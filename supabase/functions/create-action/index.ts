@@ -21,6 +21,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Create action function called');
+    
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
@@ -29,6 +31,7 @@ serve(async (req) => {
     // Get the authorization header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error('Missing authorization header');
       return new Response(
         JSON.stringify({ error: 'Missing authorization header' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -41,15 +44,20 @@ serve(async (req) => {
     );
 
     if (userError || !user) {
+      console.error('User verification failed:', userError);
       return new Response(
         JSON.stringify({ error: 'Invalid or expired token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    console.log('User verified:', user.id);
+
     const body: CreateActionRequest = await req.json();
+    console.log('Request body:', body);
     
     if (!body.project_task_id || !body.title) {
+      console.error('Missing required fields');
       return new Response(
         JSON.stringify({ error: 'Task ID and title are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -57,6 +65,7 @@ serve(async (req) => {
     }
 
     // Create the action
+    console.log('Creating action...');
     const { data: action, error: createError } = await supabaseClient
       .from('actions')
       .insert({
@@ -72,21 +81,35 @@ serve(async (req) => {
       .single();
 
     if (createError) {
+      console.error('Action creation failed:', createError);
       return new Response(
         JSON.stringify({ error: createError.message }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Create audit log
-    await supabaseClient.from('audit_logs').insert({
-      entity_type: 'action',
-      entity_id: action.id,
-      field: 'created',
-      old_value: null,
-      new_value: action,
-      actor: user.id
-    });
+    console.log('Action created successfully:', action.id);
+
+    // Create audit log with service role key for permissions
+    try {
+      const supabaseServiceClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+
+      await supabaseServiceClient.from('audit_logs').insert({
+        entity_type: 'action',
+        entity_id: action.id,
+        field: 'created',
+        old_value: null,
+        new_value: action,
+        actor: user.id
+      });
+      console.log('Audit log created');
+    } catch (auditError) {
+      console.error('Audit log creation failed (non-critical):', auditError);
+      // Don't fail the whole request if audit log fails
+    }
 
     return new Response(
       JSON.stringify({ success: true, action }),
@@ -96,7 +119,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Function error:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: 'Internal server error: ' + error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

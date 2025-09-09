@@ -1,1 +1,11 @@
 project_id = "tjbiyyejofdpwybppxhv"
+
+[api]
+enabled = true
+port = 54321
+
+[functions.admin-invite-user]
+verify_jwt = false
+
+[functions.admin-update-user]
+verify_jwt = false

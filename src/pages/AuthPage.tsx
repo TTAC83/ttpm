@@ -12,6 +12,8 @@ export const AuthPage = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [magicLinkLoading, setMagicLinkLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetMessage, setResetMessage] = useState('');
   
   const { signIn, signInWithMagicLink } = useAuth();
 
@@ -39,6 +41,30 @@ export const AuthPage = () => {
     }
   };
 
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    
+    setResetLoading(true);
+    setResetMessage('');
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth`,
+      });
+      
+      if (error) {
+        setResetMessage(`Error: ${error.message}`);
+      } else {
+        setResetMessage('Password reset email sent! Check your inbox.');
+      }
+    } catch (error: any) {
+      setResetMessage(`Error: ${error.message}`);
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
@@ -50,9 +76,10 @@ export const AuthPage = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="password" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="password">Password</TabsTrigger>
               <TabsTrigger value="magic-link">Magic Link</TabsTrigger>
+              <TabsTrigger value="reset">Reset Password</TabsTrigger>
             </TabsList>
             
             <TabsContent value="password" className="space-y-4 mt-6">
@@ -112,6 +139,37 @@ export const AuthPage = () => {
               </form>
               <div className="text-sm text-muted-foreground text-center">
                 We'll send you a secure link to sign in without a password
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="reset" className="space-y-4 mt-6">
+              <form onSubmit={handlePasswordReset} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="reset-email">Email</Label>
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={resetLoading || !email}
+                >
+                  {resetLoading ? 'Sending...' : 'Send Reset Link'}
+                </Button>
+                {resetMessage && (
+                  <div className={`text-sm text-center ${resetMessage.includes('Error') ? 'text-destructive' : 'text-green-600'}`}>
+                    {resetMessage}
+                  </div>
+                )}
+              </form>
+              <div className="text-sm text-muted-foreground text-center">
+                We'll send you a secure link to reset your password
               </div>
             </TabsContent>
           </Tabs>

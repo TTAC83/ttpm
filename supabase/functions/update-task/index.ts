@@ -22,9 +22,10 @@ serve(async (req) => {
   }
 
   try {
+    // Use service role key to bypass RLS for admin operations
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
     // Get the authorization header
@@ -36,23 +37,23 @@ serve(async (req) => {
       );
     }
 
-    // Set the user session for RLS
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(
+    // Verify user using anon client first
+    const anonClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    );
+    
+    const { data: { user }, error: userError } = await anonClient.auth.getUser(
       authHeader.replace('Bearer ', '')
     );
 
     if (userError || !user) {
+      console.log('User verification failed:', userError);
       return new Response(
         JSON.stringify({ error: 'Invalid or expired token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    // Set the auth session to ensure RLS works properly
-    await supabaseClient.auth.setSession({
-      access_token: authHeader.replace('Bearer ', ''),
-      refresh_token: '', // Not needed for this operation
-    });
 
     const body: UpdateTaskRequest = await req.json();
     
@@ -63,6 +64,8 @@ serve(async (req) => {
       );
     }
 
+    console.log('Looking for task with ID:', body.id);
+
     // Get the current task to capture old values for audit
     const { data: currentTask, error: fetchError } = await supabaseClient
       .from('project_tasks')
@@ -70,12 +73,23 @@ serve(async (req) => {
       .eq('id', body.id)
       .single();
 
-    if (fetchError || !currentTask) {
+    if (fetchError) {
+      console.log('Fetch error:', fetchError);
+      return new Response(
+        JSON.stringify({ error: 'Task not found', details: fetchError.message }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!currentTask) {
+      console.log('No task found with ID:', body.id);
       return new Response(
         JSON.stringify({ error: 'Task not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    console.log('Found task:', currentTask.task_title);
 
     // Update the task
     const updateData: any = {};
@@ -86,12 +100,15 @@ serve(async (req) => {
     if (body.status !== undefined) updateData.status = body.status;
     if (body.assignee !== undefined) updateData.assignee = body.assignee;
 
+    console.log('Updating task with:', updateData);
+
     const { error: updateError } = await supabaseClient
       .from('project_tasks')
       .update(updateData)
       .eq('id', body.id);
 
     if (updateError) {
+      console.log('Update error:', updateError);
       return new Response(
         JSON.stringify({ error: updateError.message }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -118,6 +135,8 @@ serve(async (req) => {
 
     await Promise.all(auditPromises);
 
+    console.log('Task updated successfully');
+
     return new Response(
       JSON.stringify({ success: true }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -126,7 +145,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Function error:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: 'Internal server error', details: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

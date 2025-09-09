@@ -64,13 +64,29 @@ serve(async (req) => {
     }
 
     // Check if the user is an internal admin
+    console.log('Checking user permissions for:', user.id);
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('role, is_internal')
       .eq('user_id', user.id)
       .single();
 
-    if (profileError || !profile || !profile.is_internal) {
+    console.log('Profile data:', profile);
+    console.log('Profile error:', profileError);
+
+    if (profileError) {
+      console.error('Profile error:', profileError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to check user permissions: ' + profileError.message }),
+        { 
+          status: 403, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    if (!profile || !profile.is_internal) {
+      console.log('User lacks permissions. Profile:', profile);
       return new Response(
         JSON.stringify({ error: 'Insufficient permissions' }),
         { 
@@ -79,6 +95,8 @@ serve(async (req) => {
         }
       );
     }
+
+    console.log('User has permissions, proceeding with invitation');
 
     // Parse request body
     const body: InviteUserRequest = await req.json();

@@ -436,19 +436,21 @@ const CreateActionDialog = ({
           <div className="space-y-2">
             <Label>Assignee</Label>
             <Select 
-              value={formData.assignee} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, assignee: value }))}
+              value={formData.assignee || 'unassigned'} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, assignee: value === 'unassigned' ? '' : value }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select assignee" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Unassigned</SelectItem>
-                {profiles.map((profile) => (
-                  <SelectItem key={profile.user_id} value={profile.user_id}>
-                    {profile.name || 'Unnamed User'}
-                  </SelectItem>
-                ))}
+                <SelectItem value="unassigned">Unassigned</SelectItem>
+                {profiles
+                  .filter((profile) => profile.user_id && profile.user_id.trim() !== '')
+                  .map((profile) => (
+                    <SelectItem key={profile.user_id} value={profile.user_id}>
+                      {profile.name || 'Unnamed User'}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>

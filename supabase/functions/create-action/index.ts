@@ -72,31 +72,24 @@ serve(async (req) => {
     }
 
     // Verify user has access to the project (security check)
-    const { data: projectAccess, error: accessError } = await supabaseServiceClient
+    console.log('Checking project access for task:', body.project_task_id);
+    const { data: taskData, error: taskError } = await supabaseServiceClient
       .from('project_tasks')
-      .select(`
-        project_id,
-        projects!inner(
-          company_id,
-          project_members!inner(user_id)
-        )
-      `)
+      .select('project_id')
       .eq('id', body.project_task_id)
       .single();
 
-    if (accessError || !projectAccess) {
-      console.error('Project access verification failed:', accessError);
+    if (taskError || !taskData) {
+      console.error('Task not found:', taskError);
       return new Response(
         JSON.stringify({ error: 'Project task not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    console.log('Task found, checking project membership for project:', taskData.project_id);
+
     // Check if user is internal or project member
-    const isProjectMember = projectAccess.projects.project_members.some(
-      (member: any) => member.user_id === user.id
-    );
-    
     const { data: userProfile } = await supabaseServiceClient
       .from('profiles')
       .select('is_internal')
@@ -104,13 +97,24 @@ serve(async (req) => {
       .single();
 
     const isInternal = userProfile?.is_internal || false;
+    console.log('User is internal:', isInternal);
 
-    if (!isInternal && !isProjectMember) {
-      console.error('User lacks permission to create actions for this project');
-      return new Response(
-        JSON.stringify({ error: 'Permission denied' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (!isInternal) {
+      // Check if user is a project member
+      const { data: membershipData } = await supabaseServiceClient
+        .from('project_members')
+        .select('user_id')
+        .eq('project_id', taskData.project_id)
+        .eq('user_id', user.id)
+        .single();
+
+      if (!membershipData) {
+        console.error('User lacks permission to create actions for this project');
+        return new Response(
+          JSON.stringify({ error: 'Permission denied' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     // Create the action using service client (bypasses RLS)

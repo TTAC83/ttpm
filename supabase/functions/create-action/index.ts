@@ -74,21 +74,55 @@ serve(async (req) => {
       );
     }
     
-    if (!body.project_task_id || !body.title) {
-      console.error('Missing required fields');
+    if (!body.title) {
+      console.error('Missing title');
       return new Response(
-        JSON.stringify({ error: 'Task ID and title are required' }),
+        JSON.stringify({ error: 'Title is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Verify user has access to the project (security check)
-    console.log('Checking project access for task:', body.project_task_id);
-    const { data: taskData, error: taskError } = await supabaseServiceClient
-      .from('project_tasks')
-      .select('project_id')
-      .eq('id', body.project_task_id)
-      .single();
+    if (!body.isUpdate && !body.project_task_id) {
+      console.error('Missing project_task_id for new action');
+      return new Response(
+        JSON.stringify({ error: 'Task ID is required for new actions' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    let taskData;
+    let taskError;
+
+    if (body.isUpdate && body.id) {
+      // For updates, get project info from the existing action
+      console.log('Getting project info from existing action:', body.id);
+      const { data: actionData, error: actionError } = await supabaseServiceClient
+        .from('actions')
+        .select('project_task_id, project_tasks(project_id)')
+        .eq('id', body.id)
+        .single();
+
+      if (actionError || !actionData) {
+        console.error('Action not found:', actionError);
+        return new Response(
+          JSON.stringify({ error: 'Action not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      taskData = { project_id: actionData.project_tasks.project_id };
+    } else {
+      // For new actions, verify user has access to the project (security check)
+      console.log('Checking project access for task:', body.project_task_id);
+      const result = await supabaseServiceClient
+        .from('project_tasks')
+        .select('project_id')
+        .eq('id', body.project_task_id)
+        .single();
+      
+      taskData = result.data;
+      taskError = result.error;
+    }
 
     if (taskError || !taskData) {
       console.error('Task not found:', taskError);

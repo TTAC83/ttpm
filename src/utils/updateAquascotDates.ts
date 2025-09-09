@@ -114,19 +114,19 @@ const taskUpdates: Record<string, {
     actual_start: "2024-11-14",
     actual_end: "2024-11-14"
   },
-  "Arrange Site Visit (Pre-Config)": {
+  "Arrange Site Visit": {
     planned_start: "2024-12-13",
     planned_end: "2024-12-20",
     actual_start: "2024-11-14",
     actual_end: "2024-11-14"
   },
-  "IoT Device Configuration": {
+  "IoT Device Install": {
     planned_start: "2024-12-21",
     planned_end: "2024-12-22",
     actual_start: "2024-11-14",
     actual_end: "2024-11-14"
   },
-  "Vision Camera Configuration": {
+  "Vision Camera Install": {
     planned_start: "2024-12-21",
     planned_end: "2024-12-22",
     actual_start: "2024-11-14",
@@ -160,12 +160,7 @@ const taskUpdates: Record<string, {
     planned_start: "2025-01-20",
     planned_end: "2025-01-21"
   },
-  "Arrange Site Visit (Adoption)": {
-    planned_start: "2025-01-22",
-    planned_end: "2025-01-29",
-    actual_start: "2025-06-05",
-    actual_end: "2025-06-05"
-  },
+  // Note: There are two "Arrange Site Visit" tasks, this mapping will update both
   "Guided Session 1": {
     planned_start: "2025-01-30",
     planned_end: "2025-01-31",
@@ -236,11 +231,14 @@ export const updateAquascotDates = async () => {
           if (response.ok) {
             results.push({ task: task.task_title, status: 'updated' });
           } else {
-            results.push({ task: task.task_title, status: 'failed', error: await response.text() });
+            const errorText = await response.text();
+            results.push({ task: task.task_title, status: 'failed', error: errorText });
           }
         } catch (error) {
           results.push({ task: task.task_title, status: 'failed', error: error.message });
         }
+      } else {
+        results.push({ task: task.task_title, status: 'skipped - no mapping found' });
       }
     }
 

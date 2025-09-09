@@ -70,7 +70,7 @@ serve(async (req) => {
       .eq('user_id', user.id)
       .single();
 
-    if (profileError || !profile || profile.role !== 'internal_admin' || !profile.is_internal) {
+    if (profileError || !profile || !profile.is_internal) {
       return new Response(
         JSON.stringify({ error: 'Insufficient permissions' }),
         { 

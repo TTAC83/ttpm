@@ -59,7 +59,7 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle }: SubtasksDialo
     planned_start: null as Date | null,
     planned_end: null as Date | null,
     status: 'Planned' as 'Planned' | 'In Progress' | 'Blocked' | 'Done',
-    assignee: '' as string,
+    assignee: 'unassigned' as string,
   });
 
   useEffect(() => {
@@ -125,7 +125,7 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle }: SubtasksDialo
             planned_start: formData.planned_start?.toISOString().split('T')[0] || null,
             planned_end: formData.planned_end?.toISOString().split('T')[0] || null,
             status: formData.status as any,
-            assignee: formData.assignee || null,
+            assignee: formData.assignee === 'unassigned' ? null : formData.assignee,
           })
           .eq('id', editingSubtask.id);
 
@@ -146,7 +146,7 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle }: SubtasksDialo
             planned_start: formData.planned_start?.toISOString().split('T')[0] || null,
             planned_end: formData.planned_end?.toISOString().split('T')[0] || null,
             status: formData.status as any,
-            assignee: formData.assignee || null,
+            assignee: formData.assignee === 'unassigned' ? null : formData.assignee,
           });
 
         if (error) throw error;
@@ -165,7 +165,7 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle }: SubtasksDialo
         planned_start: null,
         planned_end: null,
         status: 'Planned',
-        assignee: '',
+        assignee: 'unassigned',
       });
       fetchSubtasks();
     } catch (error: any) {
@@ -185,7 +185,7 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle }: SubtasksDialo
       planned_start: subtask.planned_start ? new Date(subtask.planned_start) : null,
       planned_end: subtask.planned_end ? new Date(subtask.planned_end) : null,
       status: subtask.status as 'Planned' | 'In Progress' | 'Blocked' | 'Done',
-      assignee: subtask.assignee || '',
+      assignee: subtask.assignee || 'unassigned',
     });
     setAddingSubtask(true);
   };
@@ -224,7 +224,7 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle }: SubtasksDialo
       planned_start: null,
       planned_end: null,
       status: 'Planned' as 'Planned' | 'In Progress' | 'Blocked' | 'Done',
-      assignee: '',
+      assignee: 'unassigned',
     });
     setAddingSubtask(true);
   };
@@ -347,7 +347,7 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle }: SubtasksDialo
                         <SelectValue placeholder="Select assignee" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Unassigned</SelectItem>
+                        <SelectItem value="unassigned">Unassigned</SelectItem>
                         {profiles.map((profile) => (
                           <SelectItem key={profile.user_id} value={profile.user_id}>
                             {profile.name}

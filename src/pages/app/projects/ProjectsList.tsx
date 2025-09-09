@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateUK } from '@/lib/dateUtils';
-import { Search, Plus, Building } from 'lucide-react';
+import { Search, Plus, Building, Calendar, Upload } from 'lucide-react';
 
 interface Project {
   id: string;
@@ -106,6 +106,80 @@ export const ProjectsList = () => {
             </Button>
           </div>
         )}
+      </div>
+
+      {/* Date Update Buttons for Internal Admins */}
+      {(profile?.is_internal === true && profile?.role === 'internal_admin') && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Customer Date Updates
+            </CardTitle>
+            <CardDescription>
+              Bulk update project dates for specific customers
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              <Button asChild variant="outline" size="sm">
+                <Link to="/app/projects/update-aquascot">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Aquascot
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/app/projects/update-finsbury">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Finsbury
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/app/projects/update-cranswick-watton">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Cranswick Watton
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/app/projects/update-butlers-farmhouse">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Butlers Farmhouse
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/app/projects/update-butternut-box">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Butternut Box
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/app/projects/update-mbc">
+                  <Upload className="h-4 w-4 mr-2" />
+                  MBC
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/app/projects/update-hfuk">
+                  <Upload className="h-4 w-4 mr-2" />
+                  HFUK
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/app/projects/update-kettle-produce">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Kettle Produce
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/app/projects/update-myton-gadbrook-morrisons">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Myton Gadbrook
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       </div>
 
       <Card>

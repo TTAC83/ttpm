@@ -63,9 +63,9 @@ serve(async (req) => {
       );
     }
 
-    // Check if the user is an internal admin
+    // Check if the user is an internal admin using service role
     console.log('Checking user permissions for:', user.id);
-    const { data: profile, error: profileError } = await supabaseClient
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('role, is_internal')
       .eq('user_id', user.id)
@@ -88,7 +88,7 @@ serve(async (req) => {
     if (!profile || !profile.is_internal) {
       console.log('User lacks permissions. Profile:', profile);
       return new Response(
-        JSON.stringify({ error: 'Insufficient permissions' }),
+        JSON.stringify({ error: 'Insufficient permissions - user is not internal' }),
         { 
           status: 403, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

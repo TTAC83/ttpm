@@ -33,7 +33,7 @@ export const NewProject = () => {
   const [internalProfiles, setInternalProfiles] = useState<Profile[]>([]);
   
   const [formData, setFormData] = useState({
-    company_id: '',
+    company_name: '', // Changed from company_id
     name: '',
     site_name: '',
     site_address: '',
@@ -90,10 +90,32 @@ export const NewProject = () => {
     setLoading(true);
 
     try {
+      // First, find or create the company
+      let company_id;
+      let { data: existingCompany } = await supabase
+        .from('companies')
+        .select('id')
+        .ilike('name', formData.company_name.trim())
+        .single();
+
+      if (existingCompany) {
+        company_id = existingCompany.id;
+      } else {
+        // Create new company
+        const { data: newCompany, error: companyError } = await supabase
+          .from('companies')
+          .insert({ name: formData.company_name.trim(), is_internal: false })
+          .select('id')
+          .single();
+        
+        if (companyError) throw companyError;
+        company_id = newCompany.id;
+      }
+
       const { data: project, error } = await supabase
         .from('projects')
         .insert({
-          company_id: formData.company_id,
+          company_id: company_id,
           name: formData.name,
           site_name: formData.site_name || null,
           site_address: formData.site_address || null,
@@ -161,23 +183,14 @@ export const NewProject = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="company_id">Customer Company *</Label>
-                <Select 
-                  value={formData.company_id} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, company_id: value }))}
+                <Label htmlFor="company_name">Customer Company *</Label>
+                <Input
+                  id="company_name"
+                  value={formData.company_name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))}
+                  placeholder="Enter customer company name"
                   required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select customer company" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {companies.map((company) => (
-                      <SelectItem key={company.id} value={company.id}>
-                        {company.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                />
               </div>
 
               <div className="space-y-2">

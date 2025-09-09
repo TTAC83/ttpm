@@ -51,6 +51,12 @@ export const AppLayout = () => {
       show: true
     },
     {
+      title: 'Projects',
+      icon: Settings,
+      path: '/app/projects',
+      show: true
+    },
+    {
       title: 'Profile',
       icon: User,
       path: '/app/profile',

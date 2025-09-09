@@ -12,6 +12,9 @@ import AppLayout from "./pages/app/AppLayout";
 import Dashboard from "./pages/app/Dashboard";
 import Profile from "./pages/app/Profile";
 import UserManagement from "./pages/app/admin/UserManagement";
+import ProjectsList from "./pages/app/projects/ProjectsList";
+import NewProject from "./pages/app/projects/NewProject";
+import ProjectDetail from "./pages/app/projects/ProjectDetail";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +45,16 @@ const App = () => (
             >
               <Route index element={<Dashboard />} />
               <Route path="profile" element={<Profile />} />
+              <Route path="projects" element={<ProjectsList />} />
+              <Route 
+                path="projects/new" 
+                element={
+                  <AuthGuard requiredRole="internal_admin">
+                    <NewProject />
+                  </AuthGuard>
+                } 
+              />
+              <Route path="projects/:id" element={<ProjectDetail />} />
               <Route 
                 path="admin/users" 
                 element={

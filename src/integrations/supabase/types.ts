@@ -541,6 +541,14 @@ export type Database = {
         Args: { n: number; start_date: string }
         Returns: string
       }
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      is_current_user_internal: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_working_day: {
         Args: { d: string }
         Returns: boolean

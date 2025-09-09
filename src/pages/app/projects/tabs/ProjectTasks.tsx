@@ -60,7 +60,7 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
 
   useEffect(() => {
     fetchTasks();
-    checkProjectMembership();
+    fetchProfiles();
     checkProjectMembership();
   }, [projectId, user]);
 
@@ -90,6 +90,20 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchProfiles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, name')
+        .order('name');
+
+      if (error) throw error;
+      setProfiles(data || []);
+    } catch (error: any) {
+      console.error('Failed to fetch profiles:', error);
     }
   };
 

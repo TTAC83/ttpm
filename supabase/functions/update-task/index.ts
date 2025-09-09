@@ -36,7 +36,7 @@ serve(async (req) => {
       );
     }
 
-    // Verify user
+    // Set the user session for RLS
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser(
       authHeader.replace('Bearer ', '')
     );
@@ -47,6 +47,12 @@ serve(async (req) => {
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Set the auth session to ensure RLS works properly
+    await supabaseClient.auth.setSession({
+      access_token: authHeader.replace('Bearer ', ''),
+      refresh_token: '', // Not needed for this operation
+    });
 
     const body: UpdateTaskRequest = await req.json();
     

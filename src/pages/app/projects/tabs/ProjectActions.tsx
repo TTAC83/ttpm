@@ -102,9 +102,19 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
       
       const { data, error } = await supabase
         .from('project_tasks')
-        .select('id, step_name, task_title, status')
+        .select(`
+          id, 
+          step_name, 
+          task_title, 
+          status,
+          master_tasks!inner (
+            master_steps!inner (
+              position
+            )
+          )
+        `)
         .eq('project_id', projectId)
-        .order('step_name')
+        .order('master_tasks.master_steps.position')
         .order('task_title');
 
       if (error) throw error;

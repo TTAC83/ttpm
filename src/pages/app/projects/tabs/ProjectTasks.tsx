@@ -74,10 +74,15 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
           *,
           profiles:assignee (
             name
+          ),
+          master_tasks!inner (
+            master_steps!inner (
+              position
+            )
           )
         `)
         .eq('project_id', projectId)
-        .order('step_name')
+        .order('master_tasks.master_steps.position')
         .order('planned_start');
 
       if (error) throw error;

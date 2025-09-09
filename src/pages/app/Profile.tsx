@@ -18,12 +18,22 @@ export const Profile = () => {
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState('');
   
   // Form state
   const [formData, setFormData] = useState({
     name: profile?.name || '',
     job_title: profile?.job_title || '',
     phone: profile?.phone || '',
+  });
+
+  // Password form state
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -107,6 +117,60 @@ export const Profile = () => {
       year: 'numeric',
       timeZone: 'Europe/London'
     });
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordMessage('New passwords do not match');
+      return;
+    }
+    
+    if (passwordData.newPassword.length < 6) {
+      setPasswordMessage('Password must be at least 6 characters');
+      return;
+    }
+    
+    setPasswordLoading(true);
+    setPasswordMessage('');
+    
+    try {
+      // For Supabase, we can update password without current password if user is authenticated
+      const { error } = await supabase.auth.updateUser({
+        password: passwordData.newPassword
+      });
+      
+      if (error) {
+        setPasswordMessage(`Error: ${error.message}`);
+      } else {
+        setPasswordMessage('Password updated successfully!');
+        setChangingPassword(false);
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: '',
+        });
+        toast({
+          title: "Password Updated",
+          description: "Your password has been updated successfully",
+        });
+      }
+    } catch (error: any) {
+      setPasswordMessage(`Error: ${error.message}`);
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  const handleCancelPasswordChange = () => {
+    setChangingPassword(false);
+    setPasswordData({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    });
+    setPasswordMessage('');
   };
 
   return (
@@ -285,6 +349,81 @@ export const Profile = () => {
               </p>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Password & Security</CardTitle>
+              <CardDescription>
+                Update your password and security settings
+              </CardDescription>
+            </div>
+            {!changingPassword && (
+              <Button onClick={() => setChangingPassword(true)} variant="outline">
+                Change Password
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {changingPassword ? (
+            <form onSubmit={handlePasswordChange} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-password">New Password</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  value={passwordData.newPassword}
+                  onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                  placeholder="Enter new password"
+                  required
+                  minLength={6}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-new-password">Confirm New Password</Label>
+                <Input
+                  id="confirm-new-password"
+                  type="password"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                  placeholder="Confirm new password"
+                  required
+                  minLength={6}
+                />
+              </div>
+              
+              {passwordMessage && (
+                <div className={`text-sm ${passwordMessage.includes('Error') ? 'text-destructive' : 'text-green-600'}`}>
+                  {passwordMessage}
+                </div>
+              )}
+              
+              <div className="flex gap-2">
+                <Button type="submit" disabled={passwordLoading || !passwordData.newPassword || !passwordData.confirmPassword}>
+                  {passwordLoading ? 'Updating...' : 'Update Password'}
+                </Button>
+                <Button type="button" variant="outline" onClick={handleCancelPasswordChange}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium">Password</p>
+                <p className="text-sm text-muted-foreground">Last updated: {user?.updated_at ? formatDate(user.updated_at) : 'Unknown'}</p>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                <p>• Use a strong password with at least 6 characters</p>
+                <p>• Include a mix of letters, numbers, and symbols</p>
+                <p>• Don't reuse passwords from other accounts</p>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

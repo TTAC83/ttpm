@@ -66,6 +66,7 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
 
   const fetchTasks = async () => {
     try {
+      console.log('ProjectTasks: Starting to fetch tasks for project:', projectId);
       setLoading(true);
       
       const { data, error } = await supabase
@@ -82,12 +83,22 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
           )
         `)
         .eq('project_id', projectId)
-        .order('master_tasks.master_steps.position')
         .order('planned_start');
 
+      console.log('ProjectTasks: Query response:', { data, error });
+
       if (error) throw error;
-      setTasks(data || []);
+      
+      // Sort by step position in JavaScript
+      const sortedTasks = (data || []).sort((a, b) => {
+        const positionA = a.master_tasks?.master_steps?.position || 999;
+        const positionB = b.master_tasks?.master_steps?.position || 999;
+        return positionA - positionB;
+      });
+      
+      setTasks(sortedTasks);
     } catch (error: any) {
+      console.error('ProjectTasks: Error fetching tasks:', error);
       toast({
         title: "Error",
         description: "Failed to fetch tasks",

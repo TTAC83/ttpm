@@ -31,6 +31,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
 
   const fetchTasks = async () => {
     try {
+      console.log('ProjectGantt: Starting to fetch tasks for project:', projectId);
       setLoading(true);
       
       const { data, error } = await supabase
@@ -39,9 +40,12 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
         .eq('project_id', projectId)
         .order('planned_start');
 
+      console.log('ProjectGantt: Query response:', { data, error });
+
       if (error) throw error;
       setTasks(data || []);
     } catch (error: any) {
+      console.error('ProjectGantt: Error fetching tasks:', error);
       toast({
         title: "Error",
         description: "Failed to fetch tasks for Gantt chart",

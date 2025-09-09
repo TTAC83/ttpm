@@ -53,9 +53,9 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
   const [formLoading, setFormLoading] = useState(false);
   const [isProjectMember, setIsProjectMember] = useState(false);
   const [filters, setFilters] = useState({
-    step_name: '',
-    status: '',
-    assignee: '',
+    step_name: 'all',
+    status: 'all',
+    assignee: 'all',
   });
 
   useEffect(() => {
@@ -183,9 +183,9 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
   };
 
   const filteredTasks = tasks.filter(task => {
-    if (filters.step_name && task.step_name !== filters.step_name) return false;
-    if (filters.status && task.status !== filters.status) return false;
-    if (filters.assignee && task.assignee !== filters.assignee) return false;
+    if (filters.step_name && filters.step_name !== 'all' && task.step_name !== filters.step_name) return false;
+    if (filters.status && filters.status !== 'all' && task.status !== filters.status) return false;
+    if (filters.assignee && filters.assignee !== 'all' && task.assignee !== filters.assignee) return false;
     return true;
   });
 
@@ -208,12 +208,12 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
               <Label>Step</Label>
-              <Select value={filters.step_name} onValueChange={(value) => setFilters(prev => ({ ...prev, step_name: value }))}>
+              <Select value={filters.step_name} onValueChange={(value) => setFilters(prev => ({ ...prev, step_name: value === "all" ? "" : value }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="All steps" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All steps</SelectItem>
+                  <SelectItem value="all">All steps</SelectItem>
                   {uniqueSteps.map((step) => (
                     <SelectItem key={step} value={step}>
                       {step}
@@ -225,12 +225,12 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
             
             <div className="space-y-2">
               <Label>Status</Label>
-              <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
+              <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value === "all" ? "" : value }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All statuses</SelectItem>
+                  <SelectItem value="all">All statuses</SelectItem>
                   {uniqueStatuses.map((status) => (
                     <SelectItem key={status} value={status}>
                       {status}
@@ -242,17 +242,19 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
             
             <div className="space-y-2">
               <Label>Assignee</Label>
-              <Select value={filters.assignee} onValueChange={(value) => setFilters(prev => ({ ...prev, assignee: value }))}>
+              <Select value={filters.assignee} onValueChange={(value) => setFilters(prev => ({ ...prev, assignee: value === "all" ? "" : value }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="All assignees" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All assignees</SelectItem>
-                  {profiles.map((profile) => (
-                    <SelectItem key={profile.user_id} value={profile.user_id}>
-                      {profile.name || 'Unnamed User'}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="all">All assignees</SelectItem>
+                  {profiles
+                    .filter((profile) => profile.user_id && profile.user_id.trim() !== '')
+                    .map((profile) => (
+                      <SelectItem key={profile.user_id} value={profile.user_id}>
+                        {profile.name || 'Unnamed User'}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -514,19 +516,21 @@ const TaskEditDialog = ({
             <div className="space-y-2">
               <Label>Assignee</Label>
               <Select 
-                value={formData.assignee} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, assignee: value }))}
+                value={formData.assignee || 'unassigned'} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, assignee: value === 'unassigned' ? '' : value }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select assignee" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Unassigned</SelectItem>
-                  {profiles.map((profile) => (
-                    <SelectItem key={profile.user_id} value={profile.user_id}>
-                      {profile.name || 'Unnamed User'}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
+                  {profiles
+                    .filter((profile) => profile.user_id && profile.user_id.trim() !== '')
+                    .map((profile) => (
+                      <SelectItem key={profile.user_id} value={profile.user_id}>
+                        {profile.name || 'Unnamed User'}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>

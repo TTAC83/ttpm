@@ -190,14 +190,17 @@ const taskUpdates: Record<string, {
 
 export const updateAquascotDates = async () => {
   try {
-    // Get the Aquascot project ID
-    const { data: projects, error: projectError } = await supabase
+    // Get all projects and find Aquascot
+    const { data: allProjects, error: projectError } = await supabase
       .from('projects')
-      .select('id, companies(name)')
-      .eq('companies.name', 'Aquascot')
-      .single();
+      .select('id, companies(name)');
 
-    if (projectError || !projects) {
+    if (projectError || !allProjects) {
+      throw new Error('Failed to fetch projects');
+    }
+
+    const aquascotProject = allProjects.find(p => p.companies?.name === 'Aquascot');
+    if (!aquascotProject) {
       throw new Error('Aquascot project not found');
     }
 
@@ -205,7 +208,7 @@ export const updateAquascotDates = async () => {
     const { data: tasks, error: tasksError } = await supabase
       .from('project_tasks')
       .select('id, task_title')
-      .eq('project_id', projects.id);
+      .eq('project_id', aquascotProject.id);
 
     if (tasksError || !tasks) {
       throw new Error('Failed to fetch project tasks');

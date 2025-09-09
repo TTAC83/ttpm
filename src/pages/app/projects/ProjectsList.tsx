@@ -180,7 +180,6 @@ export const ProjectsList = () => {
           </CardContent>
         </Card>
       )}
-      </div>
 
       <Card>
         <CardHeader>

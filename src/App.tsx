@@ -55,7 +55,7 @@ const App = () => (
                   </AuthGuard>
                 } 
               />
-              {/* <Route path="projects/:id" element={<ProjectDetail />} /> */}
+              <Route path="projects/:id" element={<ProjectDetail />} />
               <Route 
                 path="admin/users" 
                 element={

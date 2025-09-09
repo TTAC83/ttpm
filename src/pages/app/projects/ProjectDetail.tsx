@@ -10,13 +10,13 @@ import { useToast } from '@/hooks/use-toast';
 import { formatDateUK } from '@/lib/dateUtils';
 import { ArrowLeft, Building, Calendar, MapPin, Users } from 'lucide-react';
 
-// Temporary placeholder components to debug import issues
-const ProjectOverview = ({ project, onUpdate }: any) => <div>Overview placeholder</div>;
-const ProjectLines = ({ projectId }: any) => <div>Lines placeholder</div>;
-const ProjectTasks = ({ projectId }: any) => <div>Tasks placeholder</div>;
-const ProjectGantt = ({ projectId }: any) => <div>Gantt placeholder</div>;
-const ProjectActions = ({ projectId }: any) => <div>Actions placeholder</div>;
-const ProjectAudit = ({ projectId }: any) => <div>Audit placeholder</div>;
+// Tab components
+import ProjectOverview from './tabs/ProjectOverview';
+import ProjectLines from './tabs/ProjectLines';
+import ProjectTasks from './tabs/ProjectTasks';
+import ProjectGantt from './tabs/ProjectGantt';
+import ProjectActions from './tabs/ProjectActions';
+import ProjectAudit from './tabs/ProjectAudit';
 
 interface Project {
   id: string;

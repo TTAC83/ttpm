@@ -20,6 +20,10 @@ import { UpdateFinsburyDates } from "./pages/app/projects/UpdateFinsburyDates";
 import { UpdateCranswickWattonDates } from "./pages/app/projects/UpdateCranswickWattonDates";
 import { UpdateButlersFarmhouseDates } from "./pages/app/projects/UpdateButlersFarmhouseDates";
 import { UpdateButternutBoxDates } from "./pages/app/projects/UpdateButternutBoxDates";
+import { UpdateMBCDates } from "./pages/app/projects/UpdateMBCDates";
+import { UpdateHFUKDates } from "./pages/app/projects/UpdateHFUKDates";
+import { UpdateKettleProduceDates } from "./pages/app/projects/UpdateKettleProduceDates";
+import { UpdateMytonGadbrookMorrisonsDates } from "./pages/app/projects/UpdateMytonGadbrookMorrisonsDates";
 import ProjectDetail from "./pages/app/projects/ProjectDetail";
 import MasterDataManagement from "./pages/app/admin/MasterDataManagement";
 
@@ -98,6 +102,38 @@ const App = () => (
                 element={
                   <AuthGuard requiredRole="internal_admin">
                     <UpdateButlersFarmhouseDates />
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="projects/update-mbc" 
+                element={
+                  <AuthGuard requiredRole="internal_admin">
+                    <UpdateMBCDates />
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="projects/update-hfuk" 
+                element={
+                  <AuthGuard requiredRole="internal_admin">
+                    <UpdateHFUKDates />
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="projects/update-kettle-produce" 
+                element={
+                  <AuthGuard requiredRole="internal_admin">
+                    <UpdateKettleProduceDates />
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="projects/update-myton-gadbrook-morrisons" 
+                element={
+                  <AuthGuard requiredRole="internal_admin">
+                    <UpdateMytonGadbrookMorrisonsDates />
                   </AuthGuard>
                 } 
               />

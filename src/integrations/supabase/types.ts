@@ -295,13 +295,6 @@ export type Database = {
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "profiles_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "me"
-            referencedColumns: ["user_id"]
-          },
         ]
       }
       project_members: {
@@ -518,23 +511,7 @@ export type Database = {
       }
     }
     Views: {
-      me: {
-        Row: {
-          company_id: string | null
-          is_internal: boolean | null
-          role: string | null
-          user_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       add_working_days: {

@@ -91,7 +91,12 @@ export const ProjectsList = () => {
           </p>
         </div>
         
-        {isInternalAdmin() && (
+        {/* Debug info - temporary */}
+        <div className="text-xs text-gray-500 p-2 border rounded">
+          Debug: role={profile?.role}, is_internal={profile?.is_internal?.toString()}, isInternalAdmin={isInternalAdmin().toString()}
+        </div>
+        
+        {(profile?.is_internal === true && profile?.role === 'internal_admin') && (
           <Button asChild>
             <Link to="/app/projects/new">
               <Plus className="h-4 w-4 mr-2" />

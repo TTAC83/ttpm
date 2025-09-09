@@ -24,6 +24,9 @@ import { UpdateMBCDates } from "./pages/app/projects/UpdateMBCDates";
 import { UpdateHFUKDates } from "./pages/app/projects/UpdateHFUKDates";
 import { UpdateKettleProduceDates } from "./pages/app/projects/UpdateKettleProduceDates";
 import { UpdateMytonGadbrookMorrisonsDates } from "./pages/app/projects/UpdateMytonGadbrookMorrisonsDates";
+import { UpdateRGFreshDates } from "./pages/app/projects/UpdateRGFreshDates";
+import { UpdateVillageBakeryDates } from "./pages/app/projects/UpdateVillageBakeryDates";
+import { UpdateParkCakesDates } from "./pages/app/projects/UpdateParkCakesDates";
 import ProjectDetail from "./pages/app/projects/ProjectDetail";
 import MasterDataManagement from "./pages/app/admin/MasterDataManagement";
 
@@ -126,6 +129,30 @@ const App = () => (
                 element={
                   <AuthGuard requiredRole="internal_admin">
                     <UpdateKettleProduceDates />
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="projects/update-rg-fresh" 
+                element={
+                  <AuthGuard requiredRole="internal_admin">
+                    <UpdateRGFreshDates />
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="projects/update-village-bakery" 
+                element={
+                  <AuthGuard requiredRole="internal_admin">
+                    <UpdateVillageBakeryDates />
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="projects/update-park-cakes" 
+                element={
+                  <AuthGuard requiredRole="internal_admin">
+                    <UpdateParkCakesDates />
                   </AuthGuard>
                 } 
               />

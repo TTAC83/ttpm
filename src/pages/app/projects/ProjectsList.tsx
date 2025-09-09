@@ -176,6 +176,24 @@ export const ProjectsList = () => {
                   Myton Gadbrook
                 </Link>
               </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/app/projects/update-rg-fresh">
+                  <Upload className="h-4 w-4 mr-2" />
+                  R&G Fresh
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/app/projects/update-village-bakery">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Village Bakery
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/app/projects/update-park-cakes">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Park Cakes
+                </Link>
+              </Button>
             </div>
           </CardContent>
         </Card>

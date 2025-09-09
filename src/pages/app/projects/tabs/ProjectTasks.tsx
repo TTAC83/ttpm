@@ -7,10 +7,15 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
-import { formatDateUK } from '@/lib/dateUtils';
-import { Filter, Users } from 'lucide-react';
+import { formatDateUK, toISODateString } from '@/lib/dateUtils';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { Filter, Users, Edit, CalendarIcon, Save, X } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -39,11 +44,14 @@ interface ProjectTasksProps {
 }
 
 const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const { toast } = useToast();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [formLoading, setFormLoading] = useState(false);
+  const [isProjectMember, setIsProjectMember] = useState(false);
   const [filters, setFilters] = useState({
     step_name: '',
     status: '',
@@ -52,8 +60,9 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
 
   useEffect(() => {
     fetchTasks();
-    fetchProfiles();
-  }, [projectId]);
+    checkProjectMembership();
+    checkProjectMembership();
+  }, [projectId, user]);
 
   const fetchTasks = async () => {
     try {
@@ -84,17 +93,68 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
     }
   };
 
-  const fetchProfiles = async () => {
+  const checkProjectMembership = async () => {
+    if (!user || profile?.is_internal) {
+      setIsProjectMember(true); // Internal users can edit all
+      return;
+    }
+
     try {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('user_id, name')
-        .order('name');
-      
-      if (error) throw error;
-      setProfiles(data || []);
+        .from('project_members')
+        .select('user_id')
+        .eq('project_id', projectId)
+        .eq('user_id', user.id)
+        .single();
+
+      setIsProjectMember(!!data && !error);
     } catch (error) {
-      console.error('Error fetching profiles:', error);
+      setIsProjectMember(false);
+    }
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+  };
+
+  const handleSaveTask = async (taskData: Partial<Task>) => {
+    if (!editingTask) return;
+
+    setFormLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
+
+      const { data, error } = await supabase.functions.invoke('update-task', {
+        body: {
+          id: editingTask.id,
+          ...taskData
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      toast({
+        title: "Task Updated",
+        description: "Task has been updated successfully",
+      });
+
+      setEditingTask(null);
+      fetchTasks();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update task",
+        variant: "destructive",
+      });
+    } finally {
+      setFormLoading(false);
     }
   };
 
@@ -114,6 +174,8 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
     if (filters.assignee && task.assignee !== filters.assignee) return false;
     return true;
   });
+
+  const canEditTasks = profile?.is_internal || isProjectMember;
 
   const uniqueSteps = [...new Set(tasks.map(task => task.step_name))];
   const uniqueStatuses = [...new Set(tasks.map(task => task.status))];
@@ -260,6 +322,17 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
                         <TableCell>{task.planned_end ? formatDateUK(task.planned_end) : '-'}</TableCell>
                         <TableCell>{task.actual_start ? formatDateUK(task.actual_start) : '-'}</TableCell>
                         <TableCell>{task.actual_end ? formatDateUK(task.actual_end) : '-'}</TableCell>
+                        {canEditTasks && (
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditTask(task)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))
                   )}
@@ -269,7 +342,195 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Task Dialog */}
+      {editingTask && (
+        <TaskEditDialog
+          task={editingTask}
+          profiles={profiles}
+          onSave={handleSaveTask}
+          onClose={() => setEditingTask(null)}
+          loading={formLoading}
+        />
+      )}
     </div>
+  );
+};
+
+// Task Edit Dialog Component
+const TaskEditDialog = ({ 
+  task, 
+  profiles, 
+  onSave, 
+  onClose, 
+  loading 
+}: {
+  task: Task;
+  profiles: Profile[];
+  onSave: (data: Partial<Task>) => void;
+  onClose: () => void;
+  loading: boolean;
+}) => {
+  const [formData, setFormData] = useState({
+    planned_start: task.planned_start ? new Date(task.planned_start) : undefined,
+    planned_end: task.planned_end ? new Date(task.planned_end) : undefined,
+    actual_start: task.actual_start ? new Date(task.actual_start) : undefined,
+    actual_end: task.actual_end ? new Date(task.actual_end) : undefined,
+    status: task.status,
+    assignee: task.assignee || '',
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave({
+      planned_start: formData.planned_start ? toISODateString(formData.planned_start) : null,
+      planned_end: formData.planned_end ? toISODateString(formData.planned_end) : null,
+      actual_start: formData.actual_start ? toISODateString(formData.actual_start) : null,
+      actual_end: formData.actual_end ? toISODateString(formData.actual_end) : null,
+      status: formData.status,
+      assignee: formData.assignee || null,
+    });
+  };
+
+  const DatePicker = ({ 
+    date, 
+    onDateChange, 
+    placeholder 
+  }: { 
+    date: Date | undefined; 
+    onDateChange: (date: Date | undefined) => void;
+    placeholder: string;
+  }) => (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          className={cn(
+            "w-full justify-start text-left font-normal",
+            !date && "text-muted-foreground"
+          )}
+        >
+          <CalendarIcon className="mr-2 h-4 w-4" />
+          {date ? format(date, "dd/MM/yyyy") : <span>{placeholder}</span>}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="single"
+          selected={date}
+          onSelect={onDateChange}
+          initialFocus
+          className="p-3 pointer-events-auto"
+        />
+      </PopoverContent>
+    </Popover>
+  );
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Edit Task</DialogTitle>
+          <DialogDescription>
+            Update task dates, status, and assignee
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <h4 className="font-medium">Task: {task.task_title}</h4>
+            <p className="text-sm text-muted-foreground">Step: {task.step_name}</p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Planned Start</Label>
+              <DatePicker
+                date={formData.planned_start}
+                onDateChange={(date) => setFormData(prev => ({ ...prev, planned_start: date }))}
+                placeholder="Select start date"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Planned End</Label>
+              <DatePicker
+                date={formData.planned_end}
+                onDateChange={(date) => setFormData(prev => ({ ...prev, planned_end: date }))}
+                placeholder="Select end date"
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Actual Start</Label>
+              <DatePicker
+                date={formData.actual_start}
+                onDateChange={(date) => setFormData(prev => ({ ...prev, actual_start: date }))}
+                placeholder="Select actual start"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Actual End</Label>
+              <DatePicker
+                date={formData.actual_end}
+                onDateChange={(date) => setFormData(prev => ({ ...prev, actual_end: date }))}
+                placeholder="Select actual end"
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select 
+                value={formData.status} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Planned">Planned</SelectItem>
+                  <SelectItem value="In Progress">In Progress</SelectItem>
+                  <SelectItem value="Blocked">Blocked</SelectItem>
+                  <SelectItem value="Done">Done</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Assignee</Label>
+              <Select 
+                value={formData.assignee} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, assignee: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select assignee" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Unassigned</SelectItem>
+                  {profiles.map((profile) => (
+                    <SelectItem key={profile.user_id} value={profile.user_id}>
+                      {profile.name || 'Unnamed User'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-4">
+            <Button type="submit" disabled={loading}>
+              <Save className="h-4 w-4 mr-2" />
+              {loading ? 'Saving...' : 'Save Changes'}
+            </Button>
+            <Button type="button" variant="outline" onClick={onClose}>
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };
 

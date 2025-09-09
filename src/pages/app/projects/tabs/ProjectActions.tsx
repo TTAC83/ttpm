@@ -2,13 +2,21 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
-import { formatDateUK } from '@/lib/dateUtils';
-import { Plus, FileText, Calendar } from 'lucide-react';
+import { formatDateUK, toISODateString } from '@/lib/dateUtils';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { Plus, FileText, Calendar as CalendarIcon, Save, X, Edit } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -32,21 +40,31 @@ interface Action {
   } | null;
 }
 
+interface Profile {
+  user_id: string;
+  name: string | null;
+}
+
 interface ProjectActionsProps {
   projectId: string;
 }
 
 const ProjectActions = ({ projectId }: ProjectActionsProps) => {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const { toast } = useToast();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [actions, setActions] = useState<Action[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTaskId, setSelectedTaskId] = useState<string>('');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [isProjectMember, setIsProjectMember] = useState(false);
 
   useEffect(() => {
     fetchTasks();
-  }, [projectId]);
+    fetchProfiles();
+    checkProjectMembership();
+  }, [projectId, user]);
 
   useEffect(() => {
     if (selectedTaskId) {
@@ -55,6 +73,26 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
       setActions([]);
     }
   }, [selectedTaskId]);
+
+  const checkProjectMembership = async () => {
+    if (!user || profile?.is_internal) {
+      setIsProjectMember(true);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('project_members')
+        .select('user_id')
+        .eq('project_id', projectId)
+        .eq('user_id', user.id)
+        .single();
+
+      setIsProjectMember(!!data && !error);
+    } catch (error) {
+      setIsProjectMember(false);
+    }
+  };
 
   const fetchTasks = async () => {
     try {
@@ -70,7 +108,6 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
       if (error) throw error;
       setTasks(data || []);
       
-      // Auto-select first task if available
       if (data && data.length > 0) {
         setSelectedTaskId(data[0].id);
       }
@@ -82,6 +119,20 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchProfiles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, name')
+        .order('name');
+      
+      if (error) throw error;
+      setProfiles(data || []);
+    } catch (error) {
+      console.error('Error fetching profiles:', error);
     }
   };
 
@@ -109,6 +160,42 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
     }
   };
 
+  const handleCreateAction = async (actionData: any) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
+
+      const { data, error } = await supabase.functions.invoke('create-action', {
+        body: {
+          project_task_id: selectedTaskId,
+          ...actionData
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      toast({
+        title: "Action Created",
+        description: "New action has been created successfully",
+      });
+
+      setDialogOpen(false);
+      fetchActions(selectedTaskId);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create action",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'Done': return 'default';
@@ -119,10 +206,10 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
   };
 
   const selectedTask = tasks.find(task => task.id === selectedTaskId);
+  const canManageActions = profile?.is_internal || isProjectMember;
 
   return (
     <div className="space-y-6">
-      {/* Task Selection */}
       <Card>
         <CardHeader>
           <CardTitle>Select Task</CardTitle>
@@ -155,7 +242,6 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
         </CardContent>
       </Card>
 
-      {/* Actions List */}
       {selectedTaskId && (
         <Card>
           <CardHeader>
@@ -166,10 +252,23 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
                   Manage action items and track progress
                 </CardDescription>
               </div>
-              <Button disabled>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Action
-              </Button>
+              {canManageActions && (
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Action
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <CreateActionDialog
+                      profiles={profiles}
+                      onSave={handleCreateAction}
+                      onClose={() => setDialogOpen(false)}
+                    />
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
           </CardHeader>
           <CardContent>
@@ -186,20 +285,22 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
                     <TableHead>Assignee</TableHead>
                     <TableHead>Planned Date</TableHead>
                     <TableHead>Created</TableHead>
-                    <TableHead>Actions</TableHead>
+                    {canManageActions && <TableHead>Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {actions.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">
+                      <TableCell colSpan={canManageActions ? 6 : 5} className="text-center py-8">
                         <div className="flex flex-col items-center gap-2">
                           <FileText className="h-8 w-8 text-muted-foreground" />
                           <p className="text-muted-foreground">No actions found for this task</p>
-                          <Button size="sm" disabled>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add First Action
-                          </Button>
+                          {canManageActions && (
+                            <Button size="sm" onClick={() => setDialogOpen(true)}>
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add First Action
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -227,7 +328,7 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
                         <TableCell>
                           {action.planned_date ? (
                             <div className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                               {formatDateUK(action.planned_date)}
                             </div>
                           ) : (
@@ -235,11 +336,13 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
                           )}
                         </TableCell>
                         <TableCell>{formatDateUK(action.created_at)}</TableCell>
-                        <TableCell>
-                          <Button variant="ghost" size="sm" disabled>
-                            Edit
-                          </Button>
-                        </TableCell>
+                        {canManageActions && (
+                          <TableCell>
+                            <Button variant="ghost" size="sm" disabled>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))
                   )}
@@ -259,6 +362,148 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
         </Card>
       )}
     </div>
+  );
+};
+
+// Create Action Dialog Component
+const CreateActionDialog = ({ 
+  profiles, 
+  onSave, 
+  onClose 
+}: {
+  profiles: Profile[];
+  onSave: (data: any) => void;
+  onClose: () => void;
+}) => {
+  const [formData, setFormData] = useState({
+    title: '',
+    details: '',
+    assignee: '',
+    planned_date: undefined as Date | undefined,
+    notes: '',
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      await onSave({
+        title: formData.title,
+        details: formData.details || null,
+        assignee: formData.assignee || null,
+        planned_date: formData.planned_date ? toISODateString(formData.planned_date) : null,
+        notes: formData.notes || null,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>Create New Action</DialogTitle>
+        <DialogDescription>
+          Add a new action item for this task
+        </DialogDescription>
+      </DialogHeader>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="title">Title *</Label>
+          <Input
+            id="title"
+            value={formData.title}
+            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+            placeholder="Enter action title"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="details">Details</Label>
+          <Textarea
+            id="details"
+            value={formData.details}
+            onChange={(e) => setFormData(prev => ({ ...prev, details: e.target.value }))}
+            placeholder="Enter action details"
+            rows={3}
+          />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Assignee</Label>
+            <Select 
+              value={formData.assignee} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, assignee: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select assignee" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Unassigned</SelectItem>
+                {profiles.map((profile) => (
+                  <SelectItem key={profile.user_id} value={profile.user_id}>
+                    {profile.name || 'Unnamed User'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Planned Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !formData.planned_date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.planned_date ? format(formData.planned_date, "dd/MM/yyyy") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={formData.planned_date}
+                  onSelect={(date) => setFormData(prev => ({ ...prev, planned_date: date }))}
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="notes">Notes</Label>
+          <Textarea
+            id="notes"
+            value={formData.notes}
+            onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+            placeholder="Additional notes"
+            rows={2}
+          />
+        </div>
+
+        <div className="flex gap-2 pt-4">
+          <Button type="submit" disabled={loading || !formData.title}>
+            <Save className="h-4 w-4 mr-2" />
+            {loading ? 'Creating...' : 'Create Action'}
+          </Button>
+          <Button type="button" variant="outline" onClick={onClose}>
+            <X className="h-4 w-4 mr-2" />
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </>
   );
 };
 

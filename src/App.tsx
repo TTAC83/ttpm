@@ -15,6 +15,7 @@ import UserManagement from "./pages/app/admin/UserManagement";
 import ProjectsList from "./pages/app/projects/ProjectsList";
 import NewProject from "./pages/app/projects/NewProject";
 import ProjectDetail from "./pages/app/projects/ProjectDetail";
+import MasterDataManagement from "./pages/app/admin/MasterDataManagement";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +61,14 @@ const App = () => (
                 element={
                   <AuthGuard requiredRole="internal_admin">
                     <UserManagement />
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="admin/masterdata" 
+                element={
+                  <AuthGuard requiredRole="internal_admin">
+                    <MasterDataManagement />
                   </AuthGuard>
                 } 
               />

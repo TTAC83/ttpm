@@ -9,3 +9,9 @@ verify_jwt = false
 
 [functions.admin-update-user]
 verify_jwt = false
+
+[functions.update-task]
+verify_jwt = false
+
+[functions.create-action]
+verify_jwt = false

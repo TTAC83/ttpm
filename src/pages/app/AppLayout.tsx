@@ -67,6 +67,12 @@ export const AppLayout = () => {
       icon: Users,
       path: '/app/admin/users',
       show: isInternalAdmin()
+    },
+    {
+      title: 'Master Data',
+      icon: Settings,
+      path: '/app/admin/masterdata',
+      show: isInternalAdmin()
     }
   ];
 

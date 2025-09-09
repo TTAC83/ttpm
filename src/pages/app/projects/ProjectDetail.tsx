@@ -14,6 +14,7 @@ import { ArrowLeft, Building, Calendar, MapPin, Users } from 'lucide-react';
 import ProjectOverview from './tabs/ProjectOverview';
 import ProjectLines from './tabs/ProjectLines';
 import ProjectTasks from './tabs/ProjectTasks';
+import ProjectGantt from './tabs/ProjectGantt';
 import ProjectActions from './tabs/ProjectActions';
 import ProjectAudit from './tabs/ProjectAudit';
 
@@ -185,10 +186,11 @@ export const ProjectDetail = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-5 lg:w-auto">
+        <TabsList className="grid grid-cols-6 lg:w-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="lines">Lines</TabsTrigger>
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          <TabsTrigger value="gantt">Gantt</TabsTrigger>
           <TabsTrigger value="actions">Actions</TabsTrigger>
           {profile?.is_internal && (
             <TabsTrigger value="audit">Audit</TabsTrigger>
@@ -205,6 +207,10 @@ export const ProjectDetail = () => {
 
         <TabsContent value="tasks" className="space-y-4">
           <ProjectTasks projectId={project.id} />
+        </TabsContent>
+
+        <TabsContent value="gantt" className="space-y-4">
+          <ProjectGantt projectId={project.id} />
         </TabsContent>
 
         <TabsContent value="actions" className="space-y-4">

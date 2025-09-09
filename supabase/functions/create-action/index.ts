@@ -23,9 +23,16 @@ serve(async (req) => {
   try {
     console.log('Create action function called');
     
+    // Create client for user verification (anon key)
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    );
+
+    // Create service client for database operations (bypasses RLS)
+    const supabaseServiceClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
     // Get the authorization header
@@ -64,9 +71,51 @@ serve(async (req) => {
       );
     }
 
-    // Create the action
+    // Verify user has access to the project (security check)
+    const { data: projectAccess, error: accessError } = await supabaseServiceClient
+      .from('project_tasks')
+      .select(`
+        project_id,
+        projects!inner(
+          company_id,
+          project_members!inner(user_id)
+        )
+      `)
+      .eq('id', body.project_task_id)
+      .single();
+
+    if (accessError || !projectAccess) {
+      console.error('Project access verification failed:', accessError);
+      return new Response(
+        JSON.stringify({ error: 'Project task not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check if user is internal or project member
+    const isProjectMember = projectAccess.projects.project_members.some(
+      (member: any) => member.user_id === user.id
+    );
+    
+    const { data: userProfile } = await supabaseServiceClient
+      .from('profiles')
+      .select('is_internal')
+      .eq('user_id', user.id)
+      .single();
+
+    const isInternal = userProfile?.is_internal || false;
+
+    if (!isInternal && !isProjectMember) {
+      console.error('User lacks permission to create actions for this project');
+      return new Response(
+        JSON.stringify({ error: 'Permission denied' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create the action using service client (bypasses RLS)
     console.log('Creating action...');
-    const { data: action, error: createError } = await supabaseClient
+    const { data: action, error: createError } = await supabaseServiceClient
       .from('actions')
       .insert({
         project_task_id: body.project_task_id,
@@ -92,11 +141,6 @@ serve(async (req) => {
 
     // Create audit log with service role key for permissions
     try {
-      const supabaseServiceClient = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      );
-
       await supabaseServiceClient.from('audit_logs').insert({
         entity_type: 'action',
         entity_id: action.id,

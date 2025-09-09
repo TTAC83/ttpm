@@ -7,12 +7,15 @@ const corsHeaders = {
 };
 
 interface CreateActionRequest {
+  id?: string; // For updates
   project_task_id: string;
   title: string;
   details?: string;
   assignee?: string;
   planned_date?: string;
   notes?: string;
+  status?: string;
+  isUpdate?: boolean;
 }
 
 serve(async (req) => {
@@ -62,6 +65,14 @@ serve(async (req) => {
 
     const body: CreateActionRequest = await req.json();
     console.log('Request body:', body);
+    
+    if (body.isUpdate && !body.id) {
+      console.error('Missing action ID for update');
+      return new Response(
+        JSON.stringify({ error: 'Action ID is required for updates' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     
     if (!body.project_task_id || !body.title) {
       console.error('Missing required fields');
@@ -117,52 +128,100 @@ serve(async (req) => {
       }
     }
 
-    // Create the action using service client (bypasses RLS)
-    console.log('Creating action...');
-    const { data: action, error: createError } = await supabaseServiceClient
-      .from('actions')
-      .insert({
-        project_task_id: body.project_task_id,
-        title: body.title,
-        details: body.details || null,
-        assignee: body.assignee || null,
-        planned_date: body.planned_date || null,
-        notes: body.notes || null,
-        status: 'Open'
-      })
-      .select()
-      .single();
+    if (body.isUpdate && body.id) {
+      // Update existing action
+      console.log('Updating action:', body.id);
+      const { data: action, error: updateError } = await supabaseServiceClient
+        .from('actions')
+        .update({
+          title: body.title,
+          details: body.details || null,
+          assignee: body.assignee || null,
+          planned_date: body.planned_date || null,
+          notes: body.notes || null,
+          status: body.status || 'Open'
+        })
+        .eq('id', body.id)
+        .select()
+        .single();
 
-    if (createError) {
-      console.error('Action creation failed:', createError);
+      if (updateError) {
+        console.error('Action update failed:', updateError);
+        return new Response(
+          JSON.stringify({ error: updateError.message }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('Action updated successfully:', action.id);
+
+      // Create audit log for update
+      try {
+        await supabaseServiceClient.from('audit_logs').insert({
+          entity_type: 'action',
+          entity_id: action.id,
+          field: 'updated',
+          old_value: null,
+          new_value: action,
+          actor: user.id
+        });
+        console.log('Audit log created for update');
+      } catch (auditError) {
+        console.error('Audit log creation failed (non-critical):', auditError);
+      }
+
       return new Response(
-        JSON.stringify({ error: createError.message }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: true, action }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } else {
+      // Create new action
+      console.log('Creating action...');
+      const { data: action, error: createError } = await supabaseServiceClient
+        .from('actions')
+        .insert({
+          project_task_id: body.project_task_id,
+          title: body.title,
+          details: body.details || null,
+          assignee: body.assignee || null,
+          planned_date: body.planned_date || null,
+          notes: body.notes || null,
+          status: 'Open'
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error('Action creation failed:', createError);
+        return new Response(
+          JSON.stringify({ error: createError.message }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('Action created successfully:', action.id);
+
+      // Create audit log with service role key for permissions
+      try {
+        await supabaseServiceClient.from('audit_logs').insert({
+          entity_type: 'action',
+          entity_id: action.id,
+          field: 'created',
+          old_value: null,
+          new_value: action,
+          actor: user.id
+        });
+        console.log('Audit log created');
+      } catch (auditError) {
+        console.error('Audit log creation failed (non-critical):', auditError);
+        // Don't fail the whole request if audit log fails
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, action }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    console.log('Action created successfully:', action.id);
-
-    // Create audit log with service role key for permissions
-    try {
-      await supabaseServiceClient.from('audit_logs').insert({
-        entity_type: 'action',
-        entity_id: action.id,
-        field: 'created',
-        old_value: null,
-        new_value: action,
-        actor: user.id
-      });
-      console.log('Audit log created');
-    } catch (auditError) {
-      console.error('Audit log creation failed (non-critical):', auditError);
-      // Don't fail the whole request if audit log fails
-    }
-
-    return new Response(
-      JSON.stringify({ success: true, action }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
 
   } catch (error) {
     console.error('Function error:', error);

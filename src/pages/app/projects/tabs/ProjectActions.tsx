@@ -58,6 +58,8 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
   const [loading, setLoading] = useState(true);
   const [selectedTaskId, setSelectedTaskId] = useState<string>('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingAction, setEditingAction] = useState<Action | null>(null);
   const [isProjectMember, setIsProjectMember] = useState(false);
 
   useEffect(() => {
@@ -191,6 +193,52 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
       toast({
         title: "Error",
         description: error.message || "Failed to create action",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditAction = (action: Action) => {
+    setEditingAction(action);
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateAction = async (actionData: any) => {
+    if (!editingAction) return;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
+
+      // For now, we'll use the same edge function but pass the action ID
+      const { data, error } = await supabase.functions.invoke('create-action', {
+        body: {
+          id: editingAction.id,
+          ...actionData,
+          isUpdate: true
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      toast({
+        title: "Action Updated",
+        description: "Action has been updated successfully",
+      });
+
+      setEditDialogOpen(false);
+      setEditingAction(null);
+      fetchActions(selectedTaskId);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update action",
         variant: "destructive",
       });
     }
@@ -336,13 +384,17 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
                           )}
                         </TableCell>
                         <TableCell>{formatDateUK(action.created_at)}</TableCell>
-                        {canManageActions && (
-                          <TableCell>
-                            <Button variant="ghost" size="sm" disabled>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        )}
+                         {canManageActions && (
+                           <TableCell>
+                             <Button 
+                               variant="ghost" 
+                               size="sm" 
+                               onClick={() => handleEditAction(action)}
+                             >
+                               <Edit className="h-4 w-4" />
+                             </Button>
+                           </TableCell>
+                         )}
                       </TableRow>
                     ))
                   )}
@@ -360,6 +412,23 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
             <p className="text-muted-foreground">Select a task to view its actions</p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Edit Action Dialog */}
+      {editingAction && (
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent>
+            <EditActionDialog
+              action={editingAction}
+              profiles={profiles}
+              onSave={handleUpdateAction}
+              onClose={() => {
+                setEditDialogOpen(false);
+                setEditingAction(null);
+              }}
+            />
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
@@ -498,6 +567,171 @@ const CreateActionDialog = ({
           <Button type="submit" disabled={loading || !formData.title}>
             <Save className="h-4 w-4 mr-2" />
             {loading ? 'Creating...' : 'Create Action'}
+          </Button>
+          <Button type="button" variant="outline" onClick={onClose}>
+            <X className="h-4 w-4 mr-2" />
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </>
+  );
+};
+
+// Edit Action Dialog Component
+const EditActionDialog = ({ 
+  action,
+  profiles, 
+  onSave, 
+  onClose 
+}: {
+  action: Action;
+  profiles: Profile[];
+  onSave: (data: any) => void;
+  onClose: () => void;
+}) => {
+  const [formData, setFormData] = useState({
+    title: action.title,
+    details: action.details || '',
+    assignee: action.assignee || '',
+    planned_date: action.planned_date ? new Date(action.planned_date) : undefined as Date | undefined,
+    notes: action.notes || '',
+    status: action.status,
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      await onSave({
+        title: formData.title,
+        details: formData.details || null,
+        assignee: formData.assignee || null,
+        planned_date: formData.planned_date ? toISODateString(formData.planned_date) : null,
+        notes: formData.notes || null,
+        status: formData.status,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>Edit Action</DialogTitle>
+        <DialogDescription>
+          Update action details and status
+        </DialogDescription>
+      </DialogHeader>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="edit-title">Title *</Label>
+          <Input
+            id="edit-title"
+            value={formData.title}
+            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+            placeholder="Enter action title"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="edit-details">Details</Label>
+          <Textarea
+            id="edit-details"
+            value={formData.details}
+            onChange={(e) => setFormData(prev => ({ ...prev, details: e.target.value }))}
+            placeholder="Enter action details"
+            rows={3}
+          />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Status</Label>
+            <Select 
+              value={formData.status} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Open">Open</SelectItem>
+                <SelectItem value="In Progress">In Progress</SelectItem>
+                <SelectItem value="Done">Done</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Assignee</Label>
+            <Select 
+              value={formData.assignee || 'unassigned'} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, assignee: value === 'unassigned' ? '' : value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select assignee" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="unassigned">Unassigned</SelectItem>
+                {profiles
+                  .filter((profile) => profile.user_id && profile.user_id.trim() !== '')
+                  .map((profile) => (
+                    <SelectItem key={profile.user_id} value={profile.user_id}>
+                      {profile.name || 'Unnamed User'}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Planned Date</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !formData.planned_date && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {formData.planned_date ? format(formData.planned_date, "dd/MM/yyyy") : <span>Pick a date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={formData.planned_date}
+                onSelect={(date) => setFormData(prev => ({ ...prev, planned_date: date }))}
+                initialFocus
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="edit-notes">Notes</Label>
+          <Textarea
+            id="edit-notes"
+            value={formData.notes}
+            onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+            placeholder="Additional notes"
+            rows={2}
+          />
+        </div>
+
+        <div className="flex gap-2 pt-4">
+          <Button type="submit" disabled={loading || !formData.title}>
+            <Save className="h-4 w-4 mr-2" />
+            {loading ? 'Updating...' : 'Update Action'}
           </Button>
           <Button type="button" variant="outline" onClick={onClose}>
             <X className="h-4 w-4 mr-2" />

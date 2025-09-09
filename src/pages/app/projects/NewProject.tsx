@@ -270,11 +270,13 @@ export const NewProject = () => {
                       <SelectValue placeholder="Select lead" />
                     </SelectTrigger>
                     <SelectContent>
-                      {internalProfiles.map((profile) => (
-                        <SelectItem key={profile.user_id} value={profile.user_id}>
-                          {profile.name || 'Unnamed User'}
-                        </SelectItem>
-                      ))}
+                      {internalProfiles
+                        .filter((profile) => profile.user_id && profile.user_id.trim() !== '')
+                        .map((profile) => (
+                          <SelectItem key={profile.user_id} value={profile.user_id}>
+                            {profile.name || 'Unnamed User'}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -289,11 +291,13 @@ export const NewProject = () => {
                       <SelectValue placeholder="Select lead" />
                     </SelectTrigger>
                     <SelectContent>
-                      {internalProfiles.map((profile) => (
-                        <SelectItem key={profile.user_id} value={profile.user_id}>
-                          {profile.name || 'Unnamed User'}
-                        </SelectItem>
-                      ))}
+                      {internalProfiles
+                        .filter((profile) => profile.user_id && profile.user_id.trim() !== '')
+                        .map((profile) => (
+                          <SelectItem key={profile.user_id} value={profile.user_id}>
+                            {profile.name || 'Unnamed User'}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -308,11 +312,13 @@ export const NewProject = () => {
                       <SelectValue placeholder="Select engineer" />
                     </SelectTrigger>
                     <SelectContent>
-                      {internalProfiles.map((profile) => (
-                        <SelectItem key={profile.user_id} value={profile.user_id}>
-                          {profile.name || 'Unnamed User'}
-                        </SelectItem>
-                      ))}
+                      {internalProfiles
+                        .filter((profile) => profile.user_id && profile.user_id.trim() !== '')
+                        .map((profile) => (
+                          <SelectItem key={profile.user_id} value={profile.user_id}>
+                            {profile.name || 'Unnamed User'}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -327,11 +333,13 @@ export const NewProject = () => {
                       <SelectValue placeholder="Select lead" />
                     </SelectTrigger>
                     <SelectContent>
-                      {internalProfiles.map((profile) => (
-                        <SelectItem key={profile.user_id} value={profile.user_id}>
-                          {profile.name || 'Unnamed User'}
-                        </SelectItem>
-                      ))}
+                      {internalProfiles
+                        .filter((profile) => profile.user_id && profile.user_id.trim() !== '')
+                        .map((profile) => (
+                          <SelectItem key={profile.user_id} value={profile.user_id}>
+                            {profile.name || 'Unnamed User'}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -346,11 +354,13 @@ export const NewProject = () => {
                       <SelectValue placeholder="Select coordinator" />
                     </SelectTrigger>
                     <SelectContent>
-                      {internalProfiles.map((profile) => (
-                        <SelectItem key={profile.user_id} value={profile.user_id}>
-                          {profile.name || 'Unnamed User'}
-                        </SelectItem>
-                      ))}
+                      {internalProfiles
+                        .filter((profile) => profile.user_id && profile.user_id.trim() !== '')
+                        .map((profile) => (
+                          <SelectItem key={profile.user_id} value={profile.user_id}>
+                            {profile.name || 'Unnamed User'}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>

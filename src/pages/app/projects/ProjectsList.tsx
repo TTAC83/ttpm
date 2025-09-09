@@ -98,17 +98,6 @@ export const ProjectsList = () => {
         
         {(profile?.is_internal === true && profile?.role === 'internal_admin') && (
           <div className="flex gap-2">
-            <Button asChild variant="outline">
-              <Link to="/app/projects/update-aquascot">
-                Update Aquascot
-              </Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link to="/app/projects/bulk-create">
-                <Plus className="h-4 w-4 mr-2" />
-                Bulk Create
-              </Link>
-            </Button>
             <Button asChild>
               <Link to="/app/projects/new">
                 <Plus className="h-4 w-4 mr-2" />

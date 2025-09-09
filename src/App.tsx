@@ -16,6 +16,10 @@ import ProjectsList from "./pages/app/projects/ProjectsList";
 import NewProject from "./pages/app/projects/NewProject";
 import BulkProjectCreation from "./pages/app/projects/BulkProjectCreation";
 import { UpdateAquascotDates } from "./pages/app/projects/UpdateAquascotDates";
+import { UpdateFinsburyDates } from "./pages/app/projects/UpdateFinsburyDates";
+import { UpdateCranswickWattonDates } from "./pages/app/projects/UpdateCranswickWattonDates";
+import { UpdateButlersFarmhouseDates } from "./pages/app/projects/UpdateButlersFarmhouseDates";
+import { UpdateButternutBoxDates } from "./pages/app/projects/UpdateButternutBoxDates";
 import ProjectDetail from "./pages/app/projects/ProjectDetail";
 import MasterDataManagement from "./pages/app/admin/MasterDataManagement";
 
@@ -70,6 +74,38 @@ const App = () => (
                 element={
                   <AuthGuard requiredRole="internal_admin">
                     <UpdateAquascotDates />
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="projects/update-finsbury" 
+                element={
+                  <AuthGuard requiredRole="internal_admin">
+                    <UpdateFinsburyDates />
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="projects/update-cranswick-watton" 
+                element={
+                  <AuthGuard requiredRole="internal_admin">
+                    <UpdateCranswickWattonDates />
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="projects/update-butlers-farmhouse" 
+                element={
+                  <AuthGuard requiredRole="internal_admin">
+                    <UpdateButlersFarmhouseDates />
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="projects/update-butternut-box" 
+                element={
+                  <AuthGuard requiredRole="internal_admin">
+                    <UpdateButternutBoxDates />
                   </AuthGuard>
                 } 
               />

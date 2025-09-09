@@ -97,12 +97,20 @@ export const ProjectsList = () => {
         </div>
         
         {(profile?.is_internal === true && profile?.role === 'internal_admin') && (
-          <Button asChild>
-            <Link to="/app/projects/new">
-              <Plus className="h-4 w-4 mr-2" />
-              New Project
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild variant="outline">
+              <Link to="/app/projects/bulk-create">
+                <Plus className="h-4 w-4 mr-2" />
+                Bulk Create
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link to="/app/projects/new">
+                <Plus className="h-4 w-4 mr-2" />
+                New Project
+              </Link>
+            </Button>
+          </div>
         )}
       </div>
 

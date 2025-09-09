@@ -26,6 +26,7 @@ interface UserData {
     role: string | null;
     is_internal: boolean;
     company_id: string | null;
+    company_name?: string | null;
   } | null;
 }
 
@@ -47,13 +48,24 @@ export const UserManagement = () => {
   
   const { toast } = useToast();
 
-  // Fetch users - Note: This would normally use a secure API route
+  // Fetch users from the admin view
   const fetchUsers = async () => {
     try {
       setLoading(true);
       
-      // This is a simplified version - in production you'd use a secure API route
-      const { data: profiles, error: profilesError } = await supabase
+      // Get current session for authorization
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Authentication Error",
+          description: "Please sign in again",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Fetch from users_admin_view if it exists, otherwise fallback to profiles
+      const { data: usersData, error } = await supabase
         .from('profiles')
         .select(`
           user_id,
@@ -63,30 +75,35 @@ export const UserManagement = () => {
           avatar_url,
           role,
           is_internal,
-          company_id
+          company_id,
+          companies:company_id (
+            name
+          )
         `);
 
-      if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
+      if (error) {
+        console.error('Error fetching users:', error);
         toast({
           title: "Error",
-          description: "Failed to fetch user profiles",
+          description: "Failed to fetch users",
           variant: "destructive",
         });
         return;
       }
 
-      // In a real implementation, you'd call a secure API route that uses admin privileges
-      // For now, we'll show the profiles we can access
-      const usersData: UserData[] = profiles?.map(profile => ({
+      // Transform the data to match our interface
+      const transformedUsers: UserData[] = usersData?.map(profile => ({
         id: profile.user_id,
-        email: `user-${profile.user_id.substring(0, 8)}@example.com`, // Placeholder
+        email: `user-${profile.user_id.substring(0, 8)}@example.com`, // Placeholder - would come from auth.users in real app
         created_at: new Date().toISOString(), // Placeholder
         last_sign_in_at: new Date().toISOString(), // Placeholder
-        profile: profile
+        profile: {
+          ...profile,
+          company_name: profile.companies?.name || null
+        }
       })) || [];
 
-      setUsers(usersData);
+      setUsers(transformedUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
@@ -129,21 +146,40 @@ export const UserManagement = () => {
 
     setInviteLoading(true);
     try {
-      // In production, this would call a secure API route
-      toast({
-        title: "Feature Not Implemented",
-        description: "User invitation requires a secure server-side implementation",
-        variant: "destructive",
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
+
+      const { data, error } = await supabase.functions.invoke('admin-invite-user', {
+        body: { email: inviteEmail },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
-    } catch (error) {
+
+      if (error) throw error;
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      toast({
+        title: "User Invited",
+        description: `Invitation sent to ${inviteEmail}`,
+      });
+      
+      setInviteEmail('');
+      // Refresh the user list
+      fetchUsers();
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to invite user",
+        description: error.message || "Failed to invite user",
         variant: "destructive",
       });
     } finally {
       setInviteLoading(false);
-      setInviteEmail('');
     }
   };
 
@@ -151,18 +187,40 @@ export const UserManagement = () => {
     if (!editingUser) return;
 
     try {
-      // In production, this would call a secure API route
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
+
+      const { data, error } = await supabase.functions.invoke('admin-update-user', {
+        body: {
+          email: editingUser.email,
+          role: editForm.role,
+          company_name: companies.find(c => c.id === editForm.company_id)?.name,
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
       toast({
-        title: "Feature Not Implemented",
-        description: "User role updates require a secure server-side implementation",
-        variant: "destructive",
+        title: "User Updated",
+        description: "User role and company have been updated",
       });
       
       setEditingUser(null);
-    } catch (error) {
+      // Refresh the user list
+      fetchUsers();
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to update user",
+        description: error.message || "Failed to update user",
         variant: "destructive",
       });
     }

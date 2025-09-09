@@ -494,6 +494,66 @@ export type Database = {
           },
         ]
       }
+      subtasks: {
+        Row: {
+          actual_end: string | null
+          actual_start: string | null
+          assignee: string | null
+          created_at: string
+          details: string | null
+          id: string
+          planned_end: string | null
+          planned_start: string | null
+          status: Database["public"]["Enums"]["task_status"]
+          task_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          actual_end?: string | null
+          actual_start?: string | null
+          assignee?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          planned_end?: string | null
+          planned_start?: string | null
+          status?: Database["public"]["Enums"]["task_status"]
+          task_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          actual_end?: string | null
+          actual_start?: string | null
+          assignee?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          planned_end?: string | null
+          planned_start?: string | null
+          status?: Database["public"]["Enums"]["task_status"]
+          task_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subtasks_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "subtasks_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "project_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       uk_bank_holidays: {
         Row: {
           date: string

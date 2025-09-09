@@ -15,7 +15,8 @@ import { useToast } from '@/hooks/use-toast';
 import { formatDateUK, toISODateString } from '@/lib/dateUtils';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Filter, Users, Edit, CalendarIcon, Save, X } from 'lucide-react';
+import { Filter, Users, Edit, CalendarIcon, Save, X, List } from 'lucide-react';
+import SubtasksDialog from '@/components/SubtasksDialog';
 
 interface Task {
   id: string;
@@ -52,6 +53,8 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [isProjectMember, setIsProjectMember] = useState(false);
+  const [subtasksDialogOpen, setSubtasksDialogOpen] = useState(false);
+  const [selectedTaskForSubtasks, setSelectedTaskForSubtasks] = useState<{ id: string; title: string } | null>(null);
   const [filters, setFilters] = useState({
     step_name: 'all',
     status: 'all',
@@ -145,6 +148,11 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
 
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
+  };
+
+  const handleViewSubtasks = (task: Task) => {
+    setSelectedTaskForSubtasks({ id: task.id, title: task.task_title });
+    setSubtasksDialogOpen(true);
   };
 
   const handleSaveTask = async (taskData: Partial<Task>) => {
@@ -354,17 +362,27 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
                         <TableCell>{task.planned_end ? formatDateUK(task.planned_end) : '-'}</TableCell>
                         <TableCell>{task.actual_start ? formatDateUK(task.actual_start) : '-'}</TableCell>
                         <TableCell>{task.actual_end ? formatDateUK(task.actual_end) : '-'}</TableCell>
-                        {canEditTasks && (
-                          <TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleEditTask(task)}
+                              onClick={() => handleViewSubtasks(task)}
+                              title="View Subtasks"
                             >
-                              <Edit className="h-4 w-4" />
+                              <List className="h-4 w-4" />
                             </Button>
-                          </TableCell>
-                        )}
+                            {canEditTasks && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditTask(task)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
@@ -383,6 +401,16 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
           onSave={handleSaveTask}
           onClose={() => setEditingTask(null)}
           loading={formLoading}
+        />
+      )}
+
+      {/* Subtasks Dialog */}
+      {selectedTaskForSubtasks && (
+        <SubtasksDialog
+          open={subtasksDialogOpen}
+          onOpenChange={setSubtasksDialogOpen}
+          taskId={selectedTaskForSubtasks.id}
+          taskTitle={selectedTaskForSubtasks.title}
         />
       )}
     </div>

@@ -75,8 +75,8 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
           profiles:assignee (
             name
           ),
-          master_tasks!inner (
-            master_steps!inner (
+          master_tasks (
+            master_steps (
               position
             )
           )

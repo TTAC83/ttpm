@@ -107,8 +107,8 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
           step_name, 
           task_title, 
           status,
-          master_tasks!inner (
-            master_steps!inner (
+          master_tasks (
+            master_steps (
               position
             )
           )

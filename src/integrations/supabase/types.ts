@@ -162,6 +162,24 @@ export type Database = {
         }
         Relationships: []
       }
+      event_attendees: {
+        Row: {
+          event_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          event_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          event_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       lines: {
         Row: {
           camera_count: number
@@ -296,6 +314,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      project_events: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          end_date: string
+          id: string
+          project_id: string
+          start_date: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          end_date: string
+          id?: string
+          project_id: string
+          start_date: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          end_date?: string
+          id?: string
+          project_id?: string
+          start_date?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       project_members: {
         Row: {

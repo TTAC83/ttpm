@@ -28,6 +28,23 @@ interface Subtask {
   status: string;
 }
 
+interface ProjectEvent {
+  id: string;
+  title: string;
+  description: string | null;
+  start_date: string;
+  end_date: string;
+  attendees: EventAttendee[];
+}
+
+interface EventAttendee {
+  id: string;
+  user_id: string;
+  profiles?: {
+    name: string | null;
+  } | null;
+}
+
 interface ProjectGanttProps {
   projectId: string;
 }
@@ -36,15 +53,16 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
   const { toast } = useToast();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
+  const [events, setEvents] = useState<ProjectEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchTasksAndSubtasks();
+    fetchTasksSubtasksAndEvents();
   }, [projectId]);
 
-  const fetchTasksAndSubtasks = async () => {
+  const fetchTasksSubtasksAndEvents = async () => {
     try {
-      console.log('ProjectGantt: Starting to fetch tasks and subtasks for project:', projectId);
+      console.log('ProjectGantt: Starting to fetch tasks, subtasks, and events for project:', projectId);
       setLoading(true);
       
       // Fetch tasks
@@ -71,15 +89,60 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
         subtasksData = subtasksResponse || [];
       }
 
-      console.log('ProjectGantt: Query response:', { tasksData, subtasksData });
+      // Fetch calendar events
+      const { data: eventsData, error: eventsError } = await supabase
+        .from('project_events')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('start_date');
+
+      if (eventsError) {
+        console.error('Error fetching events:', eventsError);
+      }
+
+      // Fetch attendees for events
+      const eventsWithAttendees = await Promise.all(
+        (eventsData || []).map(async (event) => {
+          const { data: attendeesData, error: attendeesError } = await supabase
+            .from('event_attendees')
+            .select('id, user_id')
+            .eq('event_id', event.id);
+
+          if (attendeesError) {
+            console.error('Error fetching attendees for event:', event.id, attendeesError);
+            return { ...event, attendees: [] };
+          }
+
+          // Fetch profile names separately
+          const attendeesWithProfiles = await Promise.all(
+            (attendeesData || []).map(async (attendee) => {
+              const { data: profileData } = await supabase
+                .from('profiles')
+                .select('name')
+                .eq('user_id', attendee.user_id)
+                .single();
+
+              return {
+                ...attendee,
+                profiles: profileData || null
+              };
+            })
+          );
+
+          return { ...event, attendees: attendeesWithProfiles };
+        })
+      );
+
+      console.log('ProjectGantt: Query response:', { tasksData, subtasksData, eventsData: eventsWithAttendees });
 
       setTasks(tasksData || []);
       setSubtasks(subtasksData);
+      setEvents(eventsWithAttendees);
     } catch (error: any) {
-      console.error('ProjectGantt: Error fetching tasks and subtasks:', error);
+      console.error('ProjectGantt: Error fetching data:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch tasks for Gantt chart",
+        description: "Failed to fetch data for Gantt chart",
         variant: "destructive",
       });
     } finally {
@@ -113,13 +176,54 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
     return Math.max(20, duration * 10); // 10px per day, minimum 20px
   };
 
-  const getItemPosition = (item: Task | Subtask, allItems: (Task | Subtask)[]): number => {
+  const getItemPosition = (item: Task | Subtask, allItems: (Task | Subtask | ProjectEvent)[]): number => {
     if (!item.planned_start) return 0;
     
     const start = new Date(item.planned_start);
     const projectStart = allItems.reduce((earliest, i) => {
-      if (!i.planned_start) return earliest;
-      const itemStart = new Date(i.planned_start);
+      let itemStart: Date | null = null;
+      
+      if ('planned_start' in i && i.planned_start) {
+        itemStart = new Date(i.planned_start);
+      } else if ('start_date' in i) {
+        itemStart = new Date(i.start_date);
+      }
+      
+      if (!itemStart) return earliest;
+      return !earliest || itemStart < earliest ? itemStart : earliest;
+    }, null as Date | null);
+    
+    if (!projectStart) return 0;
+    
+    const daysDiff = Math.ceil((start.getTime() - projectStart.getTime()) / (1000 * 60 * 60 * 24));
+    return Math.max(0, daysDiff * 10); // 10px per day
+  };
+
+  // Helper function for event bars
+  const getEventColor = (): string => {
+    return '#8b5cf6'; // Purple color for events
+  };
+
+  const getEventWidth = (event: ProjectEvent): number => {
+    const start = new Date(event.start_date);
+    const end = new Date(event.end_date);
+    const duration = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))) + 1; // +1 to include both start and end dates
+    
+    return Math.max(20, duration * 10); // 10px per day, minimum 20px
+  };
+
+  const getEventPosition = (event: ProjectEvent, allItems: (Task | Subtask | ProjectEvent)[]): number => {
+    const start = new Date(event.start_date);
+    const projectStart = allItems.reduce((earliest, i) => {
+      let itemStart: Date | null = null;
+      
+      if ('planned_start' in i && i.planned_start) {
+        itemStart = new Date(i.planned_start);
+      } else if ('start_date' in i) {
+        itemStart = new Date(i.start_date);
+      }
+      
+      if (!itemStart) return earliest;
       return !earliest || itemStart < earliest ? itemStart : earliest;
     }, null as Date | null);
     
@@ -130,9 +234,10 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
   };
 
   // Create combined list for positioning calculation
-  const allItems: (Task | Subtask)[] = [
+  const allItems: (Task | Subtask | ProjectEvent)[] = [
     ...tasks,
-    ...subtasks
+    ...subtasks,
+    ...events
   ];
   
   const tasksWithDates = tasks.filter(task => task.planned_start && task.planned_end);
@@ -155,17 +260,17 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
           Project Gantt Chart
         </CardTitle>
         <CardDescription>
-          Visual timeline showing planned vs actual task completion
+          Visual timeline showing planned vs actual task completion and calendar events
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {tasksWithDates.length === 0 ? (
+        {tasksWithDates.length === 0 && events.length === 0 ? (
           <div className="text-center py-8">
             <BarChart className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-            <p className="text-muted-foreground">No tasks with planned dates found</p>
+            <p className="text-muted-foreground">No tasks or events with dates found</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* Legend */}
             <div className="flex flex-wrap gap-4 text-sm">
               <div className="flex items-center gap-2">
@@ -184,134 +289,200 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                 <div className="w-4 h-4 bg-gray-300 rounded"></div>
                 <span>On track</span>
               </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-purple-500 rounded"></div>
+                <span>Calendar Events</span>
+              </div>
             </div>
 
-            {/* Gantt Chart */}
-            <div className="overflow-x-auto">
-              <div className="min-w-[800px] space-y-2">
-                {tasksWithDates.map((task) => {
-                  const taskSubtasks = subtasks.filter(st => st.task_id === task.id && st.planned_start && st.planned_end);
-                  
-                  return (
-                    <div key={task.id} className="space-y-1">
-                      {/* Main Task */}
-                      <div className="flex items-center gap-4 py-2">
-                        {/* Task Info */}
-                        <div className="w-64 flex-shrink-0">
-                          <div className="text-sm font-medium truncate">{task.task_title}</div>
-                          <div className="text-xs text-muted-foreground">{task.step_name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {task.planned_start && task.planned_end && (
-                              <>
-                                {formatDateUK(task.planned_start)} - {formatDateUK(task.planned_end)}
-                              </>
-                            )}
+            {/* Calendar Events Section */}
+            {events.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold text-purple-700 border-b border-purple-200 pb-2">
+                  📅 Calendar Events
+                </h3>
+                <div className="overflow-x-auto">
+                  <div className="min-w-[800px] space-y-2">
+                    {events.map((event) => (
+                      <div key={event.id} className="flex items-center gap-4 py-2 bg-purple-50 rounded-lg">
+                        {/* Event Info */}
+                        <div className="w-64 flex-shrink-0 px-2">
+                          <div className="text-sm font-medium truncate text-purple-900">{event.title}</div>
+                          {event.description && (
+                            <div className="text-xs text-purple-700 truncate">{event.description}</div>
+                          )}
+                          <div className="text-xs text-purple-600">
+                            {formatDateUK(event.start_date)}
+                            {event.start_date !== event.end_date && ` - ${formatDateUK(event.end_date)}`}
                           </div>
-                        </div>
-
-                        {/* Gantt Bar */}
-                        <div className="flex-1 relative h-8 bg-gray-100 rounded">
-                          <div
-                            className="absolute top-1 h-6 rounded flex items-center justify-center text-xs text-white font-medium"
-                            style={{
-                              left: `${getItemPosition(task, allItems)}px`,
-                              width: `${getItemWidth(task)}px`,
-                              backgroundColor: getItemColor(task),
-                              minWidth: '20px'
-                            }}
-                          >
-                            {task.status === 'Done' && '✓'}
-                          </div>
-
-                          {/* Actual bar (if different from planned) */}
-                          {task.actual_start && task.actual_end && (
-                            <div
-                              className="absolute bottom-1 h-2 bg-blue-600 rounded opacity-70"
-                              style={{
-                                left: `${getItemPosition({ ...task, planned_start: task.actual_start }, allItems)}px`,
-                                width: `${getItemWidth({ ...task, planned_start: task.actual_start, planned_end: task.actual_end })}px`,
-                                minWidth: '4px'
-                              }}
-                            />
+                          {event.attendees.length > 0 && (
+                            <div className="text-xs text-purple-600 truncate">
+                              👥 {event.attendees.map(a => a.profiles?.name || 'Unknown').join(', ')}
+                            </div>
                           )}
                         </div>
 
-                        {/* Status */}
+                        {/* Event Gantt Bar */}
+                        <div className="flex-1 relative h-8 bg-purple-100 rounded">
+                          <div
+                            className="absolute top-1 h-6 rounded flex items-center justify-center text-xs text-white font-medium shadow-sm"
+                            style={{
+                              left: `${getEventPosition(event, allItems)}px`,
+                              width: `${getEventWidth(event)}px`,
+                              backgroundColor: getEventColor(),
+                              minWidth: '20px'
+                            }}
+                          >
+                            📅
+                          </div>
+                        </div>
+
+                        {/* Event Type */}
                         <div className="w-20 flex-shrink-0 text-xs">
-                          <span className={`px-2 py-1 rounded ${
-                            task.status === 'Done' ? 'bg-green-100 text-green-700' :
-                            task.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
-                            task.status === 'Blocked' ? 'bg-red-100 text-red-700' :
-                            'bg-gray-100 text-gray-700'
-                          }`}>
-                            {task.status}
+                          <span className="px-2 py-1 rounded bg-purple-100 text-purple-700">
+                            Event
                           </span>
                         </div>
                       </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
-                      {/* Subtasks */}
-                      {taskSubtasks.map((subtask) => (
-                        <div key={subtask.id} className="flex items-center gap-4 py-1 ml-4">
-                          {/* Subtask Info */}
-                          <div className="w-64 flex-shrink-0">
-                            <div className="text-xs font-medium truncate text-muted-foreground">
-                              ├─ {subtask.title}
+            {/* Tasks Section */}
+            {tasksWithDates.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold text-blue-700 border-b border-blue-200 pb-2">
+                  🔧 Project Tasks
+                </h3>
+                <div className="overflow-x-auto">
+                  <div className="min-w-[800px] space-y-2">
+                    {tasksWithDates.map((task) => {
+                      const taskSubtasks = subtasks.filter(st => st.task_id === task.id && st.planned_start && st.planned_end);
+                      
+                      return (
+                        <div key={task.id} className="space-y-1">
+                          {/* Main Task */}
+                          <div className="flex items-center gap-4 py-2">
+                            {/* Task Info */}
+                            <div className="w-64 flex-shrink-0">
+                              <div className="text-sm font-medium truncate">{task.task_title}</div>
+                              <div className="text-xs text-muted-foreground">{task.step_name}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {task.planned_start && task.planned_end && (
+                                  <>
+                                    {formatDateUK(task.planned_start)} - {formatDateUK(task.planned_end)}
+                                  </>
+                                )}
+                              </div>
                             </div>
-                            <div className="text-xs text-muted-foreground ml-3">
-                              {subtask.planned_start && subtask.planned_end && (
-                                <>
-                                  {formatDateUK(subtask.planned_start)} - {formatDateUK(subtask.planned_end)}
-                                </>
+
+                            {/* Gantt Bar */}
+                            <div className="flex-1 relative h-8 bg-gray-100 rounded">
+                              <div
+                                className="absolute top-1 h-6 rounded flex items-center justify-center text-xs text-white font-medium"
+                                style={{
+                                  left: `${getItemPosition(task, allItems)}px`,
+                                  width: `${getItemWidth(task)}px`,
+                                  backgroundColor: getItemColor(task),
+                                  minWidth: '20px'
+                                }}
+                              >
+                                {task.status === 'Done' && '✓'}
+                              </div>
+
+                              {/* Actual bar (if different from planned) */}
+                              {task.actual_start && task.actual_end && (
+                                <div
+                                  className="absolute bottom-1 h-2 bg-blue-600 rounded opacity-70"
+                                  style={{
+                                    left: `${getItemPosition({ ...task, planned_start: task.actual_start }, allItems)}px`,
+                                    width: `${getItemWidth({ ...task, planned_start: task.actual_start, planned_end: task.actual_end })}px`,
+                                    minWidth: '4px'
+                                  }}
+                                />
                               )}
                             </div>
-                          </div>
 
-                          {/* Subtask Gantt Bar */}
-                          <div className="flex-1 relative h-6 bg-gray-50 rounded">
-                            <div
-                              className="absolute top-1 h-4 rounded flex items-center justify-center text-xs text-white font-medium"
-                              style={{
-                                left: `${getItemPosition(subtask, allItems)}px`,
-                                width: `${getItemWidth(subtask)}px`,
-                                backgroundColor: getItemColor(subtask),
-                                minWidth: '15px',
-                                opacity: 0.8
-                              }}
-                            >
-                              {subtask.status === 'Done' && '✓'}
+                            {/* Status */}
+                            <div className="w-20 flex-shrink-0 text-xs">
+                              <span className={`px-2 py-1 rounded ${
+                                task.status === 'Done' ? 'bg-green-100 text-green-700' :
+                                task.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
+                                task.status === 'Blocked' ? 'bg-red-100 text-red-700' :
+                                'bg-gray-100 text-gray-700'
+                              }`}>
+                                {task.status}
+                              </span>
                             </div>
-
-                            {/* Actual bar for subtask */}
-                            {subtask.actual_start && subtask.actual_end && (
-                              <div
-                                className="absolute bottom-1 h-1 bg-blue-600 rounded opacity-70"
-                                style={{
-                                  left: `${getItemPosition({ ...subtask, planned_start: subtask.actual_start }, allItems)}px`,
-                                  width: `${getItemWidth({ ...subtask, planned_start: subtask.actual_start, planned_end: subtask.actual_end })}px`,
-                                  minWidth: '3px'
-                                }}
-                              />
-                            )}
                           </div>
 
-                          {/* Subtask Status */}
-                          <div className="w-20 flex-shrink-0 text-xs">
-                            <span className={`px-1 py-0.5 rounded text-xs ${
-                              subtask.status === 'Done' ? 'bg-green-100 text-green-700' :
-                              subtask.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
-                              subtask.status === 'Blocked' ? 'bg-red-100 text-red-700' :
-                              'bg-gray-100 text-gray-700'
-                            }`}>
-                              {subtask.status}
-                            </span>
-                          </div>
+                          {/* Subtasks */}
+                          {taskSubtasks.map((subtask) => (
+                            <div key={subtask.id} className="flex items-center gap-4 py-1 ml-4">
+                              {/* Subtask Info */}
+                              <div className="w-64 flex-shrink-0">
+                                <div className="text-xs font-medium truncate text-muted-foreground">
+                                  ├─ {subtask.title}
+                                </div>
+                                <div className="text-xs text-muted-foreground ml-3">
+                                  {subtask.planned_start && subtask.planned_end && (
+                                    <>
+                                      {formatDateUK(subtask.planned_start)} - {formatDateUK(subtask.planned_end)}
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Subtask Gantt Bar */}
+                              <div className="flex-1 relative h-6 bg-gray-50 rounded">
+                                <div
+                                  className="absolute top-1 h-4 rounded flex items-center justify-center text-xs text-white font-medium"
+                                  style={{
+                                    left: `${getItemPosition(subtask, allItems)}px`,
+                                    width: `${getItemWidth(subtask)}px`,
+                                    backgroundColor: getItemColor(subtask),
+                                    minWidth: '15px',
+                                    opacity: 0.8
+                                  }}
+                                >
+                                  {subtask.status === 'Done' && '✓'}
+                                </div>
+
+                                {/* Actual bar for subtask */}
+                                {subtask.actual_start && subtask.actual_end && (
+                                  <div
+                                    className="absolute bottom-1 h-1 bg-blue-600 rounded opacity-70"
+                                    style={{
+                                      left: `${getItemPosition({ ...subtask, planned_start: subtask.actual_start }, allItems)}px`,
+                                      width: `${getItemWidth({ ...subtask, planned_start: subtask.actual_start, planned_end: subtask.actual_end })}px`,
+                                      minWidth: '3px'
+                                    }}
+                                  />
+                                )}
+                              </div>
+
+                              {/* Subtask Status */}
+                              <div className="w-20 flex-shrink-0 text-xs">
+                                <span className={`px-1 py-0.5 rounded text-xs ${
+                                  subtask.status === 'Done' ? 'bg-green-100 text-green-700' :
+                                  subtask.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
+                                  subtask.status === 'Blocked' ? 'bg-red-100 text-red-700' :
+                                  'bg-gray-100 text-gray-700'
+                                }`}>
+                                  {subtask.status}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  );
-                })}
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Print Instructions */}
             <div className="text-xs text-muted-foreground border-t pt-4">

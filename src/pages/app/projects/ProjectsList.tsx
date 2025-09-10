@@ -108,48 +108,6 @@ export const ProjectsList = () => {
         )}
       </div>
 
-      {/* Date Update Buttons for Internal Admins */}
-      {(profile?.is_internal === true && profile?.role === 'internal_admin') && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Customer Date Updates
-            </CardTitle>
-            <CardDescription>
-              Bulk update project dates for specific customers
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              <Button asChild variant="outline" size="sm">
-                <Link to="/app/projects/update-myton-gadbrook-morrisons">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Myton Gadbrook
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link to="/app/projects/update-rg-fresh">
-                  <Upload className="h-4 w-4 mr-2" />
-                  R&G Fresh
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link to="/app/projects/update-village-bakery">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Village Bakery
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link to="/app/projects/update-park-cakes">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Park Cakes
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       <Card>
         <CardHeader>

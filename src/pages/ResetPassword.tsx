@@ -17,7 +17,7 @@ export const ResetPassword = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const checkResetToken = async () => {
+    const checkResetFlow = async () => {
       // Check URL search params for direct token (from Supabase verification redirect)
       const urlParams = new URLSearchParams(window.location.search);
       const directToken = urlParams.get('token');
@@ -28,6 +28,20 @@ export const ResetPassword = () => {
       const hashType = hashParams.get('type');
       const accessToken = hashParams.get('access_token');
       const refreshToken = hashParams.get('refresh_token');
+      
+      // Check if we already have an active session (means user came from reset link)
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        // User is logged in via reset link - this is valid for password reset
+        setIsValidToken(true);
+        // Store the current session tokens for password update
+        sessionStorage.setItem('reset_access_token', session.access_token);
+        sessionStorage.setItem('reset_refresh_token', session.refresh_token);
+        // Clear URL parameters for security
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+      }
       
       // Handle direct token verification (most common flow)
       if (type === 'recovery' && directToken) {
@@ -45,12 +59,11 @@ export const ResetPassword = () => {
             sessionStorage.setItem('reset_refresh_token', data.session.refresh_token);
             // Clear URL parameters for security
             window.history.replaceState({}, document.title, window.location.pathname);
-            // Sign out to prevent auto-login
-            await supabase.auth.signOut();
           } else {
             throw error || new Error('Invalid verification token');
           }
         } catch (err: any) {
+          console.error('Reset token verification error:', err);
           toast({
             variant: "destructive",
             title: "Invalid reset link",
@@ -72,12 +85,11 @@ export const ResetPassword = () => {
             sessionStorage.setItem('reset_refresh_token', refreshToken);
             // Clear the hash from URL for security
             window.history.replaceState({}, document.title, window.location.pathname);
-            // Sign out to prevent auto-login
-            await supabase.auth.signOut();
           } else {
             throw error || new Error('Invalid token');
           }
         } catch (err: any) {
+          console.error('Hash token validation error:', err);
           toast({
             variant: "destructive",
             title: "Invalid reset link",
@@ -86,6 +98,7 @@ export const ResetPassword = () => {
           navigate('/auth');
         }
       } else {
+        console.error('No valid reset tokens found');
         toast({
           variant: "destructive",
           title: "Invalid reset link",
@@ -95,7 +108,7 @@ export const ResetPassword = () => {
       }
     };
 
-    checkResetToken();
+    checkResetFlow();
   }, [navigate, toast]);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {

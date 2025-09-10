@@ -134,7 +134,10 @@ const ProjectCalendar = ({ projectId }: ProjectCalendarProps) => {
 
   const fetchProjectMembers = async () => {
     try {
-      const { data, error } = await supabase
+      console.log('Fetching project members for project:', projectId);
+      
+      // First, try to get project members from the project_members table
+      const { data: membersData, error: membersError } = await supabase
         .from('project_members')
         .select(`
           user_id,
@@ -144,8 +147,57 @@ const ProjectCalendar = ({ projectId }: ProjectCalendarProps) => {
         `)
         .eq('project_id', projectId);
 
-      if (error) throw error;
-      setProjectMembers(data || []);
+      console.log('Project members data:', membersData);
+      console.log('Project members error:', membersError);
+      
+      // If no project members found, fallback to getting team assignments from the project
+      if (!membersData || membersData.length === 0) {
+        console.log('No project members found, checking team assignments...');
+        
+        const { data: projectData, error: projectError } = await supabase
+          .from('projects')
+          .select(`
+            customer_project_lead,
+            implementation_lead,
+            ai_iot_engineer,
+            technical_project_lead,
+            project_coordinator
+          `)
+          .eq('id', projectId)
+          .single();
+
+        if (projectError) throw projectError;
+        
+        // Collect unique user IDs from team assignments
+        const teamUserIds = new Set();
+        if (projectData.customer_project_lead) teamUserIds.add(projectData.customer_project_lead);
+        if (projectData.implementation_lead) teamUserIds.add(projectData.implementation_lead);
+        if (projectData.ai_iot_engineer) teamUserIds.add(projectData.ai_iot_engineer);
+        if (projectData.technical_project_lead) teamUserIds.add(projectData.technical_project_lead);
+        if (projectData.project_coordinator) teamUserIds.add(projectData.project_coordinator);
+
+        console.log('Team user IDs:', Array.from(teamUserIds));
+
+        // Fetch profiles for these users
+        if (teamUserIds.size > 0) {
+          const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
+            .select('user_id, name')
+            .in('user_id', Array.from(teamUserIds) as string[]);
+
+          if (!profilesError && profilesData) {
+            const formattedMembers = profilesData.map(profile => ({
+              user_id: profile.user_id,
+              profiles: { name: profile.name }
+            }));
+            setProjectMembers(formattedMembers);
+            return;
+          }
+        }
+      }
+      
+      if (membersError) throw membersError;
+      setProjectMembers(membersData || []);
     } catch (error) {
       console.error('Error fetching project members:', error);
     }
@@ -413,31 +465,35 @@ const ProjectCalendar = ({ projectId }: ProjectCalendarProps) => {
 
               <div className="space-y-2">
                 <Label>Attendees</Label>
-                <div className="border rounded-lg p-4 space-y-2 max-h-40 overflow-y-auto">
-                  {projectMembers.map((member) => (
-                    <div key={member.user_id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={member.user_id}
-                        checked={formData.selectedAttendees.includes(member.user_id)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setFormData(prev => ({
-                              ...prev,
-                              selectedAttendees: [...prev.selectedAttendees, member.user_id]
-                            }));
-                          } else {
-                            setFormData(prev => ({
-                              ...prev,
-                              selectedAttendees: prev.selectedAttendees.filter(id => id !== member.user_id)
-                            }));
-                          }
-                        }}
-                      />
-                      <Label htmlFor={member.user_id} className="text-sm">
-                        {member.profiles?.name || 'Unnamed User'}
-                      </Label>
-                    </div>
-                  ))}
+                <div className="border rounded-lg p-4 space-y-2 max-h-40 overflow-y-auto bg-background">
+                  {projectMembers.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No project members found. Members need to be assigned to this project first.</p>
+                  ) : (
+                    projectMembers.map((member) => (
+                      <div key={member.user_id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={member.user_id}
+                          checked={formData.selectedAttendees.includes(member.user_id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setFormData(prev => ({
+                                ...prev,
+                                selectedAttendees: [...prev.selectedAttendees, member.user_id]
+                              }));
+                            } else {
+                              setFormData(prev => ({
+                                ...prev,
+                                selectedAttendees: prev.selectedAttendees.filter(id => id !== member.user_id)
+                              }));
+                            }
+                          }}
+                        />
+                        <Label htmlFor={member.user_id} className="text-sm">
+                          {member.profiles?.name || 'Unnamed User'}
+                        </Label>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>

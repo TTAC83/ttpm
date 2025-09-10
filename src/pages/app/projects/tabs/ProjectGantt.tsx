@@ -14,7 +14,6 @@ interface Task {
   actual_start: string | null;
   actual_end: string | null;
   status: string;
-  is_critical: boolean;
   subtasks?: Subtask[];
 }
 
@@ -35,6 +34,7 @@ interface ProjectEvent {
   description: string | null;
   start_date: string;
   end_date: string;
+  is_critical: boolean;
   attendees: EventAttendee[];
 }
 
@@ -69,7 +69,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
       // Fetch tasks
       const { data: tasksData, error: tasksError } = await supabase
         .from('project_tasks')
-        .select('id, step_name, task_title, planned_start, planned_end, actual_start, actual_end, status, is_critical')
+        .select('id, step_name, task_title, planned_start, planned_end, actual_start, actual_end, status')
         .eq('project_id', projectId)
         .order('planned_start');
 
@@ -152,11 +152,6 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
   };
 
   const getItemColor = (item: Task | Subtask): string => {
-    // Check if task is critical first
-    if ('is_critical' in item && item.is_critical) {
-      return '#dc2626'; // Red for critical tasks
-    }
-    
     if (!item.planned_end) return '#e5e7eb'; // gray for no planned date
     
     const plannedEnd = new Date(item.planned_end);
@@ -206,8 +201,8 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
   };
 
   // Helper function for event bars
-  const getEventColor = (): string => {
-    return '#8b5cf6'; // Purple color for events
+  const getEventColor = (event: ProjectEvent): string => {
+    return event.is_critical ? '#ef4444' : '#8b5cf6'; // Red for critical events, purple for others
   };
 
   const getEventWidth = (event: ProjectEvent): number => {
@@ -378,8 +373,8 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                 <span>Calendar Events</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-red-600 rounded"></div>
-                <span>Critical Tasks</span>
+                <div className="w-4 h-4 bg-red-500 rounded"></div>
+                <span>Critical Events</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-0.5 h-4 bg-red-500"></div>
@@ -450,7 +445,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                             style={{
                               left: `${getEventPosition(event, allItems)}px`,
                               width: `${getEventWidth(event)}px`,
-                              backgroundColor: getEventColor(),
+                              backgroundColor: getEventColor(event),
                               minWidth: '20px'
                             }}
                           >
@@ -517,10 +512,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                           <div className="flex items-center gap-4 py-2">
                             {/* Task Info */}
                             <div className="w-64 flex-shrink-0">
-                              <div className={`text-sm font-medium truncate flex items-center gap-2 ${
-                                task.is_critical ? 'text-red-700' : ''
-                              }`}>
-                                {task.is_critical && <span className="text-red-600 font-bold">🚨</span>}
+                              <div className="text-sm font-medium truncate flex items-center gap-2">
                                 {task.task_title}
                               </div>
                               <div className="text-xs text-muted-foreground">{task.step_name}</div>

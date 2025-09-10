@@ -21,12 +21,11 @@ interface ProjectCalendarProps {
   projectId: string;
 }
 
-interface CriticalTask {
+interface CriticalEvent {
   id: string;
-  task_title: string;
-  planned_start: string | null;
-  planned_end: string | null;
-  is_critical: boolean;
+  title: string;
+  start_date: string;
+  end_date: string;
 }
 
 interface ProjectEvent {
@@ -60,7 +59,7 @@ const ProjectCalendar = ({ projectId }: ProjectCalendarProps) => {
   const { toast } = useToast();
   
   const [events, setEvents] = useState<ProjectEvent[]>([]);
-  const [criticalTasks, setCriticalTasks] = useState<CriticalTask[]>([]);
+  const [criticalEvents, setCriticalEvents] = useState<CriticalEvent[]>([]);
   const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [showEventDialog, setShowEventDialog] = useState(false);
@@ -79,22 +78,24 @@ const ProjectCalendar = ({ projectId }: ProjectCalendarProps) => {
 
   useEffect(() => {
     fetchEvents();
-    fetchCriticalTasks();
+    fetchCriticalEvents();
     fetchProjectMembers();
   }, [projectId]);
 
-  const fetchCriticalTasks = async () => {
+  const fetchCriticalEvents = async () => {
+    if (!projectId) return;
+    
     try {
       const { data, error } = await supabase
-        .from('project_tasks')
-        .select('id, task_title, planned_start, planned_end, is_critical')
-        .eq('project_id', projectId)
-        .eq('is_critical', true);
+        .from("project_events")
+        .select("id, title, start_date, end_date")
+        .eq("project_id", projectId)
+        .eq("is_critical", true);
 
       if (error) throw error;
-      setCriticalTasks(data || []);
+      setCriticalEvents(data || []);
     } catch (error) {
-      console.error('Error fetching critical tasks:', error);
+      console.error("Error fetching critical events:", error);
     }
   };
 
@@ -356,7 +357,7 @@ const ProjectCalendar = ({ projectId }: ProjectCalendarProps) => {
 
       setShowEventDialog(false);
       fetchEvents();
-      fetchCriticalTasks(); // Refresh critical tasks as well
+      fetchCriticalEvents(); // Refresh critical events as well
     } catch (error: any) {
       toast({
         title: "Error",
@@ -398,31 +399,31 @@ const ProjectCalendar = ({ projectId }: ProjectCalendarProps) => {
     });
   };
 
-  const getCriticalTasksForDate = (date: Date) => {
-    return criticalTasks.filter(task => {
-      if (!task.planned_start || !task.planned_end) return false;
-      const startDate = parseISO(task.planned_start);
-      const endDate = parseISO(task.planned_end);
-      return date >= startDate && date <= endDate;
+  const getCriticalEventsForDate = (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return criticalEvents.filter(event => {
+      const start = parseISO(event.start_date);
+      const end = parseISO(event.end_date);
+      return date >= start && date <= end;
     });
   };
 
   const renderCalendarDay = (date: Date) => {
     const dayEvents = getEventsForDate(date);
-    const dayCriticalTasks = getCriticalTasksForDate(date);
+    const dayCriticalEvents = getCriticalEventsForDate(date);
     return (
       <div className="relative w-full h-full">
         <span className={cn(
           "text-sm",
-          (dayEvents.length > 0 || dayCriticalTasks.length > 0) && "font-bold"
+          (dayEvents.length > 0 || dayCriticalEvents.length > 0) && "font-bold"
         )}>
           {date.getDate()}
         </span>
         <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex gap-0.5">
-          {dayEvents.length > 0 && (
+          {dayEvents.filter(event => !dayCriticalEvents.some(ce => ce.id === event.id)).length > 0 && (
             <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
           )}
-          {dayCriticalTasks.length > 0 && (
+          {dayCriticalEvents.length > 0 && (
             <div className="w-1 h-1 bg-red-500 rounded-full"></div>
           )}
         </div>
@@ -616,25 +617,25 @@ const ProjectCalendar = ({ projectId }: ProjectCalendarProps) => {
                 </div>
               ))}
               
-              {getCriticalTasksForDate(calendarDate).map((task) => (
-                <div key={task.id} className="border rounded-lg p-4 space-y-2 bg-red-50">
+              {getCriticalEventsForDate(calendarDate).map((event) => (
+                <div key={event.id} className="border rounded-lg p-4 space-y-2 bg-red-50">
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
-                      <h4 className="font-medium text-red-900">🚨 {task.task_title}</h4>
+                      <h4 className="font-medium text-red-900">🚨 {event.title}</h4>
                       <div className="flex items-center gap-2 text-xs text-red-600">
                         <CalendarIcon className="h-3 w-3" />
-                        {task.planned_start && formatDateUK(task.planned_start)}
-                        {task.planned_start !== task.planned_end && task.planned_end && ` - ${formatDateUK(task.planned_end)}`}
+                        {formatDateUK(event.start_date)}
+                        {event.start_date !== event.end_date && ` - ${formatDateUK(event.end_date)}`}
                       </div>
-                      <div className="text-xs text-red-600 font-medium">Critical Task</div>
+                      <div className="text-xs text-red-600 font-medium">Critical Event</div>
                     </div>
                   </div>
                 </div>
               ))}
               
-              {getEventsForDate(calendarDate).length === 0 && getCriticalTasksForDate(calendarDate).length === 0 && (
+              {getEventsForDate(calendarDate).length === 0 && getCriticalEventsForDate(calendarDate).length === 0 && (
                 <p className="text-muted-foreground text-center py-8">
-                  No events or critical tasks scheduled for this date
+                  No events or critical events scheduled for this date
                 </p>
               )}
             </div>

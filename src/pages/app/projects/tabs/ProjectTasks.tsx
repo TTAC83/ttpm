@@ -30,7 +30,6 @@ interface Task {
   status: string;
   assignee: string | null;
   master_task_id: number | null;
-  is_critical: boolean;
   profiles: {
     name: string | null;
   } | null;
@@ -144,33 +143,6 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
       setIsProjectMember(!!data && !error);
     } catch (error) {
       setIsProjectMember(false);
-    }
-  };
-
-  const toggleCriticalFlag = async (taskId: string, isCritical: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('project_tasks')
-        .update({ is_critical: isCritical })
-        .eq('id', taskId);
-
-      if (error) throw error;
-
-      // Update local state
-      setTasks(prev => prev.map(task => 
-        task.id === taskId ? { ...task, is_critical: isCritical } : task
-      ));
-
-      toast({
-        title: "Success",
-        description: `Task ${isCritical ? 'marked as critical' : 'critical flag removed'}`,
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update critical flag",
-        variant: "destructive",
-      });
     }
   };
 
@@ -341,7 +313,6 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
                   <TableRow>
                     <TableHead>Step</TableHead>
                     <TableHead>Task</TableHead>
-                    <TableHead>Critical</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Assignee</TableHead>
                     <TableHead>Planned Start</TableHead>
@@ -354,7 +325,7 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
                 <TableBody>
                   {filteredTasks.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="text-center py-8">
+                      <TableCell colSpan={9} className="text-center py-8">
                         <div className="flex flex-col items-center gap-2">
                           <Users className="h-8 w-8 text-muted-foreground" />
                           <p className="text-muted-foreground">
@@ -368,42 +339,15 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
                     </TableRow>
                   ) : (
                     filteredTasks.map((task) => (
-                      <TableRow key={task.id}>
+                      <TableRow key={task.id} className="hover:bg-accent">
                         <TableCell className="font-medium">{task.step_name}</TableCell>
                         <TableCell>
-                          <div className={`${task.is_critical ? 'border-l-4 border-red-500 pl-2' : ''}`}>
-                            <p className={`font-medium flex items-center gap-2 ${task.is_critical ? 'text-red-700' : ''}`}>
-                              {task.is_critical && <span className="text-red-600">🚨</span>}
-                              {task.task_title}
-                            </p>
+                          <div>
+                            <p className="font-medium">{task.task_title}</p>
                             {task.task_details && (
                               <p className="text-sm text-muted-foreground truncate max-w-xs">
                                 {task.task_details}
                               </p>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {task.is_critical && (
-                              <span className="text-red-600 font-bold" title="Critical Task">🚨</span>
-                            )}
-                            {canEditTasks ? (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => toggleCriticalFlag(task.id, !task.is_critical)}
-                                className={`p-1 h-6 w-6 ${task.is_critical ? 'text-red-600 hover:text-red-700' : 'text-gray-400 hover:text-red-600'}`}
-                                title={task.is_critical ? 'Remove Critical Flag' : 'Mark as Critical'}
-                              >
-                                {task.is_critical ? '🚨' : '⚠️'}
-                              </Button>
-                            ) : (
-                              task.is_critical ? (
-                                <span className="text-red-600 font-bold" title="Critical Task">🚨</span>
-                              ) : (
-                                <span className="text-gray-300">-</span>
-                              )
                             )}
                           </div>
                         </TableCell>
@@ -413,8 +357,7 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {task.profiles?.name || (task.assignee ? 'Unknown User' : 'Unassigned')}
-                        </TableCell>
+                          {task.profiles?.name || (task.assignee ? 'Unknown User' : 'Unassigned')}</TableCell>
                         <TableCell>{task.planned_start ? formatDateUK(task.planned_start) : '-'}</TableCell>
                         <TableCell>{task.planned_end ? formatDateUK(task.planned_end) : '-'}</TableCell>
                         <TableCell>{task.actual_start ? formatDateUK(task.actual_start) : '-'}</TableCell>
@@ -489,137 +432,88 @@ const TaskEditDialog = ({
   loading: boolean;
 }) => {
   const [formData, setFormData] = useState({
-    planned_start: task.planned_start ? new Date(task.planned_start) : undefined,
-    planned_end: task.planned_end ? new Date(task.planned_end) : undefined,
-    actual_start: task.actual_start ? new Date(task.actual_start) : undefined,
-    actual_end: task.actual_end ? new Date(task.actual_end) : undefined,
+    task_title: task.task_title,
+    task_details: task.task_details || '',
+    planned_start: task.planned_start || '',
+    planned_end: task.planned_end || '',
+    actual_start: task.actual_start || '',
+    actual_end: task.actual_end || '',
     status: task.status,
     assignee: task.assignee || '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave({
-      planned_start: formData.planned_start ? toISODateString(formData.planned_start) : null,
-      planned_end: formData.planned_end ? toISODateString(formData.planned_end) : null,
-      actual_start: formData.actual_start ? toISODateString(formData.actual_start) : null,
-      actual_end: formData.actual_end ? toISODateString(formData.actual_end) : null,
-      status: formData.status,
-      assignee: formData.assignee || null,
-    });
+  const [datePopoverOpen, setDatePopoverOpen] = useState({
+    planned_start: false,
+    planned_end: false,
+    actual_start: false,
+    actual_end: false,
+  });
+
+  const handleDateSelect = (field: string, date: Date | undefined) => {
+    if (date) {
+      setFormData(prev => ({
+        ...prev,
+        [field]: toISODateString(date)
+      }));
+    }
+    setDatePopoverOpen(prev => ({ ...prev, [field]: false }));
   };
 
-  const DatePicker = ({ 
-    date, 
-    onDateChange, 
-    placeholder 
-  }: { 
-    date: Date | undefined; 
-    onDateChange: (date: Date | undefined) => void;
-    placeholder: string;
-  }) => (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className={cn(
-            "w-full justify-start text-left font-normal",
-            !date && "text-muted-foreground"
-          )}
-        >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {date ? format(date, "dd/MM/yyyy") : <span>{placeholder}</span>}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
-        <Calendar
-          mode="single"
-          selected={date}
-          onSelect={onDateChange}
-          initialFocus
-          className="p-3 pointer-events-auto"
-        />
-      </PopoverContent>
-    </Popover>
-  );
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(formData);
+  };
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Task</DialogTitle>
           <DialogDescription>
-            Update task dates, status, and assignee
+            Update task details and progress
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <h4 className="font-medium">Task: {task.task_title}</h4>
-            <p className="text-sm text-muted-foreground">Step: {task.step_name}</p>
-          </div>
 
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label>Planned Start</Label>
-              <DatePicker
-                date={formData.planned_start}
-                onDateChange={(date) => setFormData(prev => ({ ...prev, planned_start: date }))}
-                placeholder="Select start date"
+              <Label htmlFor="task_title">Task Title</Label>
+              <Input
+                id="task_title"
+                value={formData.task_title}
+                onChange={(e) => setFormData(prev => ({ ...prev, task_title: e.target.value }))}
+                required
               />
             </div>
-            <div className="space-y-2">
-              <Label>Planned End</Label>
-              <DatePicker
-                date={formData.planned_end}
-                onDateChange={(date) => setFormData(prev => ({ ...prev, planned_end: date }))}
-                placeholder="Select end date"
-              />
-            </div>
-          </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label>Actual Start</Label>
-              <DatePicker
-                date={formData.actual_start}
-                onDateChange={(date) => setFormData(prev => ({ ...prev, actual_start: date }))}
-                placeholder="Select actual start"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Actual End</Label>
-              <DatePicker
-                date={formData.actual_end}
-                onDateChange={(date) => setFormData(prev => ({ ...prev, actual_end: date }))}
-                placeholder="Select actual end"
-              />
-            </div>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <Select 
-                value={formData.status} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
-              >
+              <Label htmlFor="status">Status</Label>
+              <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Planned">Planned</SelectItem>
                   <SelectItem value="In Progress">In Progress</SelectItem>
-                  <SelectItem value="Blocked">Blocked</SelectItem>
                   <SelectItem value="Done">Done</SelectItem>
+                  <SelectItem value="Blocked">Blocked</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="task_details">Task Details</Label>
+              <Input
+                id="task_details"
+                value={formData.task_details}
+                onChange={(e) => setFormData(prev => ({ ...prev, task_details: e.target.value }))}
+                placeholder="Enter task details"
+              />
+            </div>
+
             <div className="space-y-2">
-              <Label>Assignee</Label>
-              <Select 
-                value={formData.assignee || 'unassigned'} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, assignee: value === 'unassigned' ? '' : value }))}
-              >
+              <Label htmlFor="assignee">Assignee</Label>
+              <Select value={formData.assignee} onValueChange={(value) => setFormData(prev => ({ ...prev, assignee: value === "unassigned" ? "" : value }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select assignee" />
                 </SelectTrigger>
@@ -635,16 +529,124 @@ const TaskEditDialog = ({
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Planned Start Date */}
+            <div className="space-y-2">
+              <Label>Planned Start</Label>
+              <Popover open={datePopoverOpen.planned_start} onOpenChange={(open) => setDatePopoverOpen(prev => ({ ...prev, planned_start: open }))}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !formData.planned_start && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.planned_start ? formatDateUK(formData.planned_start) : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.planned_start ? new Date(formData.planned_start) : undefined}
+                    onSelect={(date) => handleDateSelect('planned_start', date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Planned End Date */}
+            <div className="space-y-2">
+              <Label>Planned End</Label>
+              <Popover open={datePopoverOpen.planned_end} onOpenChange={(open) => setDatePopoverOpen(prev => ({ ...prev, planned_end: open }))}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !formData.planned_end && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.planned_end ? formatDateUK(formData.planned_end) : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.planned_end ? new Date(formData.planned_end) : undefined}
+                    onSelect={(date) => handleDateSelect('planned_end', date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Actual Start Date */}
+            <div className="space-y-2">
+              <Label>Actual Start</Label>
+              <Popover open={datePopoverOpen.actual_start} onOpenChange={(open) => setDatePopoverOpen(prev => ({ ...prev, actual_start: open }))}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !formData.actual_start && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.actual_start ? formatDateUK(formData.actual_start) : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.actual_start ? new Date(formData.actual_start) : undefined}
+                    onSelect={(date) => handleDateSelect('actual_start', date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Actual End Date */}
+            <div className="space-y-2">
+              <Label>Actual End</Label>
+              <Popover open={datePopoverOpen.actual_end} onOpenChange={(open) => setDatePopoverOpen(prev => ({ ...prev, actual_end: open }))}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !formData.actual_end && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.actual_end ? formatDateUK(formData.actual_end) : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.actual_end ? new Date(formData.actual_end) : undefined}
+                    onSelect={(date) => handleDateSelect('actual_end', date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
 
-          <div className="flex gap-2 pt-4">
-            <Button type="submit" disabled={loading}>
-              <Save className="h-4 w-4 mr-2" />
-              {loading ? 'Saving...' : 'Save Changes'}
-            </Button>
+          <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>
               <X className="h-4 w-4 mr-2" />
               Cancel
+            </Button>
+            <Button type="submit" disabled={loading}>
+              <Save className="h-4 w-4 mr-2" />
+              {loading ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         </form>

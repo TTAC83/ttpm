@@ -322,6 +322,7 @@ export type Database = {
           description: string | null
           end_date: string
           id: string
+          is_critical: boolean
           project_id: string
           start_date: string
           title: string
@@ -333,6 +334,7 @@ export type Database = {
           description?: string | null
           end_date: string
           id?: string
+          is_critical?: boolean
           project_id: string
           start_date: string
           title: string
@@ -344,6 +346,7 @@ export type Database = {
           description?: string | null
           end_date?: string
           id?: string
+          is_critical?: boolean
           project_id?: string
           start_date?: string
           title?: string
@@ -394,7 +397,6 @@ export type Database = {
           assignee: string | null
           created_at: string
           id: string
-          is_critical: boolean
           master_task_id: number | null
           planned_end: string | null
           planned_start: string | null
@@ -410,7 +412,6 @@ export type Database = {
           assignee?: string | null
           created_at?: string
           id?: string
-          is_critical?: boolean
           master_task_id?: number | null
           planned_end?: string | null
           planned_start?: string | null
@@ -426,7 +427,6 @@ export type Database = {
           assignee?: string | null
           created_at?: string
           id?: string
-          is_critical?: boolean
           master_task_id?: number | null
           planned_end?: string | null
           planned_start?: string | null

@@ -18,10 +18,18 @@ export const ResetPassword = () => {
 
   useEffect(() => {
     const checkResetFlow = async () => {
+      console.log('ResetPassword component mounted');
+      console.log('Current URL:', window.location.href);
+      console.log('Search params:', window.location.search);
+      console.log('Hash params:', window.location.hash);
+      
       // Check URL search params for direct token (from Supabase verification redirect)
       const urlParams = new URLSearchParams(window.location.search);
       const directToken = urlParams.get('token');
       const type = urlParams.get('type');
+      
+      console.log('Direct token:', directToken);
+      console.log('Type:', type);
       
       // Also check URL hash for recovery tokens (alternative flow)
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -29,10 +37,19 @@ export const ResetPassword = () => {
       const accessToken = hashParams.get('access_token');
       const refreshToken = hashParams.get('refresh_token');
       
+      console.log('Hash type:', hashType);
+      console.log('Access token from hash:', accessToken ? 'present' : 'missing');
+      console.log('Refresh token from hash:', refreshToken ? 'present' : 'missing');
+      
       // Check if we already have an active session (means user came from reset link)
-      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Checking existing session...');
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      console.log('Session error:', sessionError);
+      console.log('Session exists:', !!session);
+      console.log('Session user:', session?.user?.id);
       
       if (session?.user) {
+        console.log('User is logged in via reset link - accepting as valid');
         // User is logged in via reset link - this is valid for password reset
         setIsValidToken(true);
         // Store the current session tokens for password update
@@ -45,6 +62,7 @@ export const ResetPassword = () => {
       
       // Handle direct token verification (most common flow)
       if (type === 'recovery' && directToken) {
+        console.log('Attempting to verify direct token...');
         try {
           // Verify the token with Supabase
           const { data, error } = await supabase.auth.verifyOtp({
@@ -52,7 +70,10 @@ export const ResetPassword = () => {
             type: 'recovery'
           });
           
+          console.log('VerifyOTP result:', { data: !!data, error });
+          
           if (!error && data.session) {
+            console.log('Token verification successful');
             setIsValidToken(true);
             // Store the session tokens for password update
             sessionStorage.setItem('reset_access_token', data.session.access_token);
@@ -74,11 +95,15 @@ export const ResetPassword = () => {
       }
       // Handle hash-based tokens (alternative flow)
       else if (hashType === 'recovery' && accessToken && refreshToken) {
+        console.log('Attempting to validate hash tokens...');
         try {
           // Validate the tokens without setting a persistent session
           const { data: user, error } = await supabase.auth.getUser(accessToken);
           
+          console.log('GetUser result:', { user: !!user, error });
+          
           if (!error && user) {
+            console.log('Hash token validation successful');
             setIsValidToken(true);
             // Store tokens temporarily for password update
             sessionStorage.setItem('reset_access_token', accessToken);
@@ -98,7 +123,8 @@ export const ResetPassword = () => {
           navigate('/auth');
         }
       } else {
-        console.error('No valid reset tokens found');
+        console.error('No valid reset tokens found - redirecting to auth');
+        console.log('Available params:', { type, directToken, hashType, accessToken: !!accessToken, refreshToken: !!refreshToken });
         toast({
           variant: "destructive",
           title: "Invalid reset link",

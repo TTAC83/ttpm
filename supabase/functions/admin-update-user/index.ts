@@ -64,14 +64,15 @@ serve(async (req) => {
       );
     }
 
-    // Check if the user is an internal admin
-    const { data: profile, error: profileError } = await supabaseClient
+    // Check if the user is an internal admin using admin client to bypass RLS
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('role, is_internal')
       .eq('user_id', user.id)
       .single();
 
     if (profileError || !profile || profile.role !== 'internal_admin' || !profile.is_internal) {
+      console.error('Permission check failed:', { profileError, profile, user_id: user.id });
       return new Response(
         JSON.stringify({ error: 'Insufficient permissions' }),
         { 

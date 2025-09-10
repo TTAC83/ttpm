@@ -17,6 +17,7 @@ import ProjectTasks from './tabs/ProjectTasks';
 import ProjectGantt from './tabs/ProjectGantt';
 import ProjectActions from './tabs/ProjectActions';
 import ProjectAudit from './tabs/ProjectAudit';
+import ProjectCalendar from './tabs/ProjectCalendar';
 
 interface Project {
   id: string;
@@ -186,12 +187,13 @@ export const ProjectDetail = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-6 lg:w-auto">
+        <TabsList className="grid grid-cols-7 lg:w-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="lines">Lines</TabsTrigger>
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="gantt">Gantt</TabsTrigger>
           <TabsTrigger value="actions">Actions</TabsTrigger>
+          <TabsTrigger value="calendar">Calendar</TabsTrigger>
           {profile?.is_internal && (
             <TabsTrigger value="audit">Audit</TabsTrigger>
           )}
@@ -215,6 +217,10 @@ export const ProjectDetail = () => {
 
         <TabsContent value="actions" className="space-y-4">
           <ProjectActions projectId={project.id} />
+        </TabsContent>
+
+        <TabsContent value="calendar" className="space-y-4">
+          <ProjectCalendar projectId={project.id} />
         </TabsContent>
 
         {profile?.is_internal && (

@@ -31,6 +31,7 @@ import { UpdateParkCakesDates } from "./pages/app/projects/UpdateParkCakesDates"
 import ProjectDetail from "./pages/app/projects/ProjectDetail";
 import MasterDataManagement from "./pages/app/admin/MasterDataManagement";
 import CompleteSignup from "./pages/CompleteSignup";
+import ResetPassword from "./pages/ResetPassword";
 import Actions from "./pages/app/Actions";
 import GlobalTasks from "./pages/app/GlobalTasks";
 
@@ -58,6 +59,14 @@ const App = () => (
               element={
                 <AuthGuard requireAuth={false}>
                   <CompleteSignup />
+                </AuthGuard>
+              } 
+            />
+            <Route 
+              path="/reset-password" 
+              element={
+                <AuthGuard requireAuth={false}>
+                  <ResetPassword />
                 </AuthGuard>
               } 
             />

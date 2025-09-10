@@ -101,12 +101,6 @@ export const CompleteSignup = () => {
       }
 
       if (data.user) {
-        // Update the invitation as accepted
-        await supabase
-          .from('invitations')
-          .update({ accepted_at: new Date().toISOString() })
-          .eq('email', email);
-
         toast({
           title: "Account Created Successfully",
           description: "Your account has been created. You can now sign in.",

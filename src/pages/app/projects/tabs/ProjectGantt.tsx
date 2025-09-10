@@ -233,6 +233,28 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
     return Math.max(0, daysDiff * 10); // 10px per day
   };
 
+  // Helper function to get today's position
+  const getTodayPosition = (allItems: (Task | Subtask | ProjectEvent)[]): number => {
+    const today = new Date();
+    const projectStart = allItems.reduce((earliest, i) => {
+      let itemStart: Date | null = null;
+      
+      if ('planned_start' in i && i.planned_start) {
+        itemStart = new Date(i.planned_start);
+      } else if ('start_date' in i) {
+        itemStart = new Date(i.start_date);
+      }
+      
+      if (!itemStart) return earliest;
+      return !earliest || itemStart < earliest ? itemStart : earliest;
+    }, null as Date | null);
+    
+    if (!projectStart) return 0;
+    
+    const daysDiff = Math.ceil((today.getTime() - projectStart.getTime()) / (1000 * 60 * 60 * 24));
+    return Math.max(0, daysDiff * 10); // 10px per day
+  };
+
   // Create combined list for positioning calculation
   const allItems: (Task | Subtask | ProjectEvent)[] = [
     ...tasks,
@@ -241,6 +263,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
   ];
   
   const tasksWithDates = tasks.filter(task => task.planned_start && task.planned_end);
+  const todayPosition = getTodayPosition(allItems);
 
   if (loading) {
     return (
@@ -293,6 +316,10 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                 <div className="w-4 h-4 bg-purple-500 rounded"></div>
                 <span>Calendar Events</span>
               </div>
+              <div className="flex items-center gap-2">
+                <div className="w-0.5 h-4 bg-red-500"></div>
+                <span>Today</span>
+              </div>
             </div>
 
             {/* Calendar Events Section */}
@@ -302,7 +329,18 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                   📅 Calendar Events
                 </h3>
                 <div className="overflow-x-auto">
-                  <div className="min-w-[800px] space-y-2">
+                  <div className="min-w-[800px] space-y-2 relative">
+                    {/* Today line for events */}
+                    <div
+                      className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10 opacity-80"
+                      style={{
+                        left: `${264 + todayPosition}px` // 264px is the width of the info column
+                      }}
+                    >
+                      <div className="absolute -top-6 -left-8 bg-red-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                        Today ({formatDateUK(new Date().toISOString().split('T')[0])})
+                      </div>
+                    </div>
                     {events.map((event) => (
                       <div key={event.id} className="flex items-center gap-4 py-2 bg-purple-50 rounded-lg">
                         {/* Event Info */}
@@ -357,7 +395,18 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                   🔧 Project Tasks
                 </h3>
                 <div className="overflow-x-auto">
-                  <div className="min-w-[800px] space-y-2">
+                  <div className="min-w-[800px] space-y-2 relative">
+                    {/* Today line for tasks */}
+                    <div
+                      className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10 opacity-80"
+                      style={{
+                        left: `${264 + todayPosition}px` // 264px is the width of the info column
+                      }}
+                    >
+                      <div className="absolute -top-6 -left-8 bg-red-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                        Today ({formatDateUK(new Date().toISOString().split('T')[0])})
+                      </div>
+                    </div>
                     {tasksWithDates.map((task) => {
                       const taskSubtasks = subtasks.filter(st => st.task_id === task.id && st.planned_start && st.planned_end);
                       

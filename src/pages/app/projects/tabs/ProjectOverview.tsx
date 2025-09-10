@@ -35,11 +35,11 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
     site_address: project.site_address || '',
     domain: project.domain || '',
     contract_signed_date: project.contract_signed_date || '',
-    customer_project_lead: project.customer_project_lead || '',
-    implementation_lead: project.implementation_lead || '',
-    ai_iot_engineer: project.ai_iot_engineer || '',
-    technical_project_lead: project.technical_project_lead || '',
-    project_coordinator: project.project_coordinator || '',
+    customer_project_lead: project.customer_project_lead || 'unassigned',
+    implementation_lead: project.implementation_lead || 'unassigned',
+    ai_iot_engineer: project.ai_iot_engineer || 'unassigned',
+    technical_project_lead: project.technical_project_lead || 'unassigned',
+    project_coordinator: project.project_coordinator || 'unassigned',
   });
 
   useEffect(() => {
@@ -74,11 +74,11 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
           site_address: formData.site_address || null,
           domain: formData.domain,
           contract_signed_date: formData.contract_signed_date,
-          customer_project_lead: formData.customer_project_lead || null,
-          implementation_lead: formData.implementation_lead || null,
-          ai_iot_engineer: formData.ai_iot_engineer || null,
-          technical_project_lead: formData.technical_project_lead || null,
-          project_coordinator: formData.project_coordinator || null,
+          customer_project_lead: formData.customer_project_lead === 'unassigned' ? null : formData.customer_project_lead,
+          implementation_lead: formData.implementation_lead === 'unassigned' ? null : formData.implementation_lead,
+          ai_iot_engineer: formData.ai_iot_engineer === 'unassigned' ? null : formData.ai_iot_engineer,
+          technical_project_lead: formData.technical_project_lead === 'unassigned' ? null : formData.technical_project_lead,
+          project_coordinator: formData.project_coordinator === 'unassigned' ? null : formData.project_coordinator,
         })
         .eq('id', project.id);
 
@@ -109,11 +109,11 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
       site_address: project.site_address || '',
       domain: project.domain || '',
       contract_signed_date: project.contract_signed_date || '',
-      customer_project_lead: project.customer_project_lead || '',
-      implementation_lead: project.implementation_lead || '',
-      ai_iot_engineer: project.ai_iot_engineer || '',
-      technical_project_lead: project.technical_project_lead || '',
-      project_coordinator: project.project_coordinator || '',
+      customer_project_lead: project.customer_project_lead || 'unassigned',
+      implementation_lead: project.implementation_lead || 'unassigned',
+      ai_iot_engineer: project.ai_iot_engineer || 'unassigned',
+      technical_project_lead: project.technical_project_lead || 'unassigned',
+      project_coordinator: project.project_coordinator || 'unassigned',
     });
     setEditing(false);
   };
@@ -218,7 +218,7 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                         <SelectValue placeholder="Select lead" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Not assigned</SelectItem>
+                         <SelectItem value="unassigned">Not assigned</SelectItem>
                         {internalProfiles.map((profile) => (
                           <SelectItem key={profile.user_id} value={profile.user_id}>
                             {profile.name || 'Unnamed User'}
@@ -238,7 +238,7 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                         <SelectValue placeholder="Select lead" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Not assigned</SelectItem>
+                         <SelectItem value="unassigned">Not assigned</SelectItem>
                         {internalProfiles.map((profile) => (
                           <SelectItem key={profile.user_id} value={profile.user_id}>
                             {profile.name || 'Unnamed User'}
@@ -258,7 +258,7 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                         <SelectValue placeholder="Select engineer" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Not assigned</SelectItem>
+                         <SelectItem value="unassigned">Not assigned</SelectItem>
                         {internalProfiles.map((profile) => (
                           <SelectItem key={profile.user_id} value={profile.user_id}>
                             {profile.name || 'Unnamed User'}
@@ -278,7 +278,7 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                         <SelectValue placeholder="Select lead" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Not assigned</SelectItem>
+                         <SelectItem value="unassigned">Not assigned</SelectItem>
                         {internalProfiles.map((profile) => (
                           <SelectItem key={profile.user_id} value={profile.user_id}>
                             {profile.name || 'Unnamed User'}
@@ -298,7 +298,7 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                         <SelectValue placeholder="Select coordinator" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Not assigned</SelectItem>
+                        <SelectItem value="unassigned">Not assigned</SelectItem>
                         {internalProfiles.map((profile) => (
                           <SelectItem key={profile.user_id} value={profile.user_id}>
                             {profile.name || 'Unnamed User'}

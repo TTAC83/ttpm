@@ -12,11 +12,12 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateUK, toISODateString } from '@/lib/dateUtils';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Plus, FileText, Calendar as CalendarIcon, Save, X, Edit } from 'lucide-react';
+import { Plus, FileText, Calendar as CalendarIcon, Save, X, Edit, AlertTriangle } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -35,6 +36,7 @@ interface Action {
   status: string;
   project_task_id: string;
   created_at: string;
+  is_critical: boolean;
   profiles: {
     name: string | null;
   } | null;
@@ -167,6 +169,7 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
           )
         `)
         .eq('project_tasks.project_id', projectId)
+        .order('is_critical', { ascending: false })
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -339,14 +342,24 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
                     </TableRow>
                   ) : (
                     actions.map((action) => (
-                      <TableRow key={action.id}>
+                      <TableRow 
+                        key={action.id}
+                        className={cn(action.is_critical && "border-l-4 border-l-red-500 bg-red-50/50 dark:bg-red-950/20")}
+                      >
                         <TableCell>
-                          <div>
-                            <p className="font-medium">{action.title}</p>
-                            {action.details && (
-                              <p className="text-sm text-muted-foreground truncate max-w-xs">
-                                {action.details}
-                              </p>
+                          <div className="flex items-center gap-2">
+                            <div>
+                              <p className="font-medium">{action.title}</p>
+                              {action.details && (
+                                <p className="text-sm text-muted-foreground truncate max-w-xs">
+                                  {action.details}
+                                </p>
+                              )}
+                            </div>
+                            {action.is_critical && (
+                              <Badge variant="destructive" className="text-xs">
+                                Critical
+                              </Badge>
                             )}
                           </div>
                         </TableCell>
@@ -434,6 +447,7 @@ const CreateActionDialog = ({
     planned_date: undefined as Date | undefined,
     notes: '',
     project_task_id: '',
+    is_critical: false,
   });
   const [loading, setLoading] = useState(false);
 
@@ -445,10 +459,11 @@ const CreateActionDialog = ({
       await onSave({
         title: formData.title,
         details: formData.details || null,
-        assignee: formData.assignee || null,
+        assignee: formData.assignee,
         planned_date: formData.planned_date ? toISODateString(formData.planned_date) : null,
         notes: formData.notes || null,
         project_task_id: formData.project_task_id || null,
+        is_critical: formData.is_critical,
       });
     } finally {
       setLoading(false);
@@ -512,16 +527,16 @@ const CreateActionDialog = ({
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label>Assignee</Label>
+            <Label>Assignee *</Label>
             <Select 
-              value={formData.assignee || 'unassigned'} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, assignee: value === 'unassigned' ? '' : value }))}
+              value={formData.assignee} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, assignee: value }))}
+              required
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select assignee" />
+                <SelectValue placeholder="Select assignee (required)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="unassigned">Unassigned</SelectItem>
                 {profiles
                   .filter((profile) => profile.user_id && profile.user_id.trim() !== '')
                   .map((profile) => (
@@ -562,6 +577,21 @@ const CreateActionDialog = ({
         </div>
 
         <div className="space-y-2">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="is_critical"
+              checked={formData.is_critical}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_critical: checked as boolean }))}
+            />
+            <Label htmlFor="is_critical" className="flex items-center gap-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              <AlertTriangle className="h-4 w-4 text-red-500" />
+              Mark as Critical
+            </Label>
+          </div>
+          <p className="text-sm text-muted-foreground">Critical actions will appear at the top of the actions list</p>
+        </div>
+
+        <div className="space-y-2">
           <Label htmlFor="notes">Notes</Label>
           <Textarea
             id="notes"
@@ -573,7 +603,7 @@ const CreateActionDialog = ({
         </div>
 
         <div className="flex gap-2 pt-4">
-          <Button type="submit" disabled={loading || !formData.title}>
+          <Button type="submit" disabled={loading || !formData.title || !formData.assignee}>
             <Save className="h-4 w-4 mr-2" />
             {loading ? 'Creating...' : 'Create Action'}
           </Button>
@@ -606,6 +636,7 @@ const EditActionDialog = ({
     planned_date: action.planned_date ? new Date(action.planned_date) : undefined as Date | undefined,
     notes: action.notes || '',
     status: action.status,
+    is_critical: action.is_critical,
   });
   const [loading, setLoading] = useState(false);
 
@@ -621,6 +652,7 @@ const EditActionDialog = ({
         planned_date: formData.planned_date ? toISODateString(formData.planned_date) : null,
         notes: formData.notes || null,
         status: formData.status,
+        is_critical: formData.is_critical,
       });
     } finally {
       setLoading(false);
@@ -677,16 +709,16 @@ const EditActionDialog = ({
           </div>
 
           <div className="space-y-2">
-            <Label>Assignee</Label>
+            <Label>Assignee *</Label>
             <Select 
-              value={formData.assignee || 'unassigned'} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, assignee: value === 'unassigned' ? '' : value }))}
+              value={formData.assignee} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, assignee: value }))}
+              required
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select assignee" />
+                <SelectValue placeholder="Select assignee (required)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="unassigned">Unassigned</SelectItem>
                 {profiles
                   .filter((profile) => profile.user_id && profile.user_id.trim() !== '')
                   .map((profile) => (
@@ -727,6 +759,21 @@ const EditActionDialog = ({
         </div>
 
         <div className="space-y-2">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="edit_is_critical"
+              checked={formData.is_critical}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_critical: checked as boolean }))}
+            />
+            <Label htmlFor="edit_is_critical" className="flex items-center gap-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              <AlertTriangle className="h-4 w-4 text-red-500" />
+              Mark as Critical
+            </Label>
+          </div>
+          <p className="text-sm text-muted-foreground">Critical actions will appear at the top of the actions list</p>
+        </div>
+
+        <div className="space-y-2">
           <Label htmlFor="edit-notes">Notes</Label>
           <Textarea
             id="edit-notes"
@@ -738,7 +785,7 @@ const EditActionDialog = ({
         </div>
 
         <div className="flex gap-2 pt-4">
-          <Button type="submit" disabled={loading || !formData.title}>
+          <Button type="submit" disabled={loading || !formData.title || !formData.assignee}>
             <Save className="h-4 w-4 mr-2" />
             {loading ? 'Updating...' : 'Update Action'}
           </Button>

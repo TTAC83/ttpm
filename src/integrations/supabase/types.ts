@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           details: string | null
           id: string
+          is_critical: boolean
           notes: string | null
           planned_date: string | null
           project_task_id: string
@@ -31,6 +32,7 @@ export type Database = {
           created_at?: string
           details?: string | null
           id?: string
+          is_critical?: boolean
           notes?: string | null
           planned_date?: string | null
           project_task_id: string
@@ -42,6 +44,7 @@ export type Database = {
           created_at?: string
           details?: string | null
           id?: string
+          is_critical?: boolean
           notes?: string | null
           planned_date?: string | null
           project_task_id?: string

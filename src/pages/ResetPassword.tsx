@@ -18,16 +18,49 @@ export const ResetPassword = () => {
 
   useEffect(() => {
     const checkResetToken = async () => {
-      // First, sign out any existing session to prevent auto-login
-      await supabase.auth.signOut();
+      // Check URL search params for direct token (from Supabase verification redirect)
+      const urlParams = new URLSearchParams(window.location.search);
+      const directToken = urlParams.get('token');
+      const type = urlParams.get('type');
       
-      // Check URL hash for recovery tokens (this is how Supabase sends them)
+      // Also check URL hash for recovery tokens (alternative flow)
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const type = hashParams.get('type');
+      const hashType = hashParams.get('type');
       const accessToken = hashParams.get('access_token');
       const refreshToken = hashParams.get('refresh_token');
       
-      if (type === 'recovery' && accessToken && refreshToken) {
+      // Handle direct token verification (most common flow)
+      if (type === 'recovery' && directToken) {
+        try {
+          // Verify the token with Supabase
+          const { data, error } = await supabase.auth.verifyOtp({
+            token_hash: directToken,
+            type: 'recovery'
+          });
+          
+          if (!error && data.session) {
+            setIsValidToken(true);
+            // Store the session tokens for password update
+            sessionStorage.setItem('reset_access_token', data.session.access_token);
+            sessionStorage.setItem('reset_refresh_token', data.session.refresh_token);
+            // Clear URL parameters for security
+            window.history.replaceState({}, document.title, window.location.pathname);
+            // Sign out to prevent auto-login
+            await supabase.auth.signOut();
+          } else {
+            throw error || new Error('Invalid verification token');
+          }
+        } catch (err: any) {
+          toast({
+            variant: "destructive",
+            title: "Invalid reset link",
+            description: "This password reset link is invalid or has expired. Please request a new one.",
+          });
+          navigate('/auth');
+        }
+      }
+      // Handle hash-based tokens (alternative flow)
+      else if (hashType === 'recovery' && accessToken && refreshToken) {
         try {
           // Validate the tokens without setting a persistent session
           const { data: user, error } = await supabase.auth.getUser(accessToken);
@@ -39,6 +72,8 @@ export const ResetPassword = () => {
             sessionStorage.setItem('reset_refresh_token', refreshToken);
             // Clear the hash from URL for security
             window.history.replaceState({}, document.title, window.location.pathname);
+            // Sign out to prevent auto-login
+            await supabase.auth.signOut();
           } else {
             throw error || new Error('Invalid token');
           }

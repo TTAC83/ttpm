@@ -64,6 +64,16 @@ export const CompleteSignup = () => {
       return;
     }
 
+    // Additional password validation
+    if (password.trim() !== password) {
+      toast({
+        title: "Invalid Password",
+        description: "Password cannot contain leading or trailing spaces",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       console.log('Starting signup process with:', { email, fullName: name.trim() });

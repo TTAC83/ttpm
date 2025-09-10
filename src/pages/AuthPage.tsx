@@ -23,11 +23,15 @@ export const AuthPage = () => {
 
   const handleEmailPasswordSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
+    if (!email.trim() || !password) {
+      return;
+    }
     
     setLoading(true);
     try {
-      await signIn(email, password);
+      console.log('Attempting sign in with:', { email: email.trim() });
+      const result = await signIn(email.trim(), password);
+      console.log('Sign in result:', result);
     } finally {
       setLoading(false);
     }

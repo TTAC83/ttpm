@@ -672,6 +672,17 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_pending_invitations: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          email: string
+          expires_at: string
+          id: string
+          invited_at: string
+          invited_by: string
+          inviter_name: string
+        }[]
+      }
       is_current_user_internal: {
         Args: Record<PropertyKey, never>
         Returns: boolean

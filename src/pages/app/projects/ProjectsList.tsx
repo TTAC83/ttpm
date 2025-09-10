@@ -123,30 +123,6 @@ export const ProjectsList = () => {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               <Button asChild variant="outline" size="sm">
-                <Link to="/app/projects/update-butternut-box">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Butternut Box
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link to="/app/projects/update-mbc">
-                  <Upload className="h-4 w-4 mr-2" />
-                  MBC
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link to="/app/projects/update-hfuk">
-                  <Upload className="h-4 w-4 mr-2" />
-                  HFUK
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link to="/app/projects/update-kettle-produce">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Kettle Produce
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
                 <Link to="/app/projects/update-myton-gadbrook-morrisons">
                   <Upload className="h-4 w-4 mr-2" />
                   Myton Gadbrook

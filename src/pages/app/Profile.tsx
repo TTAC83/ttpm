@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { PasswordInput, PasswordConfirmInput } from '@/components/ui/password-input';
+import { usePasswordMatchValidation, validatePasswordOnSubmit } from '@/hooks/usePasswordValidation';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, Camera } from 'lucide-react';
 
@@ -35,6 +37,9 @@ export const Profile = () => {
     newPassword: '',
     confirmPassword: '',
   });
+
+  // Use password validation hook
+  const passwordValidation = usePasswordMatchValidation(passwordData.newPassword, passwordData.confirmPassword);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,13 +127,11 @@ export const Profile = () => {
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setPasswordMessage('New passwords do not match');
-      return;
-    }
+    // Use the validation function for submit validation
+    const passwordValidationResult = validatePasswordOnSubmit(passwordData.newPassword, passwordData.confirmPassword);
     
-    if (passwordData.newPassword.length < 6) {
-      setPasswordMessage('Password must be at least 6 characters');
+    if (!passwordValidationResult.isValid) {
+      setPasswordMessage(`Error: ${passwordValidationResult.errorMessage}`);
       return;
     }
     
@@ -371,30 +374,29 @@ export const Profile = () => {
         <CardContent>
           {changingPassword ? (
             <form onSubmit={handlePasswordChange} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="new-password">New Password</Label>
-                <Input
-                  id="new-password"
-                  type="password"
-                  value={passwordData.newPassword}
-                  onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
-                  placeholder="Enter new password"
-                  required
-                  minLength={6}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirm-new-password">Confirm New Password</Label>
-                <Input
-                  id="confirm-new-password"
-                  type="password"
-                  value={passwordData.confirmPassword}
-                  onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                  placeholder="Confirm new password"
-                  required
-                  minLength={6}
-                />
-              </div>
+              <PasswordInput
+                id="new-password"
+                label="New Password"
+                placeholder="Enter new password"
+                value={passwordData.newPassword}
+                onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                required
+                minLength={6}
+                showValidation={true}
+                validation={passwordValidation}
+              />
+              
+              <PasswordConfirmInput
+                id="confirm-new-password"
+                label="Confirm New Password"
+                placeholder="Confirm new password"
+                value={passwordData.confirmPassword}
+                onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                required
+                minLength={6}
+                passwordMatches={passwordValidation.matches}
+                showMatchValidation={true}
+              />
               
               {passwordMessage && (
                 <div className={`text-sm ${passwordMessage.includes('Error') ? 'text-destructive' : 'text-green-600'}`}>
@@ -403,7 +405,7 @@ export const Profile = () => {
               )}
               
               <div className="flex gap-2">
-                <Button type="submit" disabled={passwordLoading || !passwordData.newPassword || !passwordData.confirmPassword}>
+                <Button type="submit" disabled={passwordLoading || !passwordValidation.confirmPasswordValid}>
                   {passwordLoading ? 'Updating...' : 'Update Password'}
                 </Button>
                 <Button type="button" variant="outline" onClick={handleCancelPasswordChange}>

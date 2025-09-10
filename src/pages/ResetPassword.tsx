@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { PasswordInput, PasswordConfirmInput } from '@/components/ui/password-input';
+import { usePasswordMatchValidation, validatePasswordOnSubmit } from '@/hooks/usePasswordValidation';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -15,6 +15,9 @@ export const ResetPassword = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Use password validation hook
+  const passwordValidation = usePasswordMatchValidation(newPassword, confirmPassword);
 
   useEffect(() => {
     const checkResetFlow = async () => {
@@ -149,20 +152,14 @@ export const ResetPassword = () => {
       return;
     }
     
-    if (newPassword !== confirmPassword) {
-      toast({
-        variant: "destructive",
-        title: "Passwords don't match",
-        description: "Please make sure both passwords are identical.",
-      });
-      return;
-    }
+    // Use the validation function for submit validation
+    const passwordValidationResult = validatePasswordOnSubmit(newPassword, confirmPassword);
     
-    if (newPassword.length < 6) {
+    if (!passwordValidationResult.isValid) {
       toast({
         variant: "destructive",
-        title: "Password too short",
-        description: "Password must be at least 6 characters long.",
+        title: "Invalid Password",
+        description: passwordValidationResult.errorMessage,
       });
       return;
     }
@@ -257,34 +254,34 @@ export const ResetPassword = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleUpdatePassword} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="new-password">New Password</Label>
-              <Input
-                id="new-password"
-                type="password"
-                placeholder="Enter new password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirm-password">Confirm Password</Label>
-              <Input
-                id="confirm-password"
-                type="password"
-                placeholder="Confirm new password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-            </div>
+            <PasswordInput
+              id="new-password"
+              label="New Password"
+              placeholder="Enter new password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+              minLength={6}
+              showValidation={true}
+              validation={passwordValidation}
+            />
+            
+            <PasswordConfirmInput
+              id="confirm-password"
+              label="Confirm Password"
+              placeholder="Confirm new password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              minLength={6}
+              passwordMatches={passwordValidation.matches}
+              showMatchValidation={true}
+            />
+            
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={loading || !newPassword || !confirmPassword}
+              disabled={loading || !passwordValidation.confirmPasswordValid}
             >
               {loading ? 'Updating...' : 'Update Password'}
             </Button>

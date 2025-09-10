@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { PasswordInput, PasswordConfirmInput } from '@/components/ui/password-input';
+import { usePasswordMatchValidation, validatePasswordOnSubmit } from '@/hooks/usePasswordValidation';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Check, X } from 'lucide-react';
 
 export const CompleteSignup = () => {
   const [name, setName] = useState('');
@@ -14,20 +15,12 @@ export const CompleteSignup = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Password validation checks
-  const passwordChecks = {
-    length: password.length >= 6,
-    hasLetter: /[a-zA-Z]/.test(password),
-    hasNumber: /\d/.test(password),
-    noSpaces: !password.includes(' ') && password.trim() === password,
-    matches: password === confirmPassword && password.length > 0 && confirmPassword.length > 0
-  };
+  // Use the password validation hook
+  const passwordValidation = usePasswordMatchValidation(password, confirmPassword);
 
   useEffect(() => {
     // Get email from URL params if available (from invitation link)
@@ -58,47 +51,13 @@ export const CompleteSignup = () => {
       return;
     }
 
-    if (password.length < 6) {
-      toast({
-        title: "Password Too Short",
-        description: "Password must be at least 6 characters long",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!passwordChecks.hasLetter) {
+    // Use the validation function for submit validation
+    const passwordValidationResult = validatePasswordOnSubmit(password, confirmPassword);
+    
+    if (!passwordValidationResult.isValid) {
       toast({
         title: "Invalid Password",
-        description: "Password must contain at least one letter",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!passwordChecks.hasNumber) {
-      toast({
-        title: "Invalid Password", 
-        description: "Password must contain at least one number",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      toast({
-        title: "Passwords Don't Match",
-        description: "Please make sure both passwords match",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Additional password validation
-    if (password.trim() !== password || password.includes(' ')) {
-      toast({
-        title: "Invalid Password",
-        description: "Password cannot contain spaces",
+        description: passwordValidationResult.errorMessage,
         variant: "destructive",
       });
       return;
@@ -224,119 +183,29 @@ export const CompleteSignup = () => {
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Create a password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </button>
-              </div>
-              
-              {/* Password Requirements */}
-              {password && (
-                <div className="text-sm space-y-1 mt-2">
-                  <div className="flex items-center gap-2">
-                    {passwordChecks.length ? (
-                      <Check className="h-3 w-3 text-green-600" />
-                    ) : (
-                      <X className="h-3 w-3 text-red-500" />
-                    )}
-                    <span className={passwordChecks.length ? "text-green-600" : "text-red-500"}>
-                      At least 6 characters
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {passwordChecks.hasLetter ? (
-                      <Check className="h-3 w-3 text-green-600" />
-                    ) : (
-                      <X className="h-3 w-3 text-red-500" />
-                    )}
-                    <span className={passwordChecks.hasLetter ? "text-green-600" : "text-red-500"}>
-                      Contains at least one letter
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {passwordChecks.hasNumber ? (
-                      <Check className="h-3 w-3 text-green-600" />
-                    ) : (
-                      <X className="h-3 w-3 text-red-500" />
-                    )}
-                    <span className={passwordChecks.hasNumber ? "text-green-600" : "text-red-500"}>
-                      Contains at least one number
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {passwordChecks.noSpaces ? (
-                      <Check className="h-3 w-3 text-green-600" />
-                    ) : (
-                      <X className="h-3 w-3 text-red-500" />
-                    )}
-                    <span className={passwordChecks.noSpaces ? "text-green-600" : "text-red-500"}>
-                      No spaces allowed
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
+            <PasswordInput
+              id="password"
+              label="Password"
+              placeholder="Create a password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+              showValidation={true}
+              validation={passwordValidation}
+            />
             
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <div className="relative">
-                <Input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  placeholder="Confirm your password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </button>
-              </div>
-              
-              {/* Password Match Indicator */}
-              {confirmPassword && (
-                <div className="flex items-center gap-2 text-sm">
-                  {passwordChecks.matches ? (
-                    <Check className="h-3 w-3 text-green-600" />
-                  ) : (
-                    <X className="h-3 w-3 text-red-500" />
-                  )}
-                  <span className={passwordChecks.matches ? "text-green-600" : "text-red-500"}>
-                    {passwordChecks.matches ? "Passwords match" : "Passwords don't match"}
-                  </span>
-                </div>
-              )}
-            </div>
+            <PasswordConfirmInput
+              id="confirmPassword"
+              label="Confirm Password"
+              placeholder="Confirm your password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              minLength={6}
+              passwordMatches={passwordValidation.matches}
+              showMatchValidation={true}
+            />
             
             <Button 
               type="submit" 
@@ -347,11 +216,7 @@ export const CompleteSignup = () => {
                 !email || 
                 !password || 
                 !confirmPassword || 
-                !passwordChecks.length ||
-                !passwordChecks.hasLetter ||
-                !passwordChecks.hasNumber ||
-                !passwordChecks.noSpaces ||
-                !passwordChecks.matches
+                !passwordValidation.confirmPasswordValid
               }
             >
               {loading ? 'Creating Account...' : 'Complete Registration'}

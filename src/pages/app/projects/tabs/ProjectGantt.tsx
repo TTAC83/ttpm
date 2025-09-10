@@ -255,6 +255,60 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
     return Math.max(0, daysDiff * 10); // 10px per day
   };
 
+  // Helper function to generate date markers for x-axis
+  const generateDateMarkers = (allItems: (Task | Subtask | ProjectEvent)[]) => {
+    if (allItems.length === 0) return [];
+
+    const projectStart = allItems.reduce((earliest, i) => {
+      let itemStart: Date | null = null;
+      
+      if ('planned_start' in i && i.planned_start) {
+        itemStart = new Date(i.planned_start);
+      } else if ('start_date' in i) {
+        itemStart = new Date(i.start_date);
+      }
+      
+      if (!itemStart) return earliest;
+      return !earliest || itemStart < earliest ? itemStart : earliest;
+    }, null as Date | null);
+
+    const projectEnd = allItems.reduce((latest, i) => {
+      let itemEnd: Date | null = null;
+      
+      if ('planned_end' in i && i.planned_end) {
+        itemEnd = new Date(i.planned_end);
+      } else if ('end_date' in i) {
+        itemEnd = new Date(i.end_date);
+      }
+      
+      if (!itemEnd) return latest;
+      return !latest || itemEnd > latest ? itemEnd : latest;
+    }, null as Date | null);
+
+    if (!projectStart || !projectEnd) return [];
+
+    const markers = [];
+    const totalDays = Math.ceil((projectEnd.getTime() - projectStart.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Determine interval based on project duration
+    let interval = 7; // weekly by default
+    if (totalDays > 180) interval = 30; // monthly for long projects
+    if (totalDays < 30) interval = 3; // every 3 days for short projects
+
+    for (let day = 0; day <= totalDays; day += interval) {
+      const date = new Date(projectStart);
+      date.setDate(date.getDate() + day);
+      
+      markers.push({
+        date: date,
+        position: day * 10, // 10px per day
+        label: formatDateUK(date.toISOString().split('T')[0])
+      });
+    }
+
+    return markers;
+  };
+
   // Create combined list for positioning calculation
   const allItems: (Task | Subtask | ProjectEvent)[] = [
     ...tasks,
@@ -264,6 +318,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
   
   const tasksWithDates = tasks.filter(task => task.planned_start && task.planned_end);
   const todayPosition = getTodayPosition(allItems);
+  const dateMarkers = generateDateMarkers(allItems);
 
   if (loading) {
     return (
@@ -330,9 +385,27 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                 </h3>
                 <div className="overflow-x-auto">
                   <div className="min-w-[800px] space-y-2 relative">
+                    {/* X-axis date labels for events */}
+                    <div className="relative h-8 border-b border-gray-200">
+                      <div className="absolute inset-0" style={{ marginLeft: '264px' }}>
+                        {dateMarkers.map((marker, index) => (
+                          <div
+                            key={index}
+                            className="absolute text-xs text-gray-600 transform -rotate-45 origin-bottom-left"
+                            style={{
+                              left: `${marker.position}px`,
+                              bottom: '4px'
+                            }}
+                          >
+                            {marker.label}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
                     {/* Today line for events */}
                     <div
-                      className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10 opacity-80"
+                      className="absolute top-8 bottom-0 w-0.5 bg-red-500 z-10 opacity-80"
                       style={{
                         left: `${264 + todayPosition}px` // 264px is the width of the info column
                       }}
@@ -396,9 +469,27 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                 </h3>
                 <div className="overflow-x-auto">
                   <div className="min-w-[800px] space-y-2 relative">
+                    {/* X-axis date labels for tasks */}
+                    <div className="relative h-8 border-b border-gray-200">
+                      <div className="absolute inset-0" style={{ marginLeft: '264px' }}>
+                        {dateMarkers.map((marker, index) => (
+                          <div
+                            key={index}
+                            className="absolute text-xs text-gray-600 transform -rotate-45 origin-bottom-left"
+                            style={{
+                              left: `${marker.position}px`,
+                              bottom: '4px'
+                            }}
+                          >
+                            {marker.label}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
                     {/* Today line for tasks */}
                     <div
-                      className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10 opacity-80"
+                      className="absolute top-8 bottom-0 w-0.5 bg-red-500 z-10 opacity-80"
                       style={{
                         left: `${264 + todayPosition}px` // 264px is the width of the info column
                       }}

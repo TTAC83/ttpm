@@ -21,6 +21,14 @@ interface ProjectCalendarProps {
   projectId: string;
 }
 
+interface CriticalTask {
+  id: string;
+  task_title: string;
+  planned_start: string | null;
+  planned_end: string | null;
+  is_critical: boolean;
+}
+
 interface ProjectEvent {
   id: string;
   title: string;
@@ -52,6 +60,7 @@ const ProjectCalendar = ({ projectId }: ProjectCalendarProps) => {
   const { toast } = useToast();
   
   const [events, setEvents] = useState<ProjectEvent[]>([]);
+  const [criticalTasks, setCriticalTasks] = useState<CriticalTask[]>([]);
   const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [showEventDialog, setShowEventDialog] = useState(false);
@@ -70,8 +79,24 @@ const ProjectCalendar = ({ projectId }: ProjectCalendarProps) => {
 
   useEffect(() => {
     fetchEvents();
+    fetchCriticalTasks();
     fetchProjectMembers();
   }, [projectId]);
+
+  const fetchCriticalTasks = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('project_tasks')
+        .select('id, task_title, planned_start, planned_end, is_critical')
+        .eq('project_id', projectId)
+        .eq('is_critical', true);
+
+      if (error) throw error;
+      setCriticalTasks(data || []);
+    } catch (error) {
+      console.error('Error fetching critical tasks:', error);
+    }
+  };
 
   const fetchEvents = async () => {
     try {
@@ -331,6 +356,7 @@ const ProjectCalendar = ({ projectId }: ProjectCalendarProps) => {
 
       setShowEventDialog(false);
       fetchEvents();
+      fetchCriticalTasks(); // Refresh critical tasks as well
     } catch (error: any) {
       toast({
         title: "Error",
@@ -372,21 +398,34 @@ const ProjectCalendar = ({ projectId }: ProjectCalendarProps) => {
     });
   };
 
+  const getCriticalTasksForDate = (date: Date) => {
+    return criticalTasks.filter(task => {
+      if (!task.planned_start || !task.planned_end) return false;
+      const startDate = parseISO(task.planned_start);
+      const endDate = parseISO(task.planned_end);
+      return date >= startDate && date <= endDate;
+    });
+  };
+
   const renderCalendarDay = (date: Date) => {
     const dayEvents = getEventsForDate(date);
+    const dayCriticalTasks = getCriticalTasksForDate(date);
     return (
       <div className="relative w-full h-full">
         <span className={cn(
           "text-sm",
-          dayEvents.length > 0 && "font-bold"
+          (dayEvents.length > 0 || dayCriticalTasks.length > 0) && "font-bold"
         )}>
           {date.getDate()}
         </span>
-        {dayEvents.length > 0 && (
-          <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
-            <div className="w-1 h-1 bg-primary rounded-full"></div>
-          </div>
-        )}
+        <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex gap-0.5">
+          {dayEvents.length > 0 && (
+            <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
+          )}
+          {dayCriticalTasks.length > 0 && (
+            <div className="w-1 h-1 bg-red-500 rounded-full"></div>
+          )}
+        </div>
       </div>
     );
   };
@@ -538,20 +577,20 @@ const ProjectCalendar = ({ projectId }: ProjectCalendarProps) => {
           <CardContent>
             <div className="space-y-4">
               {getEventsForDate(calendarDate).map((event) => (
-                <div key={event.id} className="border rounded-lg p-4 space-y-2">
+                <div key={event.id} className="border rounded-lg p-4 space-y-2 bg-purple-50">
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
-                      <h4 className="font-medium">{event.title}</h4>
+                      <h4 className="font-medium text-purple-900">📅 {event.title}</h4>
                       {event.description && (
-                        <p className="text-sm text-muted-foreground">{event.description}</p>
+                        <p className="text-sm text-purple-700">{event.description}</p>
                       )}
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2 text-xs text-purple-600">
                         <CalendarIcon className="h-3 w-3" />
                         {formatDateUK(event.start_date)}
                         {event.start_date !== event.end_date && ` - ${formatDateUK(event.end_date)}`}
                       </div>
                       {event.attendees.length > 0 && (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2 text-xs text-purple-600">
                           <Users className="h-3 w-3" />
                           {event.attendees.map(a => a.profiles?.name || 'Unknown').join(', ')}
                         </div>
@@ -576,9 +615,26 @@ const ProjectCalendar = ({ projectId }: ProjectCalendarProps) => {
                   </div>
                 </div>
               ))}
-              {getEventsForDate(calendarDate).length === 0 && (
+              
+              {getCriticalTasksForDate(calendarDate).map((task) => (
+                <div key={task.id} className="border rounded-lg p-4 space-y-2 bg-red-50">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <h4 className="font-medium text-red-900">🚨 {task.task_title}</h4>
+                      <div className="flex items-center gap-2 text-xs text-red-600">
+                        <CalendarIcon className="h-3 w-3" />
+                        {task.planned_start && formatDateUK(task.planned_start)}
+                        {task.planned_start !== task.planned_end && task.planned_end && ` - ${formatDateUK(task.planned_end)}`}
+                      </div>
+                      <div className="text-xs text-red-600 font-medium">Critical Task</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              {getEventsForDate(calendarDate).length === 0 && getCriticalTasksForDate(calendarDate).length === 0 && (
                 <p className="text-muted-foreground text-center py-8">
-                  No events scheduled for this date
+                  No events or critical tasks scheduled for this date
                 </p>
               )}
             </div>

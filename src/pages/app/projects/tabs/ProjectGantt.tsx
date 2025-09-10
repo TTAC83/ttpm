@@ -14,6 +14,7 @@ interface Task {
   actual_start: string | null;
   actual_end: string | null;
   status: string;
+  is_critical: boolean;
   subtasks?: Subtask[];
 }
 
@@ -68,7 +69,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
       // Fetch tasks
       const { data: tasksData, error: tasksError } = await supabase
         .from('project_tasks')
-        .select('id, step_name, task_title, planned_start, planned_end, actual_start, actual_end, status')
+        .select('id, step_name, task_title, planned_start, planned_end, actual_start, actual_end, status, is_critical')
         .eq('project_id', projectId)
         .order('planned_start');
 
@@ -151,6 +152,11 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
   };
 
   const getItemColor = (item: Task | Subtask): string => {
+    // Check if task is critical first
+    if ('is_critical' in item && item.is_critical) {
+      return '#dc2626'; // Red for critical tasks
+    }
+    
     if (!item.planned_end) return '#e5e7eb'; // gray for no planned date
     
     const plannedEnd = new Date(item.planned_end);
@@ -372,6 +378,10 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                 <span>Calendar Events</span>
               </div>
               <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-red-600 rounded"></div>
+                <span>Critical Tasks</span>
+              </div>
+              <div className="flex items-center gap-2">
                 <div className="w-0.5 h-4 bg-red-500"></div>
                 <span>Today</span>
               </div>
@@ -507,7 +517,12 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                           <div className="flex items-center gap-4 py-2">
                             {/* Task Info */}
                             <div className="w-64 flex-shrink-0">
-                              <div className="text-sm font-medium truncate">{task.task_title}</div>
+                              <div className={`text-sm font-medium truncate flex items-center gap-2 ${
+                                task.is_critical ? 'text-red-700' : ''
+                              }`}>
+                                {task.is_critical && <span className="text-red-600 font-bold">🚨</span>}
+                                {task.task_title}
+                              </div>
                               <div className="text-xs text-muted-foreground">{task.step_name}</div>
                               <div className="text-xs text-muted-foreground">
                                 {task.planned_start && task.planned_end && (

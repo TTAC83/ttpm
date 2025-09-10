@@ -30,6 +30,7 @@ interface Task {
   status: string;
   assignee: string | null;
   master_task_id: number | null;
+  is_critical: boolean;
   profiles: {
     name: string | null;
   } | null;
@@ -143,6 +144,33 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
       setIsProjectMember(!!data && !error);
     } catch (error) {
       setIsProjectMember(false);
+    }
+  };
+
+  const toggleCriticalFlag = async (taskId: string, isCritical: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('project_tasks')
+        .update({ is_critical: isCritical })
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      // Update local state
+      setTasks(prev => prev.map(task => 
+        task.id === taskId ? { ...task, is_critical: isCritical } : task
+      ));
+
+      toast({
+        title: "Success",
+        description: `Task ${isCritical ? 'marked as critical' : 'critical flag removed'}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update critical flag",
+        variant: "destructive",
+      });
     }
   };
 
@@ -313,18 +341,20 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
                   <TableRow>
                     <TableHead>Step</TableHead>
                     <TableHead>Task</TableHead>
+                    <TableHead>Critical</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Assignee</TableHead>
                     <TableHead>Planned Start</TableHead>
                     <TableHead>Planned End</TableHead>
                     <TableHead>Actual Start</TableHead>
                     <TableHead>Actual End</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredTasks.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8">
+                      <TableCell colSpan={10} className="text-center py-8">
                         <div className="flex flex-col items-center gap-2">
                           <Users className="h-8 w-8 text-muted-foreground" />
                           <p className="text-muted-foreground">
@@ -341,12 +371,39 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
                       <TableRow key={task.id}>
                         <TableCell className="font-medium">{task.step_name}</TableCell>
                         <TableCell>
-                          <div>
-                            <p className="font-medium">{task.task_title}</p>
+                          <div className={`${task.is_critical ? 'border-l-4 border-red-500 pl-2' : ''}`}>
+                            <p className={`font-medium flex items-center gap-2 ${task.is_critical ? 'text-red-700' : ''}`}>
+                              {task.is_critical && <span className="text-red-600">🚨</span>}
+                              {task.task_title}
+                            </p>
                             {task.task_details && (
                               <p className="text-sm text-muted-foreground truncate max-w-xs">
                                 {task.task_details}
                               </p>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {task.is_critical && (
+                              <span className="text-red-600 font-bold" title="Critical Task">🚨</span>
+                            )}
+                            {canEditTasks ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleCriticalFlag(task.id, !task.is_critical)}
+                                className={`p-1 h-6 w-6 ${task.is_critical ? 'text-red-600 hover:text-red-700' : 'text-gray-400 hover:text-red-600'}`}
+                                title={task.is_critical ? 'Remove Critical Flag' : 'Mark as Critical'}
+                              >
+                                {task.is_critical ? '🚨' : '⚠️'}
+                              </Button>
+                            ) : (
+                              task.is_critical ? (
+                                <span className="text-red-600 font-bold" title="Critical Task">🚨</span>
+                              ) : (
+                                <span className="text-gray-300">-</span>
+                              )
                             )}
                           </div>
                         </TableCell>

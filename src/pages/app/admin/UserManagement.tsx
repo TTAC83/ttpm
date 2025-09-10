@@ -129,6 +129,19 @@ export const UserManagement = () => {
   // Fetch pending invitations
   const fetchPendingInvitations = async () => {
     try {
+      // First get all registered user emails from profiles
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .not('user_id', 'is', null);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        return;
+      }
+
+      // Get all user emails from auth.users via a raw query since we can't directly query auth.users
+      // For now, we'll use a workaround by getting invitations and filtering client-side
       const { data, error } = await supabase
         .from('invitations')
         .select('id, email, invited_at, expires_at, invited_by')
@@ -140,14 +153,27 @@ export const UserManagement = () => {
         return;
       }
 
-      const transformedInvitations: PendingInvitation[] = data?.map(invitation => ({
+      // Filter out invitations where user has already registered
+      // We need to check if any profile exists with an email that matches the invitation
+      const registeredEmails = new Set();
+      
+      // Get all current users to check their emails
+      const currentUsers = users.map(user => user.email);
+      currentUsers.forEach(email => registeredEmails.add(email));
+
+      const pendingInvitationsFiltered = data?.filter(invitation => 
+        !registeredEmails.has(invitation.email) &&
+        new Date(invitation.expires_at) > new Date()
+      ) || [];
+
+      const transformedInvitations: PendingInvitation[] = pendingInvitationsFiltered.map(invitation => ({
         id: invitation.id,
         email: invitation.email,
         invited_at: invitation.invited_at,
         expires_at: invitation.expires_at,
         invited_by: invitation.invited_by,
         inviter_name: 'Admin' // We'll show a generic name for now
-      })) || [];
+      }));
 
       setPendingInvitations(transformedInvitations);
     } catch (error) {

@@ -172,7 +172,7 @@ export const CompleteSignup = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name">Full Name *</Label>
               <Input
                 id="name"
                 type="text"

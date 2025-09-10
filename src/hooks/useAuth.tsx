@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 interface Profile {
   user_id: string;
@@ -46,7 +45,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
 
   // Fetch user profile
   const fetchProfile = async (userId: string) => {
@@ -116,6 +114,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       });
       
       if (error) {
+        const { toast } = await import('@/hooks/use-toast');
         toast({
           title: "Sign In Error",
           description: error.message,
@@ -125,6 +124,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       return { error };
     } catch (error: any) {
+      const { toast } = await import('@/hooks/use-toast');
       toast({
         title: "Sign In Error",
         description: "An unexpected error occurred",
@@ -144,12 +144,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       });
       
       if (error) {
+        const { toast } = await import('@/hooks/use-toast');
         toast({
           title: "Magic Link Error",
           description: error.message,
           variant: "destructive",
         });
       } else {
+        const { toast } = await import('@/hooks/use-toast');
         toast({
           title: "Magic Link Sent",
           description: "Check your email for the magic link",
@@ -158,6 +160,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       return { error };
     } catch (error: any) {
+      const { toast } = await import('@/hooks/use-toast');
       toast({
         title: "Magic Link Error",
         description: "An unexpected error occurred",
@@ -173,11 +176,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setUser(null);
       setSession(null);
       setProfile(null);
+      const { toast } = await import('@/hooks/use-toast');
       toast({
         title: "Signed Out",
         description: "You have been successfully signed out",
       });
     } catch (error: any) {
+      const { toast } = await import('@/hooks/use-toast');
       toast({
         title: "Sign Out Error",
         description: "Failed to sign out",
@@ -196,6 +201,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         .eq('user_id', user.id);
       
       if (error) {
+        const { toast } = await import('@/hooks/use-toast');
         toast({
           title: "Update Error",
           description: error.message,
@@ -207,6 +213,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Update local profile state
       setProfile(prev => prev ? { ...prev, ...updates } : null);
       
+      const { toast } = await import('@/hooks/use-toast');
       toast({
         title: "Profile Updated",
         description: "Your profile has been successfully updated",
@@ -214,6 +221,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       return { error: null };
     } catch (error: any) {
+      const { toast } = await import('@/hooks/use-toast');
       toast({
         title: "Update Error",
         description: "Failed to update profile",

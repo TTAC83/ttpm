@@ -164,12 +164,25 @@ export const UserManagement = () => {
       if (response.error) {
         console.error('Edge function error:', response.error);
         
-        // For FunctionsHttpError (non-2xx status), provide user-friendly message
+        // For FunctionsHttpError (non-2xx status), check if we can get error details
         if (response.error.name === 'FunctionsHttpError') {
-          // Check if this is likely an "email already exists" error based on the email
+          // The edge function returned an error, but we might have error details in data
+          if (response.data?.error) {
+            if (response.data.error.includes('already been registered')) {
+              toast({
+                title: "User Already Registered",
+                description: `${inviteEmail} is already registered. They can sign in directly or reset their password if needed.`,
+                variant: "destructive",
+              });
+              setInviteEmail('');
+              return;
+            }
+            throw new Error(response.data.error);
+          }
+          
           toast({
             title: "Invitation Failed",
-            description: "This email address may already be registered, or there was an error sending the invitation. Please verify the email address and try again.",
+            description: "There was an error sending the invitation. Please try again.",
             variant: "destructive",
           });
           return;
@@ -179,6 +192,15 @@ export const UserManagement = () => {
       }
 
       if (response.data?.error) {
+        if (response.data.error.includes('already been registered')) {
+          toast({
+            title: "User Already Registered",
+            description: `${inviteEmail} is already registered. They can sign in directly or reset their password if needed.`,
+            variant: "destructive",
+          });
+          setInviteEmail('');
+          return;
+        }
         throw new Error(response.data.error);
       }
 

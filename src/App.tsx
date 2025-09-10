@@ -31,7 +31,7 @@ import { UpdateParkCakesDates } from "./pages/app/projects/UpdateParkCakesDates"
 import ProjectDetail from "./pages/app/projects/ProjectDetail";
 import MasterDataManagement from "./pages/app/admin/MasterDataManagement";
 import CompleteSignup from "./pages/CompleteSignup";
-import { Actions } from "./pages/app/Actions";
+import Actions from "./pages/app/Actions";
 
 const queryClient = new QueryClient();
 

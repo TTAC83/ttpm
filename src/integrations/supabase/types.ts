@@ -668,6 +668,10 @@ export type Database = {
         Args: { n: number; start_date: string }
         Returns: string
       }
+      admin_set_user_role_and_company: {
+        Args: { company_name?: string; new_role: string; target_email: string }
+        Returns: undefined
+      }
       get_all_users_with_profiles: {
         Args: Record<PropertyKey, never>
         Returns: {

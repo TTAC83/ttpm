@@ -116,7 +116,7 @@ serve(async (req) => {
       data: {
         full_name: body.full_name || '',
       },
-      redirectTo: `${Deno.env.get('SITE_URL') || 'http://localhost:5173'}/app`,
+      redirectTo: `${req.headers.get('origin') || 'http://localhost:3000'}/complete-signup?email=${encodeURIComponent(body.email)}`,
     });
 
     if (error) {

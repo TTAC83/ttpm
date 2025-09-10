@@ -30,6 +30,7 @@ import { UpdateVillageBakeryDates } from "./pages/app/projects/UpdateVillageBake
 import { UpdateParkCakesDates } from "./pages/app/projects/UpdateParkCakesDates";
 import ProjectDetail from "./pages/app/projects/ProjectDetail";
 import MasterDataManagement from "./pages/app/admin/MasterDataManagement";
+import CompleteSignup from "./pages/CompleteSignup";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,14 @@ const App = () => (
               element={
                 <AuthGuard requireAuth={false}>
                   <AuthPage />
+                </AuthGuard>
+              } 
+            />
+            <Route 
+              path="/complete-signup" 
+              element={
+                <AuthGuard requireAuth={false}>
+                  <CompleteSignup />
                 </AuthGuard>
               } 
             />

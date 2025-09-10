@@ -10,7 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2, CalendarIcon } from 'lucide-react';
+import { Plus, Edit, Trash2, CalendarIcon, Calendar as CalendarPlus } from 'lucide-react';
+import CreateEventDialog from '@/components/CreateEventDialog';
 import { format } from 'date-fns';
 import { formatDateUK } from '@/lib/dateUtils';
 import { cn } from '@/lib/utils';
@@ -43,15 +44,18 @@ interface SubtasksDialogProps {
   onOpenChange: (open: boolean) => void;
   taskId: string;
   taskTitle: string;
+  projectId?: string;
 }
 
-const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle }: SubtasksDialogProps) => {
+const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: SubtasksDialogProps) => {
   const { toast } = useToast();
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
   const [addingSubtask, setAddingSubtask] = useState(false);
   const [editingSubtask, setEditingSubtask] = useState<Subtask | null>(null);
+  const [createEventDialogOpen, setCreateEventDialogOpen] = useState(false);
+  const [selectedSubtaskForEvent, setSelectedSubtaskForEvent] = useState<{ title: string } | null>(null);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -227,6 +231,11 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle }: SubtasksDialo
       assignee: 'unassigned',
     });
     setAddingSubtask(true);
+  };
+
+  const handleCreateEventForSubtask = (subtask: Subtask) => {
+    setSelectedSubtaskForEvent({ title: subtask.title });
+    setCreateEventDialogOpen(true);
   };
 
   return (
@@ -450,13 +459,25 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle }: SubtasksDialo
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEdit(subtask)}
+                            title="Edit Subtask"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
+                          {projectId && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleCreateEventForSubtask(subtask)}
+                              title="Create Calendar Event"
+                            >
+                              <CalendarPlus className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDelete(subtask.id)}
+                            title="Delete Subtask"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -469,6 +490,20 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle }: SubtasksDialo
             )}
           </div>
         </div>
+
+        {/* Create Event Dialog */}
+        {projectId && (
+          <CreateEventDialog
+            open={createEventDialogOpen}
+            onOpenChange={setCreateEventDialogOpen}
+            projectId={projectId}
+            prefilledTitle={selectedSubtaskForEvent?.title || ''}
+            onEventCreated={() => {
+              setCreateEventDialogOpen(false);
+              setSelectedSubtaskForEvent(null);
+            }}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );

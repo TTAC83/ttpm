@@ -15,8 +15,9 @@ import { useToast } from '@/hooks/use-toast';
 import { formatDateUK, toISODateString } from '@/lib/dateUtils';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Filter, Users, Edit, CalendarIcon, Save, X, List } from 'lucide-react';
+import { Filter, Users, Edit, CalendarIcon, Save, X, List, Calendar as CalendarPlus } from 'lucide-react';
 import SubtasksDialog from '@/components/SubtasksDialog';
+import CreateEventDialog from '@/components/CreateEventDialog';
 
 interface Task {
   id: string;
@@ -55,6 +56,8 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
   const [isProjectMember, setIsProjectMember] = useState(false);
   const [subtasksDialogOpen, setSubtasksDialogOpen] = useState(false);
   const [selectedTaskForSubtasks, setSelectedTaskForSubtasks] = useState<{ id: string; title: string } | null>(null);
+  const [createEventDialogOpen, setCreateEventDialogOpen] = useState(false);
+  const [selectedTaskForEvent, setSelectedTaskForEvent] = useState<{ title: string } | null>(null);
   const [filters, setFilters] = useState({
     step_name: 'all',
     status: 'all',
@@ -153,6 +156,11 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
   const handleViewSubtasks = (task: Task) => {
     setSelectedTaskForSubtasks({ id: task.id, title: task.task_title });
     setSubtasksDialogOpen(true);
+  };
+
+  const handleCreateEventForTask = (task: Task) => {
+    setSelectedTaskForEvent({ title: task.task_title });
+    setCreateEventDialogOpen(true);
   };
 
   const handleSaveTask = async (taskData: Partial<Task>) => {
@@ -372,6 +380,14 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
                             >
                               <List className="h-4 w-4" />
                             </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleCreateEventForTask(task)}
+                              title="Create Calendar Event"
+                            >
+                              <CalendarPlus className="h-4 w-4" />
+                            </Button>
                             {canEditTasks && (
                               <Button
                                 variant="ghost"
@@ -411,8 +427,21 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
           onOpenChange={setSubtasksDialogOpen}
           taskId={selectedTaskForSubtasks.id}
           taskTitle={selectedTaskForSubtasks.title}
+          projectId={projectId}
         />
       )}
+
+      {/* Create Event Dialog */}
+      <CreateEventDialog
+        open={createEventDialogOpen}
+        onOpenChange={setCreateEventDialogOpen}
+        projectId={projectId}
+        prefilledTitle={selectedTaskForEvent?.title || ''}
+        onEventCreated={() => {
+          setCreateEventDialogOpen(false);
+          setSelectedTaskForEvent(null);
+        }}
+      />
     </div>
   );
 };

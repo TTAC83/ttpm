@@ -151,25 +151,34 @@ export const UserManagement = () => {
         throw new Error('No active session');
       }
 
-      const { data, error } = await supabase.functions.invoke('admin-invite-user', {
+      const response = await supabase.functions.invoke('admin-invite-user', {
         body: { email: inviteEmail },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
       });
 
-      if (error) {
-        // Handle function invocation errors
-        console.error('Edge function error:', error);
-        throw new Error(error.message || 'Failed to invoke invitation function');
+      // Handle both successful responses and error responses
+      if (response.error) {
+        // For FunctionsHttpError, try to get the actual error message from the response
+        if (response.error.name === 'FunctionsHttpError') {
+          // The edge function returned an error status, but we need to check the data
+          if (response.data && response.data.error) {
+            if (response.data.error.includes('already been registered')) {
+              throw new Error(`A user with email ${inviteEmail} is already registered. Please use a different email address.`);
+            }
+            throw new Error(response.data.error);
+          }
+          throw new Error('Failed to send invitation. Please try again.');
+        }
+        throw new Error(response.error.message || 'Failed to invoke invitation function');
       }
 
-      if (data?.error) {
-        // Handle specific application errors from the edge function
-        if (data.error.includes('already been registered')) {
+      if (response.data?.error) {
+        if (response.data.error.includes('already been registered')) {
           throw new Error(`A user with email ${inviteEmail} is already registered. Please use a different email address.`);
         }
-        throw new Error(data.error);
+        throw new Error(response.data.error);
       }
 
       toast({

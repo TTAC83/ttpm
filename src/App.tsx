@@ -32,6 +32,7 @@ import ProjectDetail from "./pages/app/projects/ProjectDetail";
 import MasterDataManagement from "./pages/app/admin/MasterDataManagement";
 import CompleteSignup from "./pages/CompleteSignup";
 import Actions from "./pages/app/Actions";
+import GlobalTasks from "./pages/app/GlobalTasks";
 
 const queryClient = new QueryClient();
 
@@ -185,6 +186,7 @@ const App = () => (
               />
               <Route path="projects/:id" element={<ProjectDetail />} />
               <Route path="actions" element={<Actions />} />
+              <Route path="tasks" element={<GlobalTasks />} />
               <Route 
                 path="admin/users" 
                 element={

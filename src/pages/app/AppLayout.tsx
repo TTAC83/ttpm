@@ -63,6 +63,12 @@ export const AppLayout = () => {
       show: true
     },
     {
+      title: 'Global Tasks',
+      icon: Settings,
+      path: '/app/tasks',
+      show: true
+    },
+    {
       title: 'Profile',
       icon: User,
       path: '/app/profile',

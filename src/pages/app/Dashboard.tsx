@@ -174,31 +174,6 @@ export const Dashboard = () => {
         </p>
       </div>
       
-      {/* Client Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Client Summary</CardTitle>
-          <CardDescription>Overview of all clients and their projects</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {companies.map((company) => (
-              <div key={company.id} className="p-4 border rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-medium">{company.name}</h3>
-                  <Badge variant={company.is_internal ? 'default' : 'outline'}>
-                    {company.is_internal ? 'Internal' : 'External'}
-                  </Badge>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {company.project_count} project{company.project_count !== 1 ? 's' : ''}
-                </p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
       {/* 7-Day Calendar */}
       <Card>
         <CardHeader>
@@ -247,6 +222,31 @@ export const Dashboard = () => {
                 </div>
               );
             })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Client Summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Client Summary</CardTitle>
+          <CardDescription>Overview of all clients and their projects</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {companies.map((company) => (
+              <div key={company.id} className="p-4 border rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-medium">{company.name}</h3>
+                  <Badge variant={company.is_internal ? 'default' : 'outline'}>
+                    {company.is_internal ? 'Internal' : 'External'}
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {company.project_count} project{company.project_count !== 1 ? 's' : ''}
+                </p>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>

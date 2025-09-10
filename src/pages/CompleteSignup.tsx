@@ -37,10 +37,10 @@ export const CompleteSignup = () => {
       return;
     }
 
-    if (!email) {
+    if (!email.trim()) {
       toast({
         title: "Email Required",
-        description: "Email is required for signup",
+        description: "Please enter a valid email address",
         variant: "destructive",
       });
       return;
@@ -66,14 +66,13 @@ export const CompleteSignup = () => {
 
     setLoading(true);
     try {
-      // Sign up with name in metadata
-      // Use production URL if available, otherwise fall back to current origin
-      const redirectUrl = window.location.hostname === 'localhost' 
-        ? `${window.location.origin}/app`
-        : `${window.location.origin}/app`;
+      console.log('Starting signup process with:', { email, fullName: name.trim() });
+      
+      // Use the current origin for redirect URL
+      const redirectUrl = `${window.location.origin}/app`;
         
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: email.trim(),
         password,
         options: {
           emailRedirectTo: redirectUrl,
@@ -83,7 +82,10 @@ export const CompleteSignup = () => {
         }
       });
 
+      console.log('Signup result:', { data: !!data.user, error });
+
       if (error) {
+        console.error('Signup error:', error);
         if (error.message.includes('User already registered')) {
           toast({
             title: "Account Already Exists",
@@ -92,7 +94,7 @@ export const CompleteSignup = () => {
           });
         } else {
           toast({
-            title: "Signup Error",
+            title: "Signup Error", 
             description: error.message,
             variant: "destructive",
           });
@@ -101,15 +103,41 @@ export const CompleteSignup = () => {
       }
 
       if (data.user) {
-        toast({
-          title: "Account Created Successfully",
-          description: "Your account has been created. You can now sign in.",
-        });
-
-        // Redirect to auth page
-        navigate('/auth');
+        console.log('User created successfully:', data.user.id);
+        
+        // If user is immediately logged in (no email confirmation required)
+        if (data.session) {
+          console.log('User logged in immediately, updating profile...');
+          
+          // Update the profile with the full name to ensure it's saved
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({ name: name.trim() })
+            .eq('user_id', data.user.id);
+            
+          if (profileError) {
+            console.error('Profile update error:', profileError);
+          }
+          
+          toast({
+            title: "Account Created Successfully",
+            description: "Welcome! You're now logged in.",
+          });
+          
+          // Redirect to the app
+          navigate('/app');
+        } else {
+          toast({
+            title: "Account Created Successfully",
+            description: "Please check your email to verify your account before signing in.",
+          });
+          
+          // Redirect to auth page for login
+          navigate('/auth');
+        }
       }
     } catch (error: any) {
+      console.error('Unexpected signup error:', error);
       toast({
         title: "Signup Error",
         description: "An unexpected error occurred during signup",

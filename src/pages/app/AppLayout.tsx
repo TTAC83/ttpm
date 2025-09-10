@@ -57,7 +57,7 @@ export const AppLayout = () => {
       show: true
     },
     {
-      title: 'Actions',
+      title: 'Global Actions',
       icon: Settings,
       path: '/app/actions',
       show: true

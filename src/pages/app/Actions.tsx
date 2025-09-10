@@ -120,7 +120,7 @@ export const Actions = () => {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-2xl font-bold">Actions</CardTitle>
+            <CardTitle className="text-2xl font-bold">Global Actions</CardTitle>
             <Button
               variant={showMyActions ? "default" : "outline"}
               onClick={() => setShowMyActions(!showMyActions)}

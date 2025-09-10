@@ -216,7 +216,7 @@ export const UserManagement = () => {
         if (errorCode === 'email_exists' || errorMessage.includes('already been registered')) {
           toast({
             title: "User Already Registered",
-            description: `${inviteEmail} is already registered. They can sign in directly or reset their password if needed.`,
+            description: `${inviteEmail} is already registered in the system. Check the "Users" table above to see their current status.`,
             variant: "destructive",
           });
           setInviteEmail('');
@@ -463,7 +463,7 @@ export const UserManagement = () => {
         <CardHeader>
           <CardTitle>Pending Invitations</CardTitle>
           <CardDescription>
-            Users who have been invited but haven't signed in yet
+            Users who have been invited but haven't signed in yet. Once a user signs in, they will appear in the "Users" table above.
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -67,11 +67,16 @@ export const CompleteSignup = () => {
     setLoading(true);
     try {
       // Sign up with name in metadata
+      // Use production URL if available, otherwise fall back to current origin
+      const redirectUrl = window.location.hostname === 'localhost' 
+        ? `${window.location.origin}/app`
+        : `${window.location.origin}/app`;
+        
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/app`,
+          emailRedirectTo: redirectUrl,
           data: {
             full_name: name.trim()
           }

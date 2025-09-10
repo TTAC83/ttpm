@@ -136,10 +136,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const signInWithMagicLink = async (email: string) => {
     try {
+      // Use production URL if available, otherwise fall back to current origin
+      const redirectUrl = window.location.hostname === 'localhost' 
+        ? `${window.location.origin}/app`
+        : `${window.location.origin}/app`;
+        
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/app`,
+          emailRedirectTo: redirectUrl,
         }
       });
       

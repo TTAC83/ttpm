@@ -112,11 +112,14 @@ serve(async (req) => {
     }
 
     // Invite the user using admin client
+    // Get the correct redirect URL - use the origin from request or fallback to the app URL
+    const origin = req.headers.get('origin') || req.headers.get('referer')?.split('/').slice(0, 3).join('/') || `https://${Deno.env.get('SUPABASE_URL')?.split('//')[1]?.replace('.supabase.co', '')}.lovableproject.com`;
+    
     const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(body.email, {
       data: {
         full_name: body.full_name || '',
       },
-      redirectTo: `${req.headers.get('origin') || 'http://localhost:3000'}/complete-signup?email=${encodeURIComponent(body.email)}`,
+      redirectTo: `${origin}/complete-signup?email=${encodeURIComponent(body.email)}`,
     });
 
     if (error) {

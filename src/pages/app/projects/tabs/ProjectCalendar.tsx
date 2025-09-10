@@ -36,6 +36,7 @@ interface ProjectEvent {
   end_date: string;
   created_by: string;
   created_at: string;
+  is_critical?: boolean;
   attendees: EventAttendee[];
 }
 
@@ -70,7 +71,8 @@ const ProjectCalendar = ({ projectId }: ProjectCalendarProps) => {
     description: '',
     start_date: '',
     end_date: '',
-    selectedAttendees: [] as string[]
+    selectedAttendees: [] as string[],
+    is_critical: false
   });
 
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
@@ -249,7 +251,8 @@ const ProjectCalendar = ({ projectId }: ProjectCalendarProps) => {
         description: event.description || '',
         start_date: event.start_date,
         end_date: event.end_date,
-        selectedAttendees: event.attendees.map(a => a.user_id)
+        selectedAttendees: event.attendees.map(a => a.user_id),
+        is_critical: event.is_critical || false
       });
       const startDate = parseISO(event.start_date);
       const endDate = parseISO(event.end_date);
@@ -265,7 +268,8 @@ const ProjectCalendar = ({ projectId }: ProjectCalendarProps) => {
         description: '',
         start_date: '',
         end_date: '',
-        selectedAttendees: []
+        selectedAttendees: [],
+        is_critical: false
       });
       setSelectedDates([]);
     }
@@ -291,7 +295,8 @@ const ProjectCalendar = ({ projectId }: ProjectCalendarProps) => {
             title: formData.title,
             description: formData.description || null,
             start_date: formData.start_date,
-            end_date: formData.end_date
+            end_date: formData.end_date,
+            is_critical: formData.is_critical
           })
           .eq('id', editingEvent.id);
 
@@ -328,6 +333,7 @@ const ProjectCalendar = ({ projectId }: ProjectCalendarProps) => {
             description: formData.description || null,
             start_date: formData.start_date,
             end_date: formData.end_date,
+            is_critical: formData.is_critical,
             created_by: profile?.user_id || ''
           })
           .select()
@@ -535,6 +541,22 @@ const ProjectCalendar = ({ projectId }: ProjectCalendarProps) => {
                     ))
                   )}
                 </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is_critical"
+                  checked={formData.is_critical}
+                  onCheckedChange={(checked) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      is_critical: checked === true
+                    }));
+                  }}
+                />
+                <Label htmlFor="is_critical" className="text-sm font-medium">
+                  Mark as Critical Event
+                </Label>
               </div>
             </div>
 

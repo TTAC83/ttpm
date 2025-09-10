@@ -668,6 +668,23 @@ export type Database = {
         Args: { n: number; start_date: string }
         Returns: string
       }
+      get_all_users_with_profiles: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          avatar_url: string
+          company_id: string
+          company_name: string
+          created_at: string
+          email: string
+          is_internal: boolean
+          job_title: string
+          last_sign_in_at: string
+          name: string
+          phone: string
+          role: string
+          user_id: string
+        }[]
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string

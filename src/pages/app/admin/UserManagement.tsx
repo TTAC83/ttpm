@@ -74,22 +74,9 @@ export const UserManagement = () => {
         return;
       }
 
-      // Fetch from users_admin_view if it exists, otherwise fallback to profiles
+      // Fetch all users using the database function that includes auth data
       const { data: usersData, error } = await supabase
-        .from('profiles')
-        .select(`
-          user_id,
-          name,
-          job_title,
-          phone,
-          avatar_url,
-          role,
-          is_internal,
-          company_id,
-          companies:company_id (
-            name
-          )
-        `);
+        .rpc('get_all_users_with_profiles');
 
       if (error) {
         console.error('Error fetching users:', error);
@@ -101,15 +88,23 @@ export const UserManagement = () => {
         return;
       }
 
-      // Transform the data to match our interface
-      const transformedUsers: UserData[] = usersData?.map(profile => ({
-        id: profile.user_id,
-        email: `user-${profile.user_id.substring(0, 8)}@example.com`, // Placeholder - would come from auth.users in real app
-        created_at: new Date().toISOString(), // Placeholder
-        last_sign_in_at: new Date().toISOString(), // Placeholder
+      // Transform the data to match our interface, handling missing fields gracefully
+      const transformedUsers: UserData[] = usersData?.map(user => ({
+        id: user.user_id,
+        email: user.email || '',
+        created_at: user.created_at || new Date().toISOString(),
+        last_sign_in_at: user.last_sign_in_at || null,
         profile: {
-          ...profile,
-          company_name: profile.companies?.name || null
+          user_id: user.user_id,
+          company_id: user.company_id || null,
+          role: user.role || null,
+          is_internal: user.is_internal || false,
+          name: user.name || null,
+          job_title: user.job_title || null,
+          phone: user.phone || null,
+          avatar_url: user.avatar_url || null,
+          created_at: user.created_at || new Date().toISOString(),
+          company_name: user.company_name || null
         }
       })) || [];
 
@@ -415,19 +410,25 @@ export const UserManagement = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {user.profile?.role && (
+                      {user.profile?.role ? (
                         <Badge 
                           variant={getRoleBadgeVariant(user.profile.role, user.profile.is_internal)}
                           className="text-xs"
                         >
                           {user.profile.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                         </Badge>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">No role assigned</span>
                       )}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={user.profile?.is_internal ? 'default' : 'outline'} className="text-xs">
-                        {user.profile?.is_internal ? 'Internal' : 'External'}
-                      </Badge>
+                      {user.profile ? (
+                        <Badge variant={user.profile.is_internal ? 'default' : 'outline'} className="text-xs">
+                          {user.profile.is_internal ? 'Internal' : 'External'}
+                        </Badge>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">No profile</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {formatDate(user.last_sign_in_at)}

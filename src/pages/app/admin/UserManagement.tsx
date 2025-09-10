@@ -158,40 +158,23 @@ export const UserManagement = () => {
         },
       });
 
-      console.log('Invite response:', response);
+      console.log('Full invite response:', response);
 
-      // Handle both successful responses and error responses
-      if (response.error) {
-        console.error('Edge function error:', response.error);
+      // Handle successful response
+      if (!response.error && response.data && !response.data.error) {
+        toast({
+          title: "User Invited",
+          description: `Invitation sent to ${inviteEmail}`,
+        });
         
-        // For FunctionsHttpError (non-2xx status), check if we can get error details
-        if (response.error.name === 'FunctionsHttpError') {
-          // The edge function returned an error, but we might have error details in data
-          if (response.data?.error) {
-            if (response.data.error.includes('already been registered')) {
-              toast({
-                title: "User Already Registered",
-                description: `${inviteEmail} is already registered. They can sign in directly or reset their password if needed.`,
-                variant: "destructive",
-              });
-              setInviteEmail('');
-              return;
-            }
-            throw new Error(response.data.error);
-          }
-          
-          toast({
-            title: "Invitation Failed",
-            description: "There was an error sending the invitation. Please try again.",
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        throw new Error(response.error.message || 'Failed to send invitation');
+        setInviteEmail('');
+        fetchUsers();
+        return;
       }
 
+      // Handle function errors - check data first as it might contain the actual error
       if (response.data?.error) {
+        console.log('Response data error:', response.data.error);
         if (response.data.error.includes('already been registered')) {
           toast({
             title: "User Already Registered",
@@ -204,14 +187,14 @@ export const UserManagement = () => {
         throw new Error(response.data.error);
       }
 
-      toast({
-        title: "User Invited",
-        description: `Invitation sent to ${inviteEmail}`,
-      });
-      
-      setInviteEmail('');
-      // Refresh the user list
-      fetchUsers();
+      // Handle function invocation errors
+      if (response.error) {
+        console.error('Edge function error:', response.error);
+        throw new Error(response.error.message || 'Failed to send invitation');
+      }
+
+      // Fallback
+      throw new Error('Unknown error occurred while sending invitation');
     } catch (error: any) {
       console.error('Invitation error:', error);
       toast({

@@ -38,6 +38,10 @@ interface Action {
   profiles: {
     name: string | null;
   } | null;
+  project_tasks?: {
+    task_title: string;
+    step_name: string;
+  };
 }
 
 interface Profile {
@@ -56,7 +60,6 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
   const [actions, setActions] = useState<Action[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTaskId, setSelectedTaskId] = useState<string>('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingAction, setEditingAction] = useState<Action | null>(null);
@@ -65,16 +68,9 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
   useEffect(() => {
     fetchTasks();
     fetchProfiles();
+    fetchAllActions();
     checkProjectMembership();
   }, [projectId, user]);
-
-  useEffect(() => {
-    if (selectedTaskId) {
-      fetchActions(selectedTaskId);
-    } else {
-      setActions([]);
-    }
-  }, [selectedTaskId]);
 
   const checkProjectMembership = async () => {
     if (!user || profile?.is_internal) {
@@ -130,9 +126,6 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
       
       setTasks(sortedTasks);
       
-      if (sortedTasks && sortedTasks.length > 0) {
-        setSelectedTaskId(sortedTasks[0].id);
-      }
     } catch (error: any) {
       console.error('ProjectActions: Error fetching tasks:', error);
       toast({
@@ -159,7 +152,7 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
     }
   };
 
-  const fetchActions = async (taskId: string) => {
+  const fetchAllActions = async () => {
     try {
       const { data, error } = await supabase
         .from('actions')
@@ -167,9 +160,13 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
           *,
           profiles:assignee (
             name
+          ),
+          project_tasks!inner (
+            task_title,
+            step_name
           )
         `)
-        .eq('project_task_id', taskId)
+        .eq('project_tasks.project_id', projectId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -192,7 +189,6 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
 
       const { data, error } = await supabase.functions.invoke('create-action', {
         body: {
-          project_task_id: selectedTaskId,
           ...actionData
         },
         headers: {
@@ -209,7 +205,7 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
       });
 
       setDialogOpen(false);
-      fetchActions(selectedTaskId);
+      fetchAllActions();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -255,7 +251,7 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
 
       setEditDialogOpen(false);
       setEditingAction(null);
-      fetchActions(selectedTaskId);
+      fetchAllActions();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -274,73 +270,40 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
     }
   };
 
-  const selectedTask = tasks.find(task => task.id === selectedTaskId);
   const canManageActions = profile?.is_internal || isProjectMember;
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Select Task</CardTitle>
-          <CardDescription>
-            Choose a task to view and manage its actions
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Project Actions</CardTitle>
+              <CardDescription>
+                All action items for this project
+              </CardDescription>
+            </div>
+            {canManageActions && (
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Action
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <CreateActionDialog
+                    tasks={tasks}
+                    profiles={profiles}
+                    onSave={handleCreateAction}
+                    onClose={() => setDialogOpen(false)}
+                  />
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            <Select value={selectedTaskId} onValueChange={setSelectedTaskId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a task" />
-              </SelectTrigger>
-              <SelectContent>
-                {tasks.map((task) => (
-                  <SelectItem key={task.id} value={task.id}>
-                    <div className="flex items-center gap-2">
-                      <span>{task.step_name}</span>
-                      <span className="text-muted-foreground">-</span>
-                      <span>{task.task_title}</span>
-                      <Badge variant="outline" className="ml-2">
-                        {task.status}
-                      </Badge>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {selectedTaskId && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Actions for {selectedTask?.task_title}</CardTitle>
-                <CardDescription>
-                  Manage action items and track progress
-                </CardDescription>
-              </div>
-              {canManageActions && (
-                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Action
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <CreateActionDialog
-                      profiles={profiles}
-                      onSave={handleCreateAction}
-                      onClose={() => setDialogOpen(false)}
-                    />
-                  </DialogContent>
-                </Dialog>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
@@ -350,6 +313,7 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Title</TableHead>
+                    <TableHead>Task</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Assignee</TableHead>
                     <TableHead>Planned Date</TableHead>
@@ -360,10 +324,10 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
                 <TableBody>
                   {actions.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={canManageActions ? 6 : 5} className="text-center py-8">
+                      <TableCell colSpan={canManageActions ? 7 : 6} className="text-center py-8">
                         <div className="flex flex-col items-center gap-2">
                           <FileText className="h-8 w-8 text-muted-foreground" />
-                          <p className="text-muted-foreground">No actions found for this task</p>
+                          <p className="text-muted-foreground">No actions found for this project</p>
                           {canManageActions && (
                             <Button size="sm" onClick={() => setDialogOpen(true)}>
                               <Plus className="h-4 w-4 mr-2" />
@@ -384,6 +348,12 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
                                 {action.details}
                               </p>
                             )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <p className="font-medium">{action.project_tasks?.task_title}</p>
+                            <p className="text-muted-foreground">{action.project_tasks?.step_name}</p>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -424,16 +394,6 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
             )}
           </CardContent>
         </Card>
-      )}
-
-      {!selectedTaskId && !loading && (
-        <Card>
-          <CardContent className="text-center py-8">
-            <FileText className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-            <p className="text-muted-foreground">Select a task to view its actions</p>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Edit Action Dialog */}
       {editingAction && (
@@ -457,10 +417,12 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
 
 // Create Action Dialog Component
 const CreateActionDialog = ({ 
+  tasks,
   profiles, 
   onSave, 
   onClose 
 }: {
+  tasks: Task[];
   profiles: Profile[];
   onSave: (data: any) => void;
   onClose: () => void;
@@ -471,6 +433,7 @@ const CreateActionDialog = ({
     assignee: '',
     planned_date: undefined as Date | undefined,
     notes: '',
+    project_task_id: '',
   });
   const [loading, setLoading] = useState(false);
 
@@ -485,6 +448,7 @@ const CreateActionDialog = ({
         assignee: formData.assignee || null,
         planned_date: formData.planned_date ? toISODateString(formData.planned_date) : null,
         notes: formData.notes || null,
+        project_task_id: formData.project_task_id || null,
       });
     } finally {
       setLoading(false);
@@ -520,6 +484,30 @@ const CreateActionDialog = ({
             placeholder="Enter action details"
             rows={3}
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Task (Optional)</Label>
+          <Select 
+            value={formData.project_task_id || 'unassigned'} 
+            onValueChange={(value) => setFormData(prev => ({ ...prev, project_task_id: value === 'unassigned' ? '' : value }))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select a task" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="unassigned">No specific task</SelectItem>
+              {tasks.map((task) => (
+                <SelectItem key={task.id} value={task.id}>
+                  <div className="flex items-center gap-2">
+                    <span>{task.step_name}</span>
+                    <span className="text-muted-foreground">-</span>
+                    <span>{task.task_title}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">

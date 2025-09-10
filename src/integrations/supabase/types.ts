@@ -183,36 +183,6 @@ export type Database = {
         }
         Relationships: []
       }
-      invitations: {
-        Row: {
-          accepted_at: string | null
-          created_at: string
-          email: string
-          expires_at: string
-          id: string
-          invited_at: string
-          invited_by: string
-        }
-        Insert: {
-          accepted_at?: string | null
-          created_at?: string
-          email: string
-          expires_at?: string
-          id?: string
-          invited_at?: string
-          invited_by: string
-        }
-        Update: {
-          accepted_at?: string | null
-          created_at?: string
-          email?: string
-          expires_at?: string
-          id?: string
-          invited_at?: string
-          invited_by?: string
-        }
-        Relationships: []
-      }
       lines: {
         Row: {
           camera_count: number
@@ -692,17 +662,6 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
-      }
-      get_pending_invitations: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          email: string
-          expires_at: string
-          id: string
-          invited_at: string
-          invited_by: string
-          inviter_name: string
-        }[]
       }
       is_current_user_internal: {
         Args: Record<PropertyKey, never>

@@ -18,6 +18,9 @@ export const ResetPassword = () => {
 
   useEffect(() => {
     const checkResetToken = async () => {
+      // First, sign out any existing session to prevent auto-login
+      await supabase.auth.signOut();
+      
       // Check URL hash for recovery tokens (this is how Supabase sends them)
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const type = hashParams.get('type');
@@ -26,18 +29,18 @@ export const ResetPassword = () => {
       
       if (type === 'recovery' && accessToken && refreshToken) {
         try {
-          // Set the session temporarily to allow password update
-          const { error: sessionError } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken
-          });
+          // Validate the tokens without setting a persistent session
+          const { data: user, error } = await supabase.auth.getUser(accessToken);
           
-          if (!sessionError) {
+          if (!error && user) {
             setIsValidToken(true);
+            // Store tokens temporarily for password update
+            sessionStorage.setItem('reset_access_token', accessToken);
+            sessionStorage.setItem('reset_refresh_token', refreshToken);
             // Clear the hash from URL for security
             window.history.replaceState({}, document.title, window.location.pathname);
           } else {
-            throw sessionError;
+            throw error || new Error('Invalid token');
           }
         } catch (err: any) {
           toast({
@@ -93,6 +96,24 @@ export const ResetPassword = () => {
     setLoading(true);
     
     try {
+      // Retrieve the stored tokens for password update
+      const accessToken = sessionStorage.getItem('reset_access_token');
+      const refreshToken = sessionStorage.getItem('reset_refresh_token');
+      
+      if (!accessToken || !refreshToken) {
+        throw new Error('Reset session expired. Please request a new reset link.');
+      }
+      
+      // Temporarily set the session to update the password
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken
+      });
+      
+      if (sessionError) {
+        throw sessionError;
+      }
+      
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       });
@@ -108,6 +129,10 @@ export const ResetPassword = () => {
           title: "Password updated successfully",
           description: "Your password has been updated. You can now sign in with your new password.",
         });
+        
+        // Clean up stored tokens
+        sessionStorage.removeItem('reset_access_token');
+        sessionStorage.removeItem('reset_refresh_token');
         
         // Sign out the user so they can sign in with the new password
         await supabase.auth.signOut();

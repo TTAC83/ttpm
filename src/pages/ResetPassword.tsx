@@ -17,30 +17,53 @@ export const ResetPassword = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if this is a valid password reset callback
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const type = hashParams.get('type');
-    const accessToken = hashParams.get('access_token');
-    
-    if (type === 'recovery' && accessToken) {
-      setIsValidToken(true);
-    } else {
-      // Check URL params as well
-      const urlType = searchParams.get('type');
-      const urlToken = searchParams.get('access_token');
+    const checkAuthSession = async () => {
+      // Check if we have an active session from the reset link
+      const { data: { session }, error } = await supabase.auth.getSession();
       
-      if (urlType === 'recovery' && urlToken) {
+      if (session?.user && !error) {
         setIsValidToken(true);
       } else {
-        toast({
-          variant: "destructive",
-          title: "Invalid reset link",
-          description: "This password reset link is invalid or has expired. Please request a new one.",
-        });
-        navigate('/auth');
+        // Check URL hash for recovery tokens
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const type = hashParams.get('type');
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+        
+        if (type === 'recovery' && accessToken && refreshToken) {
+          try {
+            // Set the session using the tokens from the URL
+            const { error: sessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken
+            });
+            
+            if (!sessionError) {
+              setIsValidToken(true);
+            } else {
+              throw sessionError;
+            }
+          } catch (err: any) {
+            toast({
+              variant: "destructive",
+              title: "Invalid reset link",
+              description: "This password reset link is invalid or has expired. Please request a new one.",
+            });
+            navigate('/auth');
+          }
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Invalid reset link",
+            description: "This password reset link is invalid or has expired. Please request a new one.",
+          });
+          navigate('/auth');
+        }
       }
-    }
-  }, [searchParams, navigate, toast]);
+    };
+
+    checkAuthSession();
+  }, [navigate, toast]);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();

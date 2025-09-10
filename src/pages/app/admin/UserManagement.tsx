@@ -158,9 +158,17 @@ export const UserManagement = () => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Handle function invocation errors
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to invoke invitation function');
+      }
 
-      if (data.error) {
+      if (data?.error) {
+        // Handle specific application errors from the edge function
+        if (data.error.includes('already been registered')) {
+          throw new Error(`A user with email ${inviteEmail} is already registered. Please use a different email address.`);
+        }
         throw new Error(data.error);
       }
 

@@ -158,26 +158,27 @@ export const UserManagement = () => {
         },
       });
 
+      console.log('Invite response:', response);
+
       // Handle both successful responses and error responses
       if (response.error) {
-        // For FunctionsHttpError, try to get the actual error message from the response
+        console.error('Edge function error:', response.error);
+        
+        // For FunctionsHttpError (non-2xx status), provide user-friendly message
         if (response.error.name === 'FunctionsHttpError') {
-          // The edge function returned an error status, but we need to check the data
-          if (response.data && response.data.error) {
-            if (response.data.error.includes('already been registered')) {
-              throw new Error(`A user with email ${inviteEmail} is already registered. Please use a different email address.`);
-            }
-            throw new Error(response.data.error);
-          }
-          throw new Error('Failed to send invitation. Please try again.');
+          // Check if this is likely an "email already exists" error based on the email
+          toast({
+            title: "Invitation Failed",
+            description: "This email address may already be registered, or there was an error sending the invitation. Please verify the email address and try again.",
+            variant: "destructive",
+          });
+          return;
         }
-        throw new Error(response.error.message || 'Failed to invoke invitation function');
+        
+        throw new Error(response.error.message || 'Failed to send invitation');
       }
 
       if (response.data?.error) {
-        if (response.data.error.includes('already been registered')) {
-          throw new Error(`A user with email ${inviteEmail} is already registered. Please use a different email address.`);
-        }
         throw new Error(response.data.error);
       }
 
@@ -190,6 +191,7 @@ export const UserManagement = () => {
       // Refresh the user list
       fetchUsers();
     } catch (error: any) {
+      console.error('Invitation error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to invite user",

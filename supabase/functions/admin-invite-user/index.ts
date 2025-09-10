@@ -122,9 +122,13 @@ serve(async (req) => {
     if (error) {
       console.error('Error inviting user:', error);
       return new Response(
-        JSON.stringify({ error: error.message }),
+        JSON.stringify({ 
+          success: false, 
+          error: error.message,
+          error_code: error.code || 'unknown_error'
+        }),
         { 
-          status: 400, 
+          status: 200, // Return 200 to allow frontend to handle the error properly
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );

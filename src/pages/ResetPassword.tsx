@@ -17,41 +17,29 @@ export const ResetPassword = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const checkAuthSession = async () => {
-      // Check if we have an active session from the reset link
-      const { data: { session }, error } = await supabase.auth.getSession();
+    const checkResetToken = async () => {
+      // Check URL hash for recovery tokens (this is how Supabase sends them)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const type = hashParams.get('type');
+      const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
       
-      if (session?.user && !error) {
-        setIsValidToken(true);
-      } else {
-        // Check URL hash for recovery tokens
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const type = hashParams.get('type');
-        const accessToken = hashParams.get('access_token');
-        const refreshToken = hashParams.get('refresh_token');
-        
-        if (type === 'recovery' && accessToken && refreshToken) {
-          try {
-            // Set the session using the tokens from the URL
-            const { error: sessionError } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken
-            });
-            
-            if (!sessionError) {
-              setIsValidToken(true);
-            } else {
-              throw sessionError;
-            }
-          } catch (err: any) {
-            toast({
-              variant: "destructive",
-              title: "Invalid reset link",
-              description: "This password reset link is invalid or has expired. Please request a new one.",
-            });
-            navigate('/auth');
+      if (type === 'recovery' && accessToken && refreshToken) {
+        try {
+          // Set the session temporarily to allow password update
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
+          
+          if (!sessionError) {
+            setIsValidToken(true);
+            // Clear the hash from URL for security
+            window.history.replaceState({}, document.title, window.location.pathname);
+          } else {
+            throw sessionError;
           }
-        } else {
+        } catch (err: any) {
           toast({
             variant: "destructive",
             title: "Invalid reset link",
@@ -59,10 +47,17 @@ export const ResetPassword = () => {
           });
           navigate('/auth');
         }
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Invalid reset link",
+          description: "This password reset link is invalid or has expired. Please request a new one.",
+        });
+        navigate('/auth');
       }
     };
 
-    checkAuthSession();
+    checkResetToken();
   }, [navigate, toast]);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {

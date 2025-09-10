@@ -30,6 +30,15 @@ interface UserData {
   } | null;
 }
 
+interface PendingInvitation {
+  id: string;
+  email: string;
+  invited_at: string;
+  expires_at: string;
+  invited_by: string;
+  inviter_name?: string;
+}
+
 interface Company {
   id: string;
   name: string;
@@ -38,6 +47,7 @@ interface Company {
 
 export const UserManagement = () => {
   const [users, setUsers] = useState<UserData[]>([]);
+  const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -116,6 +126,35 @@ export const UserManagement = () => {
     }
   };
 
+  // Fetch pending invitations
+  const fetchPendingInvitations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('invitations')
+        .select('id, email, invited_at, expires_at, invited_by')
+        .is('accepted_at', null)
+        .order('invited_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching invitations:', error);
+        return;
+      }
+
+      const transformedInvitations: PendingInvitation[] = data?.map(invitation => ({
+        id: invitation.id,
+        email: invitation.email,
+        invited_at: invitation.invited_at,
+        expires_at: invitation.expires_at,
+        invited_by: invitation.invited_by,
+        inviter_name: 'Admin' // We'll show a generic name for now
+      })) || [];
+
+      setPendingInvitations(transformedInvitations);
+    } catch (error) {
+      console.error('Error fetching invitations:', error);
+    }
+  };
+
   // Fetch companies
   const fetchCompanies = async () => {
     try {
@@ -138,6 +177,7 @@ export const UserManagement = () => {
   useEffect(() => {
     fetchUsers();
     fetchCompanies();
+    fetchPendingInvitations();
   }, []);
 
   const handleInviteUser = async (e: React.FormEvent) => {
@@ -195,6 +235,7 @@ export const UserManagement = () => {
         
         setInviteEmail('');
         fetchUsers();
+        fetchPendingInvitations();
         return;
       }
 
@@ -411,6 +452,61 @@ export const UserManagement = () => {
                     </TableCell>
                   </TableRow>
                 ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Pending Invitations */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Pending Invitations</CardTitle>
+          <CardDescription>
+            Users who have been invited but haven't signed in yet
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
+            </div>
+          ) : pendingInvitations.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No pending invitations
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Invited By</TableHead>
+                  <TableHead>Invited At</TableHead>
+                  <TableHead>Expires</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pendingInvitations.map((invitation) => {
+                  const isExpired = new Date(invitation.expires_at) < new Date();
+                  return (
+                    <TableRow key={invitation.id}>
+                      <TableCell className="font-medium">{invitation.email}</TableCell>
+                      <TableCell>{invitation.inviter_name}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {formatDate(invitation.invited_at)}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {formatDate(invitation.expires_at)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={isExpired ? "destructive" : "secondary"} className="text-xs">
+                          {isExpired ? "Expired" : "Pending"}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}

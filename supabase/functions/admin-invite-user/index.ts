@@ -121,6 +121,24 @@ serve(async (req) => {
 
     if (error) {
       console.error('Error inviting user:', error);
+      
+      // If user already exists, still record the invitation attempt
+      if (error.code === 'email_exists') {
+        try {
+          await supabaseAdmin
+            .from('invitations')
+            .upsert({ 
+              email: body.email, 
+              invited_by: user.id,
+              invited_at: new Date().toISOString()
+            }, { 
+              onConflict: 'email' 
+            });
+        } catch (inviteRecordError) {
+          console.error('Error recording invitation:', inviteRecordError);
+        }
+      }
+      
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -128,10 +146,26 @@ serve(async (req) => {
           error_code: error.code || 'unknown_error'
         }),
         { 
-          status: 200, // Return 200 to allow frontend to handle the error properly
+          status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
+    }
+
+    // Record successful invitation
+    try {
+      await supabaseAdmin
+        .from('invitations')
+        .upsert({ 
+          email: body.email, 
+          invited_by: user.id,
+          invited_at: new Date().toISOString()
+        }, { 
+          onConflict: 'email' 
+        });
+    } catch (inviteRecordError) {
+      console.error('Error recording invitation:', inviteRecordError);
+      // Don't fail the invitation if we can't record it
     }
 
     return new Response(

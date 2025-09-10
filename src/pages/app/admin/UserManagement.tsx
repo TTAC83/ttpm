@@ -151,50 +151,86 @@ export const UserManagement = () => {
         throw new Error('No active session');
       }
 
-      const response = await supabase.functions.invoke('admin-invite-user', {
-        body: { email: inviteEmail },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      console.log('Full invite response:', response);
-
-      // Handle successful response
-      if (!response.error && response.data && !response.data.error) {
-        toast({
-          title: "User Invited",
-          description: `Invitation sent to ${inviteEmail}`,
+      try {
+        const response = await supabase.functions.invoke('admin-invite-user', {
+          body: { email: inviteEmail },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
         });
-        
-        setInviteEmail('');
-        fetchUsers();
-        return;
-      }
 
-      // Handle function errors - check data first as it might contain the actual error
-      if (response.data?.error) {
-        console.log('Response data error:', response.data.error);
-        if (response.data.error.includes('already been registered')) {
+        console.log('Full invite response:', response);
+
+        // Handle successful response
+        if (!response.error && response.data && !response.data.error) {
           toast({
-            title: "User Already Registered",
-            description: `${inviteEmail} is already registered. They can sign in directly or reset their password if needed.`,
-            variant: "destructive",
+            title: "User Invited",
+            description: `Invitation sent to ${inviteEmail}`,
           });
+          
           setInviteEmail('');
+          fetchUsers();
           return;
         }
-        throw new Error(response.data.error);
-      }
 
-      // Handle function invocation errors
-      if (response.error) {
-        console.error('Edge function error:', response.error);
-        throw new Error(response.error.message || 'Failed to send invitation');
-      }
+        // Handle error in response data
+        if (response.data?.error) {
+          if (response.data.error.includes('already been registered')) {
+            toast({
+              title: "User Already Registered",
+              description: `${inviteEmail} is already registered. They can sign in directly or reset their password if needed.`,
+              variant: "destructive",
+            });
+            setInviteEmail('');
+            return;
+          }
+          throw new Error(response.data.error);
+        }
 
-      // Fallback
-      throw new Error('Unknown error occurred while sending invitation');
+        // Handle function invocation errors
+        if (response.error) {
+          throw new Error(response.error.message || 'Failed to send invitation');
+        }
+
+      } catch (functionError: any) {
+        console.log('Function error caught:', functionError);
+        
+        // Handle FunctionsHttpError specifically
+        if (functionError.name === 'FunctionsHttpError') {
+          // Try to make a direct fetch to get the actual error message
+          try {
+            const directResponse = await fetch(`https://tjbiyyejofdpwybppxhv.supabase.co/functions/v1/admin-invite-user`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${session.access_token}`,
+                'Content-Type': 'application/json',
+                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqYml5eWVqb2ZkcHd5YnBweGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0NDgxMTIsImV4cCI6MjA3MzAyNDExMn0.525HE5OtL-Cvvmumq6t0APuf_Wmxy2hZO1jYdG0D1BU'
+              },
+              body: JSON.stringify({ email: inviteEmail }),
+            });
+            
+            const errorData = await directResponse.json();
+            console.log('Direct response error data:', errorData);
+            
+            if (errorData.error && errorData.error.includes('already been registered')) {
+              toast({
+                title: "User Already Registered",
+                description: `${inviteEmail} is already registered. They can sign in directly or reset their password if needed.`,
+                variant: "destructive",
+              });
+              setInviteEmail('');
+              return;
+            }
+            
+            throw new Error(errorData.error || 'Failed to send invitation');
+          } catch (fetchError) {
+            console.error('Direct fetch also failed:', fetchError);
+            throw new Error('Failed to send invitation. Please try again.');
+          }
+        }
+        
+        throw functionError;
+      }
     } catch (error: any) {
       console.error('Invitation error:', error);
       toast({

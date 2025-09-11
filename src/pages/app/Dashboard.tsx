@@ -97,7 +97,7 @@ export const Dashboard = () => {
           .or(`planned_start.gte.${startDate},planned_end.gte.${startDate}`)
           .or(`planned_start.lte.${endDate},planned_end.lte.${endDate}`)
           .not('planned_start', 'is', null)
-          .in('status', ['Blocked']); // Only critical task statuses
+          .in('status', ['Blocked']); // Only blocked tasks (considered critical)
 
         if (!tasksError && tasksData) {
           tasksData.forEach(task => {
@@ -181,18 +181,30 @@ export const Dashboard = () => {
             start_date,
             end_date,
             is_critical,
-            project_id,
-            projects!inner(
-              name,
-              companies!inner(name)
-            )
+            project_id
           `)
           .or(`start_date.gte.${startDate},end_date.gte.${startDate}`)
           .or(`start_date.lte.${endDate},end_date.lte.${endDate}`)
           .eq('is_critical', true); // Only critical calendar events
 
         if (!calendarError && calendarData) {
+          // Get project and company info for calendar events
+          const projectIds = [...new Set(calendarData.map(event => event.project_id))];
+          const { data: projectsData } = await supabase
+            .from('projects')
+            .select(`
+              id,
+              name,
+              companies!inner(name)
+            `)
+            .in('id', projectIds);
+          
+          const projectMap = new Map(projectsData?.map(p => [p.id, p]) || []);
+          
           calendarData.forEach(event => {
+            const project = projectMap.get(event.project_id);
+            if (!project) return;
+            
             // For multi-day events, add for each day in range
             const eventStart = new Date(event.start_date);
             const eventEnd = new Date(event.end_date);
@@ -210,8 +222,8 @@ export const Dashboard = () => {
                 type: 'calendar',
                 is_critical: event.is_critical,
                 project: {
-                  name: (event.projects as any).name,
-                  company: { name: (event.projects as any).companies.name }
+                  name: project.name,
+                  company: { name: (project.companies as any).name }
                 }
               });
               currentDate.setDate(currentDate.getDate() + 1);

@@ -339,7 +339,7 @@ export const MasterDataManagement = () => {
                 <div>
                   <CardTitle>Master Tasks</CardTitle>
                   <CardDescription>
-                    Manage task templates with timing offsets
+                    Manage task templates with timing offsets and technology scope
                   </CardDescription>
                 </div>
                 <Dialog open={taskDialogOpen} onOpenChange={setTaskDialogOpen}>
@@ -639,19 +639,19 @@ const TaskDialog = ({
           <div className="flex flex-col space-y-2">
             <div className="flex items-center space-x-2">
               <Checkbox 
-                id="task_iot"
+                id="task-iot"
                 checked={formData.iot}
                 onCheckedChange={(checked) => setFormData(prev => ({ ...prev, iot: checked as boolean }))}
               />
-              <Label htmlFor="task_iot">IoT</Label>
+              <Label htmlFor="task-iot">IoT</Label>
             </div>
             <div className="flex items-center space-x-2">
               <Checkbox 
-                id="task_vision"
+                id="task-vision"
                 checked={formData.vision}
                 onCheckedChange={(checked) => setFormData(prev => ({ ...prev, vision: checked as boolean }))}
               />
-              <Label htmlFor="task_vision">Vision</Label>
+              <Label htmlFor="task-vision">Vision</Label>
             </div>
           </div>
         </div>

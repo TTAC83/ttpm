@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDateUK } from '@/lib/dateUtils';
+import { useNavigate } from 'react-router-dom';
 
 interface Company {
   id: string;
@@ -19,6 +20,8 @@ interface UpcomingEvent {
   type: 'task' | 'action' | 'calendar';
   is_critical?: boolean;
   status?: string;
+  project_id?: string;
+  task_id?: string;
   project: {
     name: string;
     company: {
@@ -29,6 +32,7 @@ interface UpcomingEvent {
 
 export const Dashboard = () => {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [events, setEvents] = useState<UpcomingEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,6 +113,8 @@ export const Dashboard = () => {
                 date: task.planned_start,
                 type: 'task',
                 status: task.status,
+                project_id: task.project_id,
+                task_id: task.id,
                 project: {
                   name: (task.projects as any).name,
                   company: { name: (task.projects as any).companies.name }
@@ -123,6 +129,8 @@ export const Dashboard = () => {
                 date: task.planned_end,
                 type: 'task',
                 status: task.status,
+                project_id: task.project_id,
+                task_id: task.id,
                 project: {
                   name: (task.projects as any).name,
                   company: { name: (task.projects as any).companies.name }
@@ -164,6 +172,7 @@ export const Dashboard = () => {
               type: 'action',
               status: action.status,
               is_critical: action.is_critical,
+              project_id: (action.project_tasks as any).projects.id,
               project: {
                 name: (action.project_tasks as any).projects.name,
                 company: { name: (action.project_tasks as any).projects.companies.name }
@@ -221,6 +230,7 @@ export const Dashboard = () => {
                 date: currentDate.toISOString().split('T')[0],
                 type: 'calendar',
                 is_critical: event.is_critical,
+                project_id: event.project_id,
                 project: {
                   name: project.name,
                   company: { name: (project.companies as any).name }
@@ -250,6 +260,16 @@ export const Dashboard = () => {
   const isToday = (date: Date) => {
     const today = new Date();
     return date.toDateString() === today.toDateString();
+  };
+
+  const handleEventDoubleClick = (event: UpcomingEvent) => {
+    if (event.type === 'task' && event.project_id) {
+      navigate(`/app/projects/${event.project_id}?tab=tasks`);
+    } else if (event.type === 'action') {
+      navigate('/app/actions');
+    } else if (event.type === 'calendar' && event.project_id) {
+      navigate(`/app/projects/${event.project_id}?tab=calendar`);
+    }
   };
 
   if (loading) {
@@ -343,7 +363,8 @@ export const Dashboard = () => {
                       return (
                         <div
                           key={event.id}
-                          className={`text-xs p-1 rounded text-left ${getEventColor()}`}
+                          className={`text-xs p-1 rounded text-left cursor-pointer ${getEventColor()}`}
+                          onDoubleClick={() => handleEventDoubleClick(event)}
                         >
                           <div className="flex items-center gap-1">
                             <span className="text-[10px]">{getEventIcon()}</span>

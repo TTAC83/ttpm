@@ -50,15 +50,29 @@ export const ProcessFlowBuilder: React.FC<ProcessFlowBuilderProps> = ({
 
   const addPosition = () => {
     if (newPositionName.trim()) {
+      // Calculate total width needed for all positions
+      const totalPositions = positions.length + 1;
+      const totalWidth = totalPositions * 200 + (totalPositions - 1) * 10; // 200px boxes + 10px spacing
+      const containerWidth = Math.max(800, totalWidth + 40); // Min 800px or content + padding
+      const startX = (containerWidth - totalWidth) / 2; // Center the entire flow
+      
       const newPosition: Position = {
         id: `position-${Date.now()}`,
         name: newPositionName.trim(),
-        position_x: 20 + positions.length * 210, // 200px box width + 10px spacing
-        position_y: 140, // Center-aligned position (400px container / 2 - 120px box height / 2)
+        position_x: startX + positions.length * 210, // 200px box width + 10px spacing
+        position_y: 140, // Vertically centered (400px container / 2 - 120px box height / 2)
         titles: [],
         equipment: [],
       };
-      setPositions([...positions, newPosition]);
+      
+      // Recalculate positions for all existing positions to re-center them
+      const updatedPositions = positions.map((pos, index) => ({
+        ...pos,
+        position_x: startX + index * 210,
+        position_y: 140
+      }));
+      
+      setPositions([...updatedPositions, newPosition]);
       setNewPositionName("");
       setIsPositionDialogOpen(false);
     }
@@ -88,7 +102,24 @@ export const ProcessFlowBuilder: React.FC<ProcessFlowBuilderProps> = ({
   };
 
   const removePosition = (id: string) => {
-    setPositions(positions.filter((position) => position.id !== id));
+    const updatedPositions = positions.filter((position) => position.id !== id);
+    
+    // Recalculate positions to re-center after removal
+    if (updatedPositions.length > 0) {
+      const totalWidth = updatedPositions.length * 200 + (updatedPositions.length - 1) * 10;
+      const containerWidth = Math.max(800, totalWidth + 40);
+      const startX = (containerWidth - totalWidth) / 2;
+      
+      const recenteredPositions = updatedPositions.map((pos, index) => ({
+        ...pos,
+        position_x: startX + index * 210,
+        position_y: 140
+      }));
+      
+      setPositions(recenteredPositions);
+    } else {
+      setPositions([]);
+    }
   };
 
   const removeEquipment = (positionId: string, equipmentId: string) => {
@@ -231,7 +262,7 @@ export const ProcessFlowBuilder: React.FC<ProcessFlowBuilderProps> = ({
             onDragOver={handleDragOver}
             onDrop={handleDrop}
             style={{ 
-              minWidth: positions.length > 0 ? `${Math.max(800, positions.length * 210 + 40)}px` : '100%'
+              minWidth: positions.length > 0 ? `${Math.max(800, positions.length * 200 + (positions.length - 1) * 10 + 40)}px` : '100%'
             }}
           >
           {positions.length === 0 ? (

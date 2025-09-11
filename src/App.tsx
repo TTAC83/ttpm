@@ -34,6 +34,7 @@ import CompleteSignup from "./pages/CompleteSignup";
 import ResetPassword from "./pages/ResetPassword";
 import Actions from "./pages/app/Actions";
 import GlobalTasks from "./pages/app/GlobalTasks";
+import GlobalCalendar from "./pages/app/GlobalCalendar";
 
 const queryClient = new QueryClient();
 
@@ -196,6 +197,7 @@ const App = () => (
               <Route path="projects/:id" element={<ProjectDetail />} />
               <Route path="actions" element={<Actions />} />
               <Route path="tasks" element={<GlobalTasks />} />
+              <Route path="calendar" element={<GlobalCalendar />} />
               <Route 
                 path="admin/users" 
                 element={

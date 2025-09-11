@@ -63,6 +63,12 @@ export const AppLayout = () => {
       show: true
     },
     {
+      title: 'Global Calendar',
+      icon: Settings,
+      path: '/app/calendar',
+      show: true
+    },
+    {
       title: 'Projects',
       icon: Settings,
       path: '/app/projects',

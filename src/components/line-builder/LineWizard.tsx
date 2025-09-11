@@ -114,8 +114,8 @@ export const LineWizard: React.FC<LineWizardProps> = ({
           .insert({
             line_id: lineResult.id,
             name: position.name,
-            position_x: position.position_x,
-            position_y: position.position_y
+            position_x: Math.round(position.position_x),
+            position_y: Math.round(position.position_y)
           })
           .select()
           .single();

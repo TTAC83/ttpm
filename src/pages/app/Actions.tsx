@@ -35,10 +35,12 @@ interface Action {
 
 export const Actions = () => {
   const { user, profile } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [actions, setActions] = useState<Action[]>([]);
   const [filteredActions, setFilteredActions] = useState<Action[]>([]);
   const [loading, setLoading] = useState(true);
   const [showMyActions, setShowMyActions] = useState(false);
+  const [highlightedActionId, setHighlightedActionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (user && profile) {
@@ -53,6 +55,18 @@ export const Actions = () => {
       setFilteredActions(actions);
     }
   }, [actions, showMyActions, user]);
+
+  // Handle URL parameter to highlight specific action
+  useEffect(() => {
+    const highlightActionId = searchParams.get('highlightAction');
+    if (highlightActionId) {
+      setHighlightedActionId(highlightActionId);
+      // Remove the parameter from URL after highlighting
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete('highlightAction');
+      setSearchParams(newSearchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const fetchActions = async () => {
     try {
@@ -161,7 +175,10 @@ export const Actions = () => {
                   </TableRow>
                 ) : (
                   filteredActions.map((action) => (
-                    <TableRow key={action.id}>
+                    <TableRow 
+                      key={action.id}
+                      className={highlightedActionId === action.id ? 'bg-primary/5 border-primary' : ''}
+                    >
                       <TableCell>
                         <div>
                           <div className="font-medium">{action.title}</div>

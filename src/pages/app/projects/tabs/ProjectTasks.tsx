@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -48,6 +49,7 @@ interface ProjectTasksProps {
 const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
   const { profile, user } = useAuth();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,6 +71,21 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
     fetchProfiles();
     checkProjectMembership();
   }, [projectId, user]);
+
+  // Handle URL parameter to automatically open edit dialog for specific task
+  useEffect(() => {
+    const highlightTaskId = searchParams.get('highlightTask');
+    if (highlightTaskId && tasks.length > 0) {
+      const taskToEdit = tasks.find(task => task.id === highlightTaskId);
+      if (taskToEdit) {
+        setEditingTask(taskToEdit);
+        // Remove the parameter from URL after opening dialog
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete('highlightTask');
+        setSearchParams(newSearchParams, { replace: true });
+      }
+    }
+  }, [tasks, searchParams, setSearchParams]);
 
   const fetchTasks = async () => {
     try {

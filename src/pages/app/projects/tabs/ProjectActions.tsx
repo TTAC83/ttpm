@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -58,6 +59,7 @@ interface ProjectActionsProps {
 const ProjectActions = ({ projectId }: ProjectActionsProps) => {
   const { profile, user } = useAuth();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [actions, setActions] = useState<Action[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -73,6 +75,22 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
     fetchAllActions();
     checkProjectMembership();
   }, [projectId, user]);
+
+  // Handle URL parameter to automatically open edit dialog for specific action
+  useEffect(() => {
+    const highlightActionId = searchParams.get('highlightAction');
+    if (highlightActionId && actions.length > 0) {
+      const actionToEdit = actions.find(action => action.id === highlightActionId);
+      if (actionToEdit) {
+        setEditingAction(actionToEdit);
+        setEditDialogOpen(true);
+        // Remove the parameter from URL after opening dialog
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete('highlightAction');
+        setSearchParams(newSearchParams, { replace: true });
+      }
+    }
+  }, [actions, searchParams, setSearchParams]);
 
   const checkProjectMembership = async () => {
     if (!user || profile?.is_internal) {

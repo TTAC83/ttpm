@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -58,6 +59,7 @@ interface ProjectMember {
 const ProjectCalendar = ({ projectId }: ProjectCalendarProps) => {
   const { profile } = useAuth();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   
   const [events, setEvents] = useState<ProjectEvent[]>([]);
   const [criticalEvents, setCriticalEvents] = useState<CriticalEvent[]>([]);
@@ -83,6 +85,21 @@ const ProjectCalendar = ({ projectId }: ProjectCalendarProps) => {
     fetchCriticalEvents();
     fetchProjectMembers();
   }, [projectId]);
+
+  // Handle URL parameter to automatically open edit dialog for specific event
+  useEffect(() => {
+    const highlightEventId = searchParams.get('highlightEvent');
+    if (highlightEventId && events.length > 0) {
+      const eventToEdit = events.find(event => event.id === highlightEventId);
+      if (eventToEdit) {
+        openEventDialog(eventToEdit);
+        // Remove the parameter from URL after opening dialog
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete('highlightEvent');
+        setSearchParams(newSearchParams, { replace: true });
+      }
+    }
+  }, [events, searchParams, setSearchParams]);
 
   const fetchCriticalEvents = async () => {
     if (!projectId) return;

@@ -36,6 +36,9 @@ import Actions from "./pages/app/Actions";
 import GlobalTasks from "./pages/app/GlobalTasks";
 import GlobalCalendar from "./pages/app/GlobalCalendar";
 import GlobalModels from "./pages/app/GlobalModels";
+import { SolutionsList } from "./pages/app/solutions/SolutionsList";
+import { NewSolutionsProject } from "./pages/app/solutions/NewSolutionsProject";
+import { SolutionsProjectDetail } from "./pages/app/solutions/SolutionsProjectDetail";
 
 const queryClient = new QueryClient();
 
@@ -196,6 +199,16 @@ const App = () => (
                 } 
               />
               <Route path="projects/:id" element={<ProjectDetail />} />
+              <Route path="solutions" element={<SolutionsList />} />
+              <Route 
+                path="solutions/new" 
+                element={
+                  <AuthGuard requiredRole="internal_admin">
+                    <NewSolutionsProject />
+                  </AuthGuard>
+                } 
+              />
+              <Route path="solutions/:id" element={<SolutionsProjectDetail />} />
               <Route path="actions" element={<Actions />} />
               <Route path="tasks" element={<GlobalTasks />} />
               <Route path="calendar" element={<GlobalCalendar />} />

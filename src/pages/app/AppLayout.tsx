@@ -82,6 +82,12 @@ export const AppLayout = () => {
       show: true
     },
     {
+      title: 'Solutions Consulting',
+      icon: Eye,
+      path: '/app/solutions',
+      show: true
+    },
+    {
       title: 'Profile',
       icon: User,
       path: '/app/profile',

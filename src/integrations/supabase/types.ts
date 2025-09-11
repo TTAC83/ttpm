@@ -784,6 +784,48 @@ export type Database = {
           },
         ]
       }
+      solutions_projects: {
+        Row: {
+          company_name: string
+          created_at: string
+          created_by: string
+          customer_lead: string | null
+          domain: Database["public"]["Enums"]["work_domain"]
+          id: string
+          salesperson: string | null
+          site_address: string | null
+          site_name: string
+          solutions_consultant: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          created_by: string
+          customer_lead?: string | null
+          domain: Database["public"]["Enums"]["work_domain"]
+          id?: string
+          salesperson?: string | null
+          site_address?: string | null
+          site_name: string
+          solutions_consultant?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          created_by?: string
+          customer_lead?: string | null
+          domain?: Database["public"]["Enums"]["work_domain"]
+          id?: string
+          salesperson?: string | null
+          site_address?: string | null
+          site_name?: string
+          solutions_consultant?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       subtasks: {
         Row: {
           actual_end: string | null

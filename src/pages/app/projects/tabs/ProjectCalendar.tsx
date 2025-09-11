@@ -89,26 +89,16 @@ const ProjectCalendar = ({ projectId }: ProjectCalendarProps) => {
   // Handle URL parameter to automatically open edit dialog for specific event
   useEffect(() => {
     const highlightEventId = searchParams.get('highlightEvent');
-    console.log('Checking for highlightEvent:', highlightEventId);
-    console.log('Events loaded:', events.length);
     
     if (highlightEventId && events.length > 0 && !loading) {
-      console.log('Looking for event with ID:', highlightEventId);
-      const eventToEdit = events.find(event => {
-        console.log('Comparing event ID:', event.id, 'with highlight ID:', highlightEventId);
-        return event.id === highlightEventId;
-      });
+      const eventToEdit = events.find(event => event.id === highlightEventId);
       
       if (eventToEdit) {
-        console.log('Found event to edit:', eventToEdit);
         openEventDialog(eventToEdit);
         // Remove the parameter from URL after opening dialog
         const newSearchParams = new URLSearchParams(searchParams);
         newSearchParams.delete('highlightEvent');
         setSearchParams(newSearchParams, { replace: true });
-      } else {
-        console.log('Event not found with ID:', highlightEventId);
-        console.log('Available event IDs:', events.map(e => e.id));
       }
     }
   }, [events, searchParams, setSearchParams, loading]);

@@ -272,8 +272,10 @@ export const Dashboard = () => {
       // Navigate to actions page and scroll to the specific action
       navigate(`/app/actions?highlightAction=${actionId}`);
     } else if (event.type === 'calendar' && event.project_id) {
-      // Extract event ID from the event id (format: calendar-{eventId}-{date})
-      const eventId = event.id.split('-')[1];
+      // Extract event ID from the event id (format: calendar-{fullEventId}-{date})
+      // Split by '-' and rejoin all parts except the first (calendar) and last (date)
+      const parts = event.id.split('-');
+      const eventId = parts.slice(1, -1).join('-'); // This gets the full UUID
       // Navigate to project with calendar tab and highlight the specific event
       navigate(`/app/projects/${event.project_id}?tab=calendar&highlightEvent=${eventId}`);
     }

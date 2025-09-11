@@ -277,6 +277,22 @@ export const Dashboard = () => {
         <CardHeader>
           <CardTitle className="text-lg">Critical Events</CardTitle>
           <CardDescription>Critical tasks, actions, and events for the next 7 days</CardDescription>
+          
+          {/* Legend */}
+          <div className="flex flex-wrap gap-4 mt-4 p-3 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-orange-50 border-2 border-amber-700 rounded"></div>
+              <span className="text-xs text-muted-foreground">📋 Critical Tasks</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-slate-50 border-2 border-slate-500 rounded"></div>
+              <span className="text-xs text-muted-foreground">⚡ Critical Actions</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-slate-50 border-2 border-black rounded"></div>
+              <span className="text-xs text-muted-foreground">📅 Critical Events</span>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-7 gap-2">
@@ -301,19 +317,14 @@ export const Dashboard = () => {
                   <div className="space-y-1">
                     {dayEvents.map((event) => {
                       const getEventColor = () => {
-                        if (event.is_critical) {
-                          return 'bg-destructive/10 text-destructive border border-destructive/20';
+                        if (event.type === 'task') {
+                          return 'bg-orange-50 text-orange-800 border-2 border-amber-700'; // Brown border for critical tasks
+                        } else if (event.type === 'action') {
+                          return 'bg-slate-50 text-slate-800 border-2 border-slate-500'; // Grey border for critical actions
+                        } else if (event.type === 'calendar') {
+                          return 'bg-slate-50 text-slate-900 border-2 border-black'; // Dark black border for critical events
                         }
-                        switch (event.type) {
-                          case 'task':
-                            return 'bg-info/10 text-info border border-info/20';
-                          case 'action':
-                            return 'bg-warning/10 text-warning border border-warning/20';
-                          case 'calendar':
-                            return 'bg-accent/10 text-accent border border-accent/20';
-                          default:
-                            return 'bg-primary/10 text-primary border border-primary/20';
-                        }
+                        return 'bg-primary/10 text-primary border border-primary/20';
                       };
 
                       const getEventIcon = () => {

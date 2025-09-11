@@ -24,6 +24,10 @@ interface ProjectEvent {
   created_at: string;
   created_by: string;
   updated_at: string;
+  // Enriched fields for display
+  project_name?: string;
+  company_name?: string;
+  // Optional nested shape if relationships become available later
   projects?: {
     name: string;
     companies?: {
@@ -57,39 +61,71 @@ export const GlobalCalendar = () => {
   useEffect(() => {
     const fetchEvents = async () => {
       setLoading(true);
-      
       try {
-        let query = supabase
-          .from('project_events')
-          .select(`
-            *,
-            projects!inner(
-              name,
-              companies!inner(
-                name
-              )
-            )
-          `)
-          .order('start_date', { ascending: true });
-
-        // Filter by company if selected
+        // If filtering by company, first collect project IDs for that company
+        let projectFilterIds: string[] | null = null;
         if (selectedCompany !== 'all') {
-          query = query.eq('projects.companies.id', selectedCompany);
+          const { data: projIds, error: projErr } = await supabase
+            .from('projects')
+            .select('id')
+            .eq('company_id', selectedCompany);
+          if (projErr) throw projErr;
+          projectFilterIds = (projIds?.map((p: any) => p.id) ?? []);
+          if (!projectFilterIds.length) {
+            setEvents([]);
+            setLoading(false);
+            return;
+          }
         }
 
-        const { data, error } = await query;
-        
-        if (error) {
-          console.error('Error fetching events:', error);
-        } else if (data) {
-          console.log('Fetched events:', data);
-          setEvents(data as any);
+        // Fetch raw events
+        let eventsQuery = supabase
+          .from('project_events')
+          .select('*')
+          .order('start_date', { ascending: true });
+        if (projectFilterIds) {
+          eventsQuery = eventsQuery.in('project_id', projectFilterIds);
         }
+        const { data: eventsData, error: eventsErr } = await eventsQuery;
+        if (eventsErr) throw eventsErr;
+
+        // Enrich with project and company names
+        const uniqueProjectIds = Array.from(new Set((eventsData ?? []).map((e: any) => e.project_id))).filter(Boolean) as string[];
+        const projectMap = new Map<string, { name: string; company_id: string | null }>();
+        const companyMap = new Map<string, { name: string }>();
+
+        if (uniqueProjectIds.length) {
+          const { data: projectsData, error: projectsErr } = await supabase
+            .from('projects')
+            .select('id, name, company_id')
+            .in('id', uniqueProjectIds);
+          if (projectsErr) throw projectsErr;
+          projectsData?.forEach((p: any) => projectMap.set(p.id, { name: p.name, company_id: p.company_id }));
+
+          const uniqueCompanyIds = Array.from(new Set((projectsData ?? []).map((p: any) => p.company_id).filter(Boolean)));
+          if (uniqueCompanyIds.length) {
+            const { data: companiesData, error: companiesErr } = await supabase
+              .from('companies')
+              .select('id, name')
+              .in('id', uniqueCompanyIds as string[]);
+            if (companiesErr) throw companiesErr;
+            companiesData?.forEach((c: any) => companyMap.set(c.id, { name: c.name }));
+          }
+        }
+
+        const enriched = (eventsData ?? []).map((e: any) => {
+          const p = projectMap.get(e.project_id);
+          const cName = p?.company_id ? companyMap.get(p.company_id)?.name : undefined;
+          return { ...e, project_name: p?.name, company_name: cName } as ProjectEvent;
+        });
+
+        setEvents(enriched as any);
       } catch (error) {
-        console.error('Error in fetchEvents:', error);
+        console.error('Error fetching events:', error);
+        setEvents([]);
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
 
     fetchEvents();
@@ -335,10 +371,10 @@ export const GlobalCalendar = () => {
                       
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <div>
-                          <span className="font-medium">Project:</span> {event.projects?.name}
+                          <span className="font-medium">Project:</span> {event.projects?.name ?? event.project_name}
                         </div>
                         <div>
-                          <span className="font-medium">Company:</span> {event.projects?.companies?.name}
+                          <span className="font-medium">Company:</span> {event.projects?.companies?.name ?? event.company_name}
                         </div>
                         <div>
                           <span className="font-medium">Duration:</span> {getEventDuration(event.start_date, event.end_date)}

@@ -304,6 +304,7 @@ export const LineWizard: React.FC<LineWizardProps> = ({
               .from('iot_devices')
               .insert({
                 equipment_id: equipmentData.id,
+                name: iot.name,
                 mac_address: iot.mac_address,
                 receiver_mac_address: iot.receiver_mac_address
               });

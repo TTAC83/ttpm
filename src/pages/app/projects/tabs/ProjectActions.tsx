@@ -174,25 +174,36 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
 
   const fetchAllActions = async () => {
     try {
-      const { data, error } = await supabase
-        .from('actions')
-        .select(`
-          *,
-          profiles:assignee (
-            name
-          ),
-          project_tasks (
-            task_title,
-            step_name,
-            project_id
-          )
-        `)
-        .or(`project_id.eq.${projectId},project_tasks.project_id.eq.${projectId}`)
-        .order('is_critical', { ascending: false })
-        .order('created_at', { ascending: false });
+      const [withTask, withoutTask] = await Promise.all([
+        supabase
+          .from('actions')
+          .select(`
+            *,
+            profiles:assignee ( name ),
+            project_tasks!inner ( task_title, step_name, project_id )
+          `)
+          .eq('project_tasks.project_id', projectId),
+        supabase
+          .from('actions')
+          .select(`
+            *,
+            profiles:assignee ( name ),
+            project_tasks ( task_title, step_name, project_id )
+          `)
+          .eq('project_id', projectId)
+      ]);
 
-      if (error) throw error;
-      setActions(data || []);
+      if (withTask.error) throw withTask.error;
+      if (withoutTask.error) throw withoutTask.error;
+
+      const map = new Map<string, any>();
+      [...(withTask.data || []), ...(withoutTask.data || [])].forEach((a) => map.set(a.id, a));
+      const merged = Array.from(map.values()).sort((a: any, b: any) => {
+        if (a.is_critical !== b.is_critical) return a.is_critical ? -1 : 1;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+
+      setActions(merged);
     } catch (error: any) {
       toast({
         title: "Error",

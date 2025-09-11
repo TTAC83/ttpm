@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -40,6 +40,7 @@ interface Project {
 export const ProjectDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { profile } = useAuth();
   const { toast } = useToast();
   
@@ -52,6 +53,14 @@ export const ProjectDetail = () => {
       fetchProject();
     }
   }, [id]);
+
+  useEffect(() => {
+    // Handle URL parameters to set active tab
+    const tab = searchParams.get('tab');
+    if (tab && ['overview', 'lines', 'tasks', 'gantt', 'actions', 'calendar', 'audit'].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   const fetchProject = async () => {
     if (!id) return;

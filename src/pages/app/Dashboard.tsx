@@ -264,16 +264,18 @@ export const Dashboard = () => {
 
   const handleEventDoubleClick = (event: UpcomingEvent) => {
     if (event.type === 'task' && event.project_id && event.task_id) {
-      // Navigate to specific task detail page
-      navigate(`/app/projects/${event.project_id}?tab=tasks&taskId=${event.task_id}`);
+      // Navigate to project with tasks tab and highlight the specific task
+      navigate(`/app/projects/${event.project_id}?tab=tasks&highlightTask=${event.task_id}`);
     } else if (event.type === 'action') {
       // Extract action ID from the event id (format: action-{actionId})
       const actionId = event.id.replace('action-', '');
-      navigate(`/app/actions?actionId=${actionId}`);
+      // Navigate to actions page and scroll to the specific action
+      navigate(`/app/actions?highlightAction=${actionId}`);
     } else if (event.type === 'calendar' && event.project_id) {
       // Extract event ID from the event id (format: calendar-{eventId}-{date})
       const eventId = event.id.split('-')[1];
-      navigate(`/app/projects/${event.project_id}?tab=calendar&eventId=${eventId}`);
+      // Navigate to project with calendar tab and highlight the specific event
+      navigate(`/app/projects/${event.project_id}?tab=calendar&highlightEvent=${eventId}`);
     }
   };
 

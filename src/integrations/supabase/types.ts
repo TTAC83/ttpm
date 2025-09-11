@@ -23,7 +23,8 @@ export type Database = {
           is_critical: boolean
           notes: string | null
           planned_date: string | null
-          project_task_id: string
+          project_id: string | null
+          project_task_id: string | null
           status: Database["public"]["Enums"]["action_status"]
           title: string
         }
@@ -35,7 +36,8 @@ export type Database = {
           is_critical?: boolean
           notes?: string | null
           planned_date?: string | null
-          project_task_id: string
+          project_id?: string | null
+          project_task_id?: string | null
           status?: Database["public"]["Enums"]["action_status"]
           title: string
         }
@@ -47,7 +49,8 @@ export type Database = {
           is_critical?: boolean
           notes?: string | null
           planned_date?: string | null
-          project_task_id?: string
+          project_id?: string | null
+          project_task_id?: string | null
           status?: Database["public"]["Enums"]["action_status"]
           title?: string
         }
@@ -58,6 +61,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "actions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "actions_project_task_id_fkey"

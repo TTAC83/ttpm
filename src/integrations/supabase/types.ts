@@ -791,11 +791,16 @@ export type Database = {
           created_by: string
           customer_lead: string | null
           domain: Database["public"]["Enums"]["work_domain"]
+          gateways_required: number | null
           id: string
+          lines_required: number | null
+          receivers_required: number | null
           salesperson: string | null
+          servers_required: number | null
           site_address: string | null
           site_name: string
           solutions_consultant: string | null
+          tv_display_devices_required: number | null
           updated_at: string
         }
         Insert: {
@@ -804,11 +809,16 @@ export type Database = {
           created_by: string
           customer_lead?: string | null
           domain: Database["public"]["Enums"]["work_domain"]
+          gateways_required?: number | null
           id?: string
+          lines_required?: number | null
+          receivers_required?: number | null
           salesperson?: string | null
+          servers_required?: number | null
           site_address?: string | null
           site_name: string
           solutions_consultant?: string | null
+          tv_display_devices_required?: number | null
           updated_at?: string
         }
         Update: {
@@ -817,11 +827,16 @@ export type Database = {
           created_by?: string
           customer_lead?: string | null
           domain?: Database["public"]["Enums"]["work_domain"]
+          gateways_required?: number | null
           id?: string
+          lines_required?: number | null
+          receivers_required?: number | null
           salesperson?: string | null
+          servers_required?: number | null
           site_address?: string | null
           site_name?: string
           solutions_consultant?: string | null
+          tv_display_devices_required?: number | null
           updated_at?: string
         }
         Relationships: []

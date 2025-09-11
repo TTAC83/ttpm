@@ -4,7 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Building, Calendar, MapPin } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { ArrowLeft, Building, Calendar, MapPin, Factory } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -17,6 +19,11 @@ interface SolutionsProject {
   salesperson?: string;
   solutions_consultant?: string;
   customer_lead?: string;
+  servers_required?: number;
+  gateways_required?: number;
+  tv_display_devices_required?: number;
+  receivers_required?: number;
+  lines_required?: number;
   created_at: string;
   updated_at: string;
 }
@@ -36,6 +43,13 @@ export const SolutionsProjectDetail = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [factoryData, setFactoryData] = useState({
+    servers_required: 0,
+    gateways_required: 0,
+    tv_display_devices_required: 0,
+    receivers_required: 0,
+    lines_required: 0,
+  });
 
   const fetchProject = async () => {
     if (!id) return;
@@ -49,6 +63,17 @@ export const SolutionsProjectDetail = () => {
 
       if (error) throw error;
       setProject(data);
+      
+      // Set factory data from project
+      if (data) {
+        setFactoryData({
+          servers_required: data.servers_required || 0,
+          gateways_required: data.gateways_required || 0,
+          tv_display_devices_required: data.tv_display_devices_required || 0,
+          receivers_required: data.receivers_required || 0,
+          lines_required: data.lines_required || 0,
+        });
+      }
     } catch (error) {
       console.error('Error fetching solutions project:', error);
       toast({
@@ -84,7 +109,7 @@ export const SolutionsProjectDetail = () => {
   useEffect(() => {
     // Handle URL parameters to set active tab
     const tab = searchParams.get('tab');
-    if (tab && ['overview'].includes(tab)) {
+    if (tab && ['overview', 'factory'].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -104,6 +129,32 @@ export const SolutionsProjectDetail = () => {
         return 'outline';
       default:
         return 'secondary';
+    }
+  };
+
+  const handleFactoryUpdate = async (field: string, value: number) => {
+    if (!project) return;
+
+    try {
+      const { error } = await supabase
+        .from('solutions_projects')
+        .update({ [field]: value })
+        .eq('id', project.id);
+
+      if (error) throw error;
+
+      setFactoryData(prev => ({ ...prev, [field]: value }));
+      toast({
+        title: 'Success',
+        description: 'Factory requirement updated successfully',
+      });
+    } catch (error) {
+      console.error('Error updating factory requirement:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update factory requirement',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -190,6 +241,75 @@ export const SolutionsProjectDetail = () => {
     </div>
   );
 
+  const FactoryRequirements = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Factory className="h-5 w-5" />
+          Factory Requirements
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="servers">Servers Required</Label>
+            <Input
+              id="servers"
+              type="number"
+              min="0"
+              value={factoryData.servers_required}
+              onChange={(e) => handleFactoryUpdate('servers_required', parseInt(e.target.value) || 0)}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="gateways">Gateways Required</Label>
+            <Input
+              id="gateways"
+              type="number"
+              min="0"
+              value={factoryData.gateways_required}
+              onChange={(e) => handleFactoryUpdate('gateways_required', parseInt(e.target.value) || 0)}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="tvdisplays">TV Display Devices Required</Label>
+            <Input
+              id="tvdisplays"
+              type="number"
+              min="0"
+              value={factoryData.tv_display_devices_required}
+              onChange={(e) => handleFactoryUpdate('tv_display_devices_required', parseInt(e.target.value) || 0)}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="receivers">Receivers Required</Label>
+            <Input
+              id="receivers"
+              type="number"
+              min="0"
+              value={factoryData.receivers_required}
+              onChange={(e) => handleFactoryUpdate('receivers_required', parseInt(e.target.value) || 0)}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="lines">Lines Required</Label>
+            <Input
+              id="lines"
+              type="number"
+              min="0"
+              value={factoryData.lines_required}
+              onChange={(e) => handleFactoryUpdate('lines_required', parseInt(e.target.value) || 0)}
+            />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -261,12 +381,17 @@ export const SolutionsProjectDetail = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-1 lg:w-auto">
+        <TabsList className="grid grid-cols-2 lg:w-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="factory">Factory</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
           <SolutionsOverview />
+        </TabsContent>
+
+        <TabsContent value="factory" className="space-y-4">
+          <FactoryRequirements />
         </TabsContent>
       </Tabs>
     </div>

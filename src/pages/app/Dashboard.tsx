@@ -79,7 +79,7 @@ export const Dashboard = () => {
         
         const allEvents: UpcomingEvent[] = [];
 
-        // Fetch tasks with planned dates within range
+        // Fetch critical tasks with planned dates within range (filter by critical statuses)
         const { data: tasksData, error: tasksError } = await supabase
           .from('project_tasks')
           .select(`
@@ -96,7 +96,8 @@ export const Dashboard = () => {
           `)
           .or(`planned_start.gte.${startDate},planned_end.gte.${startDate}`)
           .or(`planned_start.lte.${endDate},planned_end.lte.${endDate}`)
-          .not('planned_start', 'is', null);
+          .not('planned_start', 'is', null)
+          .in('status', ['Blocked']); // Only critical task statuses
 
         if (!tasksError && tasksData) {
           tasksData.forEach(task => {
@@ -131,7 +132,7 @@ export const Dashboard = () => {
           });
         }
 
-        // Fetch actions with planned dates within range
+        // Fetch critical actions with planned dates within range
         const { data: actionsData, error: actionsError } = await supabase
           .from('actions')
           .select(`
@@ -151,7 +152,8 @@ export const Dashboard = () => {
           `)
           .gte('planned_date', startDate)
           .lte('planned_date', endDate)
-          .not('planned_date', 'is', null);
+          .not('planned_date', 'is', null)
+          .eq('is_critical', true); // Only critical actions
 
         if (!actionsError && actionsData) {
           actionsData.forEach(action => {
@@ -170,7 +172,7 @@ export const Dashboard = () => {
           });
         }
 
-        // Fetch calendar events within range
+        // Fetch critical calendar events within range
         const { data: calendarData, error: calendarError } = await supabase
           .from('project_events')
           .select(`
@@ -186,7 +188,8 @@ export const Dashboard = () => {
             )
           `)
           .or(`start_date.gte.${startDate},end_date.gte.${startDate}`)
-          .or(`start_date.lte.${endDate},end_date.lte.${endDate}`);
+          .or(`start_date.lte.${endDate},end_date.lte.${endDate}`)
+          .eq('is_critical', true); // Only critical calendar events
 
         if (!calendarError && calendarData) {
           calendarData.forEach(event => {
@@ -260,8 +263,8 @@ export const Dashboard = () => {
       {/* 7-Day Calendar */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Upcoming Events</CardTitle>
-          <CardDescription>Events across all projects for the next 7 days</CardDescription>
+          <CardTitle className="text-lg">Critical Events</CardTitle>
+          <CardDescription>Critical tasks, actions, and events for the next 7 days</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-7 gap-2">

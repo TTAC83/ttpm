@@ -17,6 +17,7 @@ interface CreateActionRequest {
   status?: string;
   isUpdate?: boolean;
   project_id?: string; // For actions without specific tasks
+  is_critical?: boolean; // Add critical flag
 }
 
 serve(async (req) => {
@@ -228,7 +229,8 @@ serve(async (req) => {
           assignee: body.assignee || null,
           planned_date: body.planned_date || null,
           notes: body.notes || null,
-          status: 'Open'
+          status: 'Open',
+          is_critical: (typeof body.is_critical === 'boolean') ? body.is_critical : false
         })
         .select()
         .single();

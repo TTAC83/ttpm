@@ -35,6 +35,7 @@ export const Dashboard = () => {
   const navigate = useNavigate();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [events, setEvents] = useState<UpcomingEvent[]>([]);
+  const [allCalendarEvents, setAllCalendarEvents] = useState<UpcomingEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Generate 7-day date range (previous 2 days, today, next 4 days)
@@ -241,7 +242,69 @@ export const Dashboard = () => {
           });
         }
 
+        // Fetch all calendar events within range (not just critical)
+        const { data: allCalendarData, error: allCalendarError } = await supabase
+          .from('project_events')
+          .select(`
+            id,
+            title,
+            start_date,
+            end_date,
+            is_critical,
+            project_id
+          `)
+          .or(`start_date.gte.${startDate},end_date.gte.${startDate}`)
+          .or(`start_date.lte.${endDate},end_date.lte.${endDate}`);
+
+        const allCalendarEventsArray: UpcomingEvent[] = [];
+
+        if (!allCalendarError && allCalendarData) {
+          // Get project and company info for all calendar events
+          const allProjectIds = [...new Set(allCalendarData.map(event => event.project_id))];
+          const { data: allProjectsData } = await supabase
+            .from('projects')
+            .select(`
+              id,
+              name,
+              companies!inner(name)
+            `)
+            .in('id', allProjectIds);
+          
+          const allProjectMap = new Map(allProjectsData?.map(p => [p.id, p]) || []);
+          
+          allCalendarData.forEach(event => {
+            const project = allProjectMap.get(event.project_id);
+            if (!project) return;
+            
+            // For multi-day events, add for each day in range
+            const eventStart = new Date(event.start_date);
+            const eventEnd = new Date(event.end_date);
+            const rangeStart = new Date(startDate);
+            const rangeEnd = new Date(endDate);
+            
+            const currentDate = new Date(Math.max(eventStart.getTime(), rangeStart.getTime()));
+            const endDateToCheck = new Date(Math.min(eventEnd.getTime(), rangeEnd.getTime()));
+            
+            while (currentDate <= endDateToCheck) {
+              allCalendarEventsArray.push({
+                id: `calendar-${event.id}-${currentDate.toISOString().split('T')[0]}`,
+                title: event.title,
+                date: currentDate.toISOString().split('T')[0],
+                type: 'calendar',
+                is_critical: event.is_critical,
+                project_id: event.project_id,
+                project: {
+                  name: project.name,
+                  company: { name: (project.companies as any).name }
+                }
+              });
+              currentDate.setDate(currentDate.getDate() + 1);
+            }
+          });
+        }
+
         setEvents(allEvents);
+        setAllCalendarEvents(allCalendarEventsArray);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
@@ -255,6 +318,11 @@ export const Dashboard = () => {
   const getEventsForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
     return events.filter(event => event.date === dateStr);
+  };
+
+  const getAllCalendarEventsForDate = (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    return allCalendarEvents.filter(event => event.date === dateStr);
   };
 
   const isToday = (date: Date) => {
@@ -379,6 +447,80 @@ export const Dashboard = () => {
                         >
                           <div className="flex items-center gap-1">
                             <span className="text-[10px]">{getEventIcon()}</span>
+                            <div className="font-medium truncate" title={event.title}>
+                              {event.title}
+                            </div>
+                          </div>
+                          <div className="text-muted-foreground truncate" title={event.project.company.name}>
+                            {event.project.company.name}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* All Calendar Events */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">All Calendar Events</CardTitle>
+          <CardDescription>All project calendar events for the next 7 days</CardDescription>
+          
+          {/* Legend */}
+          <div className="flex flex-wrap gap-4 mt-4 p-3 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-red-50 border-2 border-red-600 rounded"></div>
+              <span className="text-xs text-muted-foreground">📅 Critical Events</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-blue-50 border-2 border-blue-500 rounded"></div>
+              <span className="text-xs text-muted-foreground">📅 Regular Events</span>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-7 gap-2">
+            {dateRange.map((date, index) => {
+              const dayCalendarEvents = getAllCalendarEventsForDate(date);
+              const dayName = date.toLocaleDateString('en-GB', { weekday: 'short' });
+              const dayNumber = date.getDate();
+              
+              return (
+                <div
+                  key={index}
+                  className={`p-3 border rounded-lg min-h-[120px] ${
+                    isToday(date) ? 'bg-primary/5 border-primary' : ''
+                  }`}
+                >
+                  <div className="text-center mb-2">
+                    <div className="text-xs text-muted-foreground">{dayName}</div>
+                    <div className={`text-sm font-medium ${isToday(date) ? 'text-primary' : ''}`}>
+                      {dayNumber}
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    {dayCalendarEvents.map((event) => {
+                      const getEventColor = () => {
+                        if (event.is_critical) {
+                          return 'bg-red-50 text-red-800 border-2 border-red-600'; // Red border for critical events
+                        } else {
+                          return 'bg-blue-50 text-blue-800 border-2 border-blue-500'; // Blue border for regular events
+                        }
+                      };
+
+                      return (
+                        <div
+                          key={event.id}
+                          className={`text-xs p-1 rounded text-left cursor-pointer ${getEventColor()}`}
+                          onDoubleClick={() => handleEventDoubleClick(event)}
+                        >
+                          <div className="flex items-center gap-1">
+                            <span className="text-[10px]">📅</span>
                             <div className="font-medium truncate" title={event.title}>
                               {event.title}
                             </div>

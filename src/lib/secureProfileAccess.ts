@@ -19,7 +19,7 @@ export interface SafeProfile {
 
 /**
  * Get safe profile information for users in shared projects
- * This uses the safe_profiles view which only exposes non-sensitive fields
+ * Uses the secure database function that only exposes safe fields
  */
 export async function getSafeProfilesForProject(projectId: string) {
   // First get the user IDs for project members
@@ -33,24 +33,32 @@ export async function getSafeProfilesForProject(projectId: string) {
     return [];
   }
 
-  const userIds = projectMembers.map(member => member.user_id);
+  // Use the secure function to get only safe profile information
+  const profiles: SafeProfile[] = [];
+  
+  for (const member of projectMembers) {
+    const { data, error } = await supabase
+      .rpc('get_safe_profile_info', { target_user_id: member.user_id });
 
-  if (userIds.length === 0) {
-    return [];
+    if (error) {
+      console.error('Error fetching safe profile for user:', member.user_id, error);
+      continue;
+    }
+
+    if (data && data.length > 0) {
+      profiles.push({
+        user_id: data[0].user_id,
+        name: data[0].name,
+        avatar_url: data[0].avatar_url,
+        job_title: null, // Intentionally excluded for security
+        company_id: null, // Intentionally excluded for security  
+        role: data[0].role,
+        is_internal: data[0].is_internal
+      });
+    }
   }
 
-  // Then get safe profiles for those users
-  const { data, error } = await supabase
-    .from('safe_profiles')
-    .select('*')
-    .in('user_id', userIds);
-
-  if (error) {
-    console.error('Error fetching safe profiles:', error);
-    return [];
-  }
-
-  return data as SafeProfile[];
+  return profiles;
 }
 
 /**

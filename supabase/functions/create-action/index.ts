@@ -8,7 +8,7 @@ const corsHeaders = {
 
 interface CreateActionRequest {
   id?: string; // For updates
-  project_task_id: string;
+  project_task_id?: string; // Optional now
   title: string;
   details?: string;
   assignee?: string;
@@ -16,6 +16,7 @@ interface CreateActionRequest {
   notes?: string;
   status?: string;
   isUpdate?: boolean;
+  project_id?: string; // For actions without specific tasks
 }
 
 serve(async (req) => {
@@ -82,14 +83,6 @@ serve(async (req) => {
       );
     }
 
-    if (!body.isUpdate && !body.project_task_id) {
-      console.error('Missing project_task_id for new action');
-      return new Response(
-        JSON.stringify({ error: 'Task ID is required for new actions' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     let taskData;
     let taskError;
 
@@ -112,16 +105,29 @@ serve(async (req) => {
 
       taskData = { project_id: actionData.project_tasks.project_id };
     } else {
-      // For new actions, verify user has access to the project (security check)
-      console.log('Checking project access for task:', body.project_task_id);
-      const result = await supabaseServiceClient
-        .from('project_tasks')
-        .select('project_id')
-        .eq('id', body.project_task_id)
-        .single();
-      
-      taskData = result.data;
-      taskError = result.error;
+      // For new actions, we need either project_task_id or project_id
+      if (body.project_task_id) {
+        // If task is specified, get project from task
+        console.log('Checking project access for task:', body.project_task_id);
+        const result = await supabaseServiceClient
+          .from('project_tasks')
+          .select('project_id')
+          .eq('id', body.project_task_id)
+          .single();
+        
+        taskData = result.data;
+        taskError = result.error;
+      } else if (body.project_id) {
+        // If no task but project_id is provided directly
+        console.log('Using direct project_id:', body.project_id);
+        taskData = { project_id: body.project_id };
+      } else {
+        console.error('Missing both project_task_id and project_id for new action');
+        return new Response(
+          JSON.stringify({ error: 'Either task ID or project ID is required for new actions' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     if (taskError || !taskData) {
@@ -214,7 +220,7 @@ serve(async (req) => {
       const { data: action, error: createError } = await supabaseServiceClient
         .from('actions')
         .insert({
-          project_task_id: body.project_task_id,
+          project_task_id: body.project_task_id || null,
           title: body.title,
           details: body.details || null,
           assignee: body.assignee || null,

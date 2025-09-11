@@ -210,7 +210,8 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
 
       const { data, error } = await supabase.functions.invoke('create-action', {
         body: {
-          ...actionData
+          ...actionData,
+          project_id: actionData.project_task_id ? undefined : projectId // Pass project_id if no task selected
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -472,14 +473,6 @@ const CreateActionDialog = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.project_task_id) {
-      toast({
-        title: "Task required",
-        description: "Please select a task before creating an action.",
-        variant: "destructive",
-      });
-      return;
-    }
     setLoading(true);
     
     try {
@@ -489,7 +482,7 @@ const CreateActionDialog = ({
           assignee: formData.assignee,
           planned_date: formData.planned_date ? toISODateString(formData.planned_date) : null,
           notes: formData.notes || null,
-          project_task_id: formData.project_task_id,
+          project_task_id: formData.project_task_id || null,
           is_critical: formData.is_critical,
         });
     } finally {
@@ -529,15 +522,16 @@ const CreateActionDialog = ({
         </div>
 
         <div className="space-y-2">
-          <Label>Task *</Label>
+          <Label>Task (Optional)</Label>
           <Select 
-            value={formData.project_task_id}
-            onValueChange={(value) => setFormData(prev => ({ ...prev, project_task_id: value }))}
+            value={formData.project_task_id || 'unassigned'} 
+            onValueChange={(value) => setFormData(prev => ({ ...prev, project_task_id: value === 'unassigned' ? '' : value }))}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select a task (required)" />
+              <SelectValue placeholder="Select a task" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="unassigned">No specific task</SelectItem>
               {tasks.map((task) => (
                 <SelectItem key={task.id} value={task.id}>
                   <div className="flex items-center gap-2">
@@ -629,7 +623,7 @@ const CreateActionDialog = ({
         </div>
 
         <div className="flex gap-2 pt-4">
-          <Button type="submit" disabled={loading || !formData.title || !formData.assignee || !formData.project_task_id}>
+          <Button type="submit" disabled={loading || !formData.title || !formData.assignee}>
             <Save className="h-4 w-4 mr-2" />
             {loading ? 'Creating...' : 'Create Action'}
           </Button>

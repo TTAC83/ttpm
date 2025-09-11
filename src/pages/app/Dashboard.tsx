@@ -172,7 +172,9 @@ export const Dashboard = () => {
           .not('planned_date', 'is', null)
           .eq('is_critical', true);
 
-        if (actionsError) throw actionsError;
+        if (actionsError) {
+          console.warn('Actions query failed, continuing without actions:', actionsError);
+        }
 
         const actionsWithTasksOnly = (actionsData || []).filter(a => a.project_task_id);
         const actionsWithoutTasksOnly = (actionsData || []).filter(a => !a.project_task_id && a.project_id);
@@ -180,14 +182,15 @@ export const Dashboard = () => {
         // Fetch related project_tasks for actions with tasks
         const projectTaskIds = [...new Set(actionsWithTasksOnly.map(a => a.project_task_id))] as string[];
         let projectTasksMap = new Map<string, { id: string; project_id: string }>();
-        if (projectTaskIds.length > 0) {
           const { data: projectTasksData, error: projectTasksError } = await supabase
             .from('project_tasks')
             .select('id, project_id')
             .in('id', projectTaskIds);
-          if (projectTasksError) throw projectTasksError;
-          projectTasksMap = new Map((projectTasksData || []).map(pt => [pt.id, pt as any]));
-        }
+          if (projectTasksError) {
+            console.warn('Project tasks lookup failed, actions with tasks will be skipped:', projectTasksError);
+          } else {
+            projectTasksMap = new Map((projectTasksData || []).map(pt => [pt.id, pt as any]));
+          }
 
         // Collect all project_ids to fetch their names and companies
         const projectIdsFromTasks = [...new Set(Array.from(projectTasksMap.values()).map(pt => pt.project_id))];
@@ -202,27 +205,30 @@ export const Dashboard = () => {
             .from('projects')
             .select('id, name, company_id')
             .in('id', allProjectIds);
-          if (projectsError) throw projectsError;
-          projectsMap = new Map((projectsData || []).map(p => [p.id, p as any]));
+          if (!projectsError && projectsData) {
+            projectsMap = new Map((projectsData || []).map(p => [p.id, p as any]));
 
-          const companyIds = [...new Set((projectsData || []).map(p => p.company_id).filter(Boolean))] as string[];
-          if (companyIds.length > 0) {
-            const { data: companiesData, error: companiesError } = await supabase
-              .from('companies')
-              .select('id, name')
-              .in('id', companyIds);
-            if (companiesError) throw companiesError;
-            companiesMap = new Map((companiesData || []).map(c => [c.id, c as any]));
+            const companyIds = [...new Set((projectsData || []).map(p => p.company_id).filter(Boolean))] as string[];
+            if (companyIds.length > 0) {
+              const { data: companiesData, error: companiesError } = await supabase
+                .from('companies')
+                .select('id, name')
+                .in('id', companyIds);
+              if (!companiesError && companiesData) {
+                companiesMap = new Map((companiesData || []).map(c => [c.id, c as any]));
+              } else {
+                console.warn('Companies lookup failed, company names may be missing:', companiesError);
+              }
+            }
+          } else {
+            console.warn('Projects lookup failed, project names may be missing:', projectsError);
           }
         }
 
         // Process actions with tasks
         actionsWithTasksOnly.forEach(action => {
-          const pt = projectTasksMap.get(action.project_task_id as string);
-          if (!pt) return;
-          const project = projectsMap.get(pt.project_id);
-          if (!project) return;
-          const company = project.company_id ? companiesMap.get(project.company_id) : null;
+          const project = action.project_id ? projectsMap.get(action.project_id as string) : undefined;
+          const company = project && project.company_id ? companiesMap.get(project.company_id) : null;
 
           allEvents.push({
             id: `action-${action.id}`,
@@ -231,7 +237,7 @@ export const Dashboard = () => {
             type: 'action',
             status: action.status,
             is_critical: action.is_critical,
-            project_id: pt.project_id,
+            project_id: (action.project_id as string) || undefined,
             project: {
               name: project?.name || 'Unknown Project',
               company: { name: company?.name || 'Unknown Company' }
@@ -295,9 +301,8 @@ export const Dashboard = () => {
           }
           
           calendarData.forEach(event => {
-            const project = calProjectMap.get(event.project_id);
-            if (!project) return;
-            const company = project.company_id ? calCompaniesMap.get(project.company_id) : null;
+          const project = calProjectMap.get(event.project_id);
+          const company = project && project.company_id ? calCompaniesMap.get(project.company_id) : null;
             
             // For multi-day events, add for each day in range
             const eventStart = new Date(event.start_date);
@@ -363,8 +368,7 @@ export const Dashboard = () => {
           
           allCalendarData.forEach(event => {
             const project = allProjectMap.get(event.project_id);
-            if (!project) return;
-            const company = project.company_id ? allCompaniesMap.get(project.company_id) : null;
+            const company = project && project.company_id ? allCompaniesMap.get(project.company_id) : null;
             
             // For multi-day events, add for each day in range
             const eventStart = new Date(event.start_date);

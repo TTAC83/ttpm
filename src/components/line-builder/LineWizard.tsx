@@ -10,11 +10,17 @@ import { DeviceAssignment } from "./steps/DeviceAssignment";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-interface Equipment {
+interface Position {
   id: string;
   name: string;
   position_x: number;
   position_y: number;
+  equipment: Equipment[];
+}
+
+interface Equipment {
+  id: string;
+  name: string;
   equipment_type?: string;
   titles: Array<{ id: string; title: "RLE" | "OP" }>;
   cameras: Array<{
@@ -49,7 +55,7 @@ export const LineWizard: React.FC<LineWizardProps> = ({
     min_speed: 0,
     max_speed: 0,
   });
-  const [equipment, setEquipment] = useState<Equipment[]>([]);
+  const [positions, setPositions] = useState<Position[]>([]);
   const { toast } = useToast();
 
   const steps = [
@@ -75,6 +81,16 @@ export const LineWizard: React.FC<LineWizardProps> = ({
 
   const handleComplete = async () => {
     try {
+      // Calculate totals
+      const totalCameras = positions.reduce(
+        (acc, pos) => acc + pos.equipment.reduce((eqAcc, eq) => eqAcc + eq.cameras.length, 0), 
+        0
+      );
+      const totalIotDevices = positions.reduce(
+        (acc, pos) => acc + pos.equipment.reduce((eqAcc, eq) => eqAcc + eq.iot_devices.length, 0), 
+        0
+      );
+
       // Create the line
       const { data: lineResult, error: lineError } = await supabase
         .from("lines")
@@ -83,83 +99,82 @@ export const LineWizard: React.FC<LineWizardProps> = ({
           line_name: lineData.name,
           min_speed: lineData.min_speed,
           max_speed: lineData.max_speed,
-          camera_count: equipment.reduce((acc, eq) => acc + eq.cameras.length, 0),
-          iot_device_count: equipment.reduce((acc, eq) => acc + eq.iot_devices.length, 0),
+          camera_count: totalCameras,
+          iot_device_count: totalIotDevices,
         })
         .select()
         .single();
 
       if (lineError) throw lineError;
 
-      const lineId = lineResult.id;
-
-      // Create equipment
-      for (const eq of equipment) {
-        const { data: equipmentResult, error: equipmentError } = await supabase
-          .from("equipment")
+      // Create positions and equipment
+      for (const position of positions) {
+        const { data: positionData, error: positionError } = await supabase
+          .from('positions')
           .insert({
-            line_id: lineId,
-            name: eq.name,
-            position_x: eq.position_x,
-            position_y: eq.position_y,
-            equipment_type: eq.equipment_type,
+            line_id: lineResult.id,
+            name: position.name,
+            position_x: position.position_x,
+            position_y: position.position_y
           })
           .select()
           .single();
 
-        if (equipmentError) throw equipmentError;
+        if (positionError) throw positionError;
 
-        const equipmentId = equipmentResult.id;
+        // Create equipment for this position
+        for (const eq of position.equipment) {
+          const { data: equipmentData, error: equipmentError } = await supabase
+            .from('equipment')
+            .insert({
+              line_id: lineResult.id,
+              position_id: positionData.id,
+              name: eq.name,
+              equipment_type: eq.equipment_type || "Machine"
+            })
+            .select()
+            .single();
 
-        // Create titles
-        if (eq.titles.length > 0) {
-          const titlesData = eq.titles.map((title) => ({
-            equipment_id: equipmentId,
-            title: title.title,
-          }));
-          
-          const { error: titlesError } = await supabase
-            .from("equipment_titles")
-            .insert(titlesData);
+          if (equipmentError) throw equipmentError;
 
-          if (titlesError) throw titlesError;
-        }
+          // Create titles for this equipment
+          for (const title of eq.titles) {
+            await supabase
+              .from('equipment_titles')
+              .insert({
+                equipment_id: equipmentData.id,
+                title: title.title
+              });
+          }
 
-        // Create cameras
-        if (eq.cameras.length > 0) {
-          const camerasData = eq.cameras.map((camera) => ({
-            equipment_id: equipmentId,
-            camera_type: camera.camera_type,
-            lens_type: camera.lens_type,
-            mac_address: camera.mac_address,
-          }));
+          // Create cameras for this equipment
+          for (const camera of eq.cameras) {
+            await supabase
+              .from('cameras')
+              .insert({
+                equipment_id: equipmentData.id,
+                camera_type: camera.camera_type,
+                lens_type: camera.lens_type,
+                mac_address: camera.mac_address
+              });
+          }
 
-          const { error: camerasError } = await supabase
-            .from("cameras")
-            .insert(camerasData);
-
-          if (camerasError) throw camerasError;
-        }
-
-        // Create IoT devices
-        if (eq.iot_devices.length > 0) {
-          const iotData = eq.iot_devices.map((device) => ({
-            equipment_id: equipmentId,
-            mac_address: device.mac_address,
-            receiver_mac_address: device.receiver_mac_address,
-          }));
-
-          const { error: iotError } = await supabase
-            .from("iot_devices")
-            .insert(iotData);
-
-          if (iotError) throw iotError;
+          // Create IoT devices for this equipment
+          for (const iot of eq.iot_devices) {
+            await supabase
+              .from('iot_devices')
+              .insert({
+                equipment_id: equipmentData.id,
+                mac_address: iot.mac_address,
+                receiver_mac_address: iot.receiver_mac_address
+              });
+          }
         }
       }
 
       toast({
         title: "Success",
-        description: "Line created successfully with all equipment and devices.",
+        description: "Line created successfully with all positions, equipment and devices.",
       });
 
       onComplete();
@@ -168,7 +183,7 @@ export const LineWizard: React.FC<LineWizardProps> = ({
       // Reset state
       setCurrentStep(1);
       setLineData({ name: "", min_speed: 0, max_speed: 0 });
-      setEquipment([]);
+      setPositions([]);
 
     } catch (error) {
       console.error("Error creating line:", error);
@@ -180,7 +195,20 @@ export const LineWizard: React.FC<LineWizardProps> = ({
     }
   };
 
-  const CurrentStepComponent = steps[currentStep - 1].component;
+  const getStepProps = (stepId: number) => {
+    switch (stepId) {
+      case 1:
+        return { lineData, setLineData };
+      case 2:
+        return { positions, setPositions };
+      case 3:
+        return { positions, setPositions };
+      case 4:
+        return { positions, setPositions };
+      default:
+        return {};
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -197,12 +225,10 @@ export const LineWizard: React.FC<LineWizardProps> = ({
         </DialogHeader>
 
         <div className="flex-1 overflow-auto">
-          <CurrentStepComponent
-            lineData={lineData}
-            setLineData={setLineData}
-            equipment={equipment}
-            setEquipment={setEquipment}
-          />
+          {currentStep === 1 && <LineBasicInfo lineData={lineData} setLineData={setLineData} />}
+          {currentStep === 2 && <ProcessFlowBuilder positions={positions} setPositions={setPositions} />}
+          {currentStep === 3 && <EquipmentTitles positions={positions} setPositions={setPositions} />}
+          {currentStep === 4 && <DeviceAssignment positions={positions} setPositions={setPositions} />}
         </div>
 
         <div className="flex justify-between pt-4 border-t">

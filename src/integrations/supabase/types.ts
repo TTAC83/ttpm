@@ -210,6 +210,7 @@ export type Database = {
           id: string
           line_id: string
           name: string
+          position_id: string
           position_x: number
           position_y: number
           updated_at: string
@@ -220,6 +221,7 @@ export type Database = {
           id?: string
           line_id: string
           name: string
+          position_id: string
           position_x?: number
           position_y?: number
           updated_at?: string
@@ -230,6 +232,7 @@ export type Database = {
           id?: string
           line_id?: string
           name?: string
+          position_id?: string
           position_x?: number
           position_y?: number
           updated_at?: string
@@ -422,6 +425,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      positions: {
+        Row: {
+          created_at: string
+          id: string
+          line_id: string
+          name: string
+          position_x: number
+          position_y: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          line_id: string
+          name: string
+          position_x?: number
+          position_y?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          line_id?: string
+          name?: string
+          position_x?: number
+          position_y?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {

@@ -4,16 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Trash2, Camera, Cpu } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-interface Equipment {
+interface Position {
   id: string;
   name: string;
   position_x: number;
   position_y: number;
+  equipment: Equipment[];
+}
+
+interface Equipment {
+  id: string;
+  name: string;
   equipment_type?: string;
   titles: Array<{ id: string; title: "RLE" | "OP" }>;
   cameras: Array<{
@@ -30,14 +34,15 @@ interface Equipment {
 }
 
 interface DeviceAssignmentProps {
-  equipment: Equipment[];
-  setEquipment: (equipment: Equipment[]) => void;
+  positions: Position[];
+  setPositions: (positions: Position[]) => void;
 }
 
 export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
-  equipment,
-  setEquipment,
+  positions,
+  setPositions,
 }) => {
+  const [selectedPosition, setSelectedPosition] = useState<string>("");
   const [selectedEquipment, setSelectedEquipment] = useState<string>("");
   const [deviceDialogOpen, setDeviceDialogOpen] = useState(false);
   const [deviceType, setDeviceType] = useState<"camera" | "iot">("camera");
@@ -56,7 +61,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   });
 
   const addCamera = () => {
-    if (!selectedEquipment || !cameraForm.camera_type || !cameraForm.lens_type || !cameraForm.mac_address) {
+    if (!selectedPosition || !selectedEquipment || !cameraForm.camera_type || !cameraForm.lens_type || !cameraForm.mac_address) {
       return;
     }
 
@@ -65,11 +70,18 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       ...cameraForm,
     };
 
-    setEquipment(
-      equipment.map((eq) =>
-        eq.id === selectedEquipment
-          ? { ...eq, cameras: [...eq.cameras, newCamera] }
-          : eq
+    setPositions(
+      positions.map((position) =>
+        position.id === selectedPosition
+          ? {
+              ...position,
+              equipment: position.equipment.map((eq) =>
+                eq.id === selectedEquipment
+                  ? { ...eq, cameras: [...eq.cameras, newCamera] }
+                  : eq
+              ),
+            }
+          : position
       )
     );
 
@@ -78,7 +90,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   };
 
   const addIotDevice = () => {
-    if (!selectedEquipment || !iotForm.mac_address || !iotForm.receiver_mac_address) {
+    if (!selectedPosition || !selectedEquipment || !iotForm.mac_address || !iotForm.receiver_mac_address) {
       return;
     }
 
@@ -87,11 +99,18 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       ...iotForm,
     };
 
-    setEquipment(
-      equipment.map((eq) =>
-        eq.id === selectedEquipment
-          ? { ...eq, iot_devices: [...eq.iot_devices, newIotDevice] }
-          : eq
+    setPositions(
+      positions.map((position) =>
+        position.id === selectedPosition
+          ? {
+              ...position,
+              equipment: position.equipment.map((eq) =>
+                eq.id === selectedEquipment
+                  ? { ...eq, iot_devices: [...eq.iot_devices, newIotDevice] }
+                  : eq
+              ),
+            }
+          : position
       )
     );
 
@@ -99,31 +118,50 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     setDeviceDialogOpen(false);
   };
 
-  const removeCamera = (equipmentId: string, cameraId: string) => {
-    setEquipment(
-      equipment.map((eq) =>
-        eq.id === equipmentId
-          ? { ...eq, cameras: eq.cameras.filter((cam) => cam.id !== cameraId) }
-          : eq
+  const removeCamera = (positionId: string, equipmentId: string, cameraId: string) => {
+    setPositions(
+      positions.map((position) =>
+        position.id === positionId
+          ? {
+              ...position,
+              equipment: position.equipment.map((eq) =>
+                eq.id === equipmentId
+                  ? { ...eq, cameras: eq.cameras.filter((cam) => cam.id !== cameraId) }
+                  : eq
+              ),
+            }
+          : position
       )
     );
   };
 
-  const removeIotDevice = (equipmentId: string, deviceId: string) => {
-    setEquipment(
-      equipment.map((eq) =>
-        eq.id === equipmentId
-          ? { ...eq, iot_devices: eq.iot_devices.filter((dev) => dev.id !== deviceId) }
-          : eq
+  const removeIotDevice = (positionId: string, equipmentId: string, deviceId: string) => {
+    setPositions(
+      positions.map((position) =>
+        position.id === positionId
+          ? {
+              ...position,
+              equipment: position.equipment.map((eq) =>
+                eq.id === equipmentId
+                  ? { ...eq, iot_devices: eq.iot_devices.filter((dev) => dev.id !== deviceId) }
+                  : eq
+              ),
+            }
+          : position
       )
     );
   };
 
-  const openDeviceDialog = (equipmentId: string, type: "camera" | "iot") => {
+  const openDeviceDialog = (positionId: string, equipmentId: string, type: "camera" | "iot") => {
+    setSelectedPosition(positionId);
     setSelectedEquipment(equipmentId);
     setDeviceType(type);
     setDeviceDialogOpen(true);
   };
+
+  const allEquipment = positions.flatMap((position) =>
+    position.equipment.map((eq) => ({ ...eq, positionId: position.id, positionName: position.name }))
+  );
 
   return (
     <div className="space-y-6">
@@ -135,23 +173,26 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {equipment.length === 0 ? (
+          {allEquipment.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <p>No equipment available. Please add equipment in the process flow step.</p>
             </div>
           ) : (
             <div className="space-y-6">
-              {equipment.map((eq) => (
-                <Card key={eq.id} className="border-l-4 border-l-primary">
+              {allEquipment.map((eq) => (
+                <Card key={`${eq.positionId}-${eq.id}`} className="border-l-4 border-l-primary">
                   <CardContent className="pt-4">
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <h3 className="font-semibold text-lg">{eq.name}</h3>
+                        <div>
+                          <h3 className="font-semibold text-lg">{eq.name}</h3>
+                          <p className="text-sm text-muted-foreground">Position: {eq.positionName}</p>
+                        </div>
                         <div className="flex gap-2">
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => openDeviceDialog(eq.id, "camera")}
+                            onClick={() => openDeviceDialog(eq.positionId, eq.id, "camera")}
                           >
                             <Camera className="mr-1 h-3 w-3" />
                             Add Camera
@@ -159,7 +200,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => openDeviceDialog(eq.id, "iot")}
+                            onClick={() => openDeviceDialog(eq.positionId, eq.id, "iot")}
                           >
                             <Cpu className="mr-1 h-3 w-3" />
                             Add IoT Device
@@ -190,7 +231,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => removeCamera(eq.id, camera.id)}
+                                  onClick={() => removeCamera(eq.positionId, eq.id, camera.id)}
                                 >
                                   <Trash2 className="h-3 w-3" />
                                 </Button>
@@ -222,7 +263,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => removeIotDevice(eq.id, device.id)}
+                                  onClick={() => removeIotDevice(eq.positionId, eq.id, device.id)}
                                 >
                                   <Trash2 className="h-3 w-3" />
                                 </Button>

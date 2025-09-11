@@ -4,11 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, X } from "lucide-react";
 
-interface Equipment {
+interface Position {
   id: string;
   name: string;
   position_x: number;
   position_y: number;
+  equipment: Equipment[];
+}
+
+interface Equipment {
+  id: string;
+  name: string;
   equipment_type?: string;
   titles: Array<{ id: string; title: "RLE" | "OP" }>;
   cameras: Array<{
@@ -25,39 +31,53 @@ interface Equipment {
 }
 
 interface EquipmentTitlesProps {
-  equipment: Equipment[];
-  setEquipment: (equipment: Equipment[]) => void;
+  positions: Position[];
+  setPositions: (positions: Position[]) => void;
 }
 
 export const EquipmentTitles: React.FC<EquipmentTitlesProps> = ({
-  equipment,
-  setEquipment,
+  positions,
+  setPositions,
 }) => {
-  const addTitle = (equipmentId: string, title: "RLE" | "OP") => {
-    setEquipment(
-      equipment.map((eq) =>
-        eq.id === equipmentId
+  const addTitle = (positionId: string, equipmentId: string, title: "RLE" | "OP") => {
+    setPositions(
+      positions.map((position) =>
+        position.id === positionId
           ? {
-              ...eq,
-              titles: [
-                ...eq.titles,
-                { id: Math.random().toString(36).substring(7), title },
-              ],
+              ...position,
+              equipment: position.equipment.map((eq) =>
+                eq.id === equipmentId
+                  ? {
+                      ...eq,
+                      titles: [
+                        ...eq.titles,
+                        { id: Math.random().toString(36).substring(7), title },
+                      ],
+                    }
+                  : eq
+              ),
             }
-          : eq
+          : position
       )
     );
   };
 
-  const removeTitle = (equipmentId: string, titleId: string) => {
-    setEquipment(
-      equipment.map((eq) =>
-        eq.id === equipmentId
+  const removeTitle = (positionId: string, equipmentId: string, titleId: string) => {
+    setPositions(
+      positions.map((position) =>
+        position.id === positionId
           ? {
-              ...eq,
-              titles: eq.titles.filter((title) => title.id !== titleId),
+              ...position,
+              equipment: position.equipment.map((eq) =>
+                eq.id === equipmentId
+                  ? {
+                      ...eq,
+                      titles: eq.titles.filter((title) => title.id !== titleId),
+                    }
+                  : eq
+              ),
             }
-          : eq
+          : position
       )
     );
   };
@@ -65,6 +85,10 @@ export const EquipmentTitles: React.FC<EquipmentTitlesProps> = ({
   const canAddTitle = (eq: Equipment, titleType: "RLE" | "OP") => {
     return !eq.titles.some((title) => title.title === titleType);
   };
+
+  const allEquipment = positions.flatMap((position) =>
+    position.equipment.map((eq) => ({ ...eq, positionId: position.id, positionName: position.name }))
+  );
 
   return (
     <div className="space-y-6">
@@ -76,18 +100,19 @@ export const EquipmentTitles: React.FC<EquipmentTitlesProps> = ({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {equipment.length === 0 ? (
+          {allEquipment.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <p>No equipment available. Please add equipment in the previous step.</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {equipment.map((eq) => (
-                <Card key={eq.id} className="border-l-4 border-l-primary">
+              {allEquipment.map((eq) => (
+                <Card key={`${eq.positionId}-${eq.id}`} className="border-l-4 border-l-primary">
                   <CardContent className="pt-4">
                     <div className="flex items-start justify-between">
                       <div className="space-y-2">
                         <h3 className="font-semibold">{eq.name}</h3>
+                        <p className="text-sm text-muted-foreground">Position: {eq.positionName}</p>
                         <div className="flex flex-wrap gap-2">
                           {eq.titles.map((title) => (
                             <Badge
@@ -100,7 +125,7 @@ export const EquipmentTitles: React.FC<EquipmentTitlesProps> = ({
                                 variant="ghost"
                                 size="sm"
                                 className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                                onClick={() => removeTitle(eq.id, title.id)}
+                                onClick={() => removeTitle(eq.positionId, eq.id, title.id)}
                               >
                                 <X className="h-3 w-3" />
                               </Button>
@@ -118,7 +143,7 @@ export const EquipmentTitles: React.FC<EquipmentTitlesProps> = ({
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => addTitle(eq.id, "RLE")}
+                            onClick={() => addTitle(eq.positionId, eq.id, "RLE")}
                           >
                             <Plus className="mr-1 h-3 w-3" />
                             Add RLE
@@ -128,7 +153,7 @@ export const EquipmentTitles: React.FC<EquipmentTitlesProps> = ({
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => addTitle(eq.id, "OP")}
+                            onClick={() => addTitle(eq.positionId, eq.id, "OP")}
                           >
                             <Plus className="mr-1 h-3 w-3" />
                             Add OP

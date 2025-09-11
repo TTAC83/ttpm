@@ -75,11 +75,16 @@ export const AuthPage = () => {
 
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Thingtrax</CardTitle>
-          <CardDescription>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-thingtrax-subtle p-4">
+      <Card className="w-full max-w-md shadow-premium border-thingtrax-blue/10">
+        <CardHeader className="text-center space-y-4">
+          <div className="flex justify-center">
+            <div className="h-12 w-12 rounded-thingtrax-corners bg-gradient-thingtrax flex items-center justify-center shadow-thingtrax-glow">
+              <span className="text-white font-bold text-medium">TT</span>
+            </div>
+          </div>
+          <CardTitle className="text-big font-black text-thingtrax-blue">Thingtrax</CardTitle>
+          <CardDescription className="text-medium text-thingtrax-dark-gray">
             Sign in to access your implementation dashboard
           </CardDescription>
         </CardHeader>
@@ -116,6 +121,8 @@ export const AuthPage = () => {
                 </div>
                 <Button 
                   type="submit" 
+                  variant="thingtrax"
+                  size="lg"
                   className="w-full" 
                   disabled={loading || !email || !password}
                 >
@@ -139,6 +146,8 @@ export const AuthPage = () => {
                 </div>
                 <Button 
                   type="submit" 
+                  variant="thingtrax"
+                  size="lg"
                   className="w-full" 
                   disabled={magicLinkLoading || !email}
                 >
@@ -165,6 +174,8 @@ export const AuthPage = () => {
                 </div>
                 <Button 
                   type="submit" 
+                  variant="thingtrax"
+                  size="lg"
                   className="w-full" 
                   disabled={resetLoading || !email}
                 >

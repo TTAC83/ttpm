@@ -92,14 +92,14 @@ export const AppLayout = () => {
     <SidebarProvider>
       <div className="flex h-screen w-full">
         <Sidebar>
-          <SidebarHeader className="border-b border-sidebar-border p-4">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">TT</span>
+          <SidebarHeader className="border-b border-thingtrax-light-gray/20 p-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-thingtrax-corners bg-gradient-thingtrax flex items-center justify-center shadow-thingtrax thingtrax-corners">
+                <span className="text-white font-bold text-medium">TT</span>
               </div>
               <div>
-                <h2 className="font-semibold text-sidebar-foreground">Thingtrax</h2>
-                <p className="text-xs text-sidebar-foreground/60">Implementation</p>
+                <h2 className="font-bold text-medium text-thingtrax-blue">Thingtrax</h2>
+                <p className="text-small text-thingtrax-gray">Implementation</p>
               </div>
             </div>
           </SidebarHeader>
@@ -153,7 +153,7 @@ export const AppLayout = () => {
                 variant="ghost" 
                 size="sm" 
                 onClick={signOut}
-                className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent"
+                className="w-full justify-start text-thingtrax-gray hover:bg-thingtrax-blue/10 hover:text-thingtrax-blue"
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Sign Out

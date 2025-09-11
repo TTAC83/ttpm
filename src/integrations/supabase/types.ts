@@ -400,6 +400,7 @@ export type Database = {
       }
       master_tasks: {
         Row: {
+          assigned_role: string | null
           details: string | null
           id: number
           planned_end_offset_days: number
@@ -410,6 +411,7 @@ export type Database = {
           title: string
         }
         Insert: {
+          assigned_role?: string | null
           details?: string | null
           id?: number
           planned_end_offset_days?: number
@@ -420,6 +422,7 @@ export type Database = {
           title: string
         }
         Update: {
+          assigned_role?: string | null
           details?: string | null
           id?: number
           planned_end_offset_days?: number

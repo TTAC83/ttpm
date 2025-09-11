@@ -28,6 +28,7 @@ interface MasterTask {
   planned_end_offset_days: number;
   position: number;
   technology_scope: string;
+  assigned_role: string | null;
   master_steps?: {
     name: string;
   };
@@ -121,6 +122,7 @@ export const MasterDataManagement = () => {
     planned_end_offset_days: number;
     position: number;
     technology_scope: string;
+    assigned_role?: string;
   }) => {
     try {
       if (editingTask) {
@@ -373,6 +375,7 @@ export const MasterDataManagement = () => {
                       <TableHead>Position</TableHead>
                       <TableHead>Title</TableHead>
                       <TableHead>Technology Scope</TableHead>
+                      <TableHead>Assigned Role</TableHead>
                       <TableHead>Start Offset</TableHead>
                       <TableHead>End Offset</TableHead>
                       <TableHead>Actions</TableHead>
@@ -381,7 +384,7 @@ export const MasterDataManagement = () => {
                   <TableBody>
                     {tasks.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8">
+                        <TableCell colSpan={8} className="text-center py-8">
                           <List className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                           <p className="text-muted-foreground">No master tasks found</p>
                         </TableCell>
@@ -402,6 +405,15 @@ export const MasterDataManagement = () => {
                                task.technology_scope === 'vision' ? 'Vision' : 
                                'Both'}
                             </span>
+                          </TableCell>
+                          <TableCell>
+                            {task.assigned_role ? (
+                              <span className="text-sm text-muted-foreground">
+                                {task.assigned_role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                              </span>
+                            ) : (
+                              <span className="text-sm text-muted-foreground">-</span>
+                            )}
                           </TableCell>
                           <TableCell>{task.planned_start_offset_days} days</TableCell>
                           <TableCell>{task.planned_end_offset_days} days</TableCell>
@@ -527,6 +539,7 @@ const TaskDialog = ({
     position: task?.position || 0,
     iot: task?.technology_scope === 'iot' || task?.technology_scope === 'both' || !task,
     vision: task?.technology_scope === 'vision' || task?.technology_scope === 'both' || !task,
+    assigned_role: task?.assigned_role || '',
   });
   const [loading, setLoading] = useState(false);
 
@@ -545,7 +558,8 @@ const TaskDialog = ({
         planned_start_offset_days: formData.planned_start_offset_days,
         planned_end_offset_days: formData.planned_end_offset_days,
         position: formData.position,
-        technology_scope
+        technology_scope,
+        assigned_role: formData.assigned_role || null
       });
     } finally {
       setLoading(false);
@@ -632,6 +646,23 @@ const TaskDialog = ({
               onChange={(e) => setFormData(prev => ({ ...prev, position: parseInt(e.target.value) || 0 }))}
             />
           </div>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="assigned_role">Assigned Role</Label>
+          <select
+            id="assigned_role"
+            value={formData.assigned_role}
+            onChange={(e) => setFormData(prev => ({ ...prev, assigned_role: e.target.value }))}
+            className="w-full p-2 border rounded-md"
+          >
+            <option value="">No specific role assignment</option>
+            <option value="customer_project_lead">Customer Project Lead</option>
+            <option value="implementation_lead">Implementation Lead</option>
+            <option value="ai_iot_engineer">AI/IoT Engineer</option>
+            <option value="project_coordinator">Project Coordinator</option>
+            <option value="technical_project_lead">Technical Project Lead</option>
+          </select>
         </div>
         
         <div className="space-y-3">

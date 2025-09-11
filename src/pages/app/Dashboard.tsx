@@ -272,10 +272,12 @@ export const Dashboard = () => {
       // Navigate to actions page and scroll to the specific action
       navigate(`/app/actions?highlightAction=${actionId}`);
     } else if (event.type === 'calendar' && event.project_id) {
-      // Extract event ID from the event id (format: calendar-{fullEventId}-{date})
-      // Split by '-' and rejoin all parts except the first (calendar) and last (date)
-      const parts = event.id.split('-');
-      const eventId = parts.slice(1, -1).join('-'); // This gets the full UUID
+      // Extract event ID from the event id (format: calendar-{fullEventId}-{YYYY-MM-DD})
+      // Remove 'calendar-' prefix and '-YYYY-MM-DD' suffix
+      const withoutPrefix = event.id.replace('calendar-', '');
+      // Remove the last 3 parts (YYYY-MM-DD) from the end
+      const parts = withoutPrefix.split('-');
+      const eventId = parts.slice(0, -3).join('-'); // Remove last 3 parts (YYYY, MM, DD)
       // Navigate to project with calendar tab and highlight the specific event
       navigate(`/app/projects/${event.project_id}?tab=calendar&highlightEvent=${eventId}`);
     }

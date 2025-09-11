@@ -99,8 +99,7 @@ export const Dashboard = () => {
           `)
           .or(`planned_start.gte.${startDate},planned_end.gte.${startDate}`)
           .or(`planned_start.lte.${endDate},planned_end.lte.${endDate}`)
-          .not('planned_start', 'is', null)
-          .in('status', ['Blocked']);
+          .in('status', ['Blocked', 'In Progress', 'Planned']);
 
         if (!tasksError && tasksData) {
           // Build project/company maps for tasks

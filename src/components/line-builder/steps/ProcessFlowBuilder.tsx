@@ -281,20 +281,34 @@ export const ProcessFlowBuilder: React.FC<ProcessFlowBuilderProps> = ({
               {positions.map((position, index) => {
                 if (index === positions.length - 1) return null; // No arrow after last position
                 
-                const startX = position.position_x + 200; // End of current box (200px width)
-                const startY = position.position_y + 60; // Middle of box (120px height / 2)
-                const endX = positions[index + 1].position_x; // Start of next box
-                const endY = positions[index + 1].position_y + 60; // Middle of next box
+                const currentPos = positions[index];
+                const nextPos = positions[index + 1];
+                
+                const startX = currentPos.position_x + 200; // End of current box (200px width)
+                const startY = currentPos.position_y + 60; // Middle of box (120px height / 2)
+                const endX = nextPos.position_x; // Start of next box
+                const endY = nextPos.position_y + 60; // Middle of next box
+                
+                const arrowWidth = Math.max(20, Math.abs(endX - startX));
+                const arrowHeight = Math.max(20, Math.abs(endY - startY) + 20);
+                const svgLeft = Math.min(startX, endX);
+                const svgTop = Math.min(startY, endY) - 10;
+                
+                const relativeStartX = startX - svgLeft;
+                const relativeStartY = startY - svgTop;
+                const relativeEndX = endX - svgLeft;
+                const relativeEndY = endY - svgTop;
                 
                 return (
                   <svg
-                    key={`arrow-${position.id}`}
+                    key={`arrow-${position.id}-${nextPos.id}`}
                     className="absolute pointer-events-none"
                     style={{
-                      left: startX,
-                      top: startY - 10,
-                      width: endX - startX,
-                      height: 20,
+                      left: svgLeft,
+                      top: svgTop,
+                      width: arrowWidth,
+                      height: arrowHeight,
+                      zIndex: 1,
                     }}
                   >
                     <defs>
@@ -313,10 +327,10 @@ export const ProcessFlowBuilder: React.FC<ProcessFlowBuilderProps> = ({
                       </marker>
                     </defs>
                     <line
-                      x1="0"
-                      y1="10"
-                      x2={endX - startX - 10}
-                      y2="10"
+                      x1={relativeStartX}
+                      y1={relativeStartY}
+                      x2={relativeEndX - 10}
+                      y2={relativeEndY}
                       stroke="hsl(var(--primary))"
                       strokeWidth="2"
                       markerEnd={`url(#arrowhead-${index})`}
@@ -337,6 +351,7 @@ export const ProcessFlowBuilder: React.FC<ProcessFlowBuilderProps> = ({
                     top: position.position_y,
                     width: '200px',
                     minHeight: '120px',
+                    zIndex: 10,
                   }}
                 >
                   <div className="flex items-center justify-between mb-2">

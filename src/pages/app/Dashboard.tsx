@@ -143,89 +143,103 @@ export const Dashboard = () => {
           });
         }
 
-        // Fetch critical actions with planned dates within range
-        const [actionsWithTasks, actionsWithoutTasks] = await Promise.all([
-          supabase
-            .from('actions')
-            .select(`
-              id,
-              title,
-              planned_date,
-              status,
-              is_critical,
-              project_task_id,
-              project_tasks!inner(
-                project_id,
-                projects!inner(
-                  name,
-                  companies!inner(name)
-                )
-              )
-            `)
-            .gte('planned_date', startDate)
-            .lte('planned_date', endDate)
-            .not('planned_date', 'is', null)
-            .eq('is_critical', true)
-            .not('project_task_id', 'is', null),
-          supabase
-            .from('actions')
-            .select(`
-              id,
-              title,
-              planned_date,
-              status,
-              is_critical,
-              project_id,
-              projects!inner(
-                name,
-                companies!inner(name)
-              )
-            `)
-            .gte('planned_date', startDate)
-            .lte('planned_date', endDate)
-            .not('planned_date', 'is', null)
-            .eq('is_critical', true)
-            .not('project_id', 'is', null)
-            .is('project_task_id', null)
-        ]);
+        // Fetch critical actions within range (single query, no joins)
+        const { data: actionsData, error: actionsError } = await supabase
+          .from('actions')
+          .select('id, title, planned_date, status, is_critical, project_task_id, project_id')
+          .gte('planned_date', startDate)
+          .lte('planned_date', endDate)
+          .not('planned_date', 'is', null)
+          .eq('is_critical', true);
+
+        if (actionsError) throw actionsError;
+
+        const actionsWithTasksOnly = (actionsData || []).filter(a => a.project_task_id);
+        const actionsWithoutTasksOnly = (actionsData || []).filter(a => !a.project_task_id && a.project_id);
+
+        // Fetch related project_tasks for actions with tasks
+        const projectTaskIds = [...new Set(actionsWithTasksOnly.map(a => a.project_task_id))] as string[];
+        let projectTasksMap = new Map<string, { id: string; project_id: string }>();
+        if (projectTaskIds.length > 0) {
+          const { data: projectTasksData, error: projectTasksError } = await supabase
+            .from('project_tasks')
+            .select('id, project_id')
+            .in('id', projectTaskIds);
+          if (projectTasksError) throw projectTasksError;
+          projectTasksMap = new Map((projectTasksData || []).map(pt => [pt.id, pt as any]));
+        }
+
+        // Collect all project_ids to fetch their names and companies
+        const projectIdsFromTasks = [...new Set(Array.from(projectTasksMap.values()).map(pt => pt.project_id))];
+        const projectIdsFromActions = [...new Set(actionsWithoutTasksOnly.map(a => a.project_id as string))];
+        const allProjectIds = [...new Set([...projectIdsFromTasks, ...projectIdsFromActions])];
+
+        let projectsMap = new Map<string, { id: string; name: string; company_id: string | null }>();
+        let companiesMap = new Map<string, { id: string; name: string }>();
+
+        if (allProjectIds.length > 0) {
+          const { data: projectsData, error: projectsError } = await supabase
+            .from('projects')
+            .select('id, name, company_id')
+            .in('id', allProjectIds);
+          if (projectsError) throw projectsError;
+          projectsMap = new Map((projectsData || []).map(p => [p.id, p as any]));
+
+          const companyIds = [...new Set((projectsData || []).map(p => p.company_id).filter(Boolean))] as string[];
+          if (companyIds.length > 0) {
+            const { data: companiesData, error: companiesError } = await supabase
+              .from('companies')
+              .select('id, name')
+              .in('id', companyIds);
+            if (companiesError) throw companiesError;
+            companiesMap = new Map((companiesData || []).map(c => [c.id, c as any]));
+          }
+        }
 
         // Process actions with tasks
-        if (!actionsWithTasks.error && actionsWithTasks.data) {
-          actionsWithTasks.data.forEach(action => {
-            allEvents.push({
-              id: `action-${action.id}`,
-              title: action.title,
-              date: action.planned_date,
-              type: 'action',
-              status: action.status,
-              is_critical: action.is_critical,
-              project_id: (action.project_tasks as any).projects.id,
-              project: {
-                name: (action.project_tasks as any).projects.name,
-                company: { name: (action.project_tasks as any).projects.companies.name }
-              }
-            });
+        actionsWithTasksOnly.forEach(action => {
+          const pt = projectTasksMap.get(action.project_task_id as string);
+          if (!pt) return;
+          const project = projectsMap.get(pt.project_id);
+          if (!project) return;
+          const company = project.company_id ? companiesMap.get(project.company_id) : null;
+
+          allEvents.push({
+            id: `action-${action.id}`,
+            title: action.title,
+            date: action.planned_date as string,
+            type: 'action',
+            status: action.status,
+            is_critical: action.is_critical,
+            project_id: pt.project_id,
+            project: {
+              name: project?.name || 'Unknown Project',
+              company: { name: company?.name || 'Unknown Company' }
+            }
           });
-        }
+        });
 
         // Process actions without tasks (direct project actions)
-        if (!actionsWithoutTasks.error && actionsWithoutTasks.data) {
-          actionsWithoutTasks.data.forEach(action => {
-            allEvents.push({
-              id: `action-${action.id}`,
-              title: action.title,
-              date: action.planned_date,
-              type: 'action',
-              status: action.status,
-              is_critical: action.is_critical,
-              project_id: action.project_id,
-              project: {
-                name: (action.projects as any).name,
-                company: { name: (action.projects as any).companies.name }
-              }
-            });
+        actionsWithoutTasksOnly.forEach(action => {
+          const project = action.project_id ? projectsMap.get(action.project_id as string) : null;
+          if (!project) return;
+          const company = project.company_id ? companiesMap.get(project.company_id) : null;
+
+          allEvents.push({
+            id: `action-${action.id}`,
+            title: action.title,
+            date: action.planned_date as string,
+            type: 'action',
+            status: action.status,
+            is_critical: action.is_critical,
+            project_id: action.project_id as string,
+            project: {
+              name: project?.name || 'Unknown Project',
+              company: { name: company?.name || 'Unknown Company' }
+            }
           });
-        }
+        });
+
 
         // Fetch critical calendar events within range
         const { data: calendarData, error: calendarError } = await supabase

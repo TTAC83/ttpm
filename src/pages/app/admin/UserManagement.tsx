@@ -46,7 +46,14 @@ export const UserManagement = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
   const [editingUser, setEditingUser] = useState<UserData | null>(null);
-  const [editForm, setEditForm] = useState({ role: '', company_id: '' });
+  const [editForm, setEditForm] = useState({ 
+    role: '', 
+    company_id: '', 
+    name: '', 
+    job_title: '', 
+    phone: '', 
+    avatar_url: '' 
+  });
   
   const { toast } = useToast();
 
@@ -219,26 +226,25 @@ export const UserManagement = () => {
         throw new Error('No active session');
       }
 
-      const { data, error } = await supabase.functions.invoke('admin-update-user', {
-        body: {
-          email: editingUser.email,
+      // Update profile information directly
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          name: editForm.name || null,
+          job_title: editForm.job_title || null,
+          phone: editForm.phone || null,
+          avatar_url: editForm.avatar_url || null,
           role: editForm.role,
-          company_name: companies.find(c => c.id === editForm.company_id)?.name,
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
+          company_id: editForm.company_id || null,
+          is_internal: editForm.role === 'internal_admin' || editForm.role === 'internal_user'
+        })
+        .eq('user_id', editingUser.id);
 
-      if (error) throw error;
-
-      if (data.error) {
-        throw new Error(data.error);
-      }
+      if (profileError) throw profileError;
 
       toast({
         title: "User Updated",
-        description: "User role and company have been updated",
+        description: "User profile has been updated successfully",
       });
       
       setEditingUser(null);
@@ -406,7 +412,11 @@ export const UserManagement = () => {
                           setEditingUser(user);
                           setEditForm({
                             role: user.profile?.role || '',
-                            company_id: user.profile?.company_id || ''
+                            company_id: user.profile?.company_id || '',
+                            name: user.profile?.name || '',
+                            job_title: user.profile?.job_title || '',
+                            phone: user.profile?.phone || '',
+                            avatar_url: user.profile?.avatar_url || ''
                           });
                         }}
                       >
@@ -424,51 +434,98 @@ export const UserManagement = () => {
 
       {/* Edit User Dialog */}
       <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
+            <DialogTitle>Edit User Profile</DialogTitle>
             <DialogDescription>
-              Update user role and company assignment
+              Update all user profile information, role, and company assignment
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Role</Label>
-              <Select value={editForm.role} onValueChange={(value) => setEditForm(prev => ({ ...prev, role: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="internal_admin">Internal Admin</SelectItem>
-                  <SelectItem value="internal_user">Internal User</SelectItem>
-                  <SelectItem value="external_admin">External Admin</SelectItem>
-                  <SelectItem value="external_user">External User</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Full Name</Label>
+                <Input
+                  id="edit-name"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Enter full name"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit-job-title">Job Title</Label>
+                <Input
+                  id="edit-job-title"
+                  value={editForm.job_title}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, job_title: e.target.value }))}
+                  placeholder="Enter job title"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="edit-phone">Phone</Label>
+                <Input
+                  id="edit-phone"
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
+                  placeholder="Enter phone number"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit-avatar">Avatar URL</Label>
+                <Input
+                  id="edit-avatar"
+                  value={editForm.avatar_url}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, avatar_url: e.target.value }))}
+                  placeholder="Enter avatar image URL"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Role</Label>
+                <Select value={editForm.role} onValueChange={(value) => setEditForm(prev => ({ ...prev, role: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="internal_admin">Internal Admin</SelectItem>
+                    <SelectItem value="internal_user">Internal User</SelectItem>
+                    <SelectItem value="external_admin">External Admin</SelectItem>
+                    <SelectItem value="external_user">External User</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Company</Label>
+                <Select value={editForm.company_id} onValueChange={(value) => setEditForm(prev => ({ ...prev, company_id: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select company" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No company assigned</SelectItem>
+                    {companies.map((company) => (
+                      <SelectItem key={company.id} value={company.id}>
+                        {company.name} {company.is_internal && '(Internal)'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
-            <div className="space-y-2">
-              <Label>Company</Label>
-              <Select value={editForm.company_id} onValueChange={(value) => setEditForm(prev => ({ ...prev, company_id: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select company" />
-                </SelectTrigger>
-                <SelectContent>
-                  {companies.map((company) => (
-                    <SelectItem key={company.id} value={company.id}>
-                      {company.name} {company.is_internal && '(Internal)'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 pt-4">
               <Button variant="outline" onClick={() => setEditingUser(null)}>
                 Cancel
               </Button>
               <Button onClick={handleUpdateUser}>
-                Update User
+                Update User Profile
               </Button>
             </div>
           </div>

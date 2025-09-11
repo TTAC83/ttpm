@@ -667,6 +667,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_current_user_internal_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_working_day: {
         Args: { d: string }
         Returns: boolean

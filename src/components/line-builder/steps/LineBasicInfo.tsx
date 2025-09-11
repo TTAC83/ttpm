@@ -2,7 +2,6 @@ import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 
 interface LineBasicInfoProps {
   lineData: {
@@ -21,12 +20,12 @@ export const LineBasicInfo: React.FC<LineBasicInfoProps> = ({
     setLineData({ ...lineData, name: e.target.value });
   };
 
-  const handleSpeedRangeChange = (values: number[]) => {
-    setLineData({
-      ...lineData,
-      min_speed: values[0],
-      max_speed: values[1],
-    });
+  const handleMinSpeedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLineData({ ...lineData, min_speed: parseInt(e.target.value) || 0 });
+  };
+
+  const handleMaxSpeedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLineData({ ...lineData, max_speed: parseInt(e.target.value) || 0 });
   };
 
   return (
@@ -49,21 +48,28 @@ export const LineBasicInfo: React.FC<LineBasicInfoProps> = ({
             />
           </div>
 
-          <div className="space-y-4">
-            <Label>Speed Range (units/min)</Label>
-            <div className="px-4">
-              <Slider
-                value={[lineData.min_speed, lineData.max_speed]}
-                onValueChange={handleSpeedRangeChange}
-                max={1000}
-                min={0}
-                step={10}
-                className="w-full"
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="min-speed">Min Speed (units/min)</Label>
+              <Input
+                id="min-speed"
+                type="number"
+                min="0"
+                placeholder="0"
+                value={lineData.min_speed || ""}
+                onChange={handleMinSpeedChange}
               />
             </div>
-            <div className="flex justify-between text-sm text-muted-foreground">
-              <span>Min: {lineData.min_speed} units/min</span>
-              <span>Max: {lineData.max_speed} units/min</span>
+            <div className="space-y-2">
+              <Label htmlFor="max-speed">Max Speed (units/min)</Label>
+              <Input
+                id="max-speed"
+                type="number"
+                min="0"
+                placeholder="0"
+                value={lineData.max_speed || ""}
+                onChange={handleMaxSpeedChange}
+              />
             </div>
           </div>
         </CardContent>

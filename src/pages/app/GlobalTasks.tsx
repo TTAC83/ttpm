@@ -681,14 +681,14 @@ const TaskEditDialog = ({ task, profiles, isOpen, onClose, onSave }: TaskEditDia
             <div>
               <Label htmlFor="assignee">Assignee</Label>
               <Select
-                value={formData.assignee || ''}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, assignee: value || null }))}
+                value={formData.assignee || 'unassigned'}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, assignee: value === 'unassigned' ? null : value }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select assignee" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Unassigned</SelectItem>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
                   {profiles.map((profile) => (
                     <SelectItem key={profile.user_id} value={profile.user_id}>
                       {profile.name}

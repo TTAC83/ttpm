@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { ArrowLeft, Building, Calendar, MapPin, Factory } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { SolutionsLines } from './tabs/SolutionsLines';
 
 interface SolutionsProject {
   id: string;
@@ -109,7 +110,7 @@ export const SolutionsProjectDetail = () => {
   useEffect(() => {
     // Handle URL parameters to set active tab
     const tab = searchParams.get('tab');
-    if (tab && ['overview', 'factory'].includes(tab)) {
+    if (tab && ['overview', 'factory', 'lines'].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -381,9 +382,10 @@ export const SolutionsProjectDetail = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-2 lg:w-auto">
+        <TabsList className="grid grid-cols-3 lg:w-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="factory">Factory</TabsTrigger>
+          <TabsTrigger value="lines">Lines</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -392,6 +394,10 @@ export const SolutionsProjectDetail = () => {
 
         <TabsContent value="factory" className="space-y-4">
           <FactoryRequirements />
+        </TabsContent>
+
+        <TabsContent value="lines" className="space-y-4">
+          <SolutionsLines solutionsProjectId={project.id} />
         </TabsContent>
       </Tabs>
     </div>

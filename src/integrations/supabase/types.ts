@@ -784,6 +784,39 @@ export type Database = {
           },
         ]
       }
+      solutions_lines: {
+        Row: {
+          camera_count: number
+          created_at: string
+          id: string
+          iot_device_count: number
+          line_name: string
+          max_speed: number | null
+          min_speed: number | null
+          solutions_project_id: string
+        }
+        Insert: {
+          camera_count?: number
+          created_at?: string
+          id?: string
+          iot_device_count?: number
+          line_name: string
+          max_speed?: number | null
+          min_speed?: number | null
+          solutions_project_id: string
+        }
+        Update: {
+          camera_count?: number
+          created_at?: string
+          id?: string
+          iot_device_count?: number
+          line_name?: string
+          max_speed?: number | null
+          min_speed?: number | null
+          solutions_project_id?: string
+        }
+        Relationships: []
+      }
       solutions_projects: {
         Row: {
           company_name: string

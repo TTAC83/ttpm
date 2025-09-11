@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { ThingtraxLogo } from '@/components/ThingtraxLogo';
 import { 
   Sidebar, 
   SidebarContent, 
@@ -93,15 +94,7 @@ export const AppLayout = () => {
       <div className="flex h-screen w-full">
         <Sidebar>
           <SidebarHeader className="border-b border-thingtrax-light-gray/20 p-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-thingtrax-corners bg-gradient-thingtrax flex items-center justify-center shadow-thingtrax thingtrax-corners">
-                <span className="text-white font-bold text-medium">TT</span>
-              </div>
-              <div>
-                <h2 className="font-bold text-medium text-thingtrax-blue">Thingtrax</h2>
-                <p className="text-small text-thingtrax-gray">Implementation</p>
-              </div>
-            </div>
+            <ThingtraxLogo size="md" />
           </SidebarHeader>
           
           <SidebarContent>
@@ -163,9 +156,10 @@ export const AppLayout = () => {
         </Sidebar>
         
         <main className="flex-1 overflow-auto">
-          <div className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="flex h-14 items-center px-4">
+          <div className="border-b border-thingtrax-light-gray/20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="flex h-14 items-center justify-between px-4">
               <SidebarTrigger />
+              <ThingtraxLogo variant="minimal" size="sm" />
             </div>
           </div>
           <div className="p-6">

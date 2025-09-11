@@ -164,7 +164,7 @@ export const GlobalCalendar = () => {
       </Card>
 
       {/* Calendar Views */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="space-y-6">
         {/* Current Month */}
         <Card>
           <CardHeader>
@@ -174,15 +174,49 @@ export const GlobalCalendar = () => {
             <Calendar
               mode="single"
               month={currentMonth}
-              className="rounded-md border pointer-events-auto"
-              modifiers={{
-                hasEvents: (date) => getEventsForDate(date).length > 0
+              className="w-full pointer-events-auto"
+              classNames={{
+                months: "flex flex-col space-y-4",
+                month: "space-y-4",
+                table: "w-full border-collapse",
+                head_row: "flex w-full",
+                head_cell: "text-muted-foreground rounded-md w-full font-normal text-sm p-2",
+                row: "flex w-full mt-2",
+                cell: "h-24 w-full text-center text-sm p-1 relative border border-border/50 hover:bg-muted/50",
+                day: "h-full w-full p-1 font-normal flex flex-col items-start justify-start hover:bg-muted/50 rounded-none",
+                day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
+                day_today: "bg-accent text-accent-foreground font-semibold",
+                day_outside: "text-muted-foreground opacity-50",
+                day_disabled: "text-muted-foreground opacity-50"
               }}
-              modifiersStyles={{
-                hasEvents: { 
-                  backgroundColor: 'hsl(var(--primary))', 
-                  color: 'hsl(var(--primary-foreground))',
-                  fontWeight: 'bold'
+              components={{
+                Day: ({ date, ...props }) => {
+                  const dayEvents = getEventsForDate(date);
+                  return (
+                    <div className="h-full w-full p-1 flex flex-col">
+                      <span className="text-sm font-medium mb-1">{date.getDate()}</span>
+                      <div className="flex-1 space-y-1 overflow-hidden">
+                        {dayEvents.slice(0, 3).map((event, index) => (
+                          <div
+                            key={event.id}
+                            className={`text-xs px-1 py-0.5 rounded truncate ${
+                              event.is_critical 
+                                ? 'bg-destructive text-destructive-foreground' 
+                                : 'bg-primary text-primary-foreground'
+                            }`}
+                            title={event.title}
+                          >
+                            {event.title}
+                          </div>
+                        ))}
+                        {dayEvents.length > 3 && (
+                          <div className="text-xs text-muted-foreground">
+                            +{dayEvents.length - 3} more
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
                 }
               }}
             />
@@ -198,15 +232,49 @@ export const GlobalCalendar = () => {
             <Calendar
               mode="single"
               month={nextMonth}
-              className="rounded-md border pointer-events-auto"
-              modifiers={{
-                hasEvents: (date) => getEventsForDate(date).length > 0
+              className="w-full pointer-events-auto"
+              classNames={{
+                months: "flex flex-col space-y-4",
+                month: "space-y-4",
+                table: "w-full border-collapse",
+                head_row: "flex w-full",
+                head_cell: "text-muted-foreground rounded-md w-full font-normal text-sm p-2",
+                row: "flex w-full mt-2",
+                cell: "h-24 w-full text-center text-sm p-1 relative border border-border/50 hover:bg-muted/50",
+                day: "h-full w-full p-1 font-normal flex flex-col items-start justify-start hover:bg-muted/50 rounded-none",
+                day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
+                day_today: "bg-accent text-accent-foreground font-semibold",
+                day_outside: "text-muted-foreground opacity-50",
+                day_disabled: "text-muted-foreground opacity-50"
               }}
-              modifiersStyles={{
-                hasEvents: { 
-                  backgroundColor: 'hsl(var(--primary))', 
-                  color: 'hsl(var(--primary-foreground))',
-                  fontWeight: 'bold'
+              components={{
+                Day: ({ date, ...props }) => {
+                  const dayEvents = getEventsForDate(date);
+                  return (
+                    <div className="h-full w-full p-1 flex flex-col">
+                      <span className="text-sm font-medium mb-1">{date.getDate()}</span>
+                      <div className="flex-1 space-y-1 overflow-hidden">
+                        {dayEvents.slice(0, 3).map((event, index) => (
+                          <div
+                            key={event.id}
+                            className={`text-xs px-1 py-0.5 rounded truncate ${
+                              event.is_critical 
+                                ? 'bg-destructive text-destructive-foreground' 
+                                : 'bg-primary text-primary-foreground'
+                            }`}
+                            title={event.title}
+                          >
+                            {event.title}
+                          </div>
+                        ))}
+                        {dayEvents.length > 3 && (
+                          <div className="text-xs text-muted-foreground">
+                            +{dayEvents.length - 3} more
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
                 }
               }}
             />

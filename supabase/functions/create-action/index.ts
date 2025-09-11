@@ -91,7 +91,7 @@ serve(async (req) => {
       console.log('Getting project info from existing action:', body.id);
       const { data: actionData, error: actionError } = await supabaseServiceClient
         .from('actions')
-        .select('project_task_id, project_tasks(project_id)')
+        .select('project_task_id, project_id, project_tasks(project_id)')
         .eq('id', body.id)
         .single();
 
@@ -103,7 +103,7 @@ serve(async (req) => {
         );
       }
 
-      taskData = { project_id: actionData.project_tasks.project_id };
+      taskData = { project_id: actionData.project_id || actionData.project_tasks?.project_id };
     } else {
       // For new actions, we need either project_task_id or project_id
       if (body.project_task_id) {
@@ -221,6 +221,7 @@ serve(async (req) => {
         .from('actions')
         .insert({
           project_task_id: body.project_task_id || null,
+          project_id: body.project_id || null,
           title: body.title,
           details: body.details || null,
           assignee: body.assignee || null,

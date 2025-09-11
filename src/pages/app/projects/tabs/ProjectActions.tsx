@@ -474,15 +474,15 @@ const CreateActionDialog = ({
     setLoading(true);
     
     try {
-      await onSave({
-        title: formData.title,
-        details: formData.details || null,
-        assignee: formData.assignee,
-        planned_date: formData.planned_date ? toISODateString(formData.planned_date) : null,
-        notes: formData.notes || null,
-        project_task_id: formData.project_task_id || null,
-        is_critical: formData.is_critical,
-      });
+        await onSave({
+          title: formData.title,
+          details: formData.details || null,
+          assignee: formData.assignee,
+          planned_date: formData.planned_date ? toISODateString(formData.planned_date) : null,
+          notes: formData.notes || null,
+          project_task_id: formData.project_task_id,
+          is_critical: formData.is_critical,
+        });
     } finally {
       setLoading(false);
     }

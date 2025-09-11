@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { User, Filter, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useTasksStatus } from '@/hooks/useTaskStatus';
 import {
   Table,
   TableBody,
@@ -45,6 +46,13 @@ const GlobalTasks = () => {
   const { toast } = useToast();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Compute task statuses using the custom hook
+  const taskStatuses = useTasksStatus(tasks);
+  const tasksWithComputedStatus = tasks.map((task, index) => ({
+    ...task,
+    computedStatus: taskStatuses[index]
+  }));
   const [showMyTasks, setShowMyTasks] = useState(false);
   const [sortConfig, setSortConfig] = useState<{
     key: keyof Task | 'project_name' | 'company_name' | 'assignee_name' | null;
@@ -117,12 +125,17 @@ const GlobalTasks = () => {
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
-      case 'Completed':
+      case 'Completed on time':
         return 'default';
+      case 'Completed Late':
+        return 'destructive';
       case 'In Progress':
         return 'secondary';
       case 'Planned':
         return 'outline';
+      case 'Overdue - Not Started On Time':
+      case 'Overdue - Not Complete on Time':
+        return 'destructive';
       default:
         return 'outline';
     }
@@ -147,8 +160,8 @@ const GlobalTasks = () => {
 
   const sortedAndFilteredTasks = () => {
     let filtered = showMyTasks 
-      ? tasks.filter(task => task.assignee === user?.id)
-      : tasks;
+      ? tasksWithComputedStatus.filter(task => task.assignee === user?.id)
+      : tasksWithComputedStatus;
 
     // Apply filters
     filtered = filtered.filter(task => {
@@ -161,7 +174,7 @@ const GlobalTasks = () => {
         (filters.company === 'all' || companyName.toLowerCase().includes(filters.company.toLowerCase())) &&
         (filters.step === 'all' || task.step_name.toLowerCase().includes(filters.step.toLowerCase())) &&
         task.task_title.toLowerCase().includes(filters.task.toLowerCase()) &&
-        (filters.status === 'all' || task.status.toLowerCase().includes(filters.status.toLowerCase())) &&
+        (filters.status === 'all' || task.computedStatus.status.toLowerCase().includes(filters.status.toLowerCase())) &&
         (filters.assignee === 'all' || assigneeName.toLowerCase().includes(filters.assignee.toLowerCase()))
       );
     });
@@ -184,6 +197,10 @@ const GlobalTasks = () => {
           case 'assignee_name':
             aValue = a.assignee_profile?.name || '';
             bValue = b.assignee_profile?.name || '';
+            break;
+          case 'status':
+            aValue = a.computedStatus.status;
+            bValue = b.computedStatus.status;
             break;
           case 'planned_start':
           case 'planned_end':
@@ -209,11 +226,11 @@ const GlobalTasks = () => {
   const filteredTasks = sortedAndFilteredTasks();
 
   // Get unique values for filter dropdowns
-  const uniqueProjects = [...new Set(tasks.map(task => task.project?.name).filter(name => name && name.trim() !== ''))];
-  const uniqueCompanies = [...new Set(tasks.map(task => task.project?.company?.name).filter(name => name && name.trim() !== ''))];
-  const uniqueSteps = [...new Set(tasks.map(task => task.step_name).filter(step => step && step.trim() !== ''))];
-  const uniqueStatuses = [...new Set(tasks.map(task => task.status).filter(status => status && status.trim() !== ''))];
-  const uniqueAssignees = [...new Set(tasks.map(task => task.assignee_profile?.name).filter(name => name && name.trim() !== ''))];
+  const uniqueProjects = [...new Set(tasksWithComputedStatus.map(task => task.project?.name).filter(name => name && name.trim() !== ''))];
+  const uniqueCompanies = [...new Set(tasksWithComputedStatus.map(task => task.project?.company?.name).filter(name => name && name.trim() !== ''))];
+  const uniqueSteps = [...new Set(tasksWithComputedStatus.map(task => task.step_name).filter(step => step && step.trim() !== ''))];
+  const uniqueStatuses = [...new Set(tasksWithComputedStatus.map(task => task.computedStatus.status).filter(status => status && status.trim() !== ''))];
+  const uniqueAssignees = [...new Set(tasksWithComputedStatus.map(task => task.assignee_profile?.name).filter(name => name && name.trim() !== ''))];
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Not set';
@@ -469,11 +486,13 @@ const GlobalTasks = () => {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusBadgeVariant(task.status)}>
-                          {task.status}
-                        </Badge>
-                      </TableCell>
+                       <TableCell>
+                         <div className={task.computedStatus.bgColor}>
+                           <Badge variant={getStatusBadgeVariant(task.computedStatus.status)}>
+                             {task.computedStatus.status}
+                           </Badge>
+                         </div>
+                       </TableCell>
                       <TableCell>
                         {task.assignee_profile?.name || 'Unassigned'}
                       </TableCell>

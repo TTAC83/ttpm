@@ -67,7 +67,9 @@ export const Dashboard = () => {
             projects(count)
           `);
 
-        if (companiesError) throw companiesError;
+        if (companiesError) {
+          console.warn('Companies query failed, continuing without company counts:', companiesError);
+        }
 
         const companiesWithCounts = companiesData?.map(company => ({
           id: company.id,

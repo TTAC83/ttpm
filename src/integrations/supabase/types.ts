@@ -629,6 +629,60 @@ export type Database = {
         }
         Relationships: []
       }
+      vision_models: {
+        Row: {
+          created_at: string
+          end_date: string | null
+          equipment: string
+          id: string
+          line_name: string
+          position: string
+          product_run_end: string | null
+          product_run_start: string | null
+          product_sku: string
+          product_title: string
+          project_id: string
+          start_date: string | null
+          status: string
+          updated_at: string
+          use_case: string
+        }
+        Insert: {
+          created_at?: string
+          end_date?: string | null
+          equipment: string
+          id?: string
+          line_name: string
+          position: string
+          product_run_end?: string | null
+          product_run_start?: string | null
+          product_sku: string
+          product_title: string
+          project_id: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          use_case: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string | null
+          equipment?: string
+          id?: string
+          line_name?: string
+          position?: string
+          product_run_end?: string | null
+          product_run_start?: string | null
+          product_sku?: string
+          product_title?: string
+          project_id?: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          use_case?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

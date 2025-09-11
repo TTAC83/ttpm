@@ -18,6 +18,7 @@ import ProjectGantt from './tabs/ProjectGantt';
 import ProjectActions from './tabs/ProjectActions';
 import ProjectAudit from './tabs/ProjectAudit';
 import ProjectCalendar from './tabs/ProjectCalendar';
+import ProjectVisionModels from './tabs/ProjectVisionModels';
 
 interface Project {
   id: string;
@@ -57,7 +58,7 @@ export const ProjectDetail = () => {
   useEffect(() => {
     // Handle URL parameters to set active tab
     const tab = searchParams.get('tab');
-    if (tab && ['overview', 'lines', 'tasks', 'gantt', 'actions', 'calendar', 'audit'].includes(tab)) {
+    if (tab && ['overview', 'lines', 'tasks', 'gantt', 'actions', 'calendar', 'vision-models', 'audit'].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -196,13 +197,14 @@ export const ProjectDetail = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-7 lg:w-auto">
+        <TabsList className="grid grid-cols-8 lg:w-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="lines">Lines</TabsTrigger>
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="gantt">Gantt</TabsTrigger>
           <TabsTrigger value="actions">Actions</TabsTrigger>
           <TabsTrigger value="calendar">Calendar</TabsTrigger>
+          <TabsTrigger value="vision-models">Vision Models</TabsTrigger>
           {profile?.is_internal && (
             <TabsTrigger value="audit">Audit</TabsTrigger>
           )}
@@ -230,6 +232,10 @@ export const ProjectDetail = () => {
 
         <TabsContent value="calendar" className="space-y-4">
           <ProjectCalendar projectId={project.id} />
+        </TabsContent>
+
+        <TabsContent value="vision-models" className="space-y-4">
+          <ProjectVisionModels projectId={project.id} />
         </TabsContent>
 
         {profile?.is_internal && (

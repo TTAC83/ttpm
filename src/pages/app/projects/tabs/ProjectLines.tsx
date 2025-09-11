@@ -192,3 +192,5 @@ export const ProjectLines: React.FC<ProjectLinesProps> = ({ projectId }) => {
     </Card>
   );
 };
+
+export default ProjectLines;

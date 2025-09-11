@@ -31,6 +31,7 @@ interface Equipment {
   }>;
   iot_devices: Array<{
     id: string;
+    name: string;
     mac_address: string;
     receiver_mac_address: string;
   }>;
@@ -133,6 +134,7 @@ export const LineWizard: React.FC<LineWizardProps> = ({
             })) || [],
             iot_devices: eq.iot_devices?.map((iot: any) => ({
               id: iot.id,
+              name: iot.name || "Unnamed Device",
               mac_address: iot.mac_address,
               receiver_mac_address: iot.receiver_mac_address
             })) || []

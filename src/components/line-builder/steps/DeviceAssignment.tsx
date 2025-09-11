@@ -28,6 +28,7 @@ interface Equipment {
   }>;
   iot_devices: Array<{
     id: string;
+    name: string;
     mac_address: string;
     receiver_mac_address: string;
   }>;
@@ -56,6 +57,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
 
   // IoT form state
   const [iotForm, setIotForm] = useState({
+    name: "",
     mac_address: "",
     receiver_mac_address: "",
   });
@@ -90,7 +92,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   };
 
   const addIotDevice = () => {
-    if (!selectedPosition || !selectedEquipment || !iotForm.mac_address || !iotForm.receiver_mac_address) {
+    if (!selectedPosition || !selectedEquipment || !iotForm.name || !iotForm.mac_address || !iotForm.receiver_mac_address) {
       return;
     }
 
@@ -114,7 +116,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       )
     );
 
-    setIotForm({ mac_address: "", receiver_mac_address: "" });
+    setIotForm({ name: "", mac_address: "", receiver_mac_address: "" });
     setDeviceDialogOpen(false);
   };
 
@@ -255,11 +257,14 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                               <div
                                 key={device.id}
                                 className="flex items-center justify-between bg-muted/50 p-3 rounded-lg"
-                              >
-                                <div className="flex gap-2 flex-wrap">
-                                  <Badge variant="secondary">{device.mac_address}</Badge>
-                                  <Badge variant="outline">→ {device.receiver_mac_address}</Badge>
-                                </div>
+                               >
+                                 <div className="flex flex-col gap-1">
+                                   <div className="font-medium text-sm">{device.name}</div>
+                                   <div className="flex gap-2 flex-wrap">
+                                     <Badge variant="secondary">{device.mac_address}</Badge>
+                                     <Badge variant="outline">→ {device.receiver_mac_address}</Badge>
+                                   </div>
+                                 </div>
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -331,6 +336,17 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
             </div>
           ) : (
             <div className="space-y-4">
+              <div>
+                <Label htmlFor="device-name">Device Name</Label>
+                <Input
+                  id="device-name"
+                  value={iotForm.name}
+                  onChange={(e) =>
+                    setIotForm({ ...iotForm, name: e.target.value })
+                  }
+                  placeholder="Enter device name"
+                />
+              </div>
               <div>
                 <Label htmlFor="iot-mac">MAC Address</Label>
                 <Input

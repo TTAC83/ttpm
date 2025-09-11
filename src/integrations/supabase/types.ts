@@ -385,16 +385,19 @@ export type Database = {
           id: number
           name: string
           position: number
+          technology_scope: string
         }
         Insert: {
           id?: number
           name: string
           position?: number
+          technology_scope?: string
         }
         Update: {
           id?: number
           name?: string
           position?: number
+          technology_scope?: string
         }
         Relationships: []
       }

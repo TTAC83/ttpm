@@ -11,11 +11,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Edit, Trash2, Database, List, AlertTriangle } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface MasterStep {
   id: number;
   name: string;
   position: number;
+  technology_scope: string;
 }
 
 interface MasterTask {
@@ -79,7 +81,7 @@ export const MasterDataManagement = () => {
     }
   };
 
-  const handleSaveStep = async (stepData: { name: string; position: number }) => {
+  const handleSaveStep = async (stepData: { name: string; position: number; technology_scope: string }) => {
     try {
       if (editingStep) {
         const { error } = await supabase
@@ -285,13 +287,14 @@ export const MasterDataManagement = () => {
                     <TableRow>
                       <TableHead>Position</TableHead>
                       <TableHead>Name</TableHead>
+                      <TableHead>Technology Scope</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {steps.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={3} className="text-center py-8">
+                        <TableCell colSpan={4} className="text-center py-8">
                           <List className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                           <p className="text-muted-foreground">No master steps found</p>
                         </TableCell>
@@ -301,6 +304,17 @@ export const MasterDataManagement = () => {
                         <TableRow key={step.id}>
                           <TableCell>{step.position}</TableCell>
                           <TableCell className="font-medium">{step.name}</TableCell>
+                          <TableCell>
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              step.technology_scope === 'iot' ? 'bg-blue-100 text-blue-800' :
+                              step.technology_scope === 'vision' ? 'bg-green-100 text-green-800' :
+                              'bg-purple-100 text-purple-800'
+                            }`}>
+                              {step.technology_scope === 'iot' ? 'IoT' : 
+                               step.technology_scope === 'vision' ? 'Vision' : 
+                               'Both'}
+                            </span>
+                          </TableCell>
                           <TableCell>
                             <div className="flex gap-2">
                               <Button
@@ -435,6 +449,7 @@ const StepDialog = ({
   const [formData, setFormData] = useState({
     name: step?.name || '',
     position: step?.position || 0,
+    technology_scope: step?.technology_scope || 'both',
   });
   const [loading, setLoading] = useState(false);
 
@@ -477,6 +492,22 @@ const StepDialog = ({
             onChange={(e) => setFormData(prev => ({ ...prev, position: parseInt(e.target.value) || 0 }))}
             placeholder="Step order position"
           />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="technology_scope">Technology Scope *</Label>
+          <Select 
+            value={formData.technology_scope} 
+            onValueChange={(value) => setFormData(prev => ({ ...prev, technology_scope: value }))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select technology scope" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="both">Both IoT & Vision</SelectItem>
+              <SelectItem value="iot">IoT Only</SelectItem>
+              <SelectItem value="vision">Vision Only</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="flex gap-2 pt-4">
           <Button type="submit" disabled={loading || !formData.name}>

@@ -63,6 +63,13 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
+            foreignKeyName: "actions_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "safe_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "actions_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
@@ -150,6 +157,13 @@ export type Database = {
             columns: ["actor"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "audit_logs_actor_fkey"
+            columns: ["actor"]
+            isOneToOne: false
+            referencedRelation: "safe_profiles"
             referencedColumns: ["user_id"]
           },
         ]
@@ -615,6 +629,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
           },
+          {
+            foreignKeyName: "project_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "safe_profiles"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       project_tasks: {
@@ -669,6 +690,13 @@ export type Database = {
             columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "project_tasks_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "safe_profiles"
             referencedColumns: ["user_id"]
           },
           {
@@ -742,6 +770,13 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
+            foreignKeyName: "projects_ai_iot_engineer_fkey"
+            columns: ["ai_iot_engineer"]
+            isOneToOne: false
+            referencedRelation: "safe_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "projects_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
@@ -756,10 +791,24 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
+            foreignKeyName: "projects_customer_project_lead_fkey"
+            columns: ["customer_project_lead"]
+            isOneToOne: false
+            referencedRelation: "safe_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "projects_implementation_lead_fkey"
             columns: ["implementation_lead"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "projects_implementation_lead_fkey"
+            columns: ["implementation_lead"]
+            isOneToOne: false
+            referencedRelation: "safe_profiles"
             referencedColumns: ["user_id"]
           },
           {
@@ -770,10 +819,24 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
+            foreignKeyName: "projects_project_coordinator_fkey"
+            columns: ["project_coordinator"]
+            isOneToOne: false
+            referencedRelation: "safe_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "projects_technical_project_lead_fkey"
             columns: ["technical_project_lead"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "projects_technical_project_lead_fkey"
+            columns: ["technical_project_lead"]
+            isOneToOne: false
+            referencedRelation: "safe_profiles"
             referencedColumns: ["user_id"]
           },
         ]
@@ -827,6 +890,13 @@ export type Database = {
             columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "subtasks_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "safe_profiles"
             referencedColumns: ["user_id"]
           },
           {
@@ -909,7 +979,44 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      safe_profiles: {
+        Row: {
+          avatar_url: string | null
+          company_id: string | null
+          is_internal: boolean | null
+          job_title: string | null
+          name: string | null
+          role: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          company_id?: string | null
+          is_internal?: boolean | null
+          job_title?: string | null
+          name?: string | null
+          role?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          company_id?: string | null
+          is_internal?: boolean | null
+          job_title?: string | null
+          name?: string | null
+          role?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       add_working_days: {

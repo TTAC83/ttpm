@@ -247,18 +247,26 @@ export default function GlobalModels() {
                     {format(day, 'd')}
                   </div>
                   <div className="space-y-1 mt-1">
-                    {dayModels.slice(0, 2).map((model, index) => (
-                      <div
-                        key={`${model.id}-${index}`}
-                        className="text-xs p-1 rounded bg-primary/10 text-primary cursor-pointer hover:bg-primary/20 border border-primary/20"
-                        onClick={() => handleModelClick(model)}
-                        title={`${model.product_title} (${model.line_name}) - ${model.company_name}`}
-                      >
-                        <div className="font-medium truncate">{model.company_name || 'Unknown Customer'}</div>
-                        <div className="truncate text-primary/80">{model.line_name}</div>
-                        <div className="truncate text-primary/60">{model.product_title}</div>
-                      </div>
-                    ))}
+                    {dayModels.slice(0, 2).map((model, index) => {
+                      console.log('Model data:', {
+                        company_name: model.company_name,
+                        line_name: model.line_name,
+                        product_title: model.product_title,
+                        full_model: model
+                      });
+                      return (
+                        <div
+                          key={`${model.id}-${index}`}
+                          className="text-xs p-1 rounded bg-primary/10 text-primary cursor-pointer hover:bg-primary/20 border border-primary/20"
+                          onClick={() => handleModelClick(model)}
+                          title={`${model.product_title} (${model.line_name}) - ${model.company_name}`}
+                        >
+                          <div className="font-medium truncate">{model.company_name || 'Unknown Customer'}</div>
+                          <div className="truncate text-primary/80">{model.line_name || 'No Line'}</div>
+                          <div className="truncate text-primary/60">{model.product_title || 'No Product'}</div>
+                        </div>
+                      );
+                    })}
                     {dayModels.length > 2 && (
                       <div className="text-xs text-muted-foreground bg-muted/50 p-1 rounded">
                         +{dayModels.length - 2} more models

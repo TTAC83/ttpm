@@ -209,11 +209,11 @@ const GlobalTasks = () => {
   const filteredTasks = sortedAndFilteredTasks();
 
   // Get unique values for filter dropdowns
-  const uniqueProjects = [...new Set(tasks.map(task => task.project?.name).filter(Boolean))];
-  const uniqueCompanies = [...new Set(tasks.map(task => task.project?.company?.name).filter(Boolean))];
-  const uniqueSteps = [...new Set(tasks.map(task => task.step_name))];
-  const uniqueStatuses = [...new Set(tasks.map(task => task.status))];
-  const uniqueAssignees = [...new Set(tasks.map(task => task.assignee_profile?.name).filter(Boolean))];
+  const uniqueProjects = [...new Set(tasks.map(task => task.project?.name).filter(name => name && name.trim() !== ''))];
+  const uniqueCompanies = [...new Set(tasks.map(task => task.project?.company?.name).filter(name => name && name.trim() !== ''))];
+  const uniqueSteps = [...new Set(tasks.map(task => task.step_name).filter(step => step && step.trim() !== ''))];
+  const uniqueStatuses = [...new Set(tasks.map(task => task.status).filter(status => status && status.trim() !== ''))];
+  const uniqueAssignees = [...new Set(tasks.map(task => task.assignee_profile?.name).filter(name => name && name.trim() !== ''))];
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Not set';

@@ -51,12 +51,12 @@ const GlobalTasks = () => {
     direction: 'asc' | 'desc';
   }>({ key: null, direction: 'asc' });
   const [filters, setFilters] = useState({
-    project: '',
-    company: '',
-    step: '',
+    project: 'all',
+    company: 'all',
+    step: 'all',
     task: '',
-    status: '',
-    assignee: '',
+    status: 'all',
+    assignee: 'all',
   });
 
   useEffect(() => {
@@ -157,12 +157,12 @@ const GlobalTasks = () => {
       const assigneeName = task.assignee_profile?.name || '';
       
       return (
-        projectName.toLowerCase().includes(filters.project.toLowerCase()) &&
-        companyName.toLowerCase().includes(filters.company.toLowerCase()) &&
-        task.step_name.toLowerCase().includes(filters.step.toLowerCase()) &&
+        (filters.project === 'all' || projectName.toLowerCase().includes(filters.project.toLowerCase())) &&
+        (filters.company === 'all' || companyName.toLowerCase().includes(filters.company.toLowerCase())) &&
+        (filters.step === 'all' || task.step_name.toLowerCase().includes(filters.step.toLowerCase())) &&
         task.task_title.toLowerCase().includes(filters.task.toLowerCase()) &&
-        task.status.toLowerCase().includes(filters.status.toLowerCase()) &&
-        assigneeName.toLowerCase().includes(filters.assignee.toLowerCase())
+        (filters.status === 'all' || task.status.toLowerCase().includes(filters.status.toLowerCase())) &&
+        (filters.assignee === 'all' || assigneeName.toLowerCase().includes(filters.assignee.toLowerCase()))
       );
     });
 
@@ -247,7 +247,7 @@ const GlobalTasks = () => {
                       <SelectValue placeholder="All projects" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All projects</SelectItem>
+                      <SelectItem value="all">All projects</SelectItem>
                       {uniqueProjects.map(project => (
                         <SelectItem key={project} value={project}>{project}</SelectItem>
                       ))}
@@ -261,7 +261,7 @@ const GlobalTasks = () => {
                       <SelectValue placeholder="All companies" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All companies</SelectItem>
+                      <SelectItem value="all">All companies</SelectItem>
                       {uniqueCompanies.map(company => (
                         <SelectItem key={company} value={company}>{company}</SelectItem>
                       ))}
@@ -275,7 +275,7 @@ const GlobalTasks = () => {
                       <SelectValue placeholder="All steps" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All steps</SelectItem>
+                      <SelectItem value="all">All steps</SelectItem>
                       {uniqueSteps.map(step => (
                         <SelectItem key={step} value={step}>{step}</SelectItem>
                       ))}
@@ -297,7 +297,7 @@ const GlobalTasks = () => {
                       <SelectValue placeholder="All statuses" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All statuses</SelectItem>
+                      <SelectItem value="all">All statuses</SelectItem>
                       {uniqueStatuses.map(status => (
                         <SelectItem key={status} value={status}>{status}</SelectItem>
                       ))}
@@ -311,7 +311,7 @@ const GlobalTasks = () => {
                       <SelectValue placeholder="All assignees" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All assignees</SelectItem>
+                      <SelectItem value="all">All assignees</SelectItem>
                       {uniqueAssignees.map(assignee => (
                         <SelectItem key={assignee} value={assignee}>{assignee}</SelectItem>
                       ))}
@@ -319,11 +319,11 @@ const GlobalTasks = () => {
                   </Select>
                 </div>
               </div>
-              {(Object.values(filters).some(f => f !== '') || sortConfig.key) && (
+              {(Object.values(filters).some(f => f !== '' && f !== 'all') || sortConfig.key) && (
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setFilters({ project: '', company: '', step: '', task: '', status: '', assignee: '' });
+                    setFilters({ project: 'all', company: 'all', step: 'all', task: '', status: 'all', assignee: 'all' });
                     setSortConfig({ key: null, direction: 'asc' });
                   }}
                 >

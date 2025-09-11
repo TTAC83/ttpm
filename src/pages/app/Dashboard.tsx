@@ -142,30 +142,54 @@ export const Dashboard = () => {
         }
 
         // Fetch critical actions with planned dates within range
-        const { data: actionsData, error: actionsError } = await supabase
-          .from('actions')
-          .select(`
-            id,
-            title,
-            planned_date,
-            status,
-            is_critical,
-            project_task_id,
-            project_tasks!inner(
+        const [actionsWithTasks, actionsWithoutTasks] = await Promise.all([
+          supabase
+            .from('actions')
+            .select(`
+              id,
+              title,
+              planned_date,
+              status,
+              is_critical,
+              project_task_id,
+              project_tasks!inner(
+                project_id,
+                projects!inner(
+                  name,
+                  companies!inner(name)
+                )
+              )
+            `)
+            .gte('planned_date', startDate)
+            .lte('planned_date', endDate)
+            .not('planned_date', 'is', null)
+            .eq('is_critical', true)
+            .not('project_task_id', 'is', null),
+          supabase
+            .from('actions')
+            .select(`
+              id,
+              title,
+              planned_date,
+              status,
+              is_critical,
               project_id,
               projects!inner(
                 name,
                 companies!inner(name)
               )
-            )
-          `)
-          .gte('planned_date', startDate)
-          .lte('planned_date', endDate)
-          .not('planned_date', 'is', null)
-          .eq('is_critical', true); // Only critical actions
+            `)
+            .gte('planned_date', startDate)
+            .lte('planned_date', endDate)
+            .not('planned_date', 'is', null)
+            .eq('is_critical', true)
+            .not('project_id', 'is', null)
+            .is('project_task_id', null)
+        ]);
 
-        if (!actionsError && actionsData) {
-          actionsData.forEach(action => {
+        // Process actions with tasks
+        if (!actionsWithTasks.error && actionsWithTasks.data) {
+          actionsWithTasks.data.forEach(action => {
             allEvents.push({
               id: `action-${action.id}`,
               title: action.title,
@@ -177,6 +201,25 @@ export const Dashboard = () => {
               project: {
                 name: (action.project_tasks as any).projects.name,
                 company: { name: (action.project_tasks as any).projects.companies.name }
+              }
+            });
+          });
+        }
+
+        // Process actions without tasks (direct project actions)
+        if (!actionsWithoutTasks.error && actionsWithoutTasks.data) {
+          actionsWithoutTasks.data.forEach(action => {
+            allEvents.push({
+              id: `action-${action.id}`,
+              title: action.title,
+              date: action.planned_date,
+              type: 'action',
+              status: action.status,
+              is_critical: action.is_critical,
+              project_id: action.project_id,
+              project: {
+                name: (action.projects as any).name,
+                company: { name: (action.projects as any).companies.name }
               }
             });
           });

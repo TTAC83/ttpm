@@ -22,7 +22,7 @@ export interface SafeProfile {
  * Uses the secure database function that only exposes safe fields
  */
 export async function getSafeProfilesForProject(projectId: string) {
-  // First get the user IDs for project members
+  // Get project members using the secure function approach
   const { data: projectMembers, error: membersError } = await supabase
     .from('project_members')
     .select('user_id')
@@ -59,6 +59,26 @@ export async function getSafeProfilesForProject(projectId: string) {
   }
 
   return profiles;
+}
+
+/**
+ * Get secure profile data with field-level access control
+ * This function respects the security policy and only returns allowed fields
+ */
+export async function getSecureProfile(userId: string): Promise<Partial<SafeProfile> | null> {
+  const currentUser = (await supabase.auth.getUser()).data.user;
+  if (!currentUser) return null;
+
+  // Use the secure database function which implements proper field-level security
+  const { data, error } = await supabase
+    .rpc('get_safe_profile_info', { target_user_id: userId });
+
+  if (error) {
+    console.error('Error fetching secure profile:', error);
+    return null;
+  }
+
+  return data?.[0] || null;
 }
 
 /**

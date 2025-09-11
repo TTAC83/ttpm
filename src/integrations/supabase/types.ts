@@ -920,6 +920,14 @@ export type Database = {
         Args: { company_name?: string; new_role: string; target_email: string }
         Returns: undefined
       }
+      can_access_profile_field: {
+        Args: {
+          field_name: string
+          profile_user_id: string
+          requesting_user_id?: string
+        }
+        Returns: boolean
+      }
       get_all_users_with_profiles: {
         Args: Record<PropertyKey, never>
         Returns: {

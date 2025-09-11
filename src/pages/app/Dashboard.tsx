@@ -67,9 +67,7 @@ export const Dashboard = () => {
             projects(count)
           `);
 
-        if (companiesError) {
-          console.warn('Companies query failed, continuing without company counts:', companiesError);
-        }
+        if (companiesError) throw companiesError;
 
         const companiesWithCounts = companiesData?.map(company => ({
           id: company.id,
@@ -86,7 +84,7 @@ export const Dashboard = () => {
         
         const allEvents: UpcomingEvent[] = [];
 
-        // Fetch critical tasks with planned dates within range (only blocked tasks)
+        // Fetch critical tasks with planned dates within range (filter by critical statuses)
         const { data: tasksData, error: tasksError } = await supabase
           .from('project_tasks')
           .select(`
@@ -95,39 +93,19 @@ export const Dashboard = () => {
             planned_start,
             planned_end,
             status,
-            project_id
+            project_id,
+            projects!inner(
+              name,
+              companies!inner(name)
+            )
           `)
-.or(`and(planned_start.gte.${startDate},planned_start.lte.${endDate}),and(planned_end.gte.${startDate},planned_end.lte.${endDate})`)
-          .in('status', ['Blocked', 'In Progress', 'Planned']);
+          .or(`planned_start.gte.${startDate},planned_end.gte.${startDate}`)
+          .or(`planned_start.lte.${endDate},planned_end.lte.${endDate}`)
+          .not('planned_start', 'is', null)
+          .in('status', ['Blocked']); // Only blocked tasks (considered critical)
 
         if (!tasksError && tasksData) {
-          // Build project/company maps for tasks
-          const taskProjectIds = [...new Set((tasksData || []).map(t => t.project_id))] as string[];
-          let taskProjectsMap = new Map<string, { id: string; name: string; company_id: string | null }>();
-          let taskCompaniesMap = new Map<string, { id: string; name: string }>();
-
-          if (taskProjectIds.length > 0) {
-            const { data: tProjects, error: tProjError } = await supabase
-              .from('projects')
-              .select('id, name, company_id')
-              .in('id', taskProjectIds);
-            if (!tProjError && tProjects) {
-              taskProjectsMap = new Map((tProjects as any[]).map(p => [p.id, p]));
-              const tCompanyIds = [...new Set((tProjects as any[]).map(p => p.company_id).filter(Boolean))] as string[];
-              if (tCompanyIds.length > 0) {
-                const { data: tCompanies } = await supabase
-                  .from('companies')
-                  .select('id, name')
-                  .in('id', tCompanyIds);
-                taskCompaniesMap = new Map((tCompanies as any[] || []).map(c => [c.id, c]));
-              }
-            }
-          }
-
           tasksData.forEach(task => {
-            const project = taskProjectsMap.get(task.project_id);
-            const company = project?.company_id ? taskCompaniesMap.get(project.company_id) : null;
-
             // Add event for planned start date
             if (task.planned_start && task.planned_start >= startDate && task.planned_start <= endDate) {
               allEvents.push({
@@ -139,8 +117,8 @@ export const Dashboard = () => {
                 project_id: task.project_id,
                 task_id: task.id,
                 project: {
-                  name: project?.name || 'Unknown Project',
-                  company: { name: company?.name || 'Unknown Company' }
+                  name: (task.projects as any).name,
+                  company: { name: (task.projects as any).companies.name }
                 }
               });
             }
@@ -155,8 +133,8 @@ export const Dashboard = () => {
                 project_id: task.project_id,
                 task_id: task.id,
                 project: {
-                  name: project?.name || 'Unknown Project',
-                  company: { name: company?.name || 'Unknown Company' }
+                  name: (task.projects as any).name,
+                  company: { name: (task.projects as any).companies.name }
                 }
               });
             }

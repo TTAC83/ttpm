@@ -245,7 +245,7 @@ export const Dashboard = () => {
         });
 
 
-        // Fetch critical calendar events within range
+        // Fetch ONLY critical calendar events for the top chart
         const { data: calendarData, error: calendarError } = await supabase
           .from('project_events')
           .select(`
@@ -256,8 +256,8 @@ export const Dashboard = () => {
             is_critical,
             project_id
           `)
-.or(`and(start_date.gte.${startDate},start_date.lte.${endDate}),and(end_date.gte.${startDate},end_date.lte.${endDate})`)
-          .eq('is_critical', true); // Only critical calendar events
+          .or(`and(start_date.gte.${startDate},start_date.lte.${endDate}),and(end_date.gte.${startDate},end_date.lte.${endDate})`)
+          .eq('is_critical', true); // Only critical calendar events for top chart
 
         if (!calendarError && calendarData) {
           // Get project and company info for calendar events

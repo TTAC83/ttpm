@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2, Eye } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { LineWizard } from "@/components/line-builder/LineWizard";
+import { LineVisualization } from "@/components/line-builder/LineVisualization";
 
 interface Line {
   id: string;
@@ -26,6 +27,7 @@ export const ProjectLines: React.FC<ProjectLinesProps> = ({ projectId }) => {
   const [lines, setLines] = useState<Line[]>([]);
   const [loading, setLoading] = useState(true);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -83,6 +85,14 @@ export const ProjectLines: React.FC<ProjectLinesProps> = ({ projectId }) => {
     fetchLines();
   };
 
+  const handleViewLine = (lineId: string) => {
+    setSelectedLineId(lineId);
+  };
+
+  const handleBackToLines = () => {
+    setSelectedLineId(null);
+  };
+
   if (loading) {
     return (
       <Card>
@@ -91,6 +101,10 @@ export const ProjectLines: React.FC<ProjectLinesProps> = ({ projectId }) => {
         </CardContent>
       </Card>
     );
+  }
+
+  if (selectedLineId) {
+    return <LineVisualization lineId={selectedLineId} onBack={handleBackToLines} />;
   }
 
   return (
@@ -131,7 +145,7 @@ export const ProjectLines: React.FC<ProjectLinesProps> = ({ projectId }) => {
                 <TableHead>Camera Count</TableHead>
                 <TableHead>IoT Device Count</TableHead>
                 <TableHead>Created</TableHead>
-                <TableHead className="w-[100px]">Actions</TableHead>
+                <TableHead className="w-[120px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -149,9 +163,17 @@ export const ProjectLines: React.FC<ProjectLinesProps> = ({ projectId }) => {
                   <TableCell>{new Date(line.created_at).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleViewLine(line.id)}
+                        title="View Line"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" title="Delete Line">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>

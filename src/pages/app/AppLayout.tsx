@@ -69,6 +69,12 @@ export const AppLayout = () => {
       show: true
     },
     {
+      title: 'Global Models',
+      icon: Settings,
+      path: '/app/models',
+      show: true
+    },
+    {
       title: 'Projects',
       icon: Settings,
       path: '/app/projects',

@@ -12,12 +12,13 @@ interface Company {
   project_count: number;
 }
 
-interface ProjectEvent {
+interface UpcomingEvent {
   id: string;
   title: string;
-  start_date: string;
-  end_date: string;
-  is_critical: boolean;
+  date: string;
+  type: 'task' | 'action' | 'calendar';
+  is_critical?: boolean;
+  status?: string;
   project: {
     name: string;
     company: {
@@ -29,7 +30,7 @@ interface ProjectEvent {
 export const Dashboard = () => {
   const { profile } = useAuth();
   const [companies, setCompanies] = useState<Company[]>([]);
-  const [events, setEvents] = useState<ProjectEvent[]>([]);
+  const [events, setEvents] = useState<UpcomingEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Generate 7-day date range (previous 2 days, today, next 4 days)
@@ -72,11 +73,105 @@ export const Dashboard = () => {
 
         setCompanies(companiesWithCounts);
 
-        // Fetch events for the 7-day range
+        // Fetch upcoming events for the 7-day range
         const startDate = dateRange[0].toISOString().split('T')[0];
         const endDate = dateRange[dateRange.length - 1].toISOString().split('T')[0];
+        
+        const allEvents: UpcomingEvent[] = [];
 
-        const { data: eventsData, error: eventsError } = await supabase
+        // Fetch tasks with planned dates within range
+        const { data: tasksData, error: tasksError } = await supabase
+          .from('project_tasks')
+          .select(`
+            id,
+            task_title,
+            planned_start,
+            planned_end,
+            status,
+            project_id,
+            projects!inner(
+              name,
+              companies!inner(name)
+            )
+          `)
+          .or(`planned_start.gte.${startDate},planned_end.gte.${startDate}`)
+          .or(`planned_start.lte.${endDate},planned_end.lte.${endDate}`)
+          .not('planned_start', 'is', null);
+
+        if (!tasksError && tasksData) {
+          tasksData.forEach(task => {
+            // Add event for planned start date
+            if (task.planned_start && task.planned_start >= startDate && task.planned_start <= endDate) {
+              allEvents.push({
+                id: `task-start-${task.id}`,
+                title: `${task.task_title} (Start)`,
+                date: task.planned_start,
+                type: 'task',
+                status: task.status,
+                project: {
+                  name: (task.projects as any).name,
+                  company: { name: (task.projects as any).companies.name }
+                }
+              });
+            }
+            // Add event for planned end date
+            if (task.planned_end && task.planned_end >= startDate && task.planned_end <= endDate && task.planned_end !== task.planned_start) {
+              allEvents.push({
+                id: `task-end-${task.id}`,
+                title: `${task.task_title} (End)`,
+                date: task.planned_end,
+                type: 'task',
+                status: task.status,
+                project: {
+                  name: (task.projects as any).name,
+                  company: { name: (task.projects as any).companies.name }
+                }
+              });
+            }
+          });
+        }
+
+        // Fetch actions with planned dates within range
+        const { data: actionsData, error: actionsError } = await supabase
+          .from('actions')
+          .select(`
+            id,
+            title,
+            planned_date,
+            status,
+            is_critical,
+            project_task_id,
+            project_tasks!inner(
+              project_id,
+              projects!inner(
+                name,
+                companies!inner(name)
+              )
+            )
+          `)
+          .gte('planned_date', startDate)
+          .lte('planned_date', endDate)
+          .not('planned_date', 'is', null);
+
+        if (!actionsError && actionsData) {
+          actionsData.forEach(action => {
+            allEvents.push({
+              id: `action-${action.id}`,
+              title: action.title,
+              date: action.planned_date,
+              type: 'action',
+              status: action.status,
+              is_critical: action.is_critical,
+              project: {
+                name: (action.project_tasks as any).projects.name,
+                company: { name: (action.project_tasks as any).projects.companies.name }
+              }
+            });
+          });
+        }
+
+        // Fetch calendar events within range
+        const { data: calendarData, error: calendarError } = await supabase
           .from('project_events')
           .select(`
             id,
@@ -84,54 +179,44 @@ export const Dashboard = () => {
             start_date,
             end_date,
             is_critical,
-            project_id
+            project_id,
+            projects!inner(
+              name,
+              companies!inner(name)
+            )
           `)
           .or(`start_date.gte.${startDate},end_date.gte.${startDate}`)
           .or(`start_date.lte.${endDate},end_date.lte.${endDate}`);
 
-        if (eventsError) throw eventsError;
-
-        // Fetch project and company data separately
-        const projectIds = [...new Set(eventsData?.map(event => event.project_id) || [])];
-        
-        const { data: projectsData, error: projectsError } = await supabase
-          .from('projects')
-          .select(`
-            id,
-            name,
-            company_id,
-            companies!inner(
-              name
-            )
-          `)
-          .in('id', projectIds);
-
-        if (projectsError) throw projectsError;
-
-        // Create a map of projects for quick lookup
-        const projectsMap = new Map(projectsData?.map(project => [
-          project.id, 
-          {
-            name: project.name,
-            company: {
-              name: (project.companies as any).name
+        if (!calendarError && calendarData) {
+          calendarData.forEach(event => {
+            // For multi-day events, add for each day in range
+            const eventStart = new Date(event.start_date);
+            const eventEnd = new Date(event.end_date);
+            const rangeStart = new Date(startDate);
+            const rangeEnd = new Date(endDate);
+            
+            const currentDate = new Date(Math.max(eventStart.getTime(), rangeStart.getTime()));
+            const endDateToCheck = new Date(Math.min(eventEnd.getTime(), rangeEnd.getTime()));
+            
+            while (currentDate <= endDateToCheck) {
+              allEvents.push({
+                id: `calendar-${event.id}-${currentDate.toISOString().split('T')[0]}`,
+                title: event.title,
+                date: currentDate.toISOString().split('T')[0],
+                type: 'calendar',
+                is_critical: event.is_critical,
+                project: {
+                  name: (event.projects as any).name,
+                  company: { name: (event.projects as any).companies.name }
+                }
+              });
+              currentDate.setDate(currentDate.getDate() + 1);
             }
-          }
-        ]) || []);
+          });
+        }
 
-        const formattedEvents = eventsData?.map(event => ({
-          id: event.id,
-          title: event.title,
-          start_date: event.start_date,
-          end_date: event.end_date,
-          is_critical: event.is_critical,
-          project: projectsMap.get(event.project_id) || {
-            name: 'Unknown Project',
-            company: { name: 'Unknown Company' }
-          }
-        })) || [];
-
-        setEvents(formattedEvents);
+        setEvents(allEvents);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
@@ -144,9 +229,7 @@ export const Dashboard = () => {
 
   const getEventsForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return events.filter(event => {
-      return dateStr >= event.start_date && dateStr <= event.end_date;
-    });
+    return events.filter(event => event.date === dateStr);
   };
 
   const isToday = (date: Date) => {
@@ -201,23 +284,53 @@ export const Dashboard = () => {
                     </div>
                   </div>
                   <div className="space-y-1">
-                    {dayEvents.map((event) => (
-                      <div
-                        key={event.id}
-                        className={`text-xs p-1 rounded text-left ${
-                          event.is_critical 
-                            ? 'bg-destructive/10 text-destructive border border-destructive/20' 
-                            : 'bg-primary/10 text-primary border border-primary/20'
-                        }`}
-                      >
-                        <div className="font-medium truncate" title={event.title}>
-                          {event.title}
+                    {dayEvents.map((event) => {
+                      const getEventColor = () => {
+                        if (event.is_critical) {
+                          return 'bg-destructive/10 text-destructive border border-destructive/20';
+                        }
+                        switch (event.type) {
+                          case 'task':
+                            return 'bg-info/10 text-info border border-info/20';
+                          case 'action':
+                            return 'bg-warning/10 text-warning border border-warning/20';
+                          case 'calendar':
+                            return 'bg-accent/10 text-accent border border-accent/20';
+                          default:
+                            return 'bg-primary/10 text-primary border border-primary/20';
+                        }
+                      };
+
+                      const getEventIcon = () => {
+                        switch (event.type) {
+                          case 'task':
+                            return '📋';
+                          case 'action':
+                            return '⚡';
+                          case 'calendar':
+                            return '📅';
+                          default:
+                            return '📅';
+                        }
+                      };
+
+                      return (
+                        <div
+                          key={event.id}
+                          className={`text-xs p-1 rounded text-left ${getEventColor()}`}
+                        >
+                          <div className="flex items-center gap-1">
+                            <span className="text-[10px]">{getEventIcon()}</span>
+                            <div className="font-medium truncate" title={event.title}>
+                              {event.title}
+                            </div>
+                          </div>
+                          <div className="text-muted-foreground truncate" title={event.project.company.name}>
+                            {event.project.company.name}
+                          </div>
                         </div>
-                        <div className="text-muted-foreground truncate" title={event.project.company.name}>
-                          {event.project.company.name}
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               );

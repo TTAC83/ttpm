@@ -126,12 +126,19 @@ export function VisionModelDialog({
     try {
       const { data, error } = await supabase
         .from('equipment')
-        .select('id, name')
+        .select(`
+          id, 
+          name,
+          cameras(id)
+        `)
         .eq('position_id', positionId)
         .order('name');
 
       if (error) throw error;
-      setEquipment(data || []);
+      
+      // Filter to only equipment that has cameras attached
+      const equipmentWithCameras = (data || []).filter(eq => eq.cameras && eq.cameras.length > 0);
+      setEquipment(equipmentWithCameras);
     } catch (error) {
       console.error('Error loading equipment:', error);
     }
@@ -354,7 +361,7 @@ export function VisionModelDialog({
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder={equipment.length === 0 ? "Select a position first" : "Select equipment"} />
+                          <SelectValue placeholder={equipment.length === 0 ? "No equipment with cameras available" : "Select equipment"} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>

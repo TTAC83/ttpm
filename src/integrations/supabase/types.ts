@@ -959,6 +959,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_user_company_id: {
+        Args: { user_email: string }
+        Returns: string
+      }
       is_current_user_internal: {
         Args: Record<PropertyKey, never>
         Returns: boolean

@@ -45,7 +45,7 @@ export const AppLayout = () => {
 
   const menuItems = [
     {
-      title: 'Dashboard',
+      title: 'Global Dashboard',
       icon: Home,
       path: '/app',
       show: true

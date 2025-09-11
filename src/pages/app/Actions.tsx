@@ -6,8 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
-import { Filter, FilterX } from "lucide-react";
+import { Filter, FilterX, User, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 interface Action {
   id: string;
@@ -41,6 +43,19 @@ export const Actions = () => {
   const [loading, setLoading] = useState(true);
   const [showMyActions, setShowMyActions] = useState(false);
   const [highlightedActionId, setHighlightedActionId] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof Action | 'project_name' | 'company_name' | 'assignee_name' | 'task_name' | null;
+    direction: 'asc' | 'desc';
+  }>({ key: null, direction: 'asc' });
+  const [filters, setFilters] = useState({
+    project: 'all',
+    company: 'all',
+    task: 'all',
+    title: '',
+    status: 'all',
+    assignee: 'all',
+    critical: 'all',
+  });
 
   useEffect(() => {
     if (user && profile) {
@@ -49,12 +64,9 @@ export const Actions = () => {
   }, [user, profile]);
 
   useEffect(() => {
-    if (showMyActions && user) {
-      setFilteredActions(actions.filter(action => action.assignee === user.id));
-    } else {
-      setFilteredActions(actions);
-    }
-  }, [actions, showMyActions, user]);
+    // Apply filtering and sorting
+    setFilteredActions(sortedAndFilteredActions());
+  }, [actions, showMyActions, user, sortConfig, filters]);
 
   // Handle URL parameter to highlight specific action
   useEffect(() => {
@@ -118,6 +130,96 @@ export const Actions = () => {
     return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
+  const handleSort = (key: keyof Action | 'project_name' | 'company_name' | 'assignee_name' | 'task_name') => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (key: keyof Action | 'project_name' | 'company_name' | 'assignee_name' | 'task_name') => {
+    if (sortConfig.key !== key) {
+      return <ArrowUpDown className="h-4 w-4" />;
+    }
+    return sortConfig.direction === 'asc' ? 
+      <ArrowUp className="h-4 w-4" /> : 
+      <ArrowDown className="h-4 w-4" />;
+  };
+
+  const sortedAndFilteredActions = () => {
+    let filtered = showMyActions 
+      ? actions.filter(action => action.assignee === user?.id)
+      : actions;
+
+    // Apply filters
+    filtered = filtered.filter(action => {
+      const projectName = action.project_tasks?.projects?.name || '';
+      const companyName = action.project_tasks?.projects?.companies?.name || '';
+      const taskName = action.project_tasks?.task_title || '';
+      const assigneeName = action.profiles?.name || '';
+      
+      return (
+        (filters.project === 'all' || projectName.toLowerCase().includes(filters.project.toLowerCase())) &&
+        (filters.company === 'all' || companyName.toLowerCase().includes(filters.company.toLowerCase())) &&
+        (filters.task === 'all' || taskName.toLowerCase().includes(filters.task.toLowerCase())) &&
+        action.title.toLowerCase().includes(filters.title.toLowerCase()) &&
+        (filters.status === 'all' || action.status.toLowerCase().includes(filters.status.toLowerCase())) &&
+        (filters.assignee === 'all' || assigneeName.toLowerCase().includes(filters.assignee.toLowerCase())) &&
+        (filters.critical === 'all' || 
+         (filters.critical === 'critical' && action.is_critical) ||
+         (filters.critical === 'normal' && !action.is_critical))
+      );
+    });
+
+    // Apply sorting
+    if (sortConfig.key) {
+      filtered.sort((a, b) => {
+        let aValue: any;
+        let bValue: any;
+
+        switch (sortConfig.key) {
+          case 'project_name':
+            aValue = a.project_tasks?.projects?.name || '';
+            bValue = b.project_tasks?.projects?.name || '';
+            break;
+          case 'company_name':
+            aValue = a.project_tasks?.projects?.companies?.name || '';
+            bValue = b.project_tasks?.projects?.companies?.name || '';
+            break;
+          case 'task_name':
+            aValue = a.project_tasks?.task_title || '';
+            bValue = b.project_tasks?.task_title || '';
+            break;
+          case 'assignee_name':
+            aValue = a.profiles?.name || '';
+            bValue = b.profiles?.name || '';
+            break;
+          case 'planned_date':
+            aValue = a.planned_date ? new Date(a.planned_date) : new Date(0);
+            bValue = b.planned_date ? new Date(b.planned_date) : new Date(0);
+            break;
+          default:
+            aValue = a[sortConfig.key as keyof Action] || '';
+            bValue = b[sortConfig.key as keyof Action] || '';
+        }
+
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return filtered;
+  };
+
+  // Get unique values for filter dropdowns
+  const uniqueProjects = [...new Set(actions.map(action => action.project_tasks?.projects?.name).filter(name => name && name.trim() !== ''))];
+  const uniqueCompanies = [...new Set(actions.map(action => action.project_tasks?.projects?.companies?.name).filter(name => name && name.trim() !== ''))];
+  const uniqueTasks = [...new Set(actions.map(action => action.project_tasks?.task_title).filter(task => task && task.trim() !== ''))];
+  const uniqueStatuses = [...new Set(actions.map(action => action.status).filter(status => status && status.trim() !== ''))];
+  const uniqueAssignees = [...new Set(actions.map(action => action.profiles?.name).filter(name => name && name.trim() !== ''))];
+
   if (loading) {
     return (
       <div className="container mx-auto p-6">
@@ -141,31 +243,203 @@ export const Actions = () => {
               onClick={() => setShowMyActions(!showMyActions)}
               className="flex items-center gap-2"
             >
-              {showMyActions ? <FilterX className="h-4 w-4" /> : <Filter className="h-4 w-4" />}
+              <User className="h-4 w-4" />
               {showMyActions ? "Show All Actions" : "Show My Actions"}
             </Button>
           </div>
-          <p className="text-muted-foreground">
+        </CardHeader>
+        <CardContent>
+          {!loading && (
+            <div className="mb-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Project</label>
+                  <Select value={filters.project} onValueChange={(value) => setFilters(prev => ({ ...prev, project: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All projects" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All projects</SelectItem>
+                      {uniqueProjects.map(project => (
+                        <SelectItem key={project} value={project}>{project}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Company</label>
+                  <Select value={filters.company} onValueChange={(value) => setFilters(prev => ({ ...prev, company: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All companies" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All companies</SelectItem>
+                      {uniqueCompanies.map(company => (
+                        <SelectItem key={company} value={company}>{company}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Task</label>
+                  <Select value={filters.task} onValueChange={(value) => setFilters(prev => ({ ...prev, task: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All tasks" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All tasks</SelectItem>
+                      {uniqueTasks.map(task => (
+                        <SelectItem key={task} value={task}>{task}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Action Title</label>
+                  <Input
+                    placeholder="Filter actions..."
+                    value={filters.title}
+                    onChange={(e) => setFilters(prev => ({ ...prev, title: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Status</label>
+                  <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All statuses</SelectItem>
+                      {uniqueStatuses.map(status => (
+                        <SelectItem key={status} value={status}>{formatStatus(status)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Assignee</label>
+                  <Select value={filters.assignee} onValueChange={(value) => setFilters(prev => ({ ...prev, assignee: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All assignees" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All assignees</SelectItem>
+                      {uniqueAssignees.map(assignee => (
+                        <SelectItem key={assignee} value={assignee}>{assignee}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Priority</label>
+                  <Select value={filters.critical} onValueChange={(value) => setFilters(prev => ({ ...prev, critical: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All priorities" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All priorities</SelectItem>
+                      <SelectItem value="critical">Critical</SelectItem>
+                      <SelectItem value="normal">Normal</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              {(Object.values(filters).some(f => f !== '' && f !== 'all') || sortConfig.key) && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setFilters({ project: 'all', company: 'all', task: 'all', title: '', status: 'all', assignee: 'all', critical: 'all' });
+                    setSortConfig({ key: null, direction: 'asc' });
+                  }}
+                >
+                  Clear Filters & Sort
+                </Button>
+              )}
+            </div>
+          )}
+          <p className="text-muted-foreground mb-4">
             {showMyActions 
               ? `Showing ${filteredActions.length} actions assigned to you`
               : `Showing ${filteredActions.length} total actions`
             }
           </p>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Action</TableHead>
-                  <TableHead>Project</TableHead>
-                  <TableHead>Task</TableHead>
-                  <TableHead>Assignee</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Planned Date</TableHead>
-                  <TableHead>Priority</TableHead>
-                </TableRow>
-              </TableHeader>
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-muted-foreground">Loading actions...</div>
+            </div>
+          ) : filteredActions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 space-y-3">
+              <Filter className="h-12 w-12 text-muted-foreground" />
+              <div className="text-lg font-medium">No actions found</div>
+              <div className="text-muted-foreground text-center">
+                {showMyActions 
+                  ? "You don't have any actions assigned to you."
+                  : "No actions available for your accessible projects."
+                }
+              </div>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleSort('title')}
+                        className="h-auto p-0 font-semibold hover:bg-transparent"
+                      >
+                        Action {getSortIcon('title')}
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleSort('project_name')}
+                        className="h-auto p-0 font-semibold hover:bg-transparent"
+                      >
+                        Project {getSortIcon('project_name')}
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleSort('task_name')}
+                        className="h-auto p-0 font-semibold hover:bg-transparent"
+                      >
+                        Task {getSortIcon('task_name')}
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleSort('assignee_name')}
+                        className="h-auto p-0 font-semibold hover:bg-transparent"
+                      >
+                        Assignee {getSortIcon('assignee_name')}
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleSort('status')}
+                        className="h-auto p-0 font-semibold hover:bg-transparent"
+                      >
+                        Status {getSortIcon('status')}
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleSort('planned_date')}
+                        className="h-auto p-0 font-semibold hover:bg-transparent"
+                      >
+                        Planned Date {getSortIcon('planned_date')}
+                      </Button>
+                    </TableHead>
+                    <TableHead>Priority</TableHead>
+                  </TableRow>
+                </TableHeader>
               <TableBody>
                 {filteredActions.length === 0 ? (
                   <TableRow>
@@ -233,6 +507,7 @@ export const Actions = () => {
               </TableBody>
             </Table>
           </div>
+          )}
         </CardContent>
       </Card>
     </div>

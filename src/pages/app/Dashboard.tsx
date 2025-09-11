@@ -97,8 +97,7 @@ export const Dashboard = () => {
             status,
             project_id
           `)
-          .or(`planned_start.gte.${startDate},planned_end.gte.${startDate}`)
-          .or(`planned_start.lte.${endDate},planned_end.lte.${endDate}`)
+.or(`and(planned_start.gte.${startDate},planned_start.lte.${endDate}),and(planned_end.gte.${startDate},planned_end.lte.${endDate})`)
           .in('status', ['Blocked', 'In Progress', 'Planned']);
 
         if (!tasksError && tasksData) {
@@ -273,8 +272,7 @@ export const Dashboard = () => {
             is_critical,
             project_id
           `)
-          .or(`start_date.gte.${startDate},end_date.gte.${startDate}`)
-          .or(`start_date.lte.${endDate},end_date.lte.${endDate}`)
+.or(`and(start_date.gte.${startDate},start_date.lte.${endDate}),and(end_date.gte.${startDate},end_date.lte.${endDate})`)
           .eq('is_critical', true); // Only critical calendar events
 
         if (!calendarError && calendarData) {
@@ -339,8 +337,7 @@ export const Dashboard = () => {
             is_critical,
             project_id
           `)
-          .or(`start_date.gte.${startDate},end_date.gte.${startDate}`)
-          .or(`start_date.lte.${endDate},end_date.lte.${endDate}`);
+          .or(`and(start_date.gte.${startDate},start_date.lte.${endDate}),and(end_date.gte.${startDate},end_date.lte.${endDate})`);
 
         const allCalendarEventsArray: UpcomingEvent[] = [];
 

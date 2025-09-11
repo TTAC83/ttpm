@@ -68,6 +68,9 @@ export function VisionModelDialog({
   mode 
 }: VisionModelDialogProps) {
   const [loading, setLoading] = useState(false);
+  const [lines, setLines] = useState<any[]>([]);
+  const [positions, setPositions] = useState<any[]>([]);
+  const [equipment, setEquipment] = useState<any[]>([]);
   const { toast } = useToast();
 
   const form = useForm<VisionModelFormData>({
@@ -84,7 +87,65 @@ export function VisionModelDialog({
   });
 
   useEffect(() => {
+    if (open) {
+      loadLines();
+    }
+  }, [open, projectId]);
+
+  const loadLines = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('lines')
+        .select('id, line_name')
+        .eq('project_id', projectId)
+        .order('line_name');
+
+      if (error) throw error;
+      setLines(data || []);
+    } catch (error) {
+      console.error('Error loading lines:', error);
+    }
+  };
+
+  const loadPositions = async (lineId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('positions')
+        .select('id, name')
+        .eq('line_id', lineId)
+        .order('name');
+
+      if (error) throw error;
+      setPositions(data || []);
+    } catch (error) {
+      console.error('Error loading positions:', error);
+    }
+  };
+
+  const loadEquipment = async (positionId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('equipment')
+        .select('id, name')
+        .eq('position_id', positionId)
+        .order('name');
+
+      if (error) throw error;
+      setEquipment(data || []);
+    } catch (error) {
+      console.error('Error loading equipment:', error);
+    }
+  };
+
+  useEffect(() => {
     if (model && (mode === 'edit' || mode === 'view')) {
+      // Find the line ID from line name to load positions and equipment
+      const selectedLine = lines.find(line => line.line_name === model.line_name);
+      if (selectedLine) {
+        loadPositions(selectedLine.id);
+        // We'll need to load equipment after positions are loaded
+      }
+
       form.reset({
         line_name: model.line_name,
         position: model.position,
@@ -108,8 +169,10 @@ export function VisionModelDialog({
         use_case: '',
         status: 'Footage Required',
       });
+      setPositions([]);
+      setEquipment([]);
     }
-  }, [model, mode, form]);
+  }, [model, mode, form, lines]);
 
   const onSubmit = async (data: VisionModelFormData) => {
     if (mode === 'view') return;
@@ -204,9 +267,36 @@ export function VisionModelDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Line</FormLabel>
-                    <FormControl>
-                      <Input {...field} disabled={mode === 'view'} />
-                    </FormControl>
+                    <Select 
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        // Clear dependent fields
+                        form.setValue('position', '');
+                        form.setValue('equipment', '');
+                        setPositions([]);
+                        setEquipment([]);
+                        // Load positions for selected line
+                        const selectedLine = lines.find(line => line.line_name === value);
+                        if (selectedLine) {
+                          loadPositions(selectedLine.id);
+                        }
+                      }} 
+                      value={field.value}
+                      disabled={mode === 'view'}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a line" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {lines.map((line) => (
+                          <SelectItem key={line.id} value={line.line_name}>
+                            {line.line_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -218,9 +308,34 @@ export function VisionModelDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Position</FormLabel>
-                    <FormControl>
-                      <Input {...field} disabled={mode === 'view'} />
-                    </FormControl>
+                    <Select 
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        // Clear equipment field
+                        form.setValue('equipment', '');
+                        setEquipment([]);
+                        // Load equipment for selected position
+                        const selectedPosition = positions.find(pos => pos.name === value);
+                        if (selectedPosition) {
+                          loadEquipment(selectedPosition.id);
+                        }
+                      }} 
+                      value={field.value}
+                      disabled={mode === 'view' || positions.length === 0}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={positions.length === 0 ? "Select a line first" : "Select a position"} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {positions.map((position) => (
+                          <SelectItem key={position.id} value={position.name}>
+                            {position.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -232,9 +347,24 @@ export function VisionModelDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Equipment</FormLabel>
-                    <FormControl>
-                      <Input {...field} disabled={mode === 'view'} />
-                    </FormControl>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value}
+                      disabled={mode === 'view' || equipment.length === 0}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={equipment.length === 0 ? "Select a position first" : "Select equipment"} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {equipment.map((eq) => (
+                          <SelectItem key={eq.id} value={eq.name}>
+                            {eq.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

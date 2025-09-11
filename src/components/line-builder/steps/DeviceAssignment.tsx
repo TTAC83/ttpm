@@ -12,6 +12,7 @@ interface Position {
   name: string;
   position_x: number;
   position_y: number;
+  titles: Array<{ id: string; title: "RLE" | "OP" }>;
   equipment: Equipment[];
 }
 
@@ -19,7 +20,6 @@ interface Equipment {
   id: string;
   name: string;
   equipment_type?: string;
-  titles: Array<{ id: string; title: "RLE" | "OP" }>;
   cameras: Array<{
     id: string;
     camera_type: string;

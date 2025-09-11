@@ -15,6 +15,7 @@ interface Position {
   name: string;
   position_x: number;
   position_y: number;
+  titles: Array<{ id: string; title: "RLE" | "OP" }>;
   equipment: Equipment[];
 }
 
@@ -22,7 +23,6 @@ interface Equipment {
   id: string;
   name: string;
   equipment_type?: string;
-  titles: Array<{ id: string; title: "RLE" | "OP" }>;
   cameras: Array<{
     id: string;
     camera_type: string;
@@ -61,7 +61,7 @@ export const LineWizard: React.FC<LineWizardProps> = ({
   const steps = [
     { id: 1, title: "Basic Info", component: LineBasicInfo },
     { id: 2, title: "Process Flow", component: ProcessFlowBuilder },
-    { id: 3, title: "Equipment Titles", component: EquipmentTitles },
+    { id: 3, title: "Position Titles", component: EquipmentTitles },
     { id: 4, title: "Devices", component: DeviceAssignment },
   ];
 
@@ -122,6 +122,16 @@ export const LineWizard: React.FC<LineWizardProps> = ({
 
         if (positionError) throw positionError;
 
+        // Create position titles
+        for (const title of position.titles) {
+          await supabase
+            .from('position_titles')
+            .insert({
+              position_id: positionData.id,
+              title: title.title
+            });
+        }
+
         // Create equipment for this position
         for (const eq of position.equipment) {
           const { data: equipmentData, error: equipmentError } = await supabase
@@ -136,16 +146,6 @@ export const LineWizard: React.FC<LineWizardProps> = ({
             .single();
 
           if (equipmentError) throw equipmentError;
-
-          // Create titles for this equipment
-          for (const title of eq.titles) {
-            await supabase
-              .from('equipment_titles')
-              .insert({
-                equipment_id: equipmentData.id,
-                title: title.title
-              });
-          }
 
           // Create cameras for this equipment
           for (const camera of eq.cameras) {
@@ -192,21 +192,6 @@ export const LineWizard: React.FC<LineWizardProps> = ({
         description: "Failed to create line. Please try again.",
         variant: "destructive",
       });
-    }
-  };
-
-  const getStepProps = (stepId: number) => {
-    switch (stepId) {
-      case 1:
-        return { lineData, setLineData };
-      case 2:
-        return { positions, setPositions };
-      case 3:
-        return { positions, setPositions };
-      case 4:
-        return { positions, setPositions };
-      default:
-        return {};
     }
   };
 

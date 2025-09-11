@@ -11,6 +11,7 @@ interface Position {
   name: string;
   position_x: number;
   position_y: number;
+  titles: Array<{ id: string; title: "RLE" | "OP" }>;
   equipment: Equipment[];
 }
 
@@ -18,7 +19,6 @@ interface Equipment {
   id: string;
   name: string;
   equipment_type?: string;
-  titles: Array<{ id: string; title: "RLE" | "OP" }>;
   cameras: Array<{
     id: string;
     camera_type: string;
@@ -55,6 +55,7 @@ export const ProcessFlowBuilder: React.FC<ProcessFlowBuilderProps> = ({
         name: newPositionName.trim(),
         position_x: 100 + positions.length * 120,
         position_y: 100,
+        titles: [],
         equipment: [],
       };
       setPositions([...positions, newPosition]);
@@ -69,7 +70,6 @@ export const ProcessFlowBuilder: React.FC<ProcessFlowBuilderProps> = ({
         id: `equipment-${Date.now()}`,
         name: newEquipmentName.trim(),
         equipment_type: "",
-        titles: [],
         cameras: [],
         iot_devices: [],
       };

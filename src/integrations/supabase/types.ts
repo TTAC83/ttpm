@@ -426,6 +426,35 @@ export type Database = {
           },
         ]
       }
+      position_titles: {
+        Row: {
+          created_at: string
+          id: string
+          position_id: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          position_id: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          position_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "position_titles_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "positions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       positions: {
         Row: {
           created_at: string
@@ -434,6 +463,7 @@ export type Database = {
           name: string
           position_x: number
           position_y: number
+          titles: string[] | null
           updated_at: string
         }
         Insert: {
@@ -443,6 +473,7 @@ export type Database = {
           name: string
           position_x?: number
           position_y?: number
+          titles?: string[] | null
           updated_at?: string
         }
         Update: {
@@ -452,6 +483,7 @@ export type Database = {
           name?: string
           position_x?: number
           position_y?: number
+          titles?: string[] | null
           updated_at?: string
         }
         Relationships: []

@@ -76,7 +76,7 @@ export const AppLayout = () => {
       show: true
     },
     {
-      title: 'Projects',
+      title: 'Implementation Project',
       icon: Settings,
       path: '/app/projects',
       show: true

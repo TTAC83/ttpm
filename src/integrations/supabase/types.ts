@@ -385,19 +385,16 @@ export type Database = {
           id: number
           name: string
           position: number
-          technology_scope: string
         }
         Insert: {
           id?: number
           name: string
           position?: number
-          technology_scope?: string
         }
         Update: {
           id?: number
           name?: string
           position?: number
-          technology_scope?: string
         }
         Relationships: []
       }
@@ -409,6 +406,7 @@ export type Database = {
           planned_start_offset_days: number
           position: number
           step_id: number
+          technology_scope: string
           title: string
         }
         Insert: {
@@ -418,6 +416,7 @@ export type Database = {
           planned_start_offset_days?: number
           position?: number
           step_id: number
+          technology_scope?: string
           title: string
         }
         Update: {
@@ -427,6 +426,7 @@ export type Database = {
           planned_start_offset_days?: number
           position?: number
           step_id?: number
+          technology_scope?: string
           title?: string
         }
         Relationships: [

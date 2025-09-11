@@ -17,7 +17,6 @@ interface MasterStep {
   id: number;
   name: string;
   position: number;
-  technology_scope: string;
 }
 
 interface MasterTask {
@@ -28,6 +27,7 @@ interface MasterTask {
   planned_start_offset_days: number;
   planned_end_offset_days: number;
   position: number;
+  technology_scope: string;
   master_steps?: {
     name: string;
   };
@@ -81,7 +81,7 @@ export const MasterDataManagement = () => {
     }
   };
 
-  const handleSaveStep = async (stepData: { name: string; position: number; technology_scope: string }) => {
+  const handleSaveStep = async (stepData: { name: string; position: number }) => {
     try {
       if (editingStep) {
         const { error } = await supabase
@@ -120,6 +120,7 @@ export const MasterDataManagement = () => {
     planned_start_offset_days: number;
     planned_end_offset_days: number;
     position: number;
+    technology_scope: string;
   }) => {
     try {
       if (editingTask) {
@@ -287,14 +288,13 @@ export const MasterDataManagement = () => {
                     <TableRow>
                       <TableHead>Position</TableHead>
                       <TableHead>Name</TableHead>
-                      <TableHead>Technology Scope</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {steps.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8">
+                        <TableCell colSpan={3} className="text-center py-8">
                           <List className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                           <p className="text-muted-foreground">No master steps found</p>
                         </TableCell>
@@ -304,17 +304,6 @@ export const MasterDataManagement = () => {
                         <TableRow key={step.id}>
                           <TableCell>{step.position}</TableCell>
                           <TableCell className="font-medium">{step.name}</TableCell>
-                          <TableCell>
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                              step.technology_scope === 'iot' ? 'bg-blue-100 text-blue-800' :
-                              step.technology_scope === 'vision' ? 'bg-green-100 text-green-800' :
-                              'bg-purple-100 text-purple-800'
-                            }`}>
-                              {step.technology_scope === 'iot' ? 'IoT' : 
-                               step.technology_scope === 'vision' ? 'Vision' : 
-                               'Both'}
-                            </span>
-                          </TableCell>
                           <TableCell>
                             <div className="flex gap-2">
                               <Button
@@ -383,6 +372,7 @@ export const MasterDataManagement = () => {
                       <TableHead>Step</TableHead>
                       <TableHead>Position</TableHead>
                       <TableHead>Title</TableHead>
+                      <TableHead>Technology Scope</TableHead>
                       <TableHead>Start Offset</TableHead>
                       <TableHead>End Offset</TableHead>
                       <TableHead>Actions</TableHead>
@@ -391,7 +381,7 @@ export const MasterDataManagement = () => {
                   <TableBody>
                     {tasks.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8">
+                        <TableCell colSpan={7} className="text-center py-8">
                           <List className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                           <p className="text-muted-foreground">No master tasks found</p>
                         </TableCell>
@@ -402,6 +392,17 @@ export const MasterDataManagement = () => {
                           <TableCell>{task.master_steps?.name}</TableCell>
                           <TableCell>{task.position}</TableCell>
                           <TableCell className="font-medium">{task.title}</TableCell>
+                          <TableCell>
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              task.technology_scope === 'iot' ? 'bg-blue-100 text-blue-800' :
+                              task.technology_scope === 'vision' ? 'bg-green-100 text-green-800' :
+                              'bg-purple-100 text-purple-800'
+                            }`}>
+                              {task.technology_scope === 'iot' ? 'IoT' : 
+                               task.technology_scope === 'vision' ? 'Vision' : 
+                               'Both'}
+                            </span>
+                          </TableCell>
                           <TableCell>{task.planned_start_offset_days} days</TableCell>
                           <TableCell>{task.planned_end_offset_days} days</TableCell>
                           <TableCell>
@@ -449,8 +450,6 @@ const StepDialog = ({
   const [formData, setFormData] = useState({
     name: step?.name || '',
     position: step?.position || 0,
-    iot: step?.technology_scope === 'iot' || step?.technology_scope === 'both' || !step,
-    vision: step?.technology_scope === 'vision' || step?.technology_scope === 'both' || !step,
   });
   const [loading, setLoading] = useState(false);
 
@@ -458,15 +457,7 @@ const StepDialog = ({
     e.preventDefault();
     setLoading(true);
     try {
-      const technology_scope = formData.iot && formData.vision ? 'both' : 
-                               formData.iot ? 'iot' : 
-                               formData.vision ? 'vision' : 'both';
-      
-      await onSave({
-        name: formData.name,
-        position: formData.position,
-        technology_scope
-      });
+      await onSave(formData);
     } finally {
       setLoading(false);
     }
@@ -502,29 +493,8 @@ const StepDialog = ({
             placeholder="Step order position"
           />
         </div>
-        <div className="space-y-3">
-          <Label>Technology Scope *</Label>
-          <div className="flex flex-col space-y-2">
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="iot"
-                checked={formData.iot}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, iot: checked as boolean }))}
-              />
-              <Label htmlFor="iot">IoT</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="vision"
-                checked={formData.vision}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, vision: checked as boolean }))}
-              />
-              <Label htmlFor="vision">Vision</Label>
-            </div>
-          </div>
-        </div>
         <div className="flex gap-2 pt-4">
-          <Button type="submit" disabled={loading || !formData.name || (!formData.iot && !formData.vision)}>
+          <Button type="submit" disabled={loading || !formData.name}>
             {loading ? 'Saving...' : (step ? 'Update Step' : 'Create Step')}
           </Button>
           <Button type="button" variant="outline" onClick={onClose}>
@@ -555,6 +525,8 @@ const TaskDialog = ({
     planned_start_offset_days: task?.planned_start_offset_days || 0,
     planned_end_offset_days: task?.planned_end_offset_days || 1,
     position: task?.position || 0,
+    iot: task?.technology_scope === 'iot' || task?.technology_scope === 'both' || !task,
+    vision: task?.technology_scope === 'vision' || task?.technology_scope === 'both' || !task,
   });
   const [loading, setLoading] = useState(false);
 
@@ -562,7 +534,19 @@ const TaskDialog = ({
     e.preventDefault();
     setLoading(true);
     try {
-      await onSave(formData);
+      const technology_scope = formData.iot && formData.vision ? 'both' : 
+                               formData.iot ? 'iot' : 
+                               formData.vision ? 'vision' : 'both';
+      
+      await onSave({
+        step_id: formData.step_id,
+        title: formData.title,
+        details: formData.details,
+        planned_start_offset_days: formData.planned_start_offset_days,
+        planned_end_offset_days: formData.planned_end_offset_days,
+        position: formData.position,
+        technology_scope
+      });
     } finally {
       setLoading(false);
     }
@@ -650,8 +634,30 @@ const TaskDialog = ({
           </div>
         </div>
         
+        <div className="space-y-3">
+          <Label>Technology Scope *</Label>
+          <div className="flex flex-col space-y-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="task_iot"
+                checked={formData.iot}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, iot: checked as boolean }))}
+              />
+              <Label htmlFor="task_iot">IoT</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="task_vision"
+                checked={formData.vision}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, vision: checked as boolean }))}
+              />
+              <Label htmlFor="task_vision">Vision</Label>
+            </div>
+          </div>
+        </div>
+        
         <div className="flex gap-2 pt-4">
-          <Button type="submit" disabled={loading || !formData.title || !formData.step_id}>
+          <Button type="submit" disabled={loading || !formData.title || !formData.step_id || (!formData.iot && !formData.vision)}>
             {loading ? 'Saving...' : (task ? 'Update Task' : 'Create Task')}
           </Button>
           <Button type="button" variant="outline" onClick={onClose}>

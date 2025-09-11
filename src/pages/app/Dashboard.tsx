@@ -86,7 +86,7 @@ export const Dashboard = () => {
         
         const allEvents: UpcomingEvent[] = [];
 
-        // Fetch critical tasks with planned dates within range (filter by critical statuses)
+        // Fetch critical tasks with planned dates within range (only blocked tasks)
         const { data: tasksData, error: tasksError } = await supabase
           .from('project_tasks')
           .select(`
@@ -95,19 +95,41 @@ export const Dashboard = () => {
             planned_start,
             planned_end,
             status,
-            project_id,
-            projects!inner(
-              name,
-              companies!inner(name)
-            )
+            project_id
           `)
           .or(`planned_start.gte.${startDate},planned_end.gte.${startDate}`)
           .or(`planned_start.lte.${endDate},planned_end.lte.${endDate}`)
           .not('planned_start', 'is', null)
-          .in('status', ['Blocked']); // Only blocked tasks (considered critical)
+          .in('status', ['Blocked']);
 
         if (!tasksError && tasksData) {
+          // Build project/company maps for tasks
+          const taskProjectIds = [...new Set((tasksData || []).map(t => t.project_id))] as string[];
+          let taskProjectsMap = new Map<string, { id: string; name: string; company_id: string | null }>();
+          let taskCompaniesMap = new Map<string, { id: string; name: string }>();
+
+          if (taskProjectIds.length > 0) {
+            const { data: tProjects, error: tProjError } = await supabase
+              .from('projects')
+              .select('id, name, company_id')
+              .in('id', taskProjectIds);
+            if (!tProjError && tProjects) {
+              taskProjectsMap = new Map((tProjects as any[]).map(p => [p.id, p]));
+              const tCompanyIds = [...new Set((tProjects as any[]).map(p => p.company_id).filter(Boolean))] as string[];
+              if (tCompanyIds.length > 0) {
+                const { data: tCompanies } = await supabase
+                  .from('companies')
+                  .select('id, name')
+                  .in('id', tCompanyIds);
+                taskCompaniesMap = new Map((tCompanies as any[] || []).map(c => [c.id, c]));
+              }
+            }
+          }
+
           tasksData.forEach(task => {
+            const project = taskProjectsMap.get(task.project_id);
+            const company = project?.company_id ? taskCompaniesMap.get(project.company_id) : null;
+
             // Add event for planned start date
             if (task.planned_start && task.planned_start >= startDate && task.planned_start <= endDate) {
               allEvents.push({
@@ -119,8 +141,8 @@ export const Dashboard = () => {
                 project_id: task.project_id,
                 task_id: task.id,
                 project: {
-                  name: (task.projects as any).name,
-                  company: { name: (task.projects as any).companies.name }
+                  name: project?.name || 'Unknown Project',
+                  company: { name: company?.name || 'Unknown Company' }
                 }
               });
             }
@@ -135,8 +157,8 @@ export const Dashboard = () => {
                 project_id: task.project_id,
                 task_id: task.id,
                 project: {
-                  name: (task.projects as any).name,
-                  company: { name: (task.projects as any).companies.name }
+                  name: project?.name || 'Unknown Project',
+                  company: { name: company?.name || 'Unknown Company' }
                 }
               });
             }
@@ -259,20 +281,26 @@ export const Dashboard = () => {
         if (!calendarError && calendarData) {
           // Get project and company info for calendar events
           const projectIds = [...new Set(calendarData.map(event => event.project_id))];
-          const { data: projectsData } = await supabase
+          const { data: calProjects } = await supabase
             .from('projects')
-            .select(`
-              id,
-              name,
-              companies!inner(name)
-            `)
+            .select(`id, name, company_id`)
             .in('id', projectIds);
-          
-          const projectMap = new Map(projectsData?.map(p => [p.id, p]) || []);
+          const calProjectMap = new Map((calProjects || []).map(p => [p.id, p]));
+
+          const calCompanyIds = [...new Set((calProjects || []).map(p => p.company_id).filter(Boolean))] as string[];
+          let calCompaniesMap = new Map<string, { id: string; name: string }>();
+          if (calCompanyIds.length > 0) {
+            const { data: calCompanies } = await supabase
+              .from('companies')
+              .select('id, name')
+              .in('id', calCompanyIds);
+            calCompaniesMap = new Map((calCompanies || []).map(c => [c.id, c]));
+          }
           
           calendarData.forEach(event => {
-            const project = projectMap.get(event.project_id);
+            const project = calProjectMap.get(event.project_id);
             if (!project) return;
+            const company = project.company_id ? calCompaniesMap.get(project.company_id) : null;
             
             // For multi-day events, add for each day in range
             const eventStart = new Date(event.start_date);
@@ -293,7 +321,7 @@ export const Dashboard = () => {
                 project_id: event.project_id,
                 project: {
                   name: project.name,
-                  company: { name: (project.companies as any).name }
+                  company: { name: company?.name || 'Unknown Company' }
                 }
               });
               currentDate.setDate(currentDate.getDate() + 1);
@@ -322,18 +350,25 @@ export const Dashboard = () => {
           const allProjectIds = [...new Set(allCalendarData.map(event => event.project_id))];
           const { data: allProjectsData } = await supabase
             .from('projects')
-            .select(`
-              id,
-              name,
-              companies!inner(name)
-            `)
+            .select(`id, name, company_id`)
             .in('id', allProjectIds);
           
-          const allProjectMap = new Map(allProjectsData?.map(p => [p.id, p]) || []);
+          const allProjectMap = new Map((allProjectsData || []).map(p => [p.id, p]));
+
+          const allCompanyIds = [...new Set((allProjectsData || []).map(p => p.company_id).filter(Boolean))] as string[];
+          let allCompaniesMap = new Map<string, { id: string; name: string }>();
+          if (allCompanyIds.length > 0) {
+            const { data: allCompanies } = await supabase
+              .from('companies')
+              .select('id, name')
+              .in('id', allCompanyIds);
+            allCompaniesMap = new Map((allCompanies || []).map(c => [c.id, c]));
+          }
           
           allCalendarData.forEach(event => {
             const project = allProjectMap.get(event.project_id);
             if (!project) return;
+            const company = project.company_id ? allCompaniesMap.get(project.company_id) : null;
             
             // For multi-day events, add for each day in range
             const eventStart = new Date(event.start_date);
@@ -354,7 +389,7 @@ export const Dashboard = () => {
                 project_id: event.project_id,
                 project: {
                   name: project.name,
-                  company: { name: (project.companies as any).name }
+                  company: { name: company?.name || 'Unknown Company' }
                 }
               });
               currentDate.setDate(currentDate.getDate() + 1);

@@ -27,7 +27,7 @@ interface VisionModel {
   end_date: string | null;
   product_run_start: string | null;
   product_run_end: string | null;
-  status: 'Footage Capture' | 'Annotation' | 'Training' | 'Test Data Validation' | 'System Validation - Recorded Footage' | 'System validation -Live Footage' | 'Site Acceptance Test' | 'Complete';
+  status: 'Footage Required' | 'Model Training' | 'Model Validation' | 'Complete';
   created_at: string;
   updated_at: string;
 }

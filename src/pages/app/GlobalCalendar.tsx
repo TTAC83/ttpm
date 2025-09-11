@@ -3,8 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, AlertTriangle } from "lucide-react";
+import { Calendar as CalendarIcon, AlertTriangle } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
 import { formatDateUK } from "@/lib/dateUtils";
+import { addMonths, format } from "date-fns";
 
 interface Company {
   id: string;
@@ -56,28 +58,35 @@ export const GlobalCalendar = () => {
     const fetchEvents = async () => {
       setLoading(true);
       
-      let query = supabase
-        .from('project_events')
-        .select(`
-          *,
-          projects!inner(
-            name,
-            companies!inner(
-              name
+      try {
+        let query = supabase
+          .from('project_events')
+          .select(`
+            *,
+            projects!inner(
+              name,
+              companies!inner(
+                name
+              )
             )
-          )
-        `)
-        .order('start_date', { ascending: true });
+          `)
+          .order('start_date', { ascending: true });
 
-      // Filter by company if selected
-      if (selectedCompany !== 'all') {
-        query = query.eq('projects.companies.id', selectedCompany);
-      }
+        // Filter by company if selected
+        if (selectedCompany !== 'all') {
+          query = query.eq('projects.companies.id', selectedCompany);
+        }
 
-      const { data } = await query;
-      
-      if (data) {
-        setEvents(data as any);
+        const { data, error } = await query;
+        
+        if (error) {
+          console.error('Error fetching events:', error);
+        } else if (data) {
+          console.log('Fetched events:', data);
+          setEvents(data as any);
+        }
+      } catch (error) {
+        console.error('Error in fetchEvents:', error);
       }
       
       setLoading(false);
@@ -107,11 +116,22 @@ export const GlobalCalendar = () => {
     return start > today;
   };
 
+  const getEventsForDate = (date: Date) => {
+    return events.filter(event => {
+      const eventStart = new Date(event.start_date);
+      const eventEnd = new Date(event.end_date);
+      return date >= eventStart && date <= eventEnd;
+    });
+  };
+
+  const currentMonth = new Date();
+  const nextMonth = addMonths(currentMonth, 1);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Calendar className="h-6 w-6" />
+          <CalendarIcon className="h-6 w-6" />
           <h1 className="text-3xl font-bold">Global Calendar</h1>
         </div>
       </div>
@@ -143,6 +163,57 @@ export const GlobalCalendar = () => {
         </CardContent>
       </Card>
 
+      {/* Calendar Views */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Current Month */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{format(currentMonth, 'MMMM yyyy')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Calendar
+              mode="single"
+              month={currentMonth}
+              className="rounded-md border pointer-events-auto"
+              modifiers={{
+                hasEvents: (date) => getEventsForDate(date).length > 0
+              }}
+              modifiersStyles={{
+                hasEvents: { 
+                  backgroundColor: 'hsl(var(--primary))', 
+                  color: 'hsl(var(--primary-foreground))',
+                  fontWeight: 'bold'
+                }
+              }}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Next Month */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{format(nextMonth, 'MMMM yyyy')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Calendar
+              mode="single"
+              month={nextMonth}
+              className="rounded-md border pointer-events-auto"
+              modifiers={{
+                hasEvents: (date) => getEventsForDate(date).length > 0
+              }}
+              modifiersStyles={{
+                hasEvents: { 
+                  backgroundColor: 'hsl(var(--primary))', 
+                  color: 'hsl(var(--primary-foreground))',
+                  fontWeight: 'bold'
+                }
+              }}
+            />
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Events */}
       <Card>
         <CardHeader>
@@ -159,7 +230,7 @@ export const GlobalCalendar = () => {
             </div>
           ) : events.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>No calendar events found</p>
               {selectedCompany !== 'all' && (
                 <p className="text-sm mt-2">Try selecting "All Companies" to see more events</p>

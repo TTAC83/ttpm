@@ -54,6 +54,8 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
         .from('profiles')
         .select('user_id, name')
         .eq('is_internal', true)
+        .not('name', 'is', null)
+        .neq('name', '')
         .order('name');
       
       if (error) throw error;

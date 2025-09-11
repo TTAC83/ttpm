@@ -397,6 +397,57 @@ export const Dashboard = () => {
           });
         }
 
+        // Finalize events
+        if (allEvents.length === 0) {
+          console.warn('No critical events built from detailed pipeline, attempting simplified fallback queries');
+          try {
+            const { data: simpleActions } = await supabase
+              .from('actions')
+              .select('id, title, planned_date, status')
+              .eq('is_critical', true)
+              .gte('planned_date', startDate)
+              .lte('planned_date', endDate);
+            (simpleActions || []).forEach(a => {
+              allEvents.push({
+                id: `action-${a.id}`,
+                title: a.title,
+                date: a.planned_date as string,
+                type: 'action',
+                status: a.status,
+                project: { name: 'Unknown Project', company: { name: 'Unknown Company' } }
+              });
+            });
+
+            const { data: simpleCal } = await supabase
+              .from('project_events')
+              .select('id, title, start_date, end_date, is_critical, project_id')
+              .eq('is_critical', true)
+              .or(`and(start_date.gte.${startDate},start_date.lte.${endDate}),and(end_date.gte.${startDate},end_date.lte.${endDate})`);
+            (simpleCal || []).forEach(ev => {
+              const eventStart = new Date(ev.start_date);
+              const eventEnd = new Date(ev.end_date);
+              const rangeStart = new Date(startDate);
+              const rangeEnd = new Date(endDate);
+              const currentDate = new Date(Math.max(eventStart.getTime(), rangeStart.getTime()));
+              const endDateToCheck = new Date(Math.min(eventEnd.getTime(), rangeEnd.getTime()));
+              while (currentDate <= endDateToCheck) {
+                allEvents.push({
+                  id: `calendar-${ev.id}-${currentDate.toISOString().split('T')[0]}`,
+                  title: ev.title,
+                  date: currentDate.toISOString().split('T')[0],
+                  type: 'calendar',
+                  is_critical: ev.is_critical,
+                  project_id: ev.project_id,
+                  project: { name: 'Unknown Project', company: { name: 'Unknown Company' } }
+                });
+                currentDate.setDate(currentDate.getDate() + 1);
+              }
+            });
+          } catch (e) {
+            console.warn('Fallback queries failed:', e);
+          }
+        }
+
         setEvents(allEvents);
         setAllCalendarEvents(allCalendarEventsArray);
       } catch (error) {

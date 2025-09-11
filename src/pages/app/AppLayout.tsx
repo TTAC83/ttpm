@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { ThingtraxLogo } from '@/components/ThingtraxLogo';
 import { 
   Sidebar, 
   SidebarContent, 
@@ -93,8 +92,16 @@ export const AppLayout = () => {
     <SidebarProvider>
       <div className="flex h-screen w-full">
         <Sidebar>
-          <SidebarHeader className="border-b border-thingtrax-light-gray/20 p-4">
-            <ThingtraxLogo size="md" />
+          <SidebarHeader className="border-b border-sidebar-border p-4">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded bg-primary flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-sm">TT</span>
+              </div>
+              <div>
+                <h2 className="font-semibold text-sidebar-foreground">Thingtrax</h2>
+                <p className="text-xs text-sidebar-foreground/60">Implementation</p>
+              </div>
+            </div>
           </SidebarHeader>
           
           <SidebarContent>
@@ -146,7 +153,7 @@ export const AppLayout = () => {
                 variant="ghost" 
                 size="sm" 
                 onClick={signOut}
-                className="w-full justify-start text-thingtrax-gray hover:bg-thingtrax-blue/10 hover:text-thingtrax-blue"
+                className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent"
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Sign Out
@@ -156,10 +163,9 @@ export const AppLayout = () => {
         </Sidebar>
         
         <main className="flex-1 overflow-auto">
-          <div className="border-b border-thingtrax-light-gray/20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="flex h-14 items-center justify-between px-4">
+          <div className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="flex h-14 items-center px-4">
               <SidebarTrigger />
-              <ThingtraxLogo size="sm" />
             </div>
           </div>
           <div className="p-6">

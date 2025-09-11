@@ -59,7 +59,11 @@ export default function GlobalModels() {
         .select('id, name')
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching companies:', error);
+        // Don't throw on company fetch error, just log it
+        return;
+      }
       setCompanies(data || []);
     } catch (error: any) {
       console.error('Error fetching companies:', error);
@@ -76,7 +80,12 @@ export default function GlobalModels() {
           .from('projects')
           .select('id')
           .eq('company_id', selectedCompany);
-        if (projErr) throw projErr;
+        if (projErr) {
+          console.error('Error fetching projects for company filter:', projErr);
+          setModels([]);
+          setLoading(false);
+          return;
+        }
         projectFilterIds = (projIds?.map((p: any) => p.id) ?? []);
         if (!projectFilterIds.length) {
           setModels([]);
@@ -94,7 +103,18 @@ export default function GlobalModels() {
         modelsQuery = modelsQuery.in('project_id', projectFilterIds);
       }
       const { data: modelsData, error: modelsErr } = await modelsQuery;
-      if (modelsErr) throw modelsErr;
+      if (modelsErr) {
+        console.error('Error fetching vision models:', modelsErr);
+        // Show toast but don't throw to avoid auth issues
+        toast({
+          title: "Access Error",
+          description: "Unable to load vision models. You may not have access to this data.",
+          variant: "destructive",
+        });
+        setModels([]);
+        setLoading(false);
+        return;
+      }
 
       // Enrich with project and company names
       const uniqueProjectIds = Array.from(new Set((modelsData ?? []).map((m: any) => m.project_id))).filter(Boolean) as string[];
@@ -106,17 +126,25 @@ export default function GlobalModels() {
           .from('projects')
           .select('id, name, company_id')
           .in('id', uniqueProjectIds);
-        if (projectsErr) throw projectsErr;
-        projectsData?.forEach((p: any) => projectMap.set(p.id, { name: p.name, company_id: p.company_id }));
+        if (projectsErr) {
+          console.error('Error fetching project names:', projectsErr);
+          // Continue without enrichment if projects fail
+        } else {
+          projectsData?.forEach((p: any) => projectMap.set(p.id, { name: p.name, company_id: p.company_id }));
 
-        const uniqueCompanyIds = Array.from(new Set((projectsData ?? []).map((p: any) => p.company_id).filter(Boolean)));
-        if (uniqueCompanyIds.length) {
-          const { data: companiesData, error: companiesErr } = await supabase
-            .from('companies')
-            .select('id, name')
-            .in('id', uniqueCompanyIds as string[]);
-          if (companiesErr) throw companiesErr;
-          companiesData?.forEach((c: any) => companyMap.set(c.id, { name: c.name }));
+          const uniqueCompanyIds = Array.from(new Set((projectsData ?? []).map((p: any) => p.company_id).filter(Boolean)));
+          if (uniqueCompanyIds.length) {
+            const { data: companiesData, error: companiesErr } = await supabase
+              .from('companies')
+              .select('id, name')
+              .in('id', uniqueCompanyIds as string[]);
+            if (companiesErr) {
+              console.error('Error fetching company names:', companiesErr);
+              // Continue without company enrichment if companies fail
+            } else {
+              companiesData?.forEach((c: any) => companyMap.set(c.id, { name: c.name }));
+            }
+          }
         }
       }
 

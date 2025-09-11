@@ -179,7 +179,8 @@ serve(async (req) => {
           assignee: body.assignee || null,
           planned_date: body.planned_date || null,
           notes: body.notes || null,
-          status: body.status || 'Open'
+          status: body.status || 'Open',
+          is_critical: (typeof body.is_critical === 'boolean') ? body.is_critical : undefined
         })
         .eq('id', body.id)
         .select()

@@ -215,36 +215,28 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
 
   const handleCreateAction = async (actionData: any) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('No active session');
-      }
-
       const { data, error } = await supabase.functions.invoke('create-action', {
         body: {
           ...actionData,
-          project_id: actionData.project_task_id ? undefined : projectId // Pass project_id if no task selected
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          project_id: actionData.project_task_id ? undefined : projectId
         },
       });
 
       if (error) throw error;
-      if (data.error) throw new Error(data.error);
+      if ((data as any)?.error) throw new Error((data as any).error);
 
       toast({
-        title: "Action Created",
-        description: "New action has been created successfully",
+        title: 'Action Created',
+        description: 'New action has been created successfully',
       });
 
       setDialogOpen(false);
       fetchAllActions();
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message || "Failed to create action",
-        variant: "destructive",
+        title: 'Error',
+        description: error?.message || 'Failed to create action',
+        variant: 'destructive',
       });
     }
   };
@@ -258,29 +250,20 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
     if (!editingAction) return;
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('No active session');
-      }
-
-      // For now, we'll use the same edge function but pass the action ID
       const { data, error } = await supabase.functions.invoke('create-action', {
         body: {
           id: editingAction.id,
           ...actionData,
-          isUpdate: true
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          isUpdate: true,
         },
       });
 
       if (error) throw error;
-      if (data.error) throw new Error(data.error);
+      if ((data as any)?.error) throw new Error((data as any).error);
 
       toast({
-        title: "Action Updated",
-        description: "Action has been updated successfully",
+        title: 'Action Updated',
+        description: 'Action has been updated successfully',
       });
 
       setEditDialogOpen(false);
@@ -288,9 +271,9 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
       fetchAllActions();
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message || "Failed to update action",
-        variant: "destructive",
+        title: 'Error',
+        description: error?.message || 'Failed to update action',
+        variant: 'destructive',
       });
     }
   };

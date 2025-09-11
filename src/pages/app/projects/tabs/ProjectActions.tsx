@@ -468,9 +468,18 @@ const CreateActionDialog = ({
     is_critical: false,
   });
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.project_task_id) {
+      toast({
+        title: "Task required",
+        description: "Please select a task before creating an action.",
+        variant: "destructive",
+      });
+      return;
+    }
     setLoading(true);
     
     try {
@@ -520,16 +529,15 @@ const CreateActionDialog = ({
         </div>
 
         <div className="space-y-2">
-          <Label>Task (Optional)</Label>
+          <Label>Task *</Label>
           <Select 
-            value={formData.project_task_id || 'unassigned'} 
-            onValueChange={(value) => setFormData(prev => ({ ...prev, project_task_id: value === 'unassigned' ? '' : value }))}
+            value={formData.project_task_id}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, project_task_id: value }))}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select a task" />
+              <SelectValue placeholder="Select a task (required)" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="unassigned">No specific task</SelectItem>
               {tasks.map((task) => (
                 <SelectItem key={task.id} value={task.id}>
                   <div className="flex items-center gap-2">
@@ -621,7 +629,7 @@ const CreateActionDialog = ({
         </div>
 
         <div className="flex gap-2 pt-4">
-          <Button type="submit" disabled={loading || !formData.title || !formData.assignee}>
+          <Button type="submit" disabled={loading || !formData.title || !formData.assignee || !formData.project_task_id}>
             <Save className="h-4 w-4 mr-2" />
             {loading ? 'Creating...' : 'Create Action'}
           </Button>

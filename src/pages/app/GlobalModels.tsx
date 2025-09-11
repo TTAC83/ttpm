@@ -239,7 +239,7 @@ export default function GlobalModels() {
               return (
                 <div
                   key={day.toISOString()}
-                  className={`h-24 p-1 border rounded-md ${
+                  className={`h-32 p-1 border rounded-md ${
                     isCurrentMonth ? 'bg-background' : 'bg-muted/30'
                   } ${isToday ? 'ring-2 ring-primary' : ''}`}
                 >
@@ -247,19 +247,21 @@ export default function GlobalModels() {
                     {format(day, 'd')}
                   </div>
                   <div className="space-y-1 mt-1">
-                    {dayModels.slice(0, 3).map((model, index) => (
+                    {dayModels.slice(0, 2).map((model, index) => (
                       <div
                         key={`${model.id}-${index}`}
-                        className="text-xs p-1 rounded bg-primary/10 text-primary truncate cursor-pointer hover:bg-primary/20"
+                        className="text-xs p-1 rounded bg-primary/10 text-primary cursor-pointer hover:bg-primary/20 border border-primary/20"
                         onClick={() => handleModelClick(model)}
                         title={`${model.product_title} (${model.line_name}) - ${model.company_name}`}
                       >
-                        {model.product_title}
+                        <div className="font-medium truncate">{model.company_name || 'Unknown Customer'}</div>
+                        <div className="truncate text-primary/80">{model.line_name}</div>
+                        <div className="truncate text-primary/60">{model.product_title}</div>
                       </div>
                     ))}
-                    {dayModels.length > 3 && (
-                      <div className="text-xs text-muted-foreground">
-                        +{dayModels.length - 3} more
+                    {dayModels.length > 2 && (
+                      <div className="text-xs text-muted-foreground bg-muted/50 p-1 rounded">
+                        +{dayModels.length - 2} more models
                       </div>
                     )}
                   </div>

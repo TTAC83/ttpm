@@ -235,7 +235,7 @@ export const UserManagement = () => {
           phone: editForm.phone || null,
           avatar_url: editForm.avatar_url || null,
           role: editForm.role,
-          company_id: editForm.company_id || null,
+          company_id: editForm.company_id === 'none' ? null : editForm.company_id || null,
           is_internal: editForm.role === 'internal_admin' || editForm.role === 'internal_user'
         })
         .eq('user_id', editingUser.id);
@@ -412,7 +412,7 @@ export const UserManagement = () => {
                           setEditingUser(user);
                           setEditForm({
                             role: user.profile?.role || '',
-                            company_id: user.profile?.company_id || '',
+                            company_id: user.profile?.company_id || 'none',
                             name: user.profile?.name || '',
                             job_title: user.profile?.job_title || '',
                             phone: user.profile?.phone || '',
@@ -509,7 +509,7 @@ export const UserManagement = () => {
                     <SelectValue placeholder="Select company" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No company assigned</SelectItem>
+                    <SelectItem value="none">No company assigned</SelectItem>
                     {companies.map((company) => (
                       <SelectItem key={company.id} value={company.id}>
                         {company.name} {company.is_internal && '(Internal)'}

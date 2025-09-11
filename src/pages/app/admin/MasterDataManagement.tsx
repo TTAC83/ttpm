@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Edit, Trash2, Database, List, AlertTriangle } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface MasterStep {
   id: number;
@@ -449,7 +449,8 @@ const StepDialog = ({
   const [formData, setFormData] = useState({
     name: step?.name || '',
     position: step?.position || 0,
-    technology_scope: step?.technology_scope || 'both',
+    iot: step?.technology_scope === 'iot' || step?.technology_scope === 'both' || !step,
+    vision: step?.technology_scope === 'vision' || step?.technology_scope === 'both' || !step,
   });
   const [loading, setLoading] = useState(false);
 
@@ -457,7 +458,15 @@ const StepDialog = ({
     e.preventDefault();
     setLoading(true);
     try {
-      await onSave(formData);
+      const technology_scope = formData.iot && formData.vision ? 'both' : 
+                               formData.iot ? 'iot' : 
+                               formData.vision ? 'vision' : 'both';
+      
+      await onSave({
+        name: formData.name,
+        position: formData.position,
+        technology_scope
+      });
     } finally {
       setLoading(false);
     }
@@ -493,24 +502,29 @@ const StepDialog = ({
             placeholder="Step order position"
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="technology_scope">Technology Scope *</Label>
-          <Select 
-            value={formData.technology_scope} 
-            onValueChange={(value) => setFormData(prev => ({ ...prev, technology_scope: value }))}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select technology scope" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="both">Both IoT & Vision</SelectItem>
-              <SelectItem value="iot">IoT Only</SelectItem>
-              <SelectItem value="vision">Vision Only</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="space-y-3">
+          <Label>Technology Scope *</Label>
+          <div className="flex flex-col space-y-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="iot"
+                checked={formData.iot}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, iot: checked as boolean }))}
+              />
+              <Label htmlFor="iot">IoT</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="vision"
+                checked={formData.vision}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, vision: checked as boolean }))}
+              />
+              <Label htmlFor="vision">Vision</Label>
+            </div>
+          </div>
         </div>
         <div className="flex gap-2 pt-4">
-          <Button type="submit" disabled={loading || !formData.name}>
+          <Button type="submit" disabled={loading || !formData.name || (!formData.iot && !formData.vision)}>
             {loading ? 'Saving...' : (step ? 'Update Step' : 'Create Step')}
           </Button>
           <Button type="button" variant="outline" onClick={onClose}>

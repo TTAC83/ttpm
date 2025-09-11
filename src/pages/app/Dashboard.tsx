@@ -263,12 +263,17 @@ export const Dashboard = () => {
   };
 
   const handleEventDoubleClick = (event: UpcomingEvent) => {
-    if (event.type === 'task' && event.project_id) {
-      navigate(`/app/projects/${event.project_id}?tab=tasks`);
+    if (event.type === 'task' && event.project_id && event.task_id) {
+      // Navigate to specific task detail page
+      navigate(`/app/projects/${event.project_id}?tab=tasks&taskId=${event.task_id}`);
     } else if (event.type === 'action') {
-      navigate('/app/actions');
+      // Extract action ID from the event id (format: action-{actionId})
+      const actionId = event.id.replace('action-', '');
+      navigate(`/app/actions?actionId=${actionId}`);
     } else if (event.type === 'calendar' && event.project_id) {
-      navigate(`/app/projects/${event.project_id}?tab=calendar`);
+      // Extract event ID from the event id (format: calendar-{eventId}-{date})
+      const eventId = event.id.split('-')[1];
+      navigate(`/app/projects/${event.project_id}?tab=calendar&eventId=${eventId}`);
     }
   };
 

@@ -181,12 +181,13 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
           profiles:assignee (
             name
           ),
-          project_tasks!inner (
+          project_tasks (
             task_title,
-            step_name
+            step_name,
+            project_id
           )
         `)
-        .eq('project_tasks.project_id', projectId)
+        .or(`project_id.eq.${projectId},project_tasks.project_id.eq.${projectId}`)
         .order('is_critical', { ascending: false })
         .order('created_at', { ascending: false });
 

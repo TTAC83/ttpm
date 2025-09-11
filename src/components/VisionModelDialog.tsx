@@ -229,9 +229,10 @@ export function VisionModelDialog({
 
       onClose();
     } catch (error: any) {
+      console.error('Vision model error:', error);
       toast({
         title: "Error",
-        description: `Failed to ${mode === 'create' ? 'create' : 'update'} vision model`,
+        description: error.message || `Failed to ${mode === 'create' ? 'create' : 'update'} vision model`,
         variant: "destructive",
       });
     } finally {

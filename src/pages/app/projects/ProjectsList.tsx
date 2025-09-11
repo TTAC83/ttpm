@@ -9,7 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateUK } from '@/lib/dateUtils';
-import { Search, Plus, Building, Calendar, Upload } from 'lucide-react';
+import { Search, Plus, Building, Calendar, Upload, Trash2 } from 'lucide-react';
+import { DeleteProjectDialog } from '@/components/DeleteProjectDialog';
 
 interface Project {
   id: string;
@@ -29,6 +30,15 @@ export const ProjectsList = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    projectId: string;
+    projectName: string;
+  }>({
+    open: false,
+    projectId: '',
+    projectName: '',
+  });
 
   useEffect(() => {
     fetchProjects();
@@ -64,6 +74,18 @@ export const ProjectsList = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDeleteProject = (projectId: string, projectName: string) => {
+    setDeleteDialog({
+      open: true,
+      projectId,
+      projectName,
+    });
+  };
+
+  const handleDeleteSuccess = () => {
+    fetchProjects(); // Refresh the projects list
   };
 
   const filteredProjects = projects.filter(project =>
@@ -184,11 +206,23 @@ export const ProjectsList = () => {
                       <TableCell>{formatDateUK(project.contract_signed_date)}</TableCell>
                       <TableCell>{formatDateUK(project.created_at)}</TableCell>
                       <TableCell>
-                        <Button asChild variant="ghost" size="sm">
-                          <Link to={`/app/projects/${project.id}`}>
-                            View Details
-                          </Link>
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button asChild variant="ghost" size="sm">
+                            <Link to={`/app/projects/${project.id}`}>
+                              View Details
+                            </Link>
+                          </Button>
+                          {isInternalAdmin() && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteProject(project.id, project.name)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -198,6 +232,14 @@ export const ProjectsList = () => {
           )}
         </CardContent>
       </Card>
+
+      <DeleteProjectDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, open }))}
+        projectId={deleteDialog.projectId}
+        projectName={deleteDialog.projectName}
+        onSuccess={handleDeleteSuccess}
+      />
     </div>
   );
 };

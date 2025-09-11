@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -41,6 +41,7 @@ interface LineWizardProps {
   onOpenChange: (open: boolean) => void;
   projectId: string;
   onComplete: () => void;
+  editLineId?: string;
 }
 
 export const LineWizard: React.FC<LineWizardProps> = ({
@@ -48,6 +49,7 @@ export const LineWizard: React.FC<LineWizardProps> = ({
   onOpenChange,
   projectId,
   onComplete,
+  editLineId,
 }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [lineData, setLineData] = useState({
@@ -57,6 +59,97 @@ export const LineWizard: React.FC<LineWizardProps> = ({
   });
   const [positions, setPositions] = useState<Position[]>([]);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!open) {
+      setCurrentStep(1);
+      setLineData({ name: "", min_speed: 0, max_speed: 0 });
+      setPositions([]);
+    } else if (editLineId) {
+      loadLineData();
+    }
+  }, [open, editLineId]);
+
+  const loadLineData = async () => {
+    if (!editLineId) return;
+
+    try {
+      // Load line data
+      const { data: lineData, error: lineError } = await supabase
+        .from('lines')
+        .select('*')
+        .eq('id', editLineId)
+        .single();
+
+      if (lineError) throw lineError;
+
+      setLineData({
+        name: lineData.line_name,
+        min_speed: lineData.min_speed || 0,
+        max_speed: lineData.max_speed || 0,
+      });
+
+      // Load positions with titles
+      const { data: positionsData, error: positionsError } = await supabase
+        .from('positions')
+        .select(`
+          *,
+          position_titles(title)
+        `)
+        .eq('line_id', editLineId)
+        .order('position_x');
+
+      if (positionsError) throw positionsError;
+
+      // Load equipment for each position
+      const formattedPositions = await Promise.all(positionsData.map(async (pos) => {
+        const { data: equipmentData } = await supabase
+          .from('equipment')
+          .select(`
+            *,
+            cameras(*),
+            iot_devices(*)
+          `)
+          .eq('position_id', pos.id);
+
+        return {
+          id: pos.id,
+          name: pos.name,
+          position_x: pos.position_x,
+          position_y: pos.position_y,
+          titles: pos.position_titles?.map((pt: any, index: number) => ({ 
+            id: `${pt.title}-${index}`, 
+            title: pt.title as "RLE" | "OP" 
+          })) || [],
+          equipment: equipmentData?.map((eq: any) => ({
+            id: eq.id,
+            name: eq.name,
+            equipment_type: eq.equipment_type,
+            cameras: eq.cameras?.map((cam: any) => ({
+              id: cam.id,
+              camera_type: cam.camera_type,
+              lens_type: cam.lens_type,
+              mac_address: cam.mac_address
+            })) || [],
+            iot_devices: eq.iot_devices?.map((iot: any) => ({
+              id: iot.id,
+              mac_address: iot.mac_address,
+              receiver_mac_address: iot.receiver_mac_address
+            })) || []
+          })) || []
+        };
+      }));
+
+      setPositions(formattedPositions);
+    } catch (error) {
+      console.error('Error loading line data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load line data",
+        variant: "destructive",
+      });
+    }
+  };
 
   const steps = [
     { id: 1, title: "Basic Info", component: LineBasicInfo },
@@ -91,28 +184,72 @@ export const LineWizard: React.FC<LineWizardProps> = ({
         0
       );
 
-      // Create the line
-      const { data: lineResult, error: lineError } = await supabase
-        .from("lines")
-        .insert({
-          project_id: projectId,
-          line_name: lineData.name,
-          min_speed: lineData.min_speed,
-          max_speed: lineData.max_speed,
-          camera_count: totalCameras,
-          iot_device_count: totalIotDevices,
-        })
-        .select()
-        .single();
+      let currentLineId = editLineId;
 
-      if (lineError) throw lineError;
+      if (editLineId) {
+        // Update existing line
+        const { error: lineError } = await supabase
+          .from('lines')
+          .update({
+            line_name: lineData.name,
+            min_speed: lineData.min_speed,
+            max_speed: lineData.max_speed,
+            camera_count: totalCameras,
+            iot_device_count: totalIotDevices,
+          })
+          .eq('id', editLineId);
+
+        if (lineError) throw lineError;
+
+        // Delete existing related data
+        const { data: existingEquipment } = await supabase
+          .from('equipment')
+          .select('id')
+          .eq('line_id', editLineId);
+
+        if (existingEquipment?.length) {
+          const equipmentIds = existingEquipment.map(e => e.id);
+          await supabase.from('cameras').delete().in('equipment_id', equipmentIds);
+          await supabase.from('iot_devices').delete().in('equipment_id', equipmentIds);
+        }
+
+        const { data: existingPositions } = await supabase
+          .from('positions')
+          .select('id')
+          .eq('line_id', editLineId);
+
+        if (existingPositions?.length) {
+          const positionIds = existingPositions.map(p => p.id);
+          await supabase.from('position_titles').delete().in('position_id', positionIds);
+        }
+
+        await supabase.from('equipment').delete().eq('line_id', editLineId);
+        await supabase.from('positions').delete().eq('line_id', editLineId);
+      } else {
+        // Create new line
+        const { data: lineResult, error: lineError } = await supabase
+          .from("lines")
+          .insert({
+            project_id: projectId,
+            line_name: lineData.name,
+            min_speed: lineData.min_speed,
+            max_speed: lineData.max_speed,
+            camera_count: totalCameras,
+            iot_device_count: totalIotDevices,
+          })
+          .select()
+          .single();
+
+        if (lineError) throw lineError;
+        currentLineId = lineResult.id;
+      }
 
       // Create positions and equipment
       for (const position of positions) {
         const { data: positionData, error: positionError } = await supabase
           .from('positions')
           .insert({
-            line_id: lineResult.id,
+            line_id: currentLineId,
             name: position.name,
             position_x: Math.round(position.position_x),
             position_y: Math.round(position.position_y)
@@ -137,7 +274,7 @@ export const LineWizard: React.FC<LineWizardProps> = ({
           const { data: equipmentData, error: equipmentError } = await supabase
             .from('equipment')
             .insert({
-              line_id: lineResult.id,
+              line_id: currentLineId,
               position_id: positionData.id,
               name: eq.name,
               equipment_type: eq.equipment_type || "Machine"
@@ -174,7 +311,7 @@ export const LineWizard: React.FC<LineWizardProps> = ({
 
       toast({
         title: "Success",
-        description: "Line created successfully with all positions, equipment and devices.",
+        description: editLineId ? "Line updated successfully" : "Line created successfully with all positions, equipment and devices.",
       });
 
       onComplete();
@@ -199,7 +336,7 @@ export const LineWizard: React.FC<LineWizardProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Create New Production Line</DialogTitle>
+          <DialogTitle>{editLineId ? "Edit Production Line" : "Create New Production Line"}</DialogTitle>
           <div className="space-y-2">
             <div className="flex justify-between text-sm text-muted-foreground">
               <span>Step {currentStep} of {steps.length}: {steps[currentStep - 1].title}</span>

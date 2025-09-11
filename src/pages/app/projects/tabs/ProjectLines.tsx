@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Plus, Trash2, Eye } from "lucide-react";
+import { Loader2, Plus, Trash2, Eye, Edit } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { LineWizard } from "@/components/line-builder/LineWizard";
 import { LineVisualization } from "@/components/line-builder/LineVisualization";
@@ -28,6 +28,7 @@ export const ProjectLines: React.FC<ProjectLinesProps> = ({ projectId }) => {
   const [loading, setLoading] = useState(true);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
+  const [editLineId, setEditLineId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -83,10 +84,16 @@ export const ProjectLines: React.FC<ProjectLinesProps> = ({ projectId }) => {
 
   const handleWizardComplete = () => {
     fetchLines();
+    setEditLineId(null);
   };
 
   const handleViewLine = (lineId: string) => {
     setSelectedLineId(lineId);
+  };
+
+  const handleEditLine = (lineId: string) => {
+    setEditLineId(lineId);
+    setWizardOpen(true);
   };
 
   const handleBackToLines = () => {
@@ -171,6 +178,14 @@ export const ProjectLines: React.FC<ProjectLinesProps> = ({ projectId }) => {
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEditLine(line.id)}
+                        title="Edit Line"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="ghost" size="icon" title="Delete Line">
@@ -207,9 +222,13 @@ export const ProjectLines: React.FC<ProjectLinesProps> = ({ projectId }) => {
       {/* Line Creation Wizard */}
       <LineWizard
         open={wizardOpen}
-        onOpenChange={setWizardOpen}
+        onOpenChange={(open) => {
+          setWizardOpen(open);
+          if (!open) setEditLineId(null);
+        }}
         projectId={projectId}
         onComplete={handleWizardComplete}
+        editLineId={editLineId}
       />
     </Card>
   );

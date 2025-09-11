@@ -21,7 +21,7 @@ import {
   Settings, 
   LogOut,
   Home,
-  Brain
+  Eye
 } from 'lucide-react';
 
 export const AppLayout = () => {
@@ -71,7 +71,7 @@ export const AppLayout = () => {
     },
     {
       title: 'Global Models',
-      icon: Brain,
+      icon: Eye,
       path: '/app/models',
       show: true
     },

@@ -53,8 +53,8 @@ export const ProcessFlowBuilder: React.FC<ProcessFlowBuilderProps> = ({
       const newPosition: Position = {
         id: `position-${Date.now()}`,
         name: newPositionName.trim(),
-        position_x: 20 + positions.length * 220, // 200px box width + 20px spacing
-        position_y: 50,
+        position_x: 20 + positions.length * 210, // 200px box width + 10px spacing
+        position_y: 140, // Center-aligned position (400px container / 2 - 120px box height / 2)
         titles: [],
         equipment: [],
       };
@@ -231,7 +231,7 @@ export const ProcessFlowBuilder: React.FC<ProcessFlowBuilderProps> = ({
             onDragOver={handleDragOver}
             onDrop={handleDrop}
             style={{ 
-              minWidth: positions.length > 0 ? `${Math.max(800, positions.length * 220 + 40)}px` : '100%'
+              minWidth: positions.length > 0 ? `${Math.max(800, positions.length * 210 + 40)}px` : '100%'
             }}
           >
           {positions.length === 0 ? (

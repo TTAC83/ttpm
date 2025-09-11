@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ThingtraxLogo } from '@/components/ThingtraxLogo';
 
 const Index = () => {
   return (
@@ -8,11 +9,8 @@ const Index = () => {
       <Card className="w-full max-w-lg text-center shadow-premium border-thingtrax-blue/10">
         <CardHeader className="space-y-4">
           <div className="flex justify-center">
-            <div className="h-16 w-16 rounded-thingtrax-corners bg-gradient-thingtrax flex items-center justify-center shadow-thingtrax-glow">
-              <span className="text-white font-bold text-big">TT</span>
-            </div>
+            <ThingtraxLogo size="xl" />
           </div>
-          <CardTitle className="text-huge font-black text-thingtrax-blue">Thingtrax</CardTitle>
           <CardDescription className="text-big text-thingtrax-dark-gray">
             Implementation Management Platform
           </CardDescription>

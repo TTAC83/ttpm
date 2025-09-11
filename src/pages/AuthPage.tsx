@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
+import { ThingtraxLogo } from '@/components/ThingtraxLogo';
 import { supabase } from '@/integrations/supabase/client';
 
 export const AuthPage = () => {
@@ -79,11 +80,8 @@ export const AuthPage = () => {
       <Card className="w-full max-w-md shadow-premium border-thingtrax-blue/10">
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
-            <div className="h-12 w-12 rounded-thingtrax-corners bg-gradient-thingtrax flex items-center justify-center shadow-thingtrax-glow">
-              <span className="text-white font-bold text-medium">TT</span>
-            </div>
+            <ThingtraxLogo size="lg" />
           </div>
-          <CardTitle className="text-big font-black text-thingtrax-blue">Thingtrax</CardTitle>
           <CardDescription className="text-medium text-thingtrax-dark-gray">
             Sign in to access your implementation dashboard
           </CardDescription>

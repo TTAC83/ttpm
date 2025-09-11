@@ -159,7 +159,7 @@ export const AppLayout = () => {
           <div className="border-b border-thingtrax-light-gray/20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex h-14 items-center justify-between px-4">
               <SidebarTrigger />
-              <ThingtraxLogo variant="minimal" size="sm" />
+              <ThingtraxLogo size="sm" />
             </div>
           </div>
           <div className="p-6">

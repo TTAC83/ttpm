@@ -82,6 +82,8 @@ export const Dashboard = () => {
         const startDate = dateRange[0].toISOString().split('T')[0];
         const endDate = dateRange[dateRange.length - 1].toISOString().split('T')[0];
         
+        console.log('Dashboard date range:', { startDate, endDate, dateRange: dateRange.map(d => d.toISOString().split('T')[0]) });
+        
         const allEvents: UpcomingEvent[] = [];
 
         // Fetch critical tasks with planned dates within range (filter by critical statuses)
@@ -142,6 +144,8 @@ export const Dashboard = () => {
         }
 
         // Fetch critical actions with planned dates within range
+        console.log('Fetching critical actions for date range:', startDate, 'to', endDate);
+        
         const [actionsWithTasks, actionsWithoutTasks] = await Promise.all([
           supabase
             .from('actions')
@@ -187,6 +191,9 @@ export const Dashboard = () => {
             .is('project_task_id', null)
         ]);
 
+        console.log('Actions with tasks result:', actionsWithTasks);
+        console.log('Actions without tasks result:', actionsWithoutTasks);
+
         // Process actions with tasks
         if (!actionsWithTasks.error && actionsWithTasks.data) {
           actionsWithTasks.data.forEach(action => {
@@ -226,6 +233,8 @@ export const Dashboard = () => {
         }
 
         // Fetch critical calendar events within range
+        console.log('Fetching critical calendar events for date range:', startDate, 'to', endDate);
+        
         const { data: calendarData, error: calendarError } = await supabase
           .from('project_events')
           .select(`
@@ -239,6 +248,8 @@ export const Dashboard = () => {
           .or(`start_date.gte.${startDate},end_date.gte.${startDate}`)
           .or(`start_date.lte.${endDate},end_date.lte.${endDate}`)
           .eq('is_critical', true); // Only critical calendar events
+          
+        console.log('Critical calendar events result:', calendarData, calendarError);
 
         if (!calendarError && calendarData) {
           // Get project and company info for calendar events
@@ -346,6 +357,13 @@ export const Dashboard = () => {
           });
         }
 
+        console.log('Total events found:', allEvents.length);
+        console.log('Events by type:', {
+          tasks: allEvents.filter(e => e.type === 'task').length,
+          actions: allEvents.filter(e => e.type === 'action').length,
+          calendar: allEvents.filter(e => e.type === 'calendar').length
+        });
+        
         setEvents(allEvents);
         setAllCalendarEvents(allCalendarEventsArray);
       } catch (error) {

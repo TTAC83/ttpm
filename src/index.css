@@ -91,77 +91,73 @@ All colors MUST be HSL.
 
     --radius: 0.5rem;
 
+    /* Light mode sidebar */
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
-    /* Dark mode uses Thingtrax black as background */
-    --background: 20 8% 16%;                /* Thingtrax black background */
-    --foreground: 0 0% 100%;                /* White text */
+    /* Very dark background matching Thingtrax interface */
+    --background: 0 0% 7%;                  /* Almost black background */
+    --foreground: 0 0% 98%;                 /* Near white text */
 
-    --card: 20 8% 16%;
-    --card-foreground: 0 0% 100%;
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 20 8% 16%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 98%;
 
-    /* Primary inverted for dark mode */
-    --primary: 0 0% 100%;                   /* White primary in dark */
-    --primary-foreground: 20 8% 16%;        /* Black text on white */
+    /* Primary uses brand green for accents */
+    --primary: 150 99% 38%;                 /* Thingtrax green */
+    --primary-foreground: 0 0% 98%;
 
-    /* Secondary uses slightly lighter black */
-    --secondary: 20 8% 22%;
-    --secondary-foreground: 0 0% 100%;
+    /* Secondary uses dark grey */
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 98%;
 
     /* Muted variants */
-    --muted: 20 8% 22%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 63%;
 
     /* Accent maintains brand green */
     --accent: 150 99% 38%;                  /* Thingtrax green */
-    --accent-foreground: 0 0% 100%;
+    --accent-foreground: 0 0% 98%;
 
     /* Success maintains brand green */
     --success: 150 99% 38%;
-    --success-foreground: 0 0% 100%;
+    --success-foreground: 0 0% 98%;
 
     /* Warning maintains brand yellow */
     --warning: 42 89% 63%;
-    --warning-foreground: 20 8% 16%;
+    --warning-foreground: 0 0% 7%;
 
     /* Info maintains brand cyan */
     --info: 195 99% 50%;
-    --info-foreground: 0 0% 100%;
+    --info-foreground: 0 0% 98%;
 
     /* Destructive maintains brand red */
     --destructive: 2 100% 63%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 20 8% 22%;
-    --input: 20 8% 22%;
+    --border: 0 0% 14%;
+    --input: 0 0% 14%;
     --ring: 150 99% 38%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Sidebar - Very dark like in the image */
+    --sidebar-background: 0 0% 7%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 150 99% 38%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 0 0% 14%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 14%;
+    --sidebar-ring: 150 99% 38%;
   }
 }
 

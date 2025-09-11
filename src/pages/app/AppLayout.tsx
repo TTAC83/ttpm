@@ -106,13 +106,15 @@ export const AppLayout = () => {
       <div className="flex h-screen w-full">
         <Sidebar>
           <SidebarHeader className="border-b border-sidebar-border p-4">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">TT</span>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-thingtrax-green rounded-sm"></div>
+                <div className="w-2 h-2 bg-thingtrax-cyan rounded-sm"></div>
+                <div className="w-2 h-2 bg-thingtrax-yellow rounded-sm"></div>
+                <div className="w-2 h-2 bg-thingtrax-red rounded-sm"></div>
               </div>
               <div>
-                <h2 className="font-semibold text-sidebar-foreground">Thingtrax</h2>
-                <p className="text-xs text-sidebar-foreground/60">Implementation</p>
+                <h2 className="font-helvetica-display font-semibold text-sidebar-foreground text-lg">thingtrax</h2>
               </div>
             </div>
           </SidebarHeader>

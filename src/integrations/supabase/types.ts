@@ -144,6 +144,44 @@ export type Database = {
           },
         ]
       }
+      cameras: {
+        Row: {
+          camera_type: string
+          created_at: string
+          equipment_id: string
+          id: string
+          lens_type: string
+          mac_address: string
+          updated_at: string
+        }
+        Insert: {
+          camera_type: string
+          created_at?: string
+          equipment_id: string
+          id?: string
+          lens_type: string
+          mac_address: string
+          updated_at?: string
+        }
+        Update: {
+          camera_type?: string
+          created_at?: string
+          equipment_id?: string
+          id?: string
+          lens_type?: string
+          mac_address?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cameras_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           created_at: string
@@ -165,6 +203,76 @@ export type Database = {
         }
         Relationships: []
       }
+      equipment: {
+        Row: {
+          created_at: string
+          equipment_type: string | null
+          id: string
+          line_id: string
+          name: string
+          position_x: number
+          position_y: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          equipment_type?: string | null
+          id?: string
+          line_id: string
+          name: string
+          position_x?: number
+          position_y?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          equipment_type?: string | null
+          id?: string
+          line_id?: string
+          name?: string
+          position_x?: number
+          position_y?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_line_id_fkey"
+            columns: ["line_id"]
+            isOneToOne: false
+            referencedRelation: "lines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment_titles: {
+        Row: {
+          created_at: string
+          equipment_id: string
+          id: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          equipment_id: string
+          id?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          equipment_id?: string
+          id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_titles_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_attendees: {
         Row: {
           event_id: string
@@ -183,6 +291,41 @@ export type Database = {
         }
         Relationships: []
       }
+      iot_devices: {
+        Row: {
+          created_at: string
+          equipment_id: string
+          id: string
+          mac_address: string
+          receiver_mac_address: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          equipment_id: string
+          id?: string
+          mac_address: string
+          receiver_mac_address: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          equipment_id?: string
+          id?: string
+          mac_address?: string
+          receiver_mac_address?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "iot_devices_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lines: {
         Row: {
           camera_count: number
@@ -190,6 +333,8 @@ export type Database = {
           id: string
           iot_device_count: number
           line_name: string
+          max_speed: number | null
+          min_speed: number | null
           project_id: string
         }
         Insert: {
@@ -198,6 +343,8 @@ export type Database = {
           id?: string
           iot_device_count?: number
           line_name: string
+          max_speed?: number | null
+          min_speed?: number | null
           project_id: string
         }
         Update: {
@@ -206,6 +353,8 @@ export type Database = {
           id?: string
           iot_device_count?: number
           line_name?: string
+          max_speed?: number | null
+          min_speed?: number | null
           project_id?: string
         }
         Relationships: [

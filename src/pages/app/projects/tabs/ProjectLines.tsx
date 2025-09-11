@@ -1,19 +1,20 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2, Plus, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { LineWizard } from "@/components/line-builder/LineWizard";
 
 interface Line {
   id: string;
   line_name: string;
   camera_count: number;
   iot_device_count: number;
+  min_speed?: number;
+  max_speed?: number;
   created_at: string;
 }
 
@@ -21,19 +22,11 @@ interface ProjectLinesProps {
   projectId: string;
 }
 
-const ProjectLines = ({ projectId }: ProjectLinesProps) => {
-  const { toast } = useToast();
+export const ProjectLines: React.FC<ProjectLinesProps> = ({ projectId }) => {
   const [lines, setLines] = useState<Line[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingLine, setEditingLine] = useState<Line | null>(null);
-  const [formLoading, setFormLoading] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    line_name: '',
-    camera_count: 0,
-    iot_device_count: 0,
-  });
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchLines();
@@ -41,17 +34,16 @@ const ProjectLines = ({ projectId }: ProjectLinesProps) => {
 
   const fetchLines = async () => {
     try {
-      setLoading(true);
-      
       const { data, error } = await supabase
         .from('lines')
         .select('*')
         .eq('project_id', projectId)
-        .order('created_at');
+        .order('created_at', { ascending: true });
 
       if (error) throw error;
       setLines(data || []);
-    } catch (error: any) {
+    } catch (error) {
+      console.error('Error fetching lines:', error);
       toast({
         title: "Error",
         description: "Failed to fetch lines",
@@ -62,75 +54,7 @@ const ProjectLines = ({ projectId }: ProjectLinesProps) => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormLoading(true);
-
-    try {
-      if (editingLine) {
-        // Update existing line
-        const { error } = await supabase
-          .from('lines')
-          .update({
-            line_name: formData.line_name,
-            camera_count: formData.camera_count,
-            iot_device_count: formData.iot_device_count,
-          })
-          .eq('id', editingLine.id);
-
-        if (error) throw error;
-
-        toast({
-          title: "Line Updated",
-          description: "Line has been updated successfully",
-        });
-      } else {
-        // Create new line
-        const { error } = await supabase
-          .from('lines')
-          .insert({
-            project_id: projectId,
-            line_name: formData.line_name,
-            camera_count: formData.camera_count,
-            iot_device_count: formData.iot_device_count,
-          });
-
-        if (error) throw error;
-
-        toast({
-          title: "Line Created",
-          description: "New line has been created successfully",
-        });
-      }
-
-      setDialogOpen(false);
-      setEditingLine(null);
-      setFormData({ line_name: '', camera_count: 0, iot_device_count: 0 });
-      fetchLines();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to save line",
-        variant: "destructive",
-      });
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
-  const handleEdit = (line: Line) => {
-    setEditingLine(line);
-    setFormData({
-      line_name: line.line_name,
-      camera_count: line.camera_count,
-      iot_device_count: line.iot_device_count,
-    });
-    setDialogOpen(true);
-  };
-
   const handleDelete = async (lineId: string) => {
-    if (!confirm('Are you sure you want to delete this line?')) return;
-
     try {
       const { error } = await supabase
         .from('lines')
@@ -140,160 +64,131 @@ const ProjectLines = ({ projectId }: ProjectLinesProps) => {
       if (error) throw error;
 
       toast({
-        title: "Line Deleted",
-        description: "Line has been deleted successfully",
+        title: "Success",
+        description: "Line deleted successfully",
       });
 
       fetchLines();
-    } catch (error: any) {
+    } catch (error) {
+      console.error('Error deleting line:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to delete line",
+        description: "Failed to delete line",
         variant: "destructive",
       });
     }
   };
 
-  const handleNewLine = () => {
-    setEditingLine(null);
-    setFormData({ line_name: '', camera_count: 0, iot_device_count: 0 });
-    setDialogOpen(true);
+  const handleWizardComplete = () => {
+    fetchLines();
   };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Project Lines</CardTitle>
+            <CardTitle>Production Lines</CardTitle>
             <CardDescription>
-              Manage production lines with camera and IoT device counts
+              Configure production lines with equipment, devices, and process flow
             </CardDescription>
           </div>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={handleNewLine}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Line
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{editingLine ? 'Edit Line' : 'Add New Line'}</DialogTitle>
-                <DialogDescription>
-                  Enter the line details including device counts
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="line_name">Line Name *</Label>
-                  <Input
-                    id="line_name"
-                    value={formData.line_name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, line_name: e.target.value }))}
-                    placeholder="Enter line name"
-                    required
-                  />
-                </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="camera_count">Camera Count</Label>
-                    <Input
-                      id="camera_count"
-                      type="number"
-                      min="0"
-                      value={formData.camera_count}
-                      onChange={(e) => setFormData(prev => ({ ...prev, camera_count: parseInt(e.target.value) || 0 }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="iot_device_count">IoT Device Count</Label>
-                    <Input
-                      id="iot_device_count"
-                      type="number"
-                      min="0"
-                      value={formData.iot_device_count}
-                      onChange={(e) => setFormData(prev => ({ ...prev, iot_device_count: parseInt(e.target.value) || 0 }))}
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2 pt-4">
-                  <Button type="submit" disabled={formLoading}>
-                    {formLoading ? 'Saving...' : (editingLine ? 'Update Line' : 'Create Line')}
-                  </Button>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setDialogOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <Button onClick={() => setWizardOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Create Line
+          </Button>
         </div>
       </CardHeader>
+
       <CardContent>
-        {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
+        {lines.length === 0 ? (
+          <div className="text-center py-8">
+            <h3 className="text-lg font-semibold text-muted-foreground mb-2">No Lines Configured</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Create your first production line to get started
+            </p>
+            <Button onClick={() => setWizardOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create First Line
+            </Button>
           </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Line Name</TableHead>
-                <TableHead>Cameras</TableHead>
-                <TableHead>IoT Devices</TableHead>
-                <TableHead>Total Devices</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>Speed Range</TableHead>
+                <TableHead>Camera Count</TableHead>
+                <TableHead>IoT Device Count</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {lines.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8">
-                    <p className="text-muted-foreground">No lines configured</p>
-                    <Button onClick={handleNewLine} size="sm" className="mt-2">
-                      Add First Line
-                    </Button>
+              {lines.map((line) => (
+                <TableRow key={line.id}>
+                  <TableCell className="font-medium">{line.line_name}</TableCell>
+                  <TableCell>
+                    {line.min_speed !== undefined && line.max_speed !== undefined
+                      ? `${line.min_speed} - ${line.max_speed} units/min`
+                      : "Not specified"
+                    }
+                  </TableCell>
+                  <TableCell>{line.camera_count}</TableCell>
+                  <TableCell>{line.iot_device_count}</TableCell>
+                  <TableCell>{new Date(line.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Line</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete "{line.line_name}"? This will also delete all equipment, devices, and configurations associated with this line. This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(line.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </TableCell>
                 </TableRow>
-              ) : (
-                lines.map((line) => (
-                  <TableRow key={line.id}>
-                    <TableCell className="font-medium">{line.line_name}</TableCell>
-                    <TableCell>{line.camera_count}</TableCell>
-                    <TableCell>{line.iot_device_count}</TableCell>
-                    <TableCell>{line.camera_count + line.iot_device_count}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(line)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(line.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
+              ))}
             </TableBody>
           </Table>
         )}
       </CardContent>
+
+      {/* Line Creation Wizard */}
+      <LineWizard
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        projectId={projectId}
+        onComplete={handleWizardComplete}
+      />
     </Card>
   );
 };
-
-export default ProjectLines;

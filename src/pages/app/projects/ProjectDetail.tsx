@@ -12,7 +12,7 @@ import { ArrowLeft, Building, Calendar, MapPin, Users } from 'lucide-react';
 
 // Tab components
 import ProjectOverview from './tabs/ProjectOverview';
-import ProjectLines from './tabs/ProjectLines';
+import { ProjectLines } from './tabs/ProjectLines';
 import ProjectTasks from './tabs/ProjectTasks';
 import ProjectGantt from './tabs/ProjectGantt';
 import ProjectActions from './tabs/ProjectActions';

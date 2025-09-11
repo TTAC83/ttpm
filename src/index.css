@@ -103,31 +103,31 @@ All colors MUST be HSL.
   }
 
   .dark {
-    /* Very dark background matching Thingtrax interface */
-    --background: 0 0% 7%;                  /* Almost black background */
-    --foreground: 0 0% 98%;                 /* Near white text */
+    /* Light main content area matching Thingtrax interface */
+    --background: 0 0% 96%;                 /* Light grey background for main content */
+    --foreground: 20 8% 16%;                /* Dark text on light background */
 
-    --card: 0 0% 7%;
-    --card-foreground: 0 0% 98%;
+    --card: 0 0% 100%;                      /* White cards */
+    --card-foreground: 20 8% 16%;           /* Dark text on cards */
 
-    --popover: 0 0% 7%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 0 0% 100%;                   /* White popovers */
+    --popover-foreground: 20 8% 16%;        /* Dark text on popovers */
 
-    /* Primary uses brand green for accents */
-    --primary: 150 99% 38%;                 /* Thingtrax green */
-    --primary-foreground: 0 0% 98%;
+    /* Primary uses Thingtrax black */
+    --primary: 20 8% 16%;                   /* Thingtrax black */
+    --primary-foreground: 0 0% 98%;         /* White text on black */
 
-    /* Secondary uses dark grey */
-    --secondary: 0 0% 14%;
-    --secondary-foreground: 0 0% 98%;
+    /* Secondary uses light grey */
+    --secondary: 210 40% 96.1%;             /* Light grey */
+    --secondary-foreground: 20 8% 16%;      /* Dark text on light */
 
     /* Muted variants */
-    --muted: 0 0% 14%;
-    --muted-foreground: 0 0% 63%;
+    --muted: 210 40% 96.1%;                 /* Light muted */
+    --muted-foreground: 215.4 16.3% 46.9%; /* Medium grey text */
 
-    /* Accent maintains brand green */
+    /* Accent uses brand green */
     --accent: 150 99% 38%;                  /* Thingtrax green */
-    --accent-foreground: 0 0% 98%;
+    --accent-foreground: 0 0% 98%;          /* White text on green */
 
     /* Success maintains brand green */
     --success: 150 99% 38%;
@@ -145,9 +145,9 @@ All colors MUST be HSL.
     --destructive: 2 100% 63%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 14%;
-    --input: 0 0% 14%;
-    --ring: 150 99% 38%;
+    --border: 214.3 31.8% 91.4%;               /* Light borders */
+    --input: 0 0% 100%;                     /* White inputs */
+    --ring: 150 99% 38%;                    /* Green focus ring */
     
     /* Sidebar - Very dark like in the image */
     --sidebar-background: 0 0% 7%;

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import thingtraxLogo from '@/assets/thingtrax-logo.png';
 import { 
   Sidebar, 
   SidebarContent, 
@@ -107,12 +108,7 @@ export const AppLayout = () => {
         <Sidebar>
           <SidebarHeader className="border-b border-sidebar-border p-4">
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-thingtrax-green rounded-sm"></div>
-                <div className="w-2 h-2 bg-thingtrax-cyan rounded-sm"></div>
-                <div className="w-2 h-2 bg-thingtrax-yellow rounded-sm"></div>
-                <div className="w-2 h-2 bg-thingtrax-red rounded-sm"></div>
-              </div>
+              <img src={thingtraxLogo} alt="Thingtrax" className="w-8 h-8" />
               <div>
                 <h2 className="font-helvetica-display font-semibold text-sidebar-foreground text-lg">thingtrax</h2>
               </div>

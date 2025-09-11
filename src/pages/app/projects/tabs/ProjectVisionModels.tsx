@@ -60,6 +60,7 @@ export default function ProjectVisionModels({ projectId }: ProjectVisionModelsPr
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      console.log('[VisionModels] fetched', { count: data?.length });
       setModels((data || []) as VisionModel[]);
     } catch (error: any) {
       toast({

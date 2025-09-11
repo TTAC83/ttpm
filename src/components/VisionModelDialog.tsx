@@ -27,7 +27,7 @@ const visionModelSchema = z.object({
   end_date: z.date().optional(),
   product_run_start: z.date().optional(),
   product_run_end: z.date().optional(),
-  status: z.enum(['Footage Required', 'Model Training', 'Model Validation', 'Complete']),
+  status: z.enum(['Footage Capture', 'Annotation', 'Training', 'Test Data Validation', 'System Validation - Recorded Footage', 'System validation -Live Footage', 'Site Acceptance Test', 'Complete']),
 });
 
 type VisionModelFormData = z.infer<typeof visionModelSchema>;
@@ -45,7 +45,7 @@ interface VisionModel {
   end_date: string | null;
   product_run_start: string | null;
   product_run_end: string | null;
-  status: 'Footage Required' | 'Model Training' | 'Model Validation' | 'Complete';
+  status: 'Footage Capture' | 'Annotation' | 'Training' | 'Test Data Validation' | 'System Validation - Recorded Footage' | 'System validation -Live Footage' | 'Site Acceptance Test' | 'Complete';
   created_at: string;
   updated_at: string;
 }
@@ -82,7 +82,7 @@ export function VisionModelDialog({
       product_sku: '',
       product_title: '',
       use_case: '',
-      status: 'Footage Required',
+      status: 'Footage Capture',
     },
   });
 
@@ -174,7 +174,7 @@ export function VisionModelDialog({
         product_sku: '',
         product_title: '',
         use_case: '',
-        status: 'Footage Required',
+        status: 'Footage Capture',
       });
       setPositions([]);
       setEquipment([]);
@@ -433,9 +433,13 @@ export function VisionModelDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Footage Required">Footage Required</SelectItem>
-                      <SelectItem value="Model Training">Model Training</SelectItem>
-                      <SelectItem value="Model Validation">Model Validation</SelectItem>
+                      <SelectItem value="Footage Capture">Footage Capture</SelectItem>
+                      <SelectItem value="Annotation">Annotation</SelectItem>
+                      <SelectItem value="Training">Training</SelectItem>
+                      <SelectItem value="Test Data Validation">Test Data Validation</SelectItem>
+                      <SelectItem value="System Validation - Recorded Footage">System Validation - Recorded Footage</SelectItem>
+                      <SelectItem value="System validation -Live Footage">System validation -Live Footage</SelectItem>
+                      <SelectItem value="Site Acceptance Test">Site Acceptance Test</SelectItem>
                       <SelectItem value="Complete">Complete</SelectItem>
                     </SelectContent>
                   </Select>

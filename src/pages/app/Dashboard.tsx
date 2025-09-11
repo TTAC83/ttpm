@@ -322,7 +322,7 @@ export const Dashboard = () => {
                 is_critical: event.is_critical,
                 project_id: event.project_id,
                 project: {
-                  name: project.name,
+                  name: project?.name || 'Unknown Project',
                   company: { name: company?.name || 'Unknown Company' }
                 }
               });
@@ -388,7 +388,7 @@ export const Dashboard = () => {
                 is_critical: event.is_critical,
                 project_id: event.project_id,
                 project: {
-                  name: project.name,
+                  name: project?.name || 'Unknown Project',
                   company: { name: company?.name || 'Unknown Company' }
                 }
               });

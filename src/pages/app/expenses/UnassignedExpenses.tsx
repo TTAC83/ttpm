@@ -193,13 +193,9 @@ export const UnassignedExpenses = () => {
                   <TableRow>
                     <TableHead>Actions</TableHead>
                     <TableHead>Date</TableHead>
-                    <TableHead>Account</TableHead>
-                    <TableHead>Description</TableHead>
+                    <TableHead>Amount</TableHead>
                     <TableHead>Customer</TableHead>
-                    <TableHead>Gross</TableHead>
-                    <TableHead>VAT</TableHead>
-                    <TableHead>Net</TableHead>
-                    <TableHead>Invoice #</TableHead>
+                    <TableHead>Description</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -222,29 +218,14 @@ export const UnassignedExpenses = () => {
                           {formatDate(expense.expense_date)}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{expense.account}</p>
-                          <p className="text-sm text-muted-foreground">{expense.account_code}</p>
-                        </div>
+                      <TableCell className="font-mono font-medium">
+                        {formatCurrency(expense.net)}
                       </TableCell>
+                      <TableCell>{expense.customer}</TableCell>
                       <TableCell className="max-w-xs">
                         <p className="truncate" title={expense.description}>
                           {expense.description}
                         </p>
-                      </TableCell>
-                      <TableCell>{expense.customer}</TableCell>
-                      <TableCell className="font-mono">
-                        {formatCurrency(expense.gross)}
-                      </TableCell>
-                      <TableCell className="font-mono">
-                        {formatCurrency(expense.vat)}
-                      </TableCell>
-                      <TableCell className="font-mono font-medium">
-                        {formatCurrency(expense.net)}
-                      </TableCell>
-                      <TableCell className="font-mono text-sm">
-                        {expense.invoice_number}
                       </TableCell>
                     </TableRow>
                   ))}

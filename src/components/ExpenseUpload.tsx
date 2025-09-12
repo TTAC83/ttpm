@@ -60,17 +60,46 @@ export const ExpenseUpload = ({ onUploadSuccess }: ExpenseUploadProps) => {
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-      // Skip the first row (headers) and process data
-      const rows = jsonData.slice(1) as any[][];
-      
-      if (rows.length === 0) {
-        throw new Error('No data rows found in the Excel file');
+      if (jsonData.length === 0) {
+        throw new Error('The Excel file appears to be empty');
       }
 
-      // Validate headers
-      const fileHeaders = jsonData[0] as string[];
+      // Find the header row by looking for a row that contains most expected headers
+      let headerRowIndex = -1;
+      let headerRow: string[] = [];
+      
+      // Search through the first 10 rows to find headers
+      for (let i = 0; i < Math.min(10, jsonData.length); i++) {
+        const row = jsonData[i] as any[];
+        if (!row || row.length === 0) continue;
+        
+        const rowAsStrings = row.map(cell => cell?.toString() || '');
+        const matchedHeaders = expectedHeaders.filter(header => 
+          rowAsStrings.some(cell => cell.toLowerCase().includes(header.toLowerCase()))
+        );
+        
+        // If we find at least 80% of expected headers, consider this the header row
+        if (matchedHeaders.length >= Math.floor(expectedHeaders.length * 0.8)) {
+          headerRowIndex = i;
+          headerRow = rowAsStrings;
+          break;
+        }
+      }
+
+      if (headerRowIndex === -1) {
+        throw new Error(`Could not find header row. Expected headers: ${expectedHeaders.join(', ')}`);
+      }
+
+      // Get data rows (everything after the header row)
+      const dataRows = jsonData.slice(headerRowIndex + 1) as any[][];
+      
+      if (dataRows.length === 0) {
+        throw new Error('No data rows found after the header row');
+      }
+
+      // Validate that we have all required headers
       const missingHeaders = expectedHeaders.filter(header => 
-        !fileHeaders.includes(header)
+        !headerRow.some(cell => cell.toLowerCase().includes(header.toLowerCase()))
       );
       
       if (missingHeaders.length > 0) {
@@ -82,34 +111,45 @@ export const ExpenseUpload = ({ onUploadSuccess }: ExpenseUploadProps) => {
 
       setUploadProgress(25);
 
-      // Process each row
-      rows.forEach((row, index) => {
+      // Create a mapping from expected headers to actual column indices
+      const columnMapping: { [key: string]: number } = {};
+      expectedHeaders.forEach(expectedHeader => {
+        const columnIndex = headerRow.findIndex(cell => 
+          cell.toLowerCase().includes(expectedHeader.toLowerCase())
+        );
+        if (columnIndex !== -1) {
+          columnMapping[expectedHeader] = columnIndex;
+        }
+      });
+
+      // Process each data row
+      dataRows.forEach((row, index) => {
         try {
           const expense: ExpenseRow = {
-            account_code: row[0]?.toString() || '',
-            account: row[1]?.toString() || '',
-            expense_date: row[2] ? new Date(row[2]).toISOString().split('T')[0] : '',
-            source: row[3]?.toString() || '',
-            description: row[4]?.toString() || '',
-            invoice_number: row[5]?.toString() || '',
-            reference: row[6]?.toString() || '',
-            gross: parseFloat(row[7]) || 0,
-            vat: parseFloat(row[8]) || 0,
-            net: parseFloat(row[9]) || 0,
-            vat_rate: parseFloat(row[10]) || 0,
-            vat_rate_name: row[11]?.toString() || '',
-            customer: row[12]?.toString() || ''
+            account_code: row[columnMapping['Account Code']]?.toString() || '',
+            account: row[columnMapping['Account']]?.toString() || '',
+            expense_date: row[columnMapping['Date']] ? new Date(row[columnMapping['Date']]).toISOString().split('T')[0] : '',
+            source: row[columnMapping['Source']]?.toString() || '',
+            description: row[columnMapping['Description']]?.toString() || '',
+            invoice_number: row[columnMapping['Invoice Number']]?.toString() || '',
+            reference: row[columnMapping['Reference']]?.toString() || '',
+            gross: parseFloat(row[columnMapping['Gross']]) || 0,
+            vat: parseFloat(row[columnMapping['VAT']]) || 0,
+            net: parseFloat(row[columnMapping['Net']]) || 0,
+            vat_rate: parseFloat(row[columnMapping['VAT Rate']]) || 0,
+            vat_rate_name: row[columnMapping['VAT Rate Name']]?.toString() || '',
+            customer: row[columnMapping['Customer']]?.toString() || ''
           };
 
           // Basic validation
           if (!expense.account_code || !expense.account) {
-            errors.push(`Row ${index + 2}: Missing account code or account name`);
+            errors.push(`Row ${headerRowIndex + index + 2}: Missing account code or account name`);
             return;
           }
 
           expenses.push(expense);
         } catch (error) {
-          errors.push(`Row ${index + 2}: ${error instanceof Error ? error.message : 'Invalid data format'}`);
+          errors.push(`Row ${headerRowIndex + index + 2}: ${error instanceof Error ? error.message : 'Invalid data format'}`);
         }
       });
 
@@ -134,7 +174,7 @@ export const ExpenseUpload = ({ onUploadSuccess }: ExpenseUploadProps) => {
       setUploadResult({
         success: insertedData?.length || 0,
         errors,
-        total: rows.length
+        total: dataRows.length
       });
 
       if (insertedData?.length > 0) {

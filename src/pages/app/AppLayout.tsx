@@ -200,6 +200,15 @@ export const AppLayout = () => {
                             Cameras
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton
+                            onClick={() => handleNavigation('/app/admin/lenses')}
+                            isActive={location.pathname === '/app/admin/lenses'}
+                          >
+                            <Settings className="h-4 w-4" />
+                            Lenses
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
                       </SidebarMenuSub>
                     </CollapsibleContent>
                   </SidebarMenuItem>

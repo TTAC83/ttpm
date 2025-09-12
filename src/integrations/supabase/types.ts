@@ -403,6 +403,60 @@ export type Database = {
           },
         ]
       }
+      lens_master: {
+        Row: {
+          aperture: string | null
+          created_at: string
+          description: string | null
+          focal_length: string | null
+          id: string
+          lens_type: string | null
+          manufacturer: string
+          model_number: string
+          order_hyperlink: string | null
+          price: number | null
+          supplier_email: string | null
+          supplier_name: string | null
+          supplier_person: string | null
+          supplier_phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          aperture?: string | null
+          created_at?: string
+          description?: string | null
+          focal_length?: string | null
+          id?: string
+          lens_type?: string | null
+          manufacturer: string
+          model_number: string
+          order_hyperlink?: string | null
+          price?: number | null
+          supplier_email?: string | null
+          supplier_name?: string | null
+          supplier_person?: string | null
+          supplier_phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          aperture?: string | null
+          created_at?: string
+          description?: string | null
+          focal_length?: string | null
+          id?: string
+          lens_type?: string | null
+          manufacturer?: string
+          model_number?: string
+          order_hyperlink?: string | null
+          price?: number | null
+          supplier_email?: string | null
+          supplier_name?: string | null
+          supplier_person?: string | null
+          supplier_phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lights: {
         Row: {
           created_at: string

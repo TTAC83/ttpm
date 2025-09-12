@@ -54,6 +54,14 @@ interface CameraMaster {
   camera_type?: string;
 }
 
+interface LensMaster {
+  id: string;
+  manufacturer: string;
+  model_number: string;
+  lens_type?: string;
+  focal_length?: string;
+}
+
 interface DeviceAssignmentProps {
   positions: Position[];
   setPositions: (positions: Position[]) => void;
@@ -69,11 +77,13 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   const [deviceType, setDeviceType] = useState<"camera" | "iot">("camera");
   const [lights, setLights] = useState<Light[]>([]);
   const [cameras, setCameras] = useState<CameraMaster[]>([]);
+  const [lenses, setLenses] = useState<LensMaster[]>([]);
 
   // Camera form state
   const [cameraForm, setCameraForm] = useState({
     name: "",
     camera_master_id: "",
+    lens_master_id: "",
     mac_address: "",
     light_required: false,
     light_id: "",
@@ -86,10 +96,10 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     receiver_mac_address: "",
   });
 
-  // Fetch lights and cameras for the dropdowns
+  // Fetch lights, cameras, and lenses for the dropdowns
   useEffect(() => {
     const fetchData = async () => {
-      const [lightsData, camerasData] = await Promise.all([
+      const [lightsData, camerasData, lensesData] = await Promise.all([
         supabase
           .from('lights')
           .select('id, manufacturer, model_number, description')
@@ -97,6 +107,10 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
         supabase
           .from('cameras_master')
           .select('id, manufacturer, model_number, camera_type')
+          .order('manufacturer', { ascending: true }),
+        supabase
+          .from('lens_master')
+          .select('id, manufacturer, model_number, lens_type, focal_length')
           .order('manufacturer', { ascending: true })
       ]);
       
@@ -105,6 +119,9 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       }
       if (camerasData.data) {
         setCameras(camerasData.data);
+      }
+      if (lensesData.data) {
+        setLenses(lensesData.data);
       }
     };
 
@@ -117,11 +134,12 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     }
 
     const selectedCamera = cameras.find(c => c.id === cameraForm.camera_master_id);
+    const selectedLens = lenses.find(l => l.id === cameraForm.lens_master_id);
     const newCamera = {
       id: Math.random().toString(36).substring(7),
       name: cameraForm.name,
       camera_type: selectedCamera?.camera_type || "",
-      lens_type: "", // Will be set separately when lens hardware is selected
+      lens_type: selectedLens?.lens_type || "",
       mac_address: cameraForm.mac_address,
       light_required: cameraForm.light_required,
       light_id: cameraForm.light_id,
@@ -145,6 +163,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     setCameraForm({ 
       name: "", 
       camera_master_id: "", 
+      lens_master_id: "",
       mac_address: "",
       light_required: false,
       light_id: ""
@@ -394,6 +413,29 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                       <SelectItem key={camera.id} value={camera.id}>
                         {camera.manufacturer} - {camera.model_number}
                         {camera.camera_type && ` (${camera.camera_type})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="lens-model">Lens Model</Label>
+                <Select
+                  value={cameraForm.lens_master_id}
+                  onValueChange={(value) =>
+                    setCameraForm({ ...cameraForm, lens_master_id: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose lens model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {lenses.map((lens) => (
+                      <SelectItem key={lens.id} value={lens.id}>
+                        {lens.manufacturer} - {lens.model_number}
+                        {lens.lens_type && ` (${lens.lens_type})`}
+                        {lens.focal_length && ` - ${lens.focal_length}`}
                       </SelectItem>
                     ))}
                   </SelectContent>

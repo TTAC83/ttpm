@@ -15,7 +15,7 @@ interface ExpenseUploadProps {
 interface ExpenseRow {
   account_code: string;
   account: string;
-  expense_date: string;
+  expense_date: string | null;
   source: string;
   description: string;
   invoice_number: string;
@@ -45,6 +45,45 @@ export const ExpenseUpload = ({ onUploadSuccess }: ExpenseUploadProps) => {
     'Invoice Number', 'Reference', 'Gross', 'VAT', 'Net', 
     'VAT Rate', 'VAT Rate Name', 'Customer'
   ];
+
+  // Parse various Excel date formats into 'YYYY-MM-DD' or return null
+  const parseDateCell = (value: any): string | null => {
+    if (value === undefined || value === null) return null;
+
+    // If it's already a Date
+    if (value instanceof Date && !isNaN(value.getTime())) {
+      return value.toISOString().split('T')[0];
+    }
+
+    // If it's a number, likely an Excel serial date
+    if (typeof value === 'number' && !isNaN(value)) {
+      const excelEpoch = new Date(Math.round((value - 25569) * 86400 * 1000));
+      if (!isNaN(excelEpoch.getTime())) return excelEpoch.toISOString().split('T')[0];
+      return null;
+    }
+
+    // If it's a string, try common formats
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) return null;
+
+      // dd/mm/yyyy or dd-mm-yyyy
+      const dmY = trimmed.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+      if (dmY) {
+        const d = parseInt(dmY[1], 10);
+        const m = parseInt(dmY[2], 10) - 1;
+        const y = parseInt(dmY[3].length === 2 ? '20' + dmY[3] : dmY[3], 10);
+        const dt = new Date(y, m, d);
+        if (!isNaN(dt.getTime())) return dt.toISOString().split('T')[0];
+      }
+
+      // ISO or other parseable formats
+      const parsed = new Date(trimmed);
+      if (!isNaN(parsed.getTime())) return parsed.toISOString().split('T')[0];
+    }
+
+    return null;
+  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -128,7 +167,7 @@ export const ExpenseUpload = ({ onUploadSuccess }: ExpenseUploadProps) => {
           const expense: ExpenseRow = {
             account_code: row[columnMapping['Account Code']]?.toString() || '',
             account: row[columnMapping['Account']]?.toString() || '',
-            expense_date: row[columnMapping['Date']] ? new Date(row[columnMapping['Date']]).toISOString().split('T')[0] : '',
+            expense_date: parseDateCell(row[columnMapping['Date']]),
             source: row[columnMapping['Source']]?.toString() || '',
             description: row[columnMapping['Description']]?.toString() || '',
             invoice_number: row[columnMapping['Invoice Number']]?.toString() || '',

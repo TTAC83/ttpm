@@ -51,15 +51,20 @@ export const AssignExpenseDialog = ({
   currentIndex = 0,
   totalCount = 0 
 }: AssignExpenseDialogProps) => {
-  const [assignmentType, setAssignmentType] = useState<'user' | 'project' | 'solutions'>('user');
+  const [assignmentType, setAssignmentType] = useState<'user' | 'project'>('user');
+  const [projectType, setProjectType] = useState<'implementation' | 'solutions'>('implementation');
   const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [selectedCustomer, setSelectedCustomer] = useState<string>('');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [selectedSolutionsProjectId, setSelectedSolutionsProjectId] = useState<string>('');
   const [isBillable, setIsBillable] = useState(true);
   const [notes, setNotes] = useState('');
   const [users, setUsers] = useState<User[]>([]);
+  const [customers, setCustomers] = useState<string[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [solutionsProjects, setSolutionsProjects] = useState<Project[]>([]);
+  const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
+  const [filteredSolutionsProjects, setFilteredSolutionsProjects] = useState<Project[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -68,8 +73,28 @@ export const AssignExpenseDialog = ({
       fetchUsers();
       fetchProjects();
       fetchSolutionsProjects();
+      fetchCustomers();
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (selectedCustomer) {
+      if (projectType === 'implementation') {
+        const filtered = projects.filter(project => 
+          project.name.toLowerCase().includes(selectedCustomer.toLowerCase())
+        );
+        setFilteredProjects(filtered);
+      } else {
+        const filtered = solutionsProjects.filter(project => 
+          project.name.toLowerCase().includes(selectedCustomer.toLowerCase())
+        );
+        setFilteredSolutionsProjects(filtered);
+      }
+    } else {
+      setFilteredProjects(projects);
+      setFilteredSolutionsProjects(solutionsProjects);
+    }
+  }, [selectedCustomer, projects, solutionsProjects, projectType]);
 
   const fetchUsers = async () => {
     try {
@@ -116,6 +141,37 @@ export const AssignExpenseDialog = ({
     }
   };
 
+  const fetchCustomers = async () => {
+    try {
+      // Get unique customer names from projects and solutions projects
+      const [projectsData, solutionsData] = await Promise.all([
+        supabase.from('projects').select('name').order('name'),
+        supabase.from('solutions_projects').select('site_name').order('site_name')
+      ]);
+
+      const customerSet = new Set<string>();
+      
+      if (projectsData.data) {
+        projectsData.data.forEach(project => {
+          // Extract customer name (assuming it's the first part before a delimiter)
+          const customer = project.name.split(' - ')[0] || project.name.split(' ')[0];
+          if (customer) customerSet.add(customer);
+        });
+      }
+
+      if (solutionsData.data) {
+        solutionsData.data.forEach(project => {
+          const customer = project.site_name.split(' - ')[0] || project.site_name.split(' ')[0];
+          if (customer) customerSet.add(customer);
+        });
+      }
+
+      setCustomers(Array.from(customerSet).sort());
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+    }
+  };
+
   const handleSubmit = async () => {
     try {
       setIsSubmitting(true);
@@ -123,8 +179,8 @@ export const AssignExpenseDialog = ({
       const assignment = {
         expense_id: expense.id,
         assigned_to_user_id: assignmentType === 'user' ? selectedUserId : null,
-        assigned_to_project_id: assignmentType === 'project' ? selectedProjectId : null,
-        assigned_to_solutions_project_id: assignmentType === 'solutions' ? selectedSolutionsProjectId : null,
+        assigned_to_project_id: assignmentType === 'project' && projectType === 'implementation' ? selectedProjectId : null,
+        assigned_to_solutions_project_id: assignmentType === 'project' && projectType === 'solutions' ? selectedSolutionsProjectId : null,
         is_billable: isBillable,
         assignment_notes: notes.trim() || null,
         assigned_by: (await supabase.auth.getUser()).data.user?.id
@@ -140,22 +196,24 @@ export const AssignExpenseDialog = ({
         return;
       }
       
-      if (assignmentType === 'project' && !selectedProjectId) {
-        toast({
-          title: 'Error',
-          description: 'Please select a project',
-          variant: 'destructive',
-        });
-        return;
-      }
-      
-      if (assignmentType === 'solutions' && !selectedSolutionsProjectId) {
-        toast({
-          title: 'Error',
-          description: 'Please select a solutions project',
-          variant: 'destructive',
-        });
-        return;
+      if (assignmentType === 'project') {
+        if (projectType === 'implementation' && !selectedProjectId) {
+          toast({
+            title: 'Error',
+            description: 'Please select an implementation project',
+            variant: 'destructive',
+          });
+          return;
+        }
+        
+        if (projectType === 'solutions' && !selectedSolutionsProjectId) {
+          toast({
+            title: 'Error',
+            description: 'Please select a solutions project',
+            variant: 'destructive',
+          });
+          return;
+        }
       }
 
       const { error } = await supabase
@@ -231,7 +289,7 @@ export const AssignExpenseDialog = ({
           {/* Assignment Type */}
           <div className="space-y-3">
             <Label>Assign to</Label>
-            <RadioGroup value={assignmentType} onValueChange={(value: 'user' | 'project' | 'solutions') => setAssignmentType(value)}>
+            <RadioGroup value={assignmentType} onValueChange={(value: 'user' | 'project') => setAssignmentType(value)}>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="user" id="user" />
                 <Label htmlFor="user" className="flex items-center gap-2">
@@ -243,18 +301,51 @@ export const AssignExpenseDialog = ({
                 <RadioGroupItem value="project" id="project" />
                 <Label htmlFor="project" className="flex items-center gap-2">
                   <Building className="h-4 w-4" />
-                  Implementation Project
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="solutions" id="solutions" />
-                <Label htmlFor="solutions" className="flex items-center gap-2">
-                  <Building className="h-4 w-4" />
-                  Solutions Project
+                  Project
                 </Label>
               </div>
             </RadioGroup>
           </div>
+
+          {/* Project Type Selection */}
+          {assignmentType === 'project' && (
+            <div className="space-y-3">
+              <Label>Project Type</Label>
+              <RadioGroup value={projectType} onValueChange={(value: 'implementation' | 'solutions') => setProjectType(value)}>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="implementation" id="implementation" />
+                  <Label htmlFor="implementation">Implementation Project</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="solutions" id="solutions" />
+                  <Label htmlFor="solutions">Solutions Project</Label>
+                </div>
+              </RadioGroup>
+            </div>
+          )}
+
+          {/* Customer Selection for Projects */}
+          {assignmentType === 'project' && (
+            <div className="space-y-2">
+              <Label htmlFor="customer-select">Select Customer</Label>
+              <Select value={selectedCustomer} onValueChange={(value) => {
+                setSelectedCustomer(value);
+                setSelectedProjectId('');
+                setSelectedSolutionsProjectId('');
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a customer..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {customers.map((customer) => (
+                    <SelectItem key={customer} value={customer}>
+                      {customer}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* User Selection */}
           {assignmentType === 'user' && (
@@ -276,7 +367,7 @@ export const AssignExpenseDialog = ({
           )}
 
           {/* Project Selection */}
-          {assignmentType === 'project' && (
+          {assignmentType === 'project' && selectedCustomer && projectType === 'implementation' && (
             <div className="space-y-2">
               <Label htmlFor="project-select">Select Implementation Project</Label>
               <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
@@ -284,7 +375,7 @@ export const AssignExpenseDialog = ({
                   <SelectValue placeholder="Choose a project..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {projects.map((project) => (
+                  {filteredProjects.map((project) => (
                     <SelectItem key={project.id} value={project.id}>
                       {project.name}
                     </SelectItem>
@@ -295,7 +386,7 @@ export const AssignExpenseDialog = ({
           )}
 
           {/* Solutions Project Selection */}
-          {assignmentType === 'solutions' && (
+          {assignmentType === 'project' && selectedCustomer && projectType === 'solutions' && (
             <div className="space-y-2">
               <Label htmlFor="solutions-select">Select Solutions Project</Label>
               <Select value={selectedSolutionsProjectId} onValueChange={setSelectedSolutionsProjectId}>
@@ -303,7 +394,7 @@ export const AssignExpenseDialog = ({
                   <SelectValue placeholder="Choose a solutions project..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {solutionsProjects.map((project) => (
+                  {filteredSolutionsProjects.map((project) => (
                     <SelectItem key={project.id} value={project.id}>
                       {project.name}
                     </SelectItem>

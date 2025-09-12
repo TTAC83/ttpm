@@ -219,6 +219,7 @@ export const AssignedExpenses = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Actions</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Account</TableHead>
                   <TableHead>Description</TableHead>
@@ -226,12 +227,22 @@ export const AssignedExpenses = () => {
                   <TableHead>Amount</TableHead>
                   <TableHead>Assigned To</TableHead>
                   <TableHead>Billable</TableHead>
-                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {assignedExpenses.map((assignment) => (
                   <TableRow key={assignment.id}>
+                    <TableCell>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleUnassign(assignment.id)}
+                        className="flex items-center gap-2"
+                      >
+                        <UserX className="h-4 w-4" />
+                        Unassign
+                      </Button>
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -291,17 +302,6 @@ export const AssignedExpenses = () => {
                           <><XCircle className="h-3 w-3 mr-1" />Non-billable</>
                         )}
                       </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleUnassign(assignment.id)}
-                        className="flex items-center gap-2"
-                      >
-                        <UserX className="h-4 w-4" />
-                        Unassign
-                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

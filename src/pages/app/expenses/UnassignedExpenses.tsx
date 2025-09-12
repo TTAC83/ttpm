@@ -126,6 +126,7 @@ export const UnassignedExpenses = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Actions</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Account</TableHead>
                     <TableHead>Description</TableHead>
@@ -134,12 +135,22 @@ export const UnassignedExpenses = () => {
                     <TableHead>VAT</TableHead>
                     <TableHead>Net</TableHead>
                     <TableHead>Invoice #</TableHead>
-                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {expenses.map((expense) => (
                     <TableRow key={expense.id}>
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedExpense(expense)}
+                          className="flex items-center gap-2"
+                        >
+                          <UserPlus className="h-4 w-4" />
+                          Assign
+                        </Button>
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -169,17 +180,6 @@ export const UnassignedExpenses = () => {
                       </TableCell>
                       <TableCell className="font-mono text-sm">
                         {expense.invoice_number}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setSelectedExpense(expense)}
-                          className="flex items-center gap-2"
-                        >
-                          <UserPlus className="h-4 w-4" />
-                          Assign
-                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}

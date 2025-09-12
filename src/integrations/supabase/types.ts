@@ -211,7 +211,6 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
-          lens_type: string | null
           manufacturer: string
           model_number: string
           order_hyperlink: string | null
@@ -227,7 +226,6 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
-          lens_type?: string | null
           manufacturer: string
           model_number: string
           order_hyperlink?: string | null
@@ -243,7 +241,6 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
-          lens_type?: string | null
           manufacturer?: string
           model_number?: string
           order_hyperlink?: string | null

@@ -52,7 +52,6 @@ interface CameraMaster {
   manufacturer: string;
   model_number: string;
   camera_type?: string;
-  lens_type?: string;
 }
 
 interface DeviceAssignmentProps {
@@ -97,7 +96,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
           .order('manufacturer', { ascending: true }),
         supabase
           .from('cameras_master')
-          .select('id, manufacturer, model_number, camera_type, lens_type')
+          .select('id, manufacturer, model_number, camera_type')
           .order('manufacturer', { ascending: true })
       ]);
       
@@ -122,7 +121,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       id: Math.random().toString(36).substring(7),
       name: cameraForm.name,
       camera_type: selectedCamera?.camera_type || "",
-      lens_type: selectedCamera?.lens_type || "",
+      lens_type: "", // Will be set separately when lens hardware is selected
       mac_address: cameraForm.mac_address,
       light_required: cameraForm.light_required,
       light_id: cameraForm.light_id,

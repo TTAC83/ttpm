@@ -23,7 +23,6 @@ interface CameraMaster {
   supplier_email?: string;
   supplier_phone?: string;
   camera_type?: string;
-  lens_type?: string;
   created_at: string;
   updated_at: string;
 }
@@ -43,7 +42,6 @@ export const CamerasManagement: React.FC = () => {
     supplier_email: "",
     supplier_phone: "",
     camera_type: "",
-    lens_type: "",
   });
 
   useEffect(() => {
@@ -85,7 +83,6 @@ export const CamerasManagement: React.FC = () => {
         supplier_email: formData.supplier_email || null,
         supplier_phone: formData.supplier_phone || null,
         camera_type: formData.camera_type || null,
-        lens_type: formData.lens_type || null,
       };
 
       if (editingCamera) {
@@ -127,7 +124,6 @@ export const CamerasManagement: React.FC = () => {
       supplier_email: camera.supplier_email || "",
       supplier_phone: camera.supplier_phone || "",
       camera_type: camera.camera_type || "",
-      lens_type: camera.lens_type || "",
     });
     setIsDialogOpen(true);
   };
@@ -162,7 +158,6 @@ export const CamerasManagement: React.FC = () => {
       supplier_email: "",
       supplier_phone: "",
       camera_type: "",
-      lens_type: "",
     });
     setEditingCamera(null);
   };
@@ -224,7 +219,7 @@ export const CamerasManagement: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     <div>
                       <Label htmlFor="camera_type">Camera Type</Label>
                       <Input
@@ -232,15 +227,6 @@ export const CamerasManagement: React.FC = () => {
                         value={formData.camera_type}
                         onChange={(e) => setFormData({ ...formData, camera_type: e.target.value })}
                         placeholder="e.g., Industrial, PTZ, Fixed"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="lens_type">Lens Type</Label>
-                      <Input
-                        id="lens_type"
-                        value={formData.lens_type}
-                        onChange={(e) => setFormData({ ...formData, lens_type: e.target.value })}
-                        placeholder="e.g., Wide Angle, Telephoto"
                       />
                     </div>
                   </div>
@@ -345,7 +331,7 @@ export const CamerasManagement: React.FC = () => {
                   <TableHead>Manufacturer</TableHead>
                   <TableHead>Model</TableHead>
                   <TableHead>Type</TableHead>
-                  <TableHead>Lens</TableHead>
+                  <TableHead>Lens Hardware</TableHead>
                   <TableHead>Price</TableHead>
                   <TableHead>Supplier</TableHead>
                   <TableHead>Actions</TableHead>
@@ -369,9 +355,7 @@ export const CamerasManagement: React.FC = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        {camera.lens_type && (
-                          <Badge variant="secondary">{camera.lens_type}</Badge>
-                        )}
+                        <Badge variant="secondary">Separate Hardware</Badge>
                       </TableCell>
                       <TableCell>
                         {camera.price && `$${camera.price.toFixed(2)}`}

@@ -92,7 +92,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   };
 
   const addIotDevice = () => {
-    if (!selectedPosition || !selectedEquipment || !iotForm.name || !iotForm.mac_address || !iotForm.receiver_mac_address) {
+    if (!selectedPosition || !selectedEquipment || !iotForm.name) {
       return;
     }
 
@@ -261,8 +261,12 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                                  <div className="flex flex-col gap-1">
                                    <div className="font-medium text-sm">{device.name}</div>
                                    <div className="flex gap-2 flex-wrap">
-                                     <Badge variant="secondary">{device.mac_address}</Badge>
-                                     <Badge variant="outline">→ {device.receiver_mac_address}</Badge>
+                                     {device.mac_address && (
+                                       <Badge variant="secondary">{device.mac_address}</Badge>
+                                     )}
+                                     {device.receiver_mac_address && (
+                                       <Badge variant="outline">→ {device.receiver_mac_address}</Badge>
+                                     )}
                                    </div>
                                  </div>
                                 <Button
@@ -348,7 +352,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                 />
               </div>
               <div>
-                <Label htmlFor="iot-mac">MAC Address</Label>
+                <Label htmlFor="iot-mac">MAC Address (Optional)</Label>
                 <Input
                   id="iot-mac"
                   value={iotForm.mac_address}
@@ -359,7 +363,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                 />
               </div>
               <div>
-                <Label htmlFor="receiver-mac">Receiver MAC Address</Label>
+                <Label htmlFor="receiver-mac">Receiver MAC Address (Optional)</Label>
                 <Input
                   id="receiver-mac"
                   value={iotForm.receiver_mac_address}

@@ -30,7 +30,10 @@ export const NewSolutionsProject = () => {
     site_address: '',
     salesperson: '',
     solutions_consultant: '',
-    customer_lead: ''
+    customer_lead: '',
+    customer_email: '',
+    customer_phone: '',
+    customer_job_title: ''
   });
 
   const fetchUsers = async () => {
@@ -79,6 +82,9 @@ export const NewSolutionsProject = () => {
         salesperson: formData.salesperson || null,
         solutions_consultant: formData.solutions_consultant || null,
         customer_lead: formData.customer_lead || null,
+        customer_email: formData.customer_email || null,
+        customer_phone: formData.customer_phone || null,
+        customer_job_title: formData.customer_job_title || null,
         created_by: user?.id
       };
 
@@ -213,18 +219,44 @@ export const NewSolutionsProject = () => {
 
               <div>
                 <Label htmlFor="customer_lead">Customer Lead</Label>
-                <Select onValueChange={(value) => handleInputChange('customer_lead', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select customer lead" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users.map((user) => (
-                      <SelectItem key={user.user_id} value={user.user_id}>
-                        {user.name || user.email}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  id="customer_lead"
+                  value={formData.customer_lead}
+                  onChange={(e) => handleInputChange('customer_lead', e.target.value)}
+                  placeholder="Enter customer lead name"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="customer_email">Customer Email</Label>
+                <Input
+                  id="customer_email"
+                  type="email"
+                  value={formData.customer_email}
+                  onChange={(e) => handleInputChange('customer_email', e.target.value)}
+                  placeholder="Enter customer email"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="customer_phone">Customer Phone</Label>
+                <Input
+                  id="customer_phone"
+                  type="tel"
+                  value={formData.customer_phone}
+                  onChange={(e) => handleInputChange('customer_phone', e.target.value)}
+                  placeholder="Enter customer phone number"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="customer_job_title">Customer Job Title</Label>
+                <Input
+                  id="customer_job_title"
+                  value={formData.customer_job_title}
+                  onChange={(e) => handleInputChange('customer_job_title', e.target.value)}
+                  placeholder="Enter customer job title"
+                />
               </div>
             </div>
 

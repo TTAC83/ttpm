@@ -1387,7 +1387,10 @@ export type Database = {
           company_name: string
           created_at: string
           created_by: string
+          customer_email: string | null
+          customer_job_title: string | null
           customer_lead: string | null
+          customer_phone: string | null
           domain: Database["public"]["Enums"]["work_domain"]
           gateways_required: number | null
           id: string
@@ -1405,7 +1408,10 @@ export type Database = {
           company_name: string
           created_at?: string
           created_by: string
+          customer_email?: string | null
+          customer_job_title?: string | null
           customer_lead?: string | null
+          customer_phone?: string | null
           domain: Database["public"]["Enums"]["work_domain"]
           gateways_required?: number | null
           id?: string
@@ -1423,7 +1429,10 @@ export type Database = {
           company_name?: string
           created_at?: string
           created_by?: string
+          customer_email?: string | null
+          customer_job_title?: string | null
           customer_lead?: string | null
+          customer_phone?: string | null
           domain?: Database["public"]["Enums"]["work_domain"]
           gateways_required?: number | null
           id?: string

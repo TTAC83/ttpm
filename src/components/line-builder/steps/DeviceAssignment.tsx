@@ -1,11 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, Camera, Cpu } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Position {
   id: string;
@@ -26,6 +29,8 @@ interface Equipment {
     camera_type: string;
     lens_type: string;
     mac_address: string;
+    light_required?: boolean;
+    light_id?: string;
   }>;
   iot_devices: Array<{
     id: string;
@@ -33,6 +38,13 @@ interface Equipment {
     mac_address: string;
     receiver_mac_address: string;
   }>;
+}
+
+interface Light {
+  id: string;
+  manufacturer: string;
+  model_number: string;
+  description?: string;
 }
 
 interface DeviceAssignmentProps {
@@ -48,6 +60,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   const [selectedEquipment, setSelectedEquipment] = useState<string>("");
   const [deviceDialogOpen, setDeviceDialogOpen] = useState(false);
   const [deviceType, setDeviceType] = useState<"camera" | "iot">("camera");
+  const [lights, setLights] = useState<Light[]>([]);
 
   // Camera form state
   const [cameraForm, setCameraForm] = useState({
@@ -55,6 +68,8 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     camera_type: "",
     lens_type: "",
     mac_address: "",
+    light_required: false,
+    light_id: "",
   });
 
   // IoT form state
@@ -63,6 +78,22 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     mac_address: "",
     receiver_mac_address: "",
   });
+
+  // Fetch lights for the dropdown
+  useEffect(() => {
+    const fetchLights = async () => {
+      const { data } = await supabase
+        .from('lights')
+        .select('id, manufacturer, model_number, description')
+        .order('manufacturer', { ascending: true });
+      
+      if (data) {
+        setLights(data);
+      }
+    };
+
+    fetchLights();
+  }, []);
 
   const addCamera = () => {
     if (!selectedPosition || !selectedEquipment || !cameraForm.name || !cameraForm.camera_type || !cameraForm.lens_type) {
@@ -89,7 +120,14 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       )
     );
 
-    setCameraForm({ name: "", camera_type: "", lens_type: "", mac_address: "" });
+    setCameraForm({ 
+      name: "", 
+      camera_type: "", 
+      lens_type: "", 
+      mac_address: "",
+      light_required: false,
+      light_id: ""
+    });
     setDeviceDialogOpen(false);
   };
 
@@ -352,6 +390,46 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                   placeholder="XX:XX:XX:XX:XX:XX"
                 />
               </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="light-required"
+                  checked={cameraForm.light_required}
+                  onCheckedChange={(checked) =>
+                    setCameraForm({ 
+                      ...cameraForm, 
+                      light_required: !!checked,
+                      light_id: checked ? cameraForm.light_id : ""
+                    })
+                  }
+                />
+                <Label htmlFor="light-required">Light Required</Label>
+              </div>
+              
+              {cameraForm.light_required && (
+                <div>
+                  <Label htmlFor="light-select">Select Light Model</Label>
+                  <Select
+                    value={cameraForm.light_id}
+                    onValueChange={(value) =>
+                      setCameraForm({ ...cameraForm, light_id: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose light model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {lights.map((light) => (
+                        <SelectItem key={light.id} value={light.id}>
+                          {light.manufacturer} - {light.model_number}
+                          {light.description && ` (${light.description})`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              
               <Button onClick={addCamera} className="w-full">
                 Add Camera
               </Button>

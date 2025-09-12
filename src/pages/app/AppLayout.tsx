@@ -12,16 +12,25 @@ import {
   SidebarMenu, 
   SidebarMenuButton, 
   SidebarMenuItem, 
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
   SidebarProvider,
-  SidebarTrigger 
+  SidebarTrigger,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel
 } from '@/components/ui/sidebar';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   User, 
   Users, 
   Settings, 
   LogOut,
   Home,
-  Eye
+  Eye,
+  ChevronRight,
+  Lightbulb
 } from 'lucide-react';
 
 export const AppLayout = () => {
@@ -122,7 +131,7 @@ export const AppLayout = () => {
           
           <SidebarContent>
             <SidebarMenu className="p-2">
-              {menuItems.filter(item => item.show).map((item) => (
+              {menuItems.filter(item => item.show && item.title !== 'Master Data').map((item) => (
                 <SidebarMenuItem key={item.path}>
                   <SidebarMenuButton
                     onClick={() => handleNavigation(item.path)}
@@ -134,6 +143,59 @@ export const AppLayout = () => {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              
+              {isInternalAdmin() && (
+                <Collapsible>
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton className="w-full justify-start">
+                        <Settings className="h-4 w-4" />
+                        <span>Master Data</span>
+                        <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:rotate-90" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton
+                            onClick={() => handleNavigation('/app/admin/masterdata')}
+                            isActive={location.pathname === '/app/admin/masterdata'}
+                          >
+                            Project Templates
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
+              )}
+              
+              {isInternalAdmin() && (
+                <Collapsible>
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton className="w-full justify-start">
+                        <Settings className="h-4 w-4" />
+                        <span>Hardware MasterData</span>
+                        <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:rotate-90" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton
+                            onClick={() => handleNavigation('/app/admin/lights')}
+                            isActive={location.pathname === '/app/admin/lights'}
+                          >
+                            <Lightbulb className="h-4 w-4" />
+                            Lights
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
+              )}
             </SidebarMenu>
           </SidebarContent>
           

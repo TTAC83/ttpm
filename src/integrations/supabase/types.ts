@@ -161,6 +161,8 @@ export type Database = {
           equipment_id: string
           id: string
           lens_type: string
+          light_id: string | null
+          light_required: boolean | null
           mac_address: string
           updated_at: string
         }
@@ -170,6 +172,8 @@ export type Database = {
           equipment_id: string
           id?: string
           lens_type: string
+          light_id?: string | null
+          light_required?: boolean | null
           mac_address: string
           updated_at?: string
         }
@@ -179,6 +183,8 @@ export type Database = {
           equipment_id?: string
           id?: string
           lens_type?: string
+          light_id?: string | null
+          light_required?: boolean | null
           mac_address?: string
           updated_at?: string
         }
@@ -188,6 +194,13 @@ export type Database = {
             columns: ["equipment_id"]
             isOneToOne: false
             referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cameras_light_id_fkey"
+            columns: ["light_id"]
+            isOneToOne: false
+            referencedRelation: "lights"
             referencedColumns: ["id"]
           },
         ]
@@ -341,6 +354,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      lights: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          manufacturer: string
+          model_number: string
+          order_hyperlink: string | null
+          price: number | null
+          supplier_email: string | null
+          supplier_name: string | null
+          supplier_person: string | null
+          supplier_phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          manufacturer: string
+          model_number: string
+          order_hyperlink?: string | null
+          price?: number | null
+          supplier_email?: string | null
+          supplier_name?: string | null
+          supplier_person?: string | null
+          supplier_phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          manufacturer?: string
+          model_number?: string
+          order_hyperlink?: string | null
+          price?: number | null
+          supplier_email?: string | null
+          supplier_name?: string | null
+          supplier_person?: string | null
+          supplier_phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       lines: {
         Row: {

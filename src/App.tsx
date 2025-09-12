@@ -30,6 +30,7 @@ import { UpdateVillageBakeryDates } from "./pages/app/projects/UpdateVillageBake
 import { UpdateParkCakesDates } from "./pages/app/projects/UpdateParkCakesDates";
 import ProjectDetail from "./pages/app/projects/ProjectDetail";
 import MasterDataManagement from "./pages/app/admin/MasterDataManagement";
+import LightsManagement from "./pages/app/admin/LightsManagement";
 import CompleteSignup from "./pages/CompleteSignup";
 import ResetPassword from "./pages/ResetPassword";
 import Actions from "./pages/app/Actions";
@@ -226,6 +227,14 @@ const App = () => (
                 element={
                   <AuthGuard requiredRole="internal_admin">
                     <MasterDataManagement />
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="admin/lights" 
+                element={
+                  <AuthGuard requiredRole="internal_admin">
+                    <LightsManagement />
                   </AuthGuard>
                 } 
               />

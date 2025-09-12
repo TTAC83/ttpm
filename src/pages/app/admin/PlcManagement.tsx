@@ -240,7 +240,7 @@ export const PlcManagement: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="input_output_count">I/O Count</Label>
+                      <Label htmlFor="input_output_count">Outputs Count</Label>
                       <Input
                         id="input_output_count"
                         value={formData.input_output_count}
@@ -359,7 +359,7 @@ export const PlcManagement: React.FC = () => {
                   <TableHead>Manufacturer</TableHead>
                   <TableHead>Model</TableHead>
                   <TableHead>Type</TableHead>
-                  <TableHead>I/O</TableHead>
+                  <TableHead>Outputs</TableHead>
                   <TableHead>Protocol</TableHead>
                   <TableHead>Price</TableHead>
                   <TableHead>Supplier</TableHead>

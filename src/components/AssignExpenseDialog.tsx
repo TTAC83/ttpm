@@ -51,7 +51,7 @@ export const AssignExpenseDialog = ({
   currentIndex = 0,
   totalCount = 0 
 }: AssignExpenseDialogProps) => {
-  const [assignmentType, setAssignmentType] = useState<'user' | 'project'>('user');
+  
   const [projectType, setProjectType] = useState<'implementation' | 'solutions'>('implementation');
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [selectedCustomer, setSelectedCustomer] = useState<string>('');
@@ -178,42 +178,40 @@ export const AssignExpenseDialog = ({
 
       const assignment = {
         expense_id: expense.id,
-        assigned_to_user_id: assignmentType === 'user' ? selectedUserId : null,
-        assigned_to_project_id: assignmentType === 'project' && projectType === 'implementation' ? selectedProjectId : null,
-        assigned_to_solutions_project_id: assignmentType === 'project' && projectType === 'solutions' ? selectedSolutionsProjectId : null,
+        assigned_to_user_id: selectedUserId || null,
+        assigned_to_project_id: projectType === 'implementation' ? selectedProjectId : null,
+        assigned_to_solutions_project_id: projectType === 'solutions' ? selectedSolutionsProjectId : null,
         is_billable: isBillable,
         assignment_notes: notes.trim() || null,
         assigned_by: (await supabase.auth.getUser()).data.user?.id
       };
 
-      // Validate assignment
-      if (assignmentType === 'user' && !selectedUserId) {
+      // Validate assignment - require either user or project
+      if (!selectedUserId && !selectedProjectId && !selectedSolutionsProjectId) {
         toast({
           title: 'Error',
-          description: 'Please select a user',
+          description: 'Please select at least a user or a project',
           variant: 'destructive',
         });
         return;
       }
       
-      if (assignmentType === 'project') {
-        if (projectType === 'implementation' && !selectedProjectId) {
-          toast({
-            title: 'Error',
-            description: 'Please select an implementation project',
-            variant: 'destructive',
-          });
-          return;
-        }
-        
-        if (projectType === 'solutions' && !selectedSolutionsProjectId) {
-          toast({
-            title: 'Error',
-            description: 'Please select a solutions project',
-            variant: 'destructive',
-          });
-          return;
-        }
+      if (projectType === 'implementation' && selectedCustomer && !selectedProjectId) {
+        toast({
+          title: 'Error',
+          description: 'Please select an implementation project',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      if (projectType === 'solutions' && selectedCustomer && !selectedSolutionsProjectId) {
+        toast({
+          title: 'Error',
+          description: 'Please select a solutions project',
+          variant: 'destructive',
+        });
+        return;
       }
 
       const { error } = await supabase
@@ -286,88 +284,67 @@ export const AssignExpenseDialog = ({
             </CardContent>
           </Card>
 
-          {/* Assignment Type */}
+          {/* User Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="user-select" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Select User
+            </Label>
+            <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a user..." />
+              </SelectTrigger>
+              <SelectContent>
+                {users.map((user) => (
+                  <SelectItem key={user.user_id} value={user.user_id}>
+                    {user.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Project Type Selection */}
           <div className="space-y-3">
-            <Label>Assign to</Label>
-            <RadioGroup value={assignmentType} onValueChange={(value: 'user' | 'project') => setAssignmentType(value)}>
+            <Label className="flex items-center gap-2">
+              <Building className="h-4 w-4" />
+              Project Type
+            </Label>
+            <RadioGroup value={projectType} onValueChange={(value: 'implementation' | 'solutions') => setProjectType(value)}>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="user" id="user" />
-                <Label htmlFor="user" className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  User
-                </Label>
+                <RadioGroupItem value="implementation" id="implementation" />
+                <Label htmlFor="implementation">Implementation Project</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="project" id="project" />
-                <Label htmlFor="project" className="flex items-center gap-2">
-                  <Building className="h-4 w-4" />
-                  Project
-                </Label>
+                <RadioGroupItem value="solutions" id="solutions" />
+                <Label htmlFor="solutions">Solutions Project</Label>
               </div>
             </RadioGroup>
           </div>
 
-          {/* Project Type Selection */}
-          {assignmentType === 'project' && (
-            <div className="space-y-3">
-              <Label>Project Type</Label>
-              <RadioGroup value={projectType} onValueChange={(value: 'implementation' | 'solutions') => setProjectType(value)}>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="implementation" id="implementation" />
-                  <Label htmlFor="implementation">Implementation Project</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="solutions" id="solutions" />
-                  <Label htmlFor="solutions">Solutions Project</Label>
-                </div>
-              </RadioGroup>
-            </div>
-          )}
-
           {/* Customer Selection for Projects */}
-          {assignmentType === 'project' && (
-            <div className="space-y-2">
-              <Label htmlFor="customer-select">Select Customer</Label>
-              <Select value={selectedCustomer} onValueChange={(value) => {
-                setSelectedCustomer(value);
-                setSelectedProjectId('');
-                setSelectedSolutionsProjectId('');
-              }}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a customer..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers.map((customer) => (
-                    <SelectItem key={customer} value={customer}>
-                      {customer}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* User Selection */}
-          {assignmentType === 'user' && (
-            <div className="space-y-2">
-              <Label htmlFor="user-select">Select User</Label>
-              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a user..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {users.map((user) => (
-                    <SelectItem key={user.user_id} value={user.user_id}>
-                      {user.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="customer-select">Select Customer</Label>
+            <Select value={selectedCustomer} onValueChange={(value) => {
+              setSelectedCustomer(value);
+              setSelectedProjectId('');
+              setSelectedSolutionsProjectId('');
+            }}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a customer..." />
+              </SelectTrigger>
+              <SelectContent>
+                {customers.map((customer) => (
+                  <SelectItem key={customer} value={customer}>
+                    {customer}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           {/* Project Selection */}
-          {assignmentType === 'project' && selectedCustomer && projectType === 'implementation' && (
+          {selectedCustomer && projectType === 'implementation' && (
             <div className="space-y-2">
               <Label htmlFor="project-select">Select Implementation Project</Label>
               <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
@@ -386,7 +363,7 @@ export const AssignExpenseDialog = ({
           )}
 
           {/* Solutions Project Selection */}
-          {assignmentType === 'project' && selectedCustomer && projectType === 'solutions' && (
+          {selectedCustomer && projectType === 'solutions' && (
             <div className="space-y-2">
               <Label htmlFor="solutions-select">Select Solutions Project</Label>
               <Select value={selectedSolutionsProjectId} onValueChange={setSelectedSolutionsProjectId}>

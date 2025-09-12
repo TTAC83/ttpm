@@ -365,6 +365,102 @@ export type Database = {
         }
         Relationships: []
       }
+      expense_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string
+          assigned_to_project_id: string | null
+          assigned_to_solutions_project_id: string | null
+          assigned_to_user_id: string | null
+          assignment_notes: string | null
+          expense_id: string
+          id: string
+          is_billable: boolean
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by: string
+          assigned_to_project_id?: string | null
+          assigned_to_solutions_project_id?: string | null
+          assigned_to_user_id?: string | null
+          assignment_notes?: string | null
+          expense_id: string
+          id?: string
+          is_billable?: boolean
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string
+          assigned_to_project_id?: string | null
+          assigned_to_solutions_project_id?: string | null
+          assigned_to_user_id?: string | null
+          assignment_notes?: string | null
+          expense_id?: string
+          id?: string
+          is_billable?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      expenses: {
+        Row: {
+          account: string | null
+          account_code: string | null
+          created_at: string
+          customer: string | null
+          description: string | null
+          expense_date: string | null
+          gross: number | null
+          id: string
+          invoice_number: string | null
+          net: number | null
+          reference: string | null
+          source: string | null
+          updated_at: string
+          vat: number | null
+          vat_rate: number | null
+          vat_rate_name: string | null
+        }
+        Insert: {
+          account?: string | null
+          account_code?: string | null
+          created_at?: string
+          customer?: string | null
+          description?: string | null
+          expense_date?: string | null
+          gross?: number | null
+          id?: string
+          invoice_number?: string | null
+          net?: number | null
+          reference?: string | null
+          source?: string | null
+          updated_at?: string
+          vat?: number | null
+          vat_rate?: number | null
+          vat_rate_name?: string | null
+        }
+        Update: {
+          account?: string | null
+          account_code?: string | null
+          created_at?: string
+          customer?: string | null
+          description?: string | null
+          expense_date?: string | null
+          gross?: number | null
+          id?: string
+          invoice_number?: string | null
+          net?: number | null
+          reference?: string | null
+          source?: string | null
+          updated_at?: string
+          vat?: number | null
+          vat_rate?: number | null
+          vat_rate_name?: string | null
+        }
+        Relationships: []
+      }
       gateways_master: {
         Row: {
           communication_protocols: string | null

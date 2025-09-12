@@ -30,7 +30,8 @@ import {
   Home,
   Eye,
   ChevronRight,
-  Lightbulb
+  Lightbulb,
+  Receipt
 } from 'lucide-react';
 
 export const AppLayout = () => {
@@ -82,6 +83,12 @@ export const AppLayout = () => {
       title: 'Global Models',
       icon: Eye,
       path: '/app/models',
+      show: true
+    },
+    {
+      title: 'Expenses',
+      icon: Receipt,
+      path: '/app/expenses',
       show: true
     },
     {

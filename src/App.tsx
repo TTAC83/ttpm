@@ -44,6 +44,7 @@ import Actions from "./pages/app/Actions";
 import GlobalTasks from "./pages/app/GlobalTasks";
 import GlobalCalendar from "./pages/app/GlobalCalendar";
 import GlobalModels from "./pages/app/GlobalModels";
+import { Expenses } from "./pages/app/Expenses";
 import { SolutionsList } from "./pages/app/solutions/SolutionsList";
 import { NewSolutionsProject } from "./pages/app/solutions/NewSolutionsProject";
 import { SolutionsProjectDetail } from "./pages/app/solutions/SolutionsProjectDetail";
@@ -221,6 +222,7 @@ const App = () => (
               <Route path="tasks" element={<GlobalTasks />} />
               <Route path="calendar" element={<GlobalCalendar />} />
               <Route path="models" element={<GlobalModels />} />
+              <Route path="expenses" element={<Expenses />} />
               <Route 
                 path="admin/users" 
                 element={

@@ -605,6 +605,60 @@ export type Database = {
           },
         ]
       }
+      plc_master: {
+        Row: {
+          communication_protocol: string | null
+          created_at: string
+          description: string | null
+          id: string
+          input_output_count: string | null
+          manufacturer: string
+          model_number: string
+          order_hyperlink: string | null
+          plc_type: string | null
+          price: number | null
+          supplier_email: string | null
+          supplier_name: string | null
+          supplier_person: string | null
+          supplier_phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          communication_protocol?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          input_output_count?: string | null
+          manufacturer: string
+          model_number: string
+          order_hyperlink?: string | null
+          plc_type?: string | null
+          price?: number | null
+          supplier_email?: string | null
+          supplier_name?: string | null
+          supplier_person?: string | null
+          supplier_phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          communication_protocol?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          input_output_count?: string | null
+          manufacturer?: string
+          model_number?: string
+          order_hyperlink?: string | null
+          plc_type?: string | null
+          price?: number | null
+          supplier_email?: string | null
+          supplier_name?: string | null
+          supplier_person?: string | null
+          supplier_phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       position_titles: {
         Row: {
           created_at: string

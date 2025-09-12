@@ -209,6 +209,15 @@ export const AppLayout = () => {
                             Lenses
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton
+                            onClick={() => handleNavigation('/app/admin/plcs')}
+                            isActive={location.pathname === '/app/admin/plcs'}
+                          >
+                            <Settings className="h-4 w-4" />
+                            PLCs
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
                       </SidebarMenuSub>
                     </CollapsibleContent>
                   </SidebarMenuItem>

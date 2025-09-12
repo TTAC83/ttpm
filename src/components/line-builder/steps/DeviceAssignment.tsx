@@ -62,6 +62,13 @@ interface LensMaster {
   focal_length?: string;
 }
 
+interface PlcMaster {
+  id: string;
+  manufacturer: string;
+  model_number: string;
+  plc_type?: string;
+}
+
 interface DeviceAssignmentProps {
   positions: Position[];
   setPositions: (positions: Position[]) => void;
@@ -78,6 +85,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   const [lights, setLights] = useState<Light[]>([]);
   const [cameras, setCameras] = useState<CameraMaster[]>([]);
   const [lenses, setLenses] = useState<LensMaster[]>([]);
+  const [plcs, setPlcs] = useState<PlcMaster[]>([]);
 
   // Camera form state
   const [cameraForm, setCameraForm] = useState({
@@ -87,6 +95,8 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     mac_address: "",
     light_required: false,
     light_id: "",
+    plc_attached: false,
+    plc_master_id: "",
   });
 
   // IoT form state
@@ -96,10 +106,10 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     receiver_mac_address: "",
   });
 
-  // Fetch lights, cameras, and lenses for the dropdowns
+  // Fetch lights, cameras, lenses, and PLCs for the dropdowns
   useEffect(() => {
     const fetchData = async () => {
-      const [lightsData, camerasData, lensesData] = await Promise.all([
+      const [lightsData, camerasData, lensesData, plcsData] = await Promise.all([
         supabase
           .from('lights')
           .select('id, manufacturer, model_number, description')
@@ -111,6 +121,10 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
         supabase
           .from('lens_master')
           .select('id, manufacturer, model_number, lens_type, focal_length')
+          .order('manufacturer', { ascending: true }),
+        supabase
+          .from('plc_master')
+          .select('id, manufacturer, model_number, plc_type')
           .order('manufacturer', { ascending: true })
       ]);
       
@@ -122,6 +136,9 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       }
       if (lensesData.data) {
         setLenses(lensesData.data);
+      }
+      if (plcsData.data) {
+        setPlcs(plcsData.data);
       }
     };
 
@@ -143,6 +160,8 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       mac_address: cameraForm.mac_address,
       light_required: cameraForm.light_required,
       light_id: cameraForm.light_id,
+      plc_attached: cameraForm.plc_attached,
+      plc_master_id: cameraForm.plc_master_id,
     };
 
     setPositions(
@@ -166,7 +185,9 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       lens_master_id: "",
       mac_address: "",
       light_required: false,
-      light_id: ""
+      light_id: "",
+      plc_attached: false,
+      plc_master_id: ""
     });
     setDeviceDialogOpen(false);
   };
@@ -485,6 +506,45 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                         <SelectItem key={light.id} value={light.id}>
                           {light.manufacturer} - {light.model_number}
                           {light.description && ` (${light.description})`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="plc-attached"
+                  checked={cameraForm.plc_attached}
+                  onCheckedChange={(checked) =>
+                    setCameraForm({ 
+                      ...cameraForm, 
+                      plc_attached: !!checked,
+                      plc_master_id: checked ? cameraForm.plc_master_id : ""
+                    })
+                  }
+                />
+                <Label htmlFor="plc-attached">PLC Attached</Label>
+              </div>
+              
+              {cameraForm.plc_attached && (
+                <div>
+                  <Label htmlFor="plc-select">Select PLC Model</Label>
+                  <Select
+                    value={cameraForm.plc_master_id}
+                    onValueChange={(value) =>
+                      setCameraForm({ ...cameraForm, plc_master_id: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose PLC model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {plcs.map((plc) => (
+                        <SelectItem key={plc.id} value={plc.id}>
+                          {plc.manufacturer} - {plc.model_number}
+                          {plc.plc_type && ` (${plc.plc_type})`}
                         </SelectItem>
                       ))}
                     </SelectContent>

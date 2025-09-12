@@ -33,6 +33,7 @@ import MasterDataManagement from "./pages/app/admin/MasterDataManagement";
 import LightsManagement from "./pages/app/admin/LightsManagement";
 import { CamerasManagement } from "./pages/app/admin/CamerasManagement";
 import { LensManagement } from "./pages/app/admin/LensManagement";
+import { PlcManagement } from "./pages/app/admin/PlcManagement";
 import CompleteSignup from "./pages/CompleteSignup";
 import ResetPassword from "./pages/ResetPassword";
 import Actions from "./pages/app/Actions";
@@ -253,6 +254,14 @@ const App = () => (
                 element={
                   <AuthGuard requiredRole="internal_admin">
                     <LensManagement />
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="admin/plcs" 
+                element={
+                  <AuthGuard requiredRole="internal_admin">
+                    <PlcManagement />
                   </AuthGuard>
                 } 
               />

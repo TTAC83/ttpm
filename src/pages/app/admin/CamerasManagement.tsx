@@ -272,10 +272,9 @@ export const CamerasManagement: React.FC = () => {
                       <Label htmlFor="order_hyperlink">Order Link</Label>
                       <Input
                         id="order_hyperlink"
-                        type="url"
                         value={formData.order_hyperlink}
                         onChange={(e) => setFormData({ ...formData, order_hyperlink: e.target.value })}
-                        placeholder="Enter order URL"
+                        placeholder="Enter order URL (e.g., https://example.com)"
                       />
                     </div>
                   </div>

@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Building, Calendar, MapPin, Factory } from 'lucide-react';
+import { HardwareQuantityInput } from '@/components/HardwareQuantityInput';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { SolutionsLines } from './tabs/SolutionsLines';
@@ -252,49 +253,37 @@ export const SolutionsProjectDetail = () => {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="servers">Servers Required</Label>
-            <Input
-              id="servers"
-              type="number"
-              min="0"
-              value={factoryData.servers_required}
-              onChange={(e) => handleFactoryUpdate('servers_required', parseInt(e.target.value) || 0)}
-            />
-          </div>
+          <HardwareQuantityInput
+            label="Servers Required"
+            value={factoryData.servers_required}
+            onChange={(value) => handleFactoryUpdate('servers_required', value)}
+            tableName="servers_master"
+            id="servers"
+          />
           
-          <div className="space-y-2">
-            <Label htmlFor="gateways">Gateways Required</Label>
-            <Input
-              id="gateways"
-              type="number"
-              min="0"
-              value={factoryData.gateways_required}
-              onChange={(e) => handleFactoryUpdate('gateways_required', parseInt(e.target.value) || 0)}
-            />
-          </div>
+          <HardwareQuantityInput
+            label="Gateways Required"
+            value={factoryData.gateways_required}
+            onChange={(value) => handleFactoryUpdate('gateways_required', value)}
+            tableName="gateways_master"
+            id="gateways"
+          />
           
-          <div className="space-y-2">
-            <Label htmlFor="tvdisplays">TV Display Devices Required</Label>
-            <Input
-              id="tvdisplays"
-              type="number"
-              min="0"
-              value={factoryData.tv_display_devices_required}
-              onChange={(e) => handleFactoryUpdate('tv_display_devices_required', parseInt(e.target.value) || 0)}
-            />
-          </div>
+          <HardwareQuantityInput
+            label="TV Display Devices Required"
+            value={factoryData.tv_display_devices_required}
+            onChange={(value) => handleFactoryUpdate('tv_display_devices_required', value)}
+            tableName="tv_displays_master"
+            id="tvdisplays"
+          />
           
-          <div className="space-y-2">
-            <Label htmlFor="receivers">Receivers Required</Label>
-            <Input
-              id="receivers"
-              type="number"
-              min="0"
-              value={factoryData.receivers_required}
-              onChange={(e) => handleFactoryUpdate('receivers_required', parseInt(e.target.value) || 0)}
-            />
-          </div>
+          <HardwareQuantityInput
+            label="Receivers Required"
+            value={factoryData.receivers_required}
+            onChange={(value) => handleFactoryUpdate('receivers_required', value)}
+            tableName="receivers_master"
+            id="receivers"
+          />
           
           <div className="space-y-2">
             <Label htmlFor="lines">Lines Required</Label>

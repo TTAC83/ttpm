@@ -221,10 +221,9 @@ export const AssignedExpenses = () => {
                 <TableRow>
                   <TableHead>Actions</TableHead>
                   <TableHead>Date</TableHead>
-                  <TableHead>Account</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Customer</TableHead>
                   <TableHead>Amount</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Description</TableHead>
                   <TableHead>Assigned To</TableHead>
                   <TableHead>Billable</TableHead>
                 </TableRow>
@@ -249,20 +248,14 @@ export const AssignedExpenses = () => {
                         {formatDate(assignment.expenses.expense_date)}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{assignment.expenses.account}</p>
-                        <p className="text-sm text-muted-foreground">{assignment.expenses.account_code}</p>
-                      </div>
+                    <TableCell className="font-mono font-medium">
+                      {formatCurrency(assignment.expenses.net)}
                     </TableCell>
+                    <TableCell>{assignment.expenses.customer}</TableCell>
                     <TableCell className="max-w-xs">
                       <p className="truncate" title={assignment.expenses.description}>
                         {assignment.expenses.description}
                       </p>
-                    </TableCell>
-                    <TableCell>{assignment.expenses.customer}</TableCell>
-                    <TableCell className="font-mono font-medium">
-                      {formatCurrency(assignment.expenses.net)}
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">

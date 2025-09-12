@@ -22,6 +22,7 @@ interface Equipment {
   equipment_type?: string;
   cameras: Array<{
     id: string;
+    name: string;
     camera_type: string;
     lens_type: string;
     mac_address: string;
@@ -50,6 +51,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
 
   // Camera form state
   const [cameraForm, setCameraForm] = useState({
+    name: "",
     camera_type: "",
     lens_type: "",
     mac_address: "",
@@ -63,7 +65,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   });
 
   const addCamera = () => {
-    if (!selectedPosition || !selectedEquipment || !cameraForm.camera_type || !cameraForm.lens_type || !cameraForm.mac_address) {
+    if (!selectedPosition || !selectedEquipment || !cameraForm.name || !cameraForm.camera_type || !cameraForm.lens_type || !cameraForm.mac_address) {
       return;
     }
 
@@ -87,7 +89,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       )
     );
 
-    setCameraForm({ camera_type: "", lens_type: "", mac_address: "" });
+    setCameraForm({ name: "", camera_type: "", lens_type: "", mac_address: "" });
     setDeviceDialogOpen(false);
   };
 
@@ -225,10 +227,13 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                                 key={camera.id}
                                 className="flex items-center justify-between bg-muted/50 p-3 rounded-lg"
                               >
-                                <div className="flex gap-2 flex-wrap">
-                                  <Badge variant="outline">{camera.camera_type}</Badge>
-                                  <Badge variant="outline">{camera.lens_type}</Badge>
-                                  <Badge variant="secondary">{camera.mac_address}</Badge>
+                                <div className="flex flex-col gap-1">
+                                  <div className="font-medium text-sm">{camera.name}</div>
+                                  <div className="flex gap-2 flex-wrap">
+                                    <Badge variant="outline">{camera.camera_type}</Badge>
+                                    <Badge variant="outline">{camera.lens_type}</Badge>
+                                    <Badge variant="secondary">{camera.mac_address}</Badge>
+                                  </div>
                                 </div>
                                 <Button
                                   variant="ghost"
@@ -301,6 +306,17 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
 
           {deviceType === "camera" ? (
             <div className="space-y-4">
+              <div>
+                <Label htmlFor="camera-name">Camera Name</Label>
+                <Input
+                  id="camera-name"
+                  value={cameraForm.name}
+                  onChange={(e) =>
+                    setCameraForm({ ...cameraForm, name: e.target.value })
+                  }
+                  placeholder="Enter camera name"
+                />
+              </div>
               <div>
                 <Label htmlFor="camera-type">Camera Type</Label>
                 <Input

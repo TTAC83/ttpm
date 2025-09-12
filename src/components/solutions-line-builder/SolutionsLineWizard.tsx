@@ -25,6 +25,7 @@ interface Equipment {
   equipment_type?: string;
   cameras: Array<{
     id: string;
+    name: string;
     camera_type: string;
     lens_type: string;
     mac_address: string;

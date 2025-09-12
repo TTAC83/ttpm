@@ -218,6 +218,42 @@ export const AppLayout = () => {
                             PLCs
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton
+                            onClick={() => handleNavigation('/app/admin/servers')}
+                            isActive={location.pathname === '/app/admin/servers'}
+                          >
+                            <Settings className="h-4 w-4" />
+                            Servers
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton
+                            onClick={() => handleNavigation('/app/admin/gateways')}
+                            isActive={location.pathname === '/app/admin/gateways'}
+                          >
+                            <Settings className="h-4 w-4" />
+                            Gateways
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton
+                            onClick={() => handleNavigation('/app/admin/receivers')}
+                            isActive={location.pathname === '/app/admin/receivers'}
+                          >
+                            <Settings className="h-4 w-4" />
+                            Receivers
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton
+                            onClick={() => handleNavigation('/app/admin/tv-displays')}
+                            isActive={location.pathname === '/app/admin/tv-displays'}
+                          >
+                            <Settings className="h-4 w-4" />
+                            TV Displays
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
                       </SidebarMenuSub>
                     </CollapsibleContent>
                   </SidebarMenuItem>

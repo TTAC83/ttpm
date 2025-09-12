@@ -365,6 +365,66 @@ export type Database = {
         }
         Relationships: []
       }
+      gateways_master: {
+        Row: {
+          communication_protocols: string | null
+          connection_types: string | null
+          created_at: string
+          description: string | null
+          gateway_type: string | null
+          id: string
+          manufacturer: string
+          max_devices: number | null
+          model_number: string
+          order_hyperlink: string | null
+          power_requirements: string | null
+          price: number | null
+          supplier_email: string | null
+          supplier_name: string | null
+          supplier_person: string | null
+          supplier_phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          communication_protocols?: string | null
+          connection_types?: string | null
+          created_at?: string
+          description?: string | null
+          gateway_type?: string | null
+          id?: string
+          manufacturer: string
+          max_devices?: number | null
+          model_number: string
+          order_hyperlink?: string | null
+          power_requirements?: string | null
+          price?: number | null
+          supplier_email?: string | null
+          supplier_name?: string | null
+          supplier_person?: string | null
+          supplier_phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          communication_protocols?: string | null
+          connection_types?: string | null
+          created_at?: string
+          description?: string | null
+          gateway_type?: string | null
+          id?: string
+          manufacturer?: string
+          max_devices?: number | null
+          model_number?: string
+          order_hyperlink?: string | null
+          power_requirements?: string | null
+          price?: number | null
+          supplier_email?: string | null
+          supplier_name?: string | null
+          supplier_person?: string | null
+          supplier_phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       iot_devices: {
         Row: {
           created_at: string
@@ -1001,6 +1061,126 @@ export type Database = {
           },
         ]
       }
+      receivers_master: {
+        Row: {
+          communication_protocol: string | null
+          created_at: string
+          description: string | null
+          frequency_range: string | null
+          id: string
+          manufacturer: string
+          model_number: string
+          order_hyperlink: string | null
+          power_requirements: string | null
+          price: number | null
+          range_distance: string | null
+          receiver_type: string | null
+          supplier_email: string | null
+          supplier_name: string | null
+          supplier_person: string | null
+          supplier_phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          communication_protocol?: string | null
+          created_at?: string
+          description?: string | null
+          frequency_range?: string | null
+          id?: string
+          manufacturer: string
+          model_number: string
+          order_hyperlink?: string | null
+          power_requirements?: string | null
+          price?: number | null
+          range_distance?: string | null
+          receiver_type?: string | null
+          supplier_email?: string | null
+          supplier_name?: string | null
+          supplier_person?: string | null
+          supplier_phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          communication_protocol?: string | null
+          created_at?: string
+          description?: string | null
+          frequency_range?: string | null
+          id?: string
+          manufacturer?: string
+          model_number?: string
+          order_hyperlink?: string | null
+          power_requirements?: string | null
+          price?: number | null
+          range_distance?: string | null
+          receiver_type?: string | null
+          supplier_email?: string | null
+          supplier_name?: string | null
+          supplier_person?: string | null
+          supplier_phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      servers_master: {
+        Row: {
+          cpu_specs: string | null
+          created_at: string
+          description: string | null
+          id: string
+          manufacturer: string
+          model_number: string
+          operating_system: string | null
+          order_hyperlink: string | null
+          price: number | null
+          ram_specs: string | null
+          server_type: string | null
+          storage_specs: string | null
+          supplier_email: string | null
+          supplier_name: string | null
+          supplier_person: string | null
+          supplier_phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          cpu_specs?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          manufacturer: string
+          model_number: string
+          operating_system?: string | null
+          order_hyperlink?: string | null
+          price?: number | null
+          ram_specs?: string | null
+          server_type?: string | null
+          storage_specs?: string | null
+          supplier_email?: string | null
+          supplier_name?: string | null
+          supplier_person?: string | null
+          supplier_phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cpu_specs?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          manufacturer?: string
+          model_number?: string
+          operating_system?: string | null
+          order_hyperlink?: string | null
+          price?: number | null
+          ram_specs?: string | null
+          server_type?: string | null
+          storage_specs?: string | null
+          supplier_email?: string | null
+          supplier_name?: string | null
+          supplier_person?: string | null
+          supplier_phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       solutions_lines: {
         Row: {
           camera_count: number
@@ -1150,6 +1330,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tv_displays_master: {
+        Row: {
+          connectivity_options: string | null
+          created_at: string
+          description: string | null
+          display_type: string | null
+          id: string
+          manufacturer: string
+          model_number: string
+          mounting_type: string | null
+          order_hyperlink: string | null
+          power_consumption: string | null
+          price: number | null
+          resolution: string | null
+          screen_size: string | null
+          supplier_email: string | null
+          supplier_name: string | null
+          supplier_person: string | null
+          supplier_phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          connectivity_options?: string | null
+          created_at?: string
+          description?: string | null
+          display_type?: string | null
+          id?: string
+          manufacturer: string
+          model_number: string
+          mounting_type?: string | null
+          order_hyperlink?: string | null
+          power_consumption?: string | null
+          price?: number | null
+          resolution?: string | null
+          screen_size?: string | null
+          supplier_email?: string | null
+          supplier_name?: string | null
+          supplier_person?: string | null
+          supplier_phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          connectivity_options?: string | null
+          created_at?: string
+          description?: string | null
+          display_type?: string | null
+          id?: string
+          manufacturer?: string
+          model_number?: string
+          mounting_type?: string | null
+          order_hyperlink?: string | null
+          power_consumption?: string | null
+          price?: number | null
+          resolution?: string | null
+          screen_size?: string | null
+          supplier_email?: string | null
+          supplier_name?: string | null
+          supplier_person?: string | null
+          supplier_phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       uk_bank_holidays: {
         Row: {

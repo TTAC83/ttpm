@@ -34,6 +34,10 @@ import LightsManagement from "./pages/app/admin/LightsManagement";
 import { CamerasManagement } from "./pages/app/admin/CamerasManagement";
 import { LensManagement } from "./pages/app/admin/LensManagement";
 import { PlcManagement } from "./pages/app/admin/PlcManagement";
+import ServersManagement from "./pages/app/admin/ServersManagement";
+import GatewaysManagement from "./pages/app/admin/GatewaysManagement";
+import ReceiversManagement from "./pages/app/admin/ReceiversManagement";
+import TvDisplaysManagement from "./pages/app/admin/TvDisplaysManagement";
 import CompleteSignup from "./pages/CompleteSignup";
 import ResetPassword from "./pages/ResetPassword";
 import Actions from "./pages/app/Actions";
@@ -262,6 +266,38 @@ const App = () => (
                 element={
                   <AuthGuard requiredRole="internal_admin">
                     <PlcManagement />
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="admin/servers" 
+                element={
+                  <AuthGuard requiredRole="internal_admin">
+                    <ServersManagement />
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="admin/gateways" 
+                element={
+                  <AuthGuard requiredRole="internal_admin">
+                    <GatewaysManagement />
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="admin/receivers" 
+                element={
+                  <AuthGuard requiredRole="internal_admin">
+                    <ReceiversManagement />
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="admin/tv-displays" 
+                element={
+                  <AuthGuard requiredRole="internal_admin">
+                    <TvDisplaysManagement />
                   </AuthGuard>
                 } 
               />

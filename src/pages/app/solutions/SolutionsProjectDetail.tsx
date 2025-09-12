@@ -11,6 +11,7 @@ import { HardwareQuantityInput } from '@/components/HardwareQuantityInput';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { SolutionsLines } from './tabs/SolutionsLines';
+import { SolutionsHardware } from './tabs/SolutionsHardware';
 
 interface SolutionsProject {
   id: string;
@@ -111,7 +112,7 @@ export const SolutionsProjectDetail = () => {
   useEffect(() => {
     // Handle URL parameters to set active tab
     const tab = searchParams.get('tab');
-    if (tab && ['overview', 'factory', 'lines'].includes(tab)) {
+    if (tab && ['overview', 'factory', 'lines', 'hardware'].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -375,10 +376,11 @@ export const SolutionsProjectDetail = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-3 lg:w-auto">
+        <TabsList className="grid grid-cols-4 lg:w-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="factory">Factory</TabsTrigger>
           <TabsTrigger value="lines">Lines</TabsTrigger>
+          <TabsTrigger value="hardware">Hardware</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -391,6 +393,10 @@ export const SolutionsProjectDetail = () => {
 
         <TabsContent value="lines" className="space-y-4">
           <SolutionsLines solutionsProjectId={project.id} />
+        </TabsContent>
+
+        <TabsContent value="hardware" className="space-y-4">
+          <SolutionsHardware solutionsProjectId={project.id} />
         </TabsContent>
       </Tabs>
     </div>

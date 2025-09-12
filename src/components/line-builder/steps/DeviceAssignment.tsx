@@ -65,7 +65,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   });
 
   const addCamera = () => {
-    if (!selectedPosition || !selectedEquipment || !cameraForm.name || !cameraForm.camera_type || !cameraForm.lens_type || !cameraForm.mac_address) {
+    if (!selectedPosition || !selectedEquipment || !cameraForm.name || !cameraForm.camera_type || !cameraForm.lens_type) {
       return;
     }
 
@@ -232,7 +232,9 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                                   <div className="flex gap-2 flex-wrap">
                                     <Badge variant="outline">{camera.camera_type}</Badge>
                                     <Badge variant="outline">{camera.lens_type}</Badge>
-                                    <Badge variant="secondary">{camera.mac_address}</Badge>
+                                    {camera.mac_address && (
+                                      <Badge variant="secondary">{camera.mac_address}</Badge>
+                                    )}
                                   </div>
                                 </div>
                                 <Button
@@ -340,7 +342,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                 />
               </div>
               <div>
-                <Label htmlFor="camera-mac">MAC Address</Label>
+                <Label htmlFor="camera-mac">MAC Address (Optional)</Label>
                 <Input
                   id="camera-mac"
                   value={cameraForm.mac_address}

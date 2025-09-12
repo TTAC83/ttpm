@@ -1804,6 +1804,10 @@ export type Database = {
         Args: { user_email: string }
         Returns: string
       }
+      has_expense_access: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_current_user_internal: {
         Args: Record<PropertyKey, never>
         Returns: boolean

@@ -1,5 +1,6 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useExpenseAccess } from '@/hooks/useExpenseAccess';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -36,6 +37,7 @@ import {
 
 export const AppLayout = () => {
   const { user, profile, signOut, isInternalAdmin } = useAuth();
+  const { hasAccess: hasExpenseAccess } = useExpenseAccess();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -89,7 +91,7 @@ export const AppLayout = () => {
       title: 'Expenses',
       icon: Receipt,
       path: '/app/expenses',
-      show: true
+      show: hasExpenseAccess
     },
     {
       title: 'Implementation Project',

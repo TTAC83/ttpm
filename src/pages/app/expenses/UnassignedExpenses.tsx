@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { UserPlus, Building2, Calendar } from 'lucide-react';
+import { UserPlus, Building2, Calendar, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { AssignExpenseDialog } from '@/components/AssignExpenseDialog';
@@ -30,6 +30,8 @@ export const UnassignedExpenses = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+  const [isMultiAssignMode, setIsMultiAssignMode] = useState(false);
+  const [currentExpenseIndex, setCurrentExpenseIndex] = useState(0);
   const { toast } = useToast();
 
   const fetchUnassignedExpenses = async () => {
@@ -72,12 +74,48 @@ export const UnassignedExpenses = () => {
   }, []);
 
   const handleAssignSuccess = () => {
-    fetchUnassignedExpenses();
+    if (isMultiAssignMode) {
+      // Move to next expense in multi-assign mode
+      const nextIndex = currentExpenseIndex + 1;
+      if (nextIndex < expenses.length) {
+        setCurrentExpenseIndex(nextIndex);
+        setSelectedExpense(expenses[nextIndex]);
+        toast({
+          title: 'Success',
+          description: `Expense assigned successfully. Moving to expense ${nextIndex + 1} of ${expenses.length}`,
+        });
+      } else {
+        // All expenses assigned, exit multi-assign mode
+        setIsMultiAssignMode(false);
+        setSelectedExpense(null);
+        setCurrentExpenseIndex(0);
+        toast({
+          title: 'Complete',
+          description: 'All expenses have been assigned!',
+        });
+      }
+      fetchUnassignedExpenses();
+    } else {
+      fetchUnassignedExpenses();
+      setSelectedExpense(null);
+      toast({
+        title: 'Success',
+        description: 'Expense assigned successfully',
+      });
+    }
+  };
+
+  const startMultiAssign = () => {
+    if (expenses.length === 0) return;
+    setIsMultiAssignMode(true);
+    setCurrentExpenseIndex(0);
+    setSelectedExpense(expenses[0]);
+  };
+
+  const exitMultiAssign = () => {
+    setIsMultiAssignMode(false);
     setSelectedExpense(null);
-    toast({
-      title: 'Success',
-      description: 'Expense assigned successfully',
-    });
+    setCurrentExpenseIndex(0);
   };
 
   const formatCurrency = (amount: number) => {
@@ -109,10 +147,37 @@ export const UnassignedExpenses = () => {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Unassigned Expenses</span>
-            <Badge variant="secondary">
-              {expenses.length} unassigned
-            </Badge>
+            <div className="flex items-center gap-2">
+              {expenses.length > 0 && !isMultiAssignMode && (
+                <Button
+                  onClick={startMultiAssign}
+                  variant="default"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <Zap className="h-4 w-4" />
+                  Multi Assign
+                </Button>
+              )}
+              {isMultiAssignMode && (
+                <Button
+                  onClick={exitMultiAssign}
+                  variant="outline"
+                  size="sm"
+                >
+                  Exit Multi Assign
+                </Button>
+              )}
+              <Badge variant="secondary">
+                {expenses.length} unassigned
+              </Badge>
+            </div>
           </CardTitle>
+          {isMultiAssignMode && expenses.length > 0 && (
+            <div className="text-sm text-muted-foreground">
+              Multi-assign mode: Expense {currentExpenseIndex + 1} of {expenses.length}
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           {expenses.length === 0 ? (
@@ -194,8 +259,11 @@ export const UnassignedExpenses = () => {
         <AssignExpenseDialog
           expense={selectedExpense}
           isOpen={!!selectedExpense}
-          onClose={() => setSelectedExpense(null)}
+          onClose={isMultiAssignMode ? exitMultiAssign : () => setSelectedExpense(null)}
           onSuccess={handleAssignSuccess}
+          isMultiAssignMode={isMultiAssignMode}
+          currentIndex={currentExpenseIndex}
+          totalCount={expenses.length}
         />
       )}
     </>

@@ -27,6 +27,9 @@ interface AssignExpenseDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  isMultiAssignMode?: boolean;
+  currentIndex?: number;
+  totalCount?: number;
 }
 
 interface User {
@@ -39,7 +42,15 @@ interface Project {
   name: string;
 }
 
-export const AssignExpenseDialog = ({ expense, isOpen, onClose, onSuccess }: AssignExpenseDialogProps) => {
+export const AssignExpenseDialog = ({ 
+  expense, 
+  isOpen, 
+  onClose, 
+  onSuccess, 
+  isMultiAssignMode = false,
+  currentIndex = 0,
+  totalCount = 0 
+}: AssignExpenseDialogProps) => {
   const [assignmentType, setAssignmentType] = useState<'user' | 'project' | 'solutions'>('user');
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
@@ -181,9 +192,14 @@ export const AssignExpenseDialog = ({ expense, isOpen, onClose, onSuccess }: Ass
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Assign Expense</DialogTitle>
+          <DialogTitle>
+            {isMultiAssignMode ? `Multi Assign - Expense ${currentIndex + 1} of ${totalCount}` : 'Assign Expense'}
+          </DialogTitle>
           <DialogDescription>
-            Assign this expense to a user or project
+            {isMultiAssignMode 
+              ? `Assigning expenses in bulk. After saving, you'll be taken to the next unassigned expense.`
+              : 'Assign this expense to a user or project'
+            }
           </DialogDescription>
         </DialogHeader>
 

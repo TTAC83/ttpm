@@ -27,6 +27,7 @@ interface Equipment {
   }>;
   iot_devices: Array<{
     id: string;
+    name: string;
     mac_address: string;
     receiver_mac_address: string;
   }>;
@@ -34,7 +35,7 @@ interface Equipment {
 
 interface ProcessFlowBuilderProps {
   positions: Position[];
-  setPositions: (positions: Position[]) => void;
+  setPositions: React.Dispatch<React.SetStateAction<Position[]>>;
 }
 
 export const ProcessFlowBuilder: React.FC<ProcessFlowBuilderProps> = ({

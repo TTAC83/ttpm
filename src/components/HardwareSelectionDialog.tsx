@@ -154,10 +154,13 @@ export const HardwareSelectionDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" aria-describedby="hardware-selection-description">
         <DialogHeader>
           <DialogTitle>Select {title}</DialogTitle>
         </DialogHeader>
+        <div id="hardware-selection-description" className="sr-only">
+          Choose the specific hardware models and quantities for your project requirements.
+        </div>
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">

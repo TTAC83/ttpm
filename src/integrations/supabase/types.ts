@@ -1214,6 +1214,174 @@ export type Database = {
         }
         Relationships: []
       }
+      solutions_project_gateways: {
+        Row: {
+          created_at: string
+          gateway_master_id: string
+          id: string
+          quantity: number
+          solutions_project_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          gateway_master_id: string
+          id?: string
+          quantity?: number
+          solutions_project_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          gateway_master_id?: string
+          id?: string
+          quantity?: number
+          solutions_project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solutions_project_gateways_gateway_master_id_fkey"
+            columns: ["gateway_master_id"]
+            isOneToOne: false
+            referencedRelation: "gateways_master"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solutions_project_gateways_solutions_project_id_fkey"
+            columns: ["solutions_project_id"]
+            isOneToOne: false
+            referencedRelation: "solutions_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      solutions_project_receivers: {
+        Row: {
+          created_at: string
+          id: string
+          quantity: number
+          receiver_master_id: string
+          solutions_project_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          quantity?: number
+          receiver_master_id: string
+          solutions_project_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          quantity?: number
+          receiver_master_id?: string
+          solutions_project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solutions_project_receivers_receiver_master_id_fkey"
+            columns: ["receiver_master_id"]
+            isOneToOne: false
+            referencedRelation: "receivers_master"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solutions_project_receivers_solutions_project_id_fkey"
+            columns: ["solutions_project_id"]
+            isOneToOne: false
+            referencedRelation: "solutions_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      solutions_project_servers: {
+        Row: {
+          created_at: string
+          id: string
+          quantity: number
+          server_master_id: string
+          solutions_project_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          quantity?: number
+          server_master_id: string
+          solutions_project_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          quantity?: number
+          server_master_id?: string
+          solutions_project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solutions_project_servers_server_master_id_fkey"
+            columns: ["server_master_id"]
+            isOneToOne: false
+            referencedRelation: "servers_master"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solutions_project_servers_solutions_project_id_fkey"
+            columns: ["solutions_project_id"]
+            isOneToOne: false
+            referencedRelation: "solutions_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      solutions_project_tv_displays: {
+        Row: {
+          created_at: string
+          id: string
+          quantity: number
+          solutions_project_id: string
+          tv_display_master_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          quantity?: number
+          solutions_project_id: string
+          tv_display_master_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          quantity?: number
+          solutions_project_id?: string
+          tv_display_master_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solutions_project_tv_displays_solutions_project_id_fkey"
+            columns: ["solutions_project_id"]
+            isOneToOne: false
+            referencedRelation: "solutions_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solutions_project_tv_displays_tv_display_master_id_fkey"
+            columns: ["tv_display_master_id"]
+            isOneToOne: false
+            referencedRelation: "tv_displays_master"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       solutions_projects: {
         Row: {
           company_name: string

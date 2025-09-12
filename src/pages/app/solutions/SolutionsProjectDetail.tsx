@@ -259,6 +259,7 @@ export const SolutionsProjectDetail = () => {
             onChange={(value) => handleFactoryUpdate('servers_required', value)}
             tableName="servers_master"
             id="servers"
+            solutionsProjectId={project.id}
           />
           
           <HardwareQuantityInput
@@ -267,6 +268,7 @@ export const SolutionsProjectDetail = () => {
             onChange={(value) => handleFactoryUpdate('gateways_required', value)}
             tableName="gateways_master"
             id="gateways"
+            solutionsProjectId={project.id}
           />
           
           <HardwareQuantityInput
@@ -275,6 +277,7 @@ export const SolutionsProjectDetail = () => {
             onChange={(value) => handleFactoryUpdate('tv_display_devices_required', value)}
             tableName="tv_displays_master"
             id="tvdisplays"
+            solutionsProjectId={project.id}
           />
           
           <HardwareQuantityInput
@@ -283,6 +286,7 @@ export const SolutionsProjectDetail = () => {
             onChange={(value) => handleFactoryUpdate('receivers_required', value)}
             tableName="receivers_master"
             id="receivers"
+            solutionsProjectId={project.id}
           />
           
           <div className="space-y-2">

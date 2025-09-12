@@ -205,6 +205,57 @@ export type Database = {
           },
         ]
       }
+      cameras_master: {
+        Row: {
+          camera_type: string | null
+          created_at: string
+          description: string | null
+          id: string
+          lens_type: string | null
+          manufacturer: string
+          model_number: string
+          order_hyperlink: string | null
+          price: number | null
+          supplier_email: string | null
+          supplier_name: string | null
+          supplier_person: string | null
+          supplier_phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          camera_type?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          lens_type?: string | null
+          manufacturer: string
+          model_number: string
+          order_hyperlink?: string | null
+          price?: number | null
+          supplier_email?: string | null
+          supplier_name?: string | null
+          supplier_person?: string | null
+          supplier_phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          camera_type?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          lens_type?: string | null
+          manufacturer?: string
+          model_number?: string
+          order_hyperlink?: string | null
+          price?: number | null
+          supplier_email?: string | null
+          supplier_name?: string | null
+          supplier_person?: string | null
+          supplier_phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           created_at: string

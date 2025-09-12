@@ -47,6 +47,14 @@ interface Light {
   description?: string;
 }
 
+interface CameraMaster {
+  id: string;
+  manufacturer: string;
+  model_number: string;
+  camera_type?: string;
+  lens_type?: string;
+}
+
 interface DeviceAssignmentProps {
   positions: Position[];
   setPositions: (positions: Position[]) => void;
@@ -61,12 +69,12 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   const [deviceDialogOpen, setDeviceDialogOpen] = useState(false);
   const [deviceType, setDeviceType] = useState<"camera" | "iot">("camera");
   const [lights, setLights] = useState<Light[]>([]);
+  const [cameras, setCameras] = useState<CameraMaster[]>([]);
 
   // Camera form state
   const [cameraForm, setCameraForm] = useState({
     name: "",
-    camera_type: "",
-    lens_type: "",
+    camera_master_id: "",
     mac_address: "",
     light_required: false,
     light_id: "",
@@ -79,30 +87,45 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     receiver_mac_address: "",
   });
 
-  // Fetch lights for the dropdown
+  // Fetch lights and cameras for the dropdowns
   useEffect(() => {
-    const fetchLights = async () => {
-      const { data } = await supabase
-        .from('lights')
-        .select('id, manufacturer, model_number, description')
-        .order('manufacturer', { ascending: true });
+    const fetchData = async () => {
+      const [lightsData, camerasData] = await Promise.all([
+        supabase
+          .from('lights')
+          .select('id, manufacturer, model_number, description')
+          .order('manufacturer', { ascending: true }),
+        supabase
+          .from('cameras_master')
+          .select('id, manufacturer, model_number, camera_type, lens_type')
+          .order('manufacturer', { ascending: true })
+      ]);
       
-      if (data) {
-        setLights(data);
+      if (lightsData.data) {
+        setLights(lightsData.data);
+      }
+      if (camerasData.data) {
+        setCameras(camerasData.data);
       }
     };
 
-    fetchLights();
+    fetchData();
   }, []);
 
   const addCamera = () => {
-    if (!selectedPosition || !selectedEquipment || !cameraForm.name || !cameraForm.camera_type || !cameraForm.lens_type) {
+    if (!selectedPosition || !selectedEquipment || !cameraForm.name || !cameraForm.camera_master_id) {
       return;
     }
 
+    const selectedCamera = cameras.find(c => c.id === cameraForm.camera_master_id);
     const newCamera = {
       id: Math.random().toString(36).substring(7),
-      ...cameraForm,
+      name: cameraForm.name,
+      camera_type: selectedCamera?.camera_type || "",
+      lens_type: selectedCamera?.lens_type || "",
+      mac_address: cameraForm.mac_address,
+      light_required: cameraForm.light_required,
+      light_id: cameraForm.light_id,
     };
 
     setPositions(
@@ -122,8 +145,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
 
     setCameraForm({ 
       name: "", 
-      camera_type: "", 
-      lens_type: "", 
+      camera_master_id: "", 
       mac_address: "",
       light_required: false,
       light_id: ""
@@ -358,26 +380,25 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                 />
               </div>
               <div>
-                <Label htmlFor="camera-type">Camera Type</Label>
-                <Input
-                  id="camera-type"
-                  value={cameraForm.camera_type}
-                  onChange={(e) =>
-                    setCameraForm({ ...cameraForm, camera_type: e.target.value })
+                <Label htmlFor="camera-model">Camera Model</Label>
+                <Select
+                  value={cameraForm.camera_master_id}
+                  onValueChange={(value) =>
+                    setCameraForm({ ...cameraForm, camera_master_id: value })
                   }
-                  placeholder="e.g., Industrial, PTZ, Fixed"
-                />
-              </div>
-              <div>
-                <Label htmlFor="lens-type">Lens Type</Label>
-                <Input
-                  id="lens-type"
-                  value={cameraForm.lens_type}
-                  onChange={(e) =>
-                    setCameraForm({ ...cameraForm, lens_type: e.target.value })
-                  }
-                  placeholder="e.g., Wide Angle, Telephoto, Standard"
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose camera model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cameras.map((camera) => (
+                      <SelectItem key={camera.id} value={camera.id}>
+                        {camera.manufacturer} - {camera.model_number}
+                        {camera.camera_type && ` (${camera.camera_type})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="camera-mac">MAC Address (Optional)</Label>

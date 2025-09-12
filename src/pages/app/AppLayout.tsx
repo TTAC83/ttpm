@@ -191,6 +191,15 @@ export const AppLayout = () => {
                             Lights
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton
+                            onClick={() => handleNavigation('/app/admin/cameras')}
+                            isActive={location.pathname === '/app/admin/cameras'}
+                          >
+                            <Eye className="h-4 w-4" />
+                            Cameras
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
                       </SidebarMenuSub>
                     </CollapsibleContent>
                   </SidebarMenuItem>

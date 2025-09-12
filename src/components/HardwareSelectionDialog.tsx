@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -154,13 +154,13 @@ export const HardwareSelectionDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" aria-describedby="hardware-selection-description">
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Select {title}</DialogTitle>
+          <DialogDescription>
+            Choose specific hardware models from the master data to meet the quantity requirements.
+          </DialogDescription>
         </DialogHeader>
-        <div id="hardware-selection-description" className="sr-only">
-          Choose the specific hardware models and quantities for your project requirements.
-        </div>
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">

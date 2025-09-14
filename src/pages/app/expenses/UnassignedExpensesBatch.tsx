@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Users, Save } from 'lucide-react';
+import { Loader2, Users, Save, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
   listUnassignedExpenses, 
@@ -174,6 +174,10 @@ export const UnassignedExpensesBatch = () => {
     }
   };
 
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
   const totalPages = Math.ceil(totalCount / pageSize);
 
   if (loading) {
@@ -221,6 +225,61 @@ export const UnassignedExpensesBatch = () => {
               <Save className="h-4 w-4 mr-2" />
               Save All Assignments ({Object.entries(assignments).filter(([_, userId]) => userId).length})
             </Button>
+          </div>
+
+          {/* Pagination Controls */}
+          <div className="flex items-center justify-between py-4">
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 0}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage >= totalPages - 1}
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <div className="flex items-center space-x-2 ml-4">
+                <span className="text-sm text-muted-foreground">Go to page:</span>
+                <Select
+                  value={String(currentPage + 1)}
+                  onValueChange={(value) => handlePageChange(parseInt(value) - 1)}
+                >
+                  <SelectTrigger className="w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: totalPages }, (_, i) => (
+                      <SelectItem key={i + 1} value={String(i + 1)}>
+                        {i + 1}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+              <span>
+                Page {currentPage + 1} of {totalPages}
+              </span>
+              <span>•</span>
+              <span>
+                {totalCount} total expenses
+              </span>
+              <span>•</span>
+              <span>
+                Showing {Math.min((currentPage * pageSize) + 1, totalCount)} - {Math.min((currentPage + 1) * pageSize, totalCount)}
+              </span>
+            </div>
           </div>
 
           <div className="border rounded-lg">

@@ -387,7 +387,62 @@ This is a comprehensive web application for managing industrial IoT and Vision A
 - File upload size limits not explicitly configured
 - Database queries optimized with appropriate indexes
 
-## 8. Deployment & Configuration
+## 8. BAU (Business-as-Usual) Customer Management
+
+### **BAU Database Schema**
+
+#### **Core BAU Tables**
+- `bau_customers`: Main BAU customer records with health status, SLA terms, and subscription details
+- `bau_contacts`: Customer contact information linked to BAU customers
+- `bau_sites`: Multiple sites per BAU customer with timezone and location data
+- `bau_tickets`: Support ticket system with status tracking and priority management
+- `bau_visits`: Visit logs for onsite/remote customer interactions
+- `bau_change_requests`: Change request management with approval workflow
+- `bau_expense_links`: Links expenses to BAU customers for billing attribution
+- `bau_audit_logs`: Complete audit trail for all BAU-related changes
+
+#### **BAU Enums**
+- `bau_health_enum`: {Excellent, Good, Watch, AtRisk}
+- `ticket_status_enum`: {Open, InProgress, WaitingCustomer, Resolved, Closed}
+- `visit_type_enum`: {Onsite, Remote, Review, Training}
+- `change_req_status_enum`: {Proposed, Approved, Rejected, Scheduled, Completed}
+
+### **BAU Navigation & Permissions**
+- **Internal users**: Full BAU module access, can create/edit all BAU records
+- **External users**: Can only access BAU records for their company
+- **BAU nav item**: Visible only to users with accessible BAU records
+
+### **BAU Routes**
+- `/app/bau` - BAU customers list with health status and ticket counts
+- `/app/bau/new` - Create new BAU customer (internal only)
+- `/app/bau/[id]` - BAU customer detail with tabs:
+  - Overview: KPIs, health status, customer information
+  - Tickets: Support ticket management
+  - Visits: Visit scheduling and logging
+  - Changes: Change request workflow
+  - Contacts: Customer contact management
+  - Expenses: Linked expenses with billable status
+  - Audit: Complete change history
+- `/app/bau/my-tickets` - Personal ticket dashboard
+
+### **Expense Attribution Options**
+1. **No Assignment**: General expense not tied to specific project/customer
+2. **Assign to Project**: Link to implementation or solutions project
+3. **Assign to BAU Customer**: Link to ongoing customer support (new option)
+
+**BAU Expense Flow**:
+- User selects "Assign to BAU Customer" during expense confirmation
+- Searchable table shows available BAU customers with health status
+- On selection, expense routes directly to ReadyForSignoff (no project lead review)
+- BAU-linked expenses appear in customer's expense tab for billing
+
+### **BAU Lifecycle Management**
+- **Ticket Lifecycle**: Open → InProgress → (WaitingCustomer) → Resolved → Closed
+- **Visit Types**: Onsite maintenance, Remote support, Regular reviews, Training sessions
+- **Change Requests**: Customer-requested changes with approval workflow
+- **Health Monitoring**: Track customer health (Excellent → Good → Watch → AtRisk)
+
+## 9. Deployment & Configuration
 
 ### **Environment Variables**
 - `VITE_SUPABASE_URL`: Supabase project URL

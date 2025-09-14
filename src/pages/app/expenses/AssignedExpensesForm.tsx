@@ -7,7 +7,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, CheckCircle, FileText, Building2 } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { Loader2, CheckCircle, FileText, Building2, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
   listAssignedToMe, 
@@ -17,6 +19,7 @@ import {
   type Customer,
   type Project 
 } from '@/lib/expenseService';
+import { getBauCustomers, linkExpenseToBau, type BAUCustomer } from '@/lib/bauService';
 
 const categoryOptions = [
   { value: 'FoodDrink', label: 'Food & Drink' },
@@ -57,19 +60,23 @@ export const AssignedExpensesForm = () => {
   const [assignments, setAssignments] = useState<AssignedExpenseItem[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [bauCustomers, setBauCustomers] = useState<BAUCustomer[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [selectedBauCustomer, setSelectedBauCustomer] = useState<BAUCustomer | null>(null);
   const [projectDialogOpen, setProjectDialogOpen] = useState(false);
+  const [bauDialogOpen, setBauDialogOpen] = useState(false);
   const [currentAssignmentId, setCurrentAssignmentId] = useState<string>('');
 
   // Form states for each assignment
   const [formData, setFormData] = useState<Record<string, {
     customer: string;
-    assignToProject: boolean;
+    assignmentType: 'none' | 'project' | 'bau';
     billable: boolean;
     category: string;
     description: string;
     selectedProject: Project | null;
+    selectedBauCustomer: BAUCustomer | null;
   }>>({});
 
   const formatCurrency = (amount: number | undefined | null) => {
@@ -95,26 +102,29 @@ export const AssignedExpensesForm = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [assignmentsResult, customersResult, projectsResult] = await Promise.all([
+      const [assignmentsResult, customersResult, projectsResult, bauResult] = await Promise.all([
         listAssignedToMe(),
         getCustomers(),
-        getAllProjectsForSelection()
+        getAllProjectsForSelection(),
+        getBauCustomers(1, 100) // Get first 100 BAU customers
       ]);
       
       setAssignments(assignmentsResult);
       setCustomers(customersResult);
       setProjects(projectsResult);
+      setBauCustomers(bauResult.data);
 
       // Initialize form data
       const initialFormData: typeof formData = {};
       assignmentsResult.forEach(assignment => {
         initialFormData[assignment.id] = {
           customer: assignment.customer || assignment.expenses.customer || '',
-          assignToProject: !!(assignment.assigned_to_project_id || assignment.assigned_to_solutions_project_id),
+          assignmentType: !!(assignment.assigned_to_project_id || assignment.assigned_to_solutions_project_id) ? 'project' : 'none',
           billable: assignment.is_billable,
           category: assignment.category || 'Other',
           description: assignment.assignee_description || '',
-          selectedProject: null
+          selectedProject: null,
+          selectedBauCustomer: null
         };
       });
       setFormData(initialFormData);
@@ -150,21 +160,33 @@ export const AssignedExpensesForm = () => {
     setProjectDialogOpen(false);
   };
 
+  const handleBauCustomerSelect = (bauCustomer: BAUCustomer) => {
+    updateFormData(currentAssignmentId, 'selectedBauCustomer', bauCustomer);
+    setSelectedBauCustomer(bauCustomer);
+    setBauDialogOpen(false);
+  };
+
   const handleConfirmExpense = async (assignmentId: string) => {
     const data = formData[assignmentId];
     if (!data) return;
 
     try {
+      // First confirm the expense
       await confirmMyExpense(
         assignmentId,
         data.customer,
         data.billable,
         data.category as any,
         data.description,
-        data.assignToProject,
+        data.assignmentType === 'project',
         data.selectedProject?.kind,
         data.selectedProject?.project_id || data.selectedProject?.solutions_project_id
       );
+
+      // If BAU customer selected, link the expense
+      if (data.assignmentType === 'bau' && data.selectedBauCustomer) {
+        await linkExpenseToBau(assignmentId, data.selectedBauCustomer.id, data.billable);
+      }
 
       toast({
         title: 'Success',
@@ -224,11 +246,12 @@ export const AssignedExpensesForm = () => {
             {assignments.map(assignment => {
               const data = formData[assignment.id] || {
                 customer: '',
-                assignToProject: false,
+                assignmentType: 'none' as const,
                 billable: false,
                 category: 'Other',
                 description: '',
-                selectedProject: null
+                selectedProject: null,
+                selectedBauCustomer: null
               };
               return (
                 <Card key={assignment.id} className="border-l-4 border-l-primary">
@@ -309,18 +332,29 @@ export const AssignedExpensesForm = () => {
                           </label>
                         </div>
 
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`project-${assignment.id}`}
-                            checked={data.assignToProject}
-                            onCheckedChange={(checked) => updateFormData(assignment.id, 'assignToProject', checked)}
-                          />
-                          <label htmlFor={`project-${assignment.id}`} className="text-sm font-medium">
-                            Assign to project
-                          </label>
+                        <div>
+                          <label className="text-sm font-medium mb-3 block">Assignment Type</label>
+                          <RadioGroup
+                            value={data.assignmentType}
+                            onValueChange={(value) => updateFormData(assignment.id, 'assignmentType', value)}
+                            className="space-y-2"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="none" id={`none-${assignment.id}`} />
+                              <Label htmlFor={`none-${assignment.id}`}>No specific assignment</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="project" id={`project-${assignment.id}`} />
+                              <Label htmlFor={`project-${assignment.id}`}>Assign to project</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="bau" id={`bau-${assignment.id}`} />
+                              <Label htmlFor={`bau-${assignment.id}`}>Assign to BAU customer</Label>
+                            </div>
+                          </RadioGroup>
                         </div>
 
-                        {data.assignToProject && (
+                        {data.assignmentType === 'project' && (
                           <div>
                             <Dialog open={projectDialogOpen} onOpenChange={setProjectDialogOpen}>
                               <DialogTrigger asChild>
@@ -374,6 +408,70 @@ export const AssignedExpensesForm = () => {
                                             <Button
                                               size="sm"
                                               onClick={() => handleProjectSelect(project)}
+                                            >
+                                              Select
+                                            </Button>
+                                          </TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
+                        )}
+
+                        {data.assignmentType === 'bau' && (
+                          <div>
+                            <Dialog open={bauDialogOpen} onOpenChange={setBauDialogOpen}>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  onClick={() => setCurrentAssignmentId(assignment.id)}
+                                  className="w-full"
+                                >
+                                  <Users className="h-4 w-4 mr-2" />
+                                  {data.selectedBauCustomer 
+                                    ? `${data.selectedBauCustomer.name} ${data.selectedBauCustomer.site_name ? `- ${data.selectedBauCustomer.site_name}` : ''}`
+                                    : 'Select BAU Customer'
+                                  }
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-4xl">
+                                <DialogHeader>
+                                  <DialogTitle>Select BAU Customer</DialogTitle>
+                                </DialogHeader>
+                                <div className="max-h-96 overflow-auto">
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead>Customer Name</TableHead>
+                                        <TableHead>Site</TableHead>
+                                        <TableHead>Company</TableHead>
+                                        <TableHead>Health</TableHead>
+                                        <TableHead>Action</TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {bauCustomers.map(bauCustomer => (
+                                        <TableRow key={bauCustomer.id}>
+                                          <TableCell className="font-medium">{bauCustomer.name}</TableCell>
+                                          <TableCell>{bauCustomer.site_name || 'N/A'}</TableCell>
+                                          <TableCell>{bauCustomer.company_name}</TableCell>
+                                          <TableCell>
+                                            <Badge variant={
+                                              bauCustomer.health === 'Excellent' ? 'default' :
+                                              bauCustomer.health === 'Good' ? 'secondary' :
+                                              bauCustomer.health === 'Watch' ? 'outline' : 'destructive'
+                                            }>
+                                              {bauCustomer.health}
+                                            </Badge>
+                                          </TableCell>
+                                          <TableCell>
+                                            <Button
+                                              size="sm"
+                                              onClick={() => handleBauCustomerSelect(bauCustomer)}
                                             >
                                               Select
                                             </Button>

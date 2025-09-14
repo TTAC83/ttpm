@@ -71,9 +71,10 @@ export const BAU = () => {
     try {
       setUploading(true);
       
-      // Generate a unique filename
+      // Generate a unique filename with timestamp
       const timestamp = new Date().toISOString().slice(0, 10);
-      const fileName = `${timestamp}-${file.name}`;
+      const timeString = new Date().toISOString().slice(11, 19).replace(/:/g, '-');
+      const fileName = `${timestamp}-${timeString}-${file.name}`;
       const filePath = `${fileName}`;
 
       // Upload to storage

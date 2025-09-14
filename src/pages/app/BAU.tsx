@@ -20,6 +20,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 export const BAU = () => {
+  console.log('BAU component rendering...');
+  
   const [bauCustomers, setBauCustomers] = useState<BAUCustomer[]>([]);
   const [implementationCustomers, setImplementationCustomers] = useState<BAUCustomer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +34,8 @@ export const BAU = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  console.log('State initialized:', { bauCustomers: bauCustomers.length, implementationCustomers: implementationCustomers.length });
 
   const pageSize = 20;
 
@@ -163,6 +167,7 @@ export const BAU = () => {
   };
 
   const getHealthColor = (health: BAUCustomer['health']) => {
+    console.log('getHealthColor called with:', health);
     switch (health) {
       case 'Excellent': return 'bg-green-500';
       case 'Good': return 'bg-blue-500';
@@ -170,17 +175,28 @@ export const BAU = () => {
       case 'AtRisk': return 'bg-red-500';
       default: return 'bg-gray-500';
     }
-  };
+};
 
-  const CustomerTable = ({ 
-    customers, 
-    type, 
-    totalCount 
-  }: { 
-    customers: BAUCustomer[]; 
-    type: 'bau' | 'implementation';
-    totalCount: number;
-  }) => (
+const CustomerTable = ({ 
+  customers, 
+  type, 
+  totalCount,
+  onToggleCustomerType,
+  navigate,
+  getHealthColor,
+  loading
+}: { 
+  customers: BAUCustomer[]; 
+  type: 'bau' | 'implementation';
+  totalCount: number;
+  onToggleCustomerType: (customerId: string, currentType: 'bau' | 'implementation') => void;
+  navigate: (path: string) => void;
+  getHealthColor: (health: BAUCustomer['health']) => string;
+  loading: boolean;
+}) => {
+  console.log(`CustomerTable rendering for ${type}:`, customers?.length || 0, 'customers');
+  
+  return (
     <Card>
       <CardHeader>
         <CardTitle>
@@ -248,7 +264,7 @@ export const BAU = () => {
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleToggleCustomerType(customer.id, customer.customer_type);
+                          onToggleCustomerType(customer.id, customer.customer_type);
                         }}
                       >
                         <ArrowUpDown className="h-3 w-3 mr-1" />
@@ -272,6 +288,7 @@ export const BAU = () => {
       </CardContent>
     </Card>
   );
+};
 
   if (loading && bauCustomers.length === 0 && implementationCustomers.length === 0) {
     return (
@@ -334,14 +351,22 @@ export const BAU = () => {
       <CustomerTable 
         customers={bauCustomers} 
         type="bau" 
-        totalCount={bauTotalCount} 
+        totalCount={bauTotalCount}
+        onToggleCustomerType={handleToggleCustomerType}
+        navigate={navigate}
+        getHealthColor={getHealthColor}
+        loading={loading}
       />
 
       {/* Implementation Customers Table */}
       <CustomerTable 
         customers={implementationCustomers} 
         type="implementation" 
-        totalCount={implementationTotalCount} 
+        totalCount={implementationTotalCount}
+        onToggleCustomerType={handleToggleCustomerType}
+        navigate={navigate}
+        getHealthColor={getHealthColor}
+        loading={loading}
       />
     </div>
   );

@@ -137,8 +137,23 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
     );
   }
 
-  const numericKPIs = kpis?.filter(k => k.metric_value_numeric !== null) || [];
-  const textKPIs = kpis?.filter(k => k.metric_value_text !== null && k.metric_value_numeric === null) || [];
+  // Filter to show only the 3 requested KPIs
+  const allowedKPIs = [
+    'Jobs over 50% complete',
+    'percentage of uncategorized time',
+    'percentage of unclassified time'
+  ];
+  
+  const numericKPIs = kpis?.filter(k => 
+    k.metric_value_numeric !== null && 
+    allowedKPIs.some(allowed => k.metric_key.toLowerCase().includes(allowed.toLowerCase()))
+  ) || [];
+  
+  const textKPIs = kpis?.filter(k => 
+    k.metric_value_text !== null && 
+    k.metric_value_numeric === null &&
+    allowedKPIs.some(allowed => k.metric_key.toLowerCase().includes(allowed.toLowerCase()))
+  ) || [];
 
   return (
     <div className="h-full flex flex-col">

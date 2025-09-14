@@ -215,8 +215,8 @@ export async function confirmMyExpense(
     p_category: category,
     p_assignee_description: assigneeDescription,
     p_assign_to_project: assignToProject,
-    p_project_kind: projectKind,
-    p_project_id: projectId
+    p_project_kind: projectKind || null,
+    p_project_id: projectId || null
   });
 
   if (error) throw error;

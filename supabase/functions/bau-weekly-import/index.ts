@@ -84,8 +84,22 @@ serve(async (req) => {
       }
 
       try {
-        const dateFrom = new Date(r[0]);
-        const dateTo = new Date(r[1]);
+        // Handle Excel date parsing - Excel stores dates as numbers (days since 1900)
+        let dateFrom: Date;
+        let dateTo: Date;
+        
+        if (typeof r[0] === 'number') {
+          dateFrom = XLSX.SSF.parse_date_code(r[0]);
+        } else {
+          dateFrom = new Date(r[0]);
+        }
+        
+        if (typeof r[1] === 'number') {
+          dateTo = XLSX.SSF.parse_date_code(r[1]);
+        } else {
+          dateTo = new Date(r[1]);
+        }
+        
         const customerName = String(r[2] ?? "").trim();
         
         if (!customerName || isNaN(dateFrom.getTime()) || isNaN(dateTo.getTime())) {

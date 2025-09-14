@@ -31,7 +31,7 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
   onNext,
   hasNext
 }) => {
-  const [health, setHealth] = useState<'green' | 'red'>('green');
+  const [health, setHealth] = useState<'green' | 'red' | ''>('');
   const [reasonCode, setReasonCode] = useState('');
   const [escalation, setEscalation] = useState('');
   const [trendDrawer, setTrendDrawer] = useState<{
@@ -106,7 +106,7 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
     } else {
       // Only reset when switching to a different customer
       if (customer?.id !== previousCustomerId.current) {
-        setHealth('green');
+        setHealth('');
         setReasonCode('');
         setEscalation('');
       }
@@ -115,8 +115,8 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
 
   // Auto-save with debouncing
   const autoSave = useCallback(
-    async (healthValue: 'green' | 'red', reasonCodeValue: string, escalationValue: string) => {
-      if (!customer || !selectedWeek) return;
+    async (healthValue: 'green' | 'red' | '', reasonCodeValue: string, escalationValue: string) => {
+      if (!customer || !selectedWeek || !healthValue) return; // Don't save if no health selected
 
       // Validate required fields when health is red
       if (healthValue === 'red') {
@@ -130,7 +130,7 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
           customerId: customer.id,
           weekFrom: selectedWeek.date_from,
           weekTo: selectedWeek.date_to,
-          health: healthValue,
+          health: healthValue as 'green' | 'red',
           reasonCode: reasonCodeValue,
           escalation: escalationValue
         });
@@ -144,7 +144,7 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
   // Debounced auto-save for text fields
   const debouncedAutoSave = useRef<NodeJS.Timeout>();
   const triggerAutoSave = useCallback(
-    (healthValue: 'green' | 'red', reasonCodeValue: string, escalationValue: string) => {
+    (healthValue: 'green' | 'red' | '', reasonCodeValue: string, escalationValue: string) => {
       if (debouncedAutoSave.current) {
         clearTimeout(debouncedAutoSave.current);
       }
@@ -157,21 +157,21 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
 
   // Auto-save when health changes (immediate)
   useEffect(() => {
-    if (customer && selectedWeek) {
+    if (customer && selectedWeek && health) { // Only save if health is selected
       autoSave(health, reasonCode, escalation);
     }
   }, [health]); // Only trigger on health changes
 
   // Auto-save when reason code changes (immediate, since it's a select)
   useEffect(() => {
-    if (customer && selectedWeek && reasonCode) {
+    if (customer && selectedWeek && health && reasonCode) {
       autoSave(health, reasonCode, escalation);
     }
   }, [reasonCode]); // Only trigger on reason code changes
 
   // Auto-save when escalation changes (debounced)
   useEffect(() => {
-    if (customer && selectedWeek && escalation) {
+    if (customer && selectedWeek && health && escalation) {
       triggerAutoSave(health, reasonCode, escalation);
     }
   }, [escalation]); // Only trigger on escalation changes
@@ -352,7 +352,11 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
                 <ToggleGroup
                   type="single"
                   value={health}
-                  onValueChange={(value) => value && setHealth(value as 'green' | 'red')}
+                  onValueChange={(value) => {
+                    if (value) {
+                      setHealth(value as 'green' | 'red');
+                    }
+                  }}
                   className="justify-start"
                 >
                   <ToggleGroupItem value="green" className="data-[state=on]:bg-green-500 data-[state=on]:text-white">

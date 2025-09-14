@@ -105,6 +105,16 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
   const handleSave = async () => {
     if (!customer || !selectedWeek) return;
 
+    // Validate required reason when health is red
+    if (health === 'red' && !escalation.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please provide a reason for marking this customer as red",
+        variant: "destructive",
+      });
+      return;
+    }
+
     await saveReviewMutation.mutateAsync({
       customerId: customer.id,
       weekFrom: selectedWeek.date_from,
@@ -300,18 +310,20 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
                   </ToggleGroupItem>
                 </ToggleGroup>
 
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Escalation Notes (optional)
-                  </label>
-                  <Textarea
-                    value={escalation}
-                    onChange={(e) => setEscalation(e.target.value)}
-                    placeholder="Add any escalation notes or concerns..."
-                    className="mt-1"
-                    rows={3}
-                  />
-                </div>
+                {health === 'red' && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">
+                      Reason for red <span className="text-destructive">*</span>
+                    </label>
+                    <Textarea
+                      value={escalation}
+                      onChange={(e) => setEscalation(e.target.value)}
+                      placeholder="Please explain why this customer is marked as red..."
+                      className="mt-1"
+                      rows={3}
+                    />
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

@@ -137,22 +137,22 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
     );
   }
 
-  // Filter to show only the 3 requested KPIs
+  // Filter to show only the 3 requested KPIs - matching actual database metric names
   const allowedKPIs = [
-    'Jobs over 50% complete',
-    'percentage of uncategorized time',
-    'percentage of unclassified time'
+    'Jobs over 150% Complete',  // This is the actual metric name in the database
+    'Percentage of Uncategorized',  // This matches the database
+    'Unclassified Time'  // This is the closest match for unclassified time
   ];
   
   const numericKPIs = kpis?.filter(k => 
     k.metric_value_numeric !== null && 
-    allowedKPIs.some(allowed => k.metric_key.toLowerCase().includes(allowed.toLowerCase()))
+    allowedKPIs.includes(k.metric_key)
   ) || [];
   
   const textKPIs = kpis?.filter(k => 
     k.metric_value_text !== null && 
     k.metric_value_numeric === null &&
-    allowedKPIs.some(allowed => k.metric_key.toLowerCase().includes(allowed.toLowerCase()))
+    allowedKPIs.includes(k.metric_key)
   ) || [];
 
   return (

@@ -113,6 +113,9 @@ export const BAU = () => {
         description: `File uploaded and processed. ${processResult.processedRows} rows processed, ${processResult.totalMetrics} metrics imported.`,
       });
 
+      // Refresh list
+      await loadCustomers();
+
       // Reset file input
       event.target.value = '';
       

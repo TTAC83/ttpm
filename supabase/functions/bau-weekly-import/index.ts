@@ -25,6 +25,13 @@ serve(async (req) => {
     
     const { path, upload_id } = await req.json();
     console.log('Processing upload:', { path, upload_id });
+
+    // Create a per-request client that carries the caller's JWT
+    const authHeader = req.headers.get('Authorization') || '';
+    const client = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false },
+      global: { headers: { Authorization: authHeader } }
+    });
     
     if (!path) {
       return new Response(JSON.stringify({ error: "Missing path" }), { 

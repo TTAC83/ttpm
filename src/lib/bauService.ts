@@ -90,12 +90,15 @@ export interface BAUExpenseLink {
 // Get BAU customers list
 export const getBauCustomers = async (page = 1, pageSize = 20, search?: string) => {
   let query = supabase
-    .from('v_bau_list')
-    .select('*')
+    .from('bau_customers')
+    .select(`
+      *,
+      companies(name)
+    `, { count: 'exact' })
     .order('created_at', { ascending: false });
 
   if (search) {
-    query = query.or(`name.ilike.%${search}%,site_name.ilike.%${search}%,company_name.ilike.%${search}%`);
+    query = query.or(`name.ilike.%${search}%,site_name.ilike.%${search}%`);
   }
 
   const from = (page - 1) * pageSize;
@@ -104,7 +107,12 @@ export const getBauCustomers = async (page = 1, pageSize = 20, search?: string) 
   const { data, error, count } = await query.range(from, to);
 
   if (error) throw error;
-  return { data: data || [], count: count || 0 };
+  const mapped = (data || []).map((row: any) => ({
+    ...row,
+    company_name: row.companies?.name ?? null,
+    open_tickets: row.open_tickets ?? 0,
+  }));
+  return { data: mapped, count: count || 0 };
 };
 
 // Create BAU customer

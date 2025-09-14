@@ -32,7 +32,8 @@ import {
   Eye,
   ChevronRight,
   Lightbulb,
-  Receipt
+  Receipt,
+  Headphones
 } from 'lucide-react';
 
 export const AppLayout = () => {
@@ -92,6 +93,12 @@ export const AppLayout = () => {
       icon: Receipt,
       path: '/app/expenses',
       show: hasExpenseAccess
+    },
+    {
+      title: 'BAU Customers',
+      icon: Headphones,
+      path: '/app/bau',
+      show: true
     },
     {
       title: 'Implementation Project',

@@ -61,7 +61,14 @@ export interface InternalUser {
 export async function listUnassignedExpenses(page = 0, pageSize = 20) {
   const offset = page * pageSize;
   
-  const { data, error, count } = await supabase
+  // First get assigned expense IDs
+  const { data: assignments } = await supabase
+    .from('expense_assignments')
+    .select('expense_id');
+    
+  const assignedIds = assignments?.map(a => a.expense_id) || [];
+  
+  let query = supabase
     .from('expenses')
     .select(`
       id,
@@ -74,9 +81,15 @@ export async function listUnassignedExpenses(page = 0, pageSize = 20) {
       gross,
       vat
     `, { count: 'exact' })
-    .not('id', 'in', `(SELECT expense_id FROM expense_assignments)`)
     .order('expense_date', { ascending: false })
     .range(offset, offset + pageSize - 1);
+    
+  // Filter out assigned expenses if there are any
+  if (assignedIds.length > 0) {
+    query = query.not('id', 'in', `(${assignedIds.join(',')})`);
+  }
+
+  const { data, error, count } = await query;
 
   if (error) throw error;
   return { data: data || [], count: count || 0 };

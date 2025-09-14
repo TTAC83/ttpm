@@ -144,23 +144,37 @@ serve(async (req) => {
             }
           }
           
-          // Create the BAU customer
-          const { data: newCustomerRes, error: createErr } = await db.rpc("bau_create_customer", {
-            p_company_id: companyId,
-            p_name: customerName,
-            p_site_name: null,
-            p_plan: 'Standard',
-            p_sla_response_mins: 60,
-            p_sla_resolution_hours: 24
-          });
+          // Create the BAU customer directly to ensure created_by is set
+          const { data: uid, error: uidErr } = await db.rpc('auth_user_id');
+          if (uidErr || !uid) {
+            console.error('Unable to resolve auth user id for created_by', uidErr);
+            errorRows++;
+            continue;
+          }
+
+          if (!companyId) {
+            console.error('Cannot create BAU customer without a company_id');
+            errorRows++;
+            continue;
+          }
+
+          const { data: newCustomer, error: insertErr } = await db
+            .from('bau_customers')
+            .insert({
+              company_id: companyId,
+              name: customerName,
+              created_by: uid as string,
+            })
+            .select('id')
+            .single();
           
-          if (createErr) {
-            console.error(`Error creating BAU customer "${customerName}":`, createErr);
+          if (insertErr) {
+            console.error(`Error inserting BAU customer "${customerName}":`, insertErr);
             errorRows++;
             continue;
           }
           
-          bau_customer_id = newCustomerRes as string;
+          bau_customer_id = newCustomer.id as string;
           console.log(`Created new BAU customer "${customerName}" with ID: ${bau_customer_id}`);
         }
 
@@ -213,7 +227,7 @@ serve(async (req) => {
     // Mark upload as processed
     if (upload_id) {
       console.log('Marking upload as processed:', upload_id);
-      const { error: updateErr } = await client
+      const { error: updateErr } = await db
         .from("bau_weekly_uploads")
         .update({ processed_at: new Date().toISOString() })
         .eq("id", upload_id);

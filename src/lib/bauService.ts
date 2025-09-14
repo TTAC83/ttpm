@@ -91,10 +91,7 @@ export interface BAUExpenseLink {
 export const getBauCustomers = async (page = 1, pageSize = 20, search?: string) => {
   let query = supabase
     .from('bau_customers')
-    .select(`
-      *,
-      companies(name)
-    `, { count: 'exact' })
+    .select('*', { count: 'exact' })
     .order('created_at', { ascending: false });
 
   if (search) {
@@ -109,7 +106,7 @@ export const getBauCustomers = async (page = 1, pageSize = 20, search?: string) 
   if (error) throw error;
   const mapped = (data || []).map((row: any) => ({
     ...row,
-    company_name: row.companies?.name ?? null,
+    company_name: row.company_name ?? null,
     open_tickets: row.open_tickets ?? 0,
   }));
   return { data: mapped, count: count || 0 };

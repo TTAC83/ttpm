@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { Plus, Search, Upload, ArrowUpDown, Calendar } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Search, ArrowUpDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,12 +12,11 @@ import {
   TableHead, 
   TableHeader, 
   TableRow 
-} from '@/components/ui/table';
+ } from '@/components/ui/table';
 import { useAuth } from '@/hooks/useAuth';
 import { getBauCustomers, BAUCustomer, toggleCustomerType } from '@/lib/bauService';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 export const BAU = () => {
   console.log('BAU component rendering...');
@@ -29,11 +28,9 @@ export const BAU = () => {
   const [page, setPage] = useState(1);
   const [bauTotalCount, setBauTotalCount] = useState(0);
   const [implementationTotalCount, setImplementationTotalCount] = useState(0);
-  const [uploading, setUploading] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   console.log('State initialized:', { bauCustomers: bauCustomers.length, implementationCustomers: implementationCustomers.length });
 
@@ -89,82 +86,6 @@ export const BAU = () => {
   useEffect(() => {
     loadCustomers();
   }, [page, search]);
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
-      toast({
-        title: "Invalid File",
-        description: "Please upload an Excel file (.xlsx or .xls)",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setUploading(true);
-      
-      // Generate a unique filename with timestamp
-      const timestamp = new Date().toISOString().slice(0, 10);
-      const timeString = new Date().toISOString().slice(11, 19).replace(/:/g, '-');
-      const fileName = `${timestamp}-${timeString}-${file.name}`;
-      const filePath = `${fileName}`;
-
-      // Upload to storage
-      const { error: uploadError } = await supabase.storage
-        .from('bau-weekly-uploads')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      // Register the upload in database
-      const { data: uploadRecord, error: dbError } = await supabase
-        .from('bau_weekly_uploads')
-        .insert({
-          storage_path: filePath,
-          uploaded_by: user?.id,
-          notes: `Global weekly upload`
-        })
-        .select()
-        .single();
-
-      if (dbError) throw dbError;
-
-      // Call the edge function to process the file
-      const { data: processResult, error: processError } = await supabase.functions
-        .invoke('bau-weekly-import', {
-          body: {
-            path: filePath,
-            upload_id: uploadRecord.id
-          }
-        });
-
-      if (processError) throw processError;
-
-      toast({
-        title: "Success",
-        description: `File uploaded and processed. ${processResult.processedRows} rows processed, ${processResult.totalMetrics} metrics imported.`,
-      });
-
-      // Refresh list
-      await loadCustomers();
-
-      // Reset file input
-      event.target.value = '';
-      
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      toast({
-        title: "Error",
-        description: "Failed to upload and process file",
-        variant: "destructive",
-      });
-    } finally {
-      setUploading(false);
-    }
-  };
 
   const getHealthColor = (health: BAUCustomer['health']) => {
     console.log('getHealthColor called with:', health);
@@ -305,28 +226,6 @@ const CustomerTable = ({
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Customer Management</h1>
         <div className="flex items-center gap-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".xlsx,.xls"
-            onChange={handleFileUpload}
-            className="hidden"
-          />
-          <Button 
-            variant="outline" 
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            {uploading ? 'Uploading...' : 'Upload Weekly Excel'}
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => navigate('/app/bau/weekly-review')}
-          >
-            <Calendar className="h-4 w-4 mr-2" />
-            Weekly Review
-          </Button>
           <Button onClick={() => navigate('/app/bau/new')}>
             <Plus className="h-4 w-4 mr-2" />
             New Customer

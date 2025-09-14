@@ -52,6 +52,7 @@ import { BAU } from "./pages/app/BAU";
 import { NewBAUCustomer } from "./pages/app/NewBAUCustomer";
 import { BAUDetail } from "./pages/app/BAUDetail";
 import { WeeklyReview } from "./pages/app/bau/WeeklyReview";
+import WeeklyReviewPage from "./pages/app/bau/WeeklyReviewPage";
 
 const queryClient = new QueryClient();
 
@@ -237,6 +238,7 @@ const App = () => (
                 } 
               />
               <Route path="bau/weekly-review" element={<WeeklyReview />} />
+              <Route path="bau/weekly-review-page" element={<WeeklyReviewPage />} />
               <Route path="bau/:id" element={<BAUDetail />} />
               <Route 
                 path="admin/users" 

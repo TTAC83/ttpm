@@ -201,7 +201,10 @@ export async function getInternalUsers(): Promise<InternalUser[]> {
 
 // Get assigned expenses for current user
 export async function listAssignedToMe() {
-  const { data, error } = await supabase
+  // Check if user has full expense access (Allan and Paul)
+  const { data: hasFullAccess } = await supabase.rpc('has_expense_access');
+  
+  let query = supabase
     .from('expense_assignments')
     .select(`
       *,
@@ -220,6 +223,15 @@ export async function listAssignedToMe() {
     .in('status', ['Assigned', 'ConfirmedByAssignee', 'PendingLeadReview', 'ReadyForSignoff'])
     .order('assigned_at', { ascending: false });
 
+  // If user doesn't have full access, only show their own assignments
+  if (!hasFullAccess) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      query = query.eq('assigned_to_user_id', user.id);
+    }
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
   return data || [];
 }
@@ -281,7 +293,10 @@ export async function confirmMyExpense(
 
 // Get pending lead review expenses
 export async function listPendingLeadReview() {
-  const { data, error } = await supabase
+  // Check if user has full expense access (Allan and Paul)
+  const { data: hasFullAccess } = await supabase.rpc('has_expense_access');
+  
+  let query = supabase
     .from('expense_assignments')
     .select(`
       *,
@@ -308,6 +323,15 @@ export async function listPendingLeadReview() {
     .eq('status', 'PendingLeadReview')
     .order('assigned_at', { ascending: false });
 
+  // If user doesn't have full access, only show their own assignments
+  if (!hasFullAccess) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      query = query.eq('assigned_to_user_id', user.id);
+    }
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
   return data || [];
 }
@@ -324,7 +348,10 @@ export async function leadApproveExpense(assignmentId: string, billable: boolean
 
 // Get ready for signoff expenses
 export async function listReadyForSignoff() {
-  const { data, error } = await supabase
+  // Check if user has full expense access (Allan and Paul)
+  const { data: hasFullAccess } = await supabase.rpc('has_expense_access');
+  
+  let query = supabase
     .from('expense_assignments')
     .select(`
       *,
@@ -346,13 +373,25 @@ export async function listReadyForSignoff() {
     .eq('status', 'ReadyForSignoff')
     .order('approved_at', { ascending: false });
 
+  // If user doesn't have full access, only show their own assignments
+  if (!hasFullAccess) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      query = query.eq('assigned_to_user_id', user.id);
+    }
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
   return data || [];
 }
 
 // Get approved expenses
 export async function listApproved() {
-  const { data, error } = await supabase
+  // Check if user has full expense access (Allan and Paul)
+  const { data: hasFullAccess } = await supabase.rpc('has_expense_access');
+  
+  let query = supabase
     .from('expense_assignments')
     .select(`
       *,
@@ -374,6 +413,15 @@ export async function listApproved() {
     .eq('status', 'Approved')
     .order('approved_at', { ascending: false });
 
+  // If user doesn't have full access, only show their own assignments
+  if (!hasFullAccess) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      query = query.eq('assigned_to_user_id', user.id);
+    }
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
   return data || [];
 }

@@ -1,8 +1,6 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useExpenseAccess } from '@/hooks/useExpenseAccess';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -23,24 +21,40 @@ import {
   SidebarGroupLabel
 } from '@/components/ui/sidebar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { 
-  User, 
-  Users, 
-  Settings, 
-  LogOut,
-  Home,
-  Eye,
-  ChevronRight,
-  Lightbulb,
-  Receipt,
-  Headphones
-} from 'lucide-react';
+import { LogOut, ChevronRight } from 'lucide-react';
+import { NAV, visibleItemsForRole, ICON_MAP, type Role, type NavItem } from '@/config/nav';
+import { useState, useEffect } from 'react';
 
 export const AppLayout = () => {
-  const { user, profile, signOut, isInternalAdmin } = useAuth();
-  const { hasAccess: hasExpenseAccess } = useExpenseAccess();
+  const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [openGroups, setOpenGroups] = useState<string[]>([]);
+
+  // Load open groups from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('nav:openGroups');
+    if (saved) {
+      setOpenGroups(JSON.parse(saved));
+    } else {
+      // Auto-open group containing active route
+      const currentPath = location.pathname;
+      const autoOpenGroup = NAV.find(item => 
+        item.children?.some(child => 
+          child.to === currentPath || 
+          child.matchPaths?.some(path => currentPath.startsWith(path))
+        )
+      );
+      if (autoOpenGroup) {
+        setOpenGroups([autoOpenGroup.label]);
+      }
+    }
+  }, [location.pathname]);
+
+  // Save open groups to localStorage
+  useEffect(() => {
+    localStorage.setItem('nav:openGroups', JSON.stringify(openGroups));
+  }, [openGroups]);
 
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -57,80 +71,76 @@ export const AppLayout = () => {
     return 'outline';
   };
 
-  const menuItems = [
-    {
-      title: 'Global Dashboard',
-      icon: Home,
-      path: '/app',
-      show: true
-    },
-    {
-      title: 'Global Actions',
-      icon: Settings,
-      path: '/app/actions',
-      show: true
-    },
-    {
-      title: 'Global Tasks',
-      icon: Settings,
-      path: '/app/tasks',
-      show: true
-    },
-    {
-      title: 'Global Calendar',
-      icon: Settings,
-      path: '/app/calendar',
-      show: true
-    },
-    {
-      title: 'Global Models',
-      icon: Eye,
-      path: '/app/models',
-      show: true
-    },
-    {
-      title: 'Expenses',
-      icon: Receipt,
-      path: '/app/expenses',
-      show: hasExpenseAccess
-    },
-    {
-      title: 'BAU Customers',
-      icon: Headphones,
-      path: '/app/bau',
-      show: true
-    },
-    {
-      title: 'Implementation Project',
-      icon: Settings,
-      path: '/app/projects',
-      show: true
-    },
-    {
-      title: 'Solutions Consulting',
-      icon: Eye,
-      path: '/app/solutions',
-      show: true
-    },
-    {
-      title: 'Profile',
-      icon: User,
-      path: '/app/profile',
-      show: true
-    },
-    {
-      title: 'User Management',
-      icon: Users,
-      path: '/app/admin/users',
-      show: isInternalAdmin()
-    },
-    {
-      title: 'Master Data',
-      icon: Settings,
-      path: '/app/admin/masterdata',
-      show: isInternalAdmin()
+  const toggleGroup = (groupLabel: string) => {
+    setOpenGroups(prev => 
+      prev.includes(groupLabel)
+        ? prev.filter(g => g !== groupLabel)
+        : [...prev, groupLabel]
+    );
+  };
+
+  const isActiveRoute = (item: NavItem) => {
+    if (item.to && location.pathname === item.to) return true;
+    return item.matchPaths?.some(path => location.pathname.startsWith(path)) || false;
+  };
+
+  const getIcon = (iconName?: string) => {
+    if (!iconName) return null;
+    const IconComponent = ICON_MAP[iconName as keyof typeof ICON_MAP];
+    return IconComponent ? <IconComponent className="h-4 w-4" /> : null;
+  };
+
+  const renderNavItem = (item: NavItem) => {
+    if (item.children) {
+      const isOpen = openGroups.includes(item.label);
+      
+      return (
+        <Collapsible key={item.label} open={isOpen} onOpenChange={() => toggleGroup(item.label)}>
+          <SidebarMenuItem>
+            <CollapsibleTrigger asChild>
+              <SidebarMenuButton className="w-full justify-start">
+                {getIcon(item.iconName)}
+                <span className="uppercase text-xs tracking-wide font-medium">{item.label}</span>
+                <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:rotate-90" />
+              </SidebarMenuButton>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <SidebarMenuSub>
+                {item.children.map((child) => (
+                  <SidebarMenuSubItem key={child.to || child.label}>
+                    <SidebarMenuSubButton
+                      onClick={() => child.to && handleNavigation(child.to)}
+                      isActive={isActiveRoute(child)}
+                      className="text-sm rounded-xl"
+                    >
+                      {getIcon(child.iconName)}
+                      <span>{child.label}</span>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                ))}
+              </SidebarMenuSub>
+            </CollapsibleContent>
+          </SidebarMenuItem>
+        </Collapsible>
+      );
+    } else {
+      return (
+        <SidebarMenuItem key={item.to || item.label}>
+          <SidebarMenuButton
+            onClick={() => item.to && handleNavigation(item.to)}
+            isActive={isActiveRoute(item)}
+            className="w-full justify-start"
+          >
+            {getIcon(item.iconName)}
+            <span>{item.label}</span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      );
     }
-  ];
+  };
+
+  const currentRole = profile?.role as Role;
+  const visibleItems = visibleItemsForRole(currentRole);
 
   return (
     <SidebarProvider>
@@ -147,134 +157,7 @@ export const AppLayout = () => {
           
           <SidebarContent>
             <SidebarMenu className="p-2">
-              {menuItems.filter(item => item.show && item.title !== 'Master Data').map((item) => (
-                <SidebarMenuItem key={item.path}>
-                  <SidebarMenuButton
-                    onClick={() => handleNavigation(item.path)}
-                    isActive={location.pathname === item.path}
-                    className="w-full justify-start"
-                  >
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-              
-              {isInternalAdmin() && (
-                <Collapsible>
-                  <SidebarMenuItem>
-                    <CollapsibleTrigger asChild>
-                      <SidebarMenuButton className="w-full justify-start">
-                        <Settings className="h-4 w-4" />
-                        <span>Master Data</span>
-                        <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:rotate-90" />
-                      </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <SidebarMenuSub>
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton
-                            onClick={() => handleNavigation('/app/admin/masterdata')}
-                            isActive={location.pathname === '/app/admin/masterdata'}
-                          >
-                            Project Templates
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      </SidebarMenuSub>
-                    </CollapsibleContent>
-                  </SidebarMenuItem>
-                </Collapsible>
-              )}
-              
-              {isInternalAdmin() && (
-                <Collapsible>
-                  <SidebarMenuItem>
-                    <CollapsibleTrigger asChild>
-                      <SidebarMenuButton className="w-full justify-start">
-                        <Settings className="h-4 w-4" />
-                        <span>Hardware MasterData</span>
-                        <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:rotate-90" />
-                      </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <SidebarMenuSub>
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton
-                            onClick={() => handleNavigation('/app/admin/lights')}
-                            isActive={location.pathname === '/app/admin/lights'}
-                          >
-                            <Lightbulb className="h-4 w-4" />
-                            Lights
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton
-                            onClick={() => handleNavigation('/app/admin/cameras')}
-                            isActive={location.pathname === '/app/admin/cameras'}
-                          >
-                            <Eye className="h-4 w-4" />
-                            Cameras
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton
-                            onClick={() => handleNavigation('/app/admin/lenses')}
-                            isActive={location.pathname === '/app/admin/lenses'}
-                          >
-                            <Settings className="h-4 w-4" />
-                            Lenses
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton
-                            onClick={() => handleNavigation('/app/admin/plcs')}
-                            isActive={location.pathname === '/app/admin/plcs'}
-                          >
-                            <Settings className="h-4 w-4" />
-                            PLCs
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton
-                            onClick={() => handleNavigation('/app/admin/servers')}
-                            isActive={location.pathname === '/app/admin/servers'}
-                          >
-                            <Settings className="h-4 w-4" />
-                            Servers
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton
-                            onClick={() => handleNavigation('/app/admin/gateways')}
-                            isActive={location.pathname === '/app/admin/gateways'}
-                          >
-                            <Settings className="h-4 w-4" />
-                            Gateways
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton
-                            onClick={() => handleNavigation('/app/admin/receivers')}
-                            isActive={location.pathname === '/app/admin/receivers'}
-                          >
-                            <Settings className="h-4 w-4" />
-                            Receivers
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton
-                            onClick={() => handleNavigation('/app/admin/tv-displays')}
-                            isActive={location.pathname === '/app/admin/tv-displays'}
-                          >
-                            <Settings className="h-4 w-4" />
-                            TV Displays
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      </SidebarMenuSub>
-                    </CollapsibleContent>
-                  </SidebarMenuItem>
-                </Collapsible>
-              )}
+              {visibleItems.map(item => renderNavItem(item))}
             </SidebarMenu>
           </SidebarContent>
           

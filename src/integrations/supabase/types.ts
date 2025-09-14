@@ -304,6 +304,46 @@ export type Database = {
           },
         ]
       }
+      bau_customer_aliases: {
+        Row: {
+          alias: string
+          bau_customer_id: string
+          id: number
+        }
+        Insert: {
+          alias: string
+          bau_customer_id: string
+          id?: number
+        }
+        Update: {
+          alias?: string
+          bau_customer_id?: string
+          id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bau_customer_aliases_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "bau_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_customer_aliases_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_customer_aliases_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_projects_like"
+            referencedColumns: ["bau_customer_id"]
+          },
+        ]
+      }
       bau_customers: {
         Row: {
           company_id: string
@@ -422,6 +462,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      bau_metric_catalog: {
+        Row: {
+          id: number
+          label: string | null
+          metric_key: string | null
+          unit: string | null
+        }
+        Insert: {
+          id?: number
+          label?: string | null
+          metric_key?: string | null
+          unit?: string | null
+        }
+        Update: {
+          id?: number
+          label?: string | null
+          metric_key?: string | null
+          unit?: string | null
+        }
+        Relationships: []
       }
       bau_sites: {
         Row: {
@@ -584,6 +645,156 @@ export type Database = {
             referencedColumns: ["bau_customer_id"]
           },
         ]
+      }
+      bau_weekly_metrics: {
+        Row: {
+          bau_customer_id: string
+          created_at: string
+          created_by: string
+          date_from: string
+          date_to: string
+          id: string
+          metric_key: string
+          metric_value_numeric: number | null
+          metric_value_text: string | null
+          source_upload_id: string | null
+        }
+        Insert: {
+          bau_customer_id: string
+          created_at?: string
+          created_by: string
+          date_from: string
+          date_to: string
+          id?: string
+          metric_key: string
+          metric_value_numeric?: number | null
+          metric_value_text?: string | null
+          source_upload_id?: string | null
+        }
+        Update: {
+          bau_customer_id?: string
+          created_at?: string
+          created_by?: string
+          date_from?: string
+          date_to?: string
+          id?: string
+          metric_key?: string
+          metric_value_numeric?: number | null
+          metric_value_text?: string | null
+          source_upload_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bau_weekly_metrics_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "bau_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_weekly_metrics_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_weekly_metrics_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_projects_like"
+            referencedColumns: ["bau_customer_id"]
+          },
+          {
+            foreignKeyName: "bau_weekly_metrics_source_upload_id_fkey"
+            columns: ["source_upload_id"]
+            isOneToOne: false
+            referencedRelation: "bau_weekly_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bau_weekly_reviews: {
+        Row: {
+          bau_customer_id: string
+          date_from: string
+          date_to: string
+          escalation: string | null
+          health: Database["public"]["Enums"]["bau_health_simple"]
+          id: string
+          reviewed_at: string
+          reviewed_by: string
+        }
+        Insert: {
+          bau_customer_id: string
+          date_from: string
+          date_to: string
+          escalation?: string | null
+          health?: Database["public"]["Enums"]["bau_health_simple"]
+          id?: string
+          reviewed_at?: string
+          reviewed_by: string
+        }
+        Update: {
+          bau_customer_id?: string
+          date_from?: string
+          date_to?: string
+          escalation?: string | null
+          health?: Database["public"]["Enums"]["bau_health_simple"]
+          id?: string
+          reviewed_at?: string
+          reviewed_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bau_weekly_reviews_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "bau_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_weekly_reviews_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_weekly_reviews_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_projects_like"
+            referencedColumns: ["bau_customer_id"]
+          },
+        ]
+      }
+      bau_weekly_uploads: {
+        Row: {
+          id: string
+          notes: string | null
+          processed_at: string | null
+          storage_path: string
+          uploaded_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          id?: string
+          notes?: string | null
+          processed_at?: string | null
+          storage_path: string
+          uploaded_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          id?: string
+          notes?: string | null
+          processed_at?: string | null
+          storage_path?: string
+          uploaded_at?: string
+          uploaded_by?: string
+        }
+        Relationships: []
       }
       cameras: {
         Row: {
@@ -2246,6 +2457,40 @@ export type Database = {
         }
         Relationships: []
       }
+      v_bau_latest_review: {
+        Row: {
+          bau_customer_id: string | null
+          date_from: string | null
+          date_to: string | null
+          escalation: string | null
+          health: Database["public"]["Enums"]["bau_health_simple"] | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bau_weekly_reviews_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "bau_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_weekly_reviews_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_weekly_reviews_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_projects_like"
+            referencedColumns: ["bau_customer_id"]
+          },
+        ]
+      }
       v_bau_list: {
         Row: {
           company_id: string | null
@@ -2270,6 +2515,89 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_bau_metric_agg: {
+        Row: {
+          avg_value: number | null
+          bau_customer_id: string | null
+          first_from: string | null
+          last_to: string | null
+          metric_key: string | null
+          points: number | null
+          sum_value: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bau_weekly_metrics_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "bau_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_weekly_metrics_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_weekly_metrics_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_projects_like"
+            referencedColumns: ["bau_customer_id"]
+          },
+        ]
+      }
+      v_bau_metric_trend: {
+        Row: {
+          bau_customer_id: string | null
+          date_from: string | null
+          date_to: string | null
+          metric_key: string | null
+          metric_value_numeric: number | null
+          metric_value_text: string | null
+        }
+        Insert: {
+          bau_customer_id?: string | null
+          date_from?: string | null
+          date_to?: string | null
+          metric_key?: string | null
+          metric_value_numeric?: number | null
+          metric_value_text?: string | null
+        }
+        Update: {
+          bau_customer_id?: string | null
+          date_from?: string | null
+          date_to?: string | null
+          metric_key?: string | null
+          metric_value_numeric?: number | null
+          metric_value_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bau_weekly_metrics_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "bau_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_weekly_metrics_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_weekly_metrics_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_projects_like"
+            referencedColumns: ["bau_customer_id"]
           },
         ]
       }
@@ -2418,6 +2746,10 @@ export type Database = {
         Args: { p_assignment_id: string; p_billable: boolean }
         Returns: undefined
       }
+      find_bau_customer_id: {
+        Args: { p_customer_name: string }
+        Returns: string
+      }
       get_all_users_with_profiles: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -2489,6 +2821,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_bau_weekly_review: {
+        Args: {
+          p_bau_customer_id: string
+          p_date_from: string
+          p_date_to: string
+          p_escalation: string
+          p_health: Database["public"]["Enums"]["bau_health_simple"]
+        }
+        Returns: undefined
+      }
       snapshot_project_tasks: {
         Args: { p_project_id: string }
         Returns: undefined
@@ -2501,6 +2843,22 @@ export type Database = {
           user_id: string
         }[]
       }
+      upsert_bau_alias: {
+        Args: { p_alias: string; p_bau_customer_id: string }
+        Returns: undefined
+      }
+      upsert_bau_weekly_metric: {
+        Args: {
+          p_bau_customer_id: string
+          p_date_from: string
+          p_date_to: string
+          p_metric_key: string
+          p_metric_value_numeric: number
+          p_metric_value_text: string
+          p_source_upload_id: string
+        }
+        Returns: undefined
+      }
       user_company_id: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -2509,6 +2867,7 @@ export type Database = {
     Enums: {
       action_status: "Open" | "In Progress" | "Done"
       bau_health_enum: "Excellent" | "Good" | "Watch" | "AtRisk"
+      bau_health_simple: "green" | "red"
       change_req_status_enum:
         | "Proposed"
         | "Approved"
@@ -2669,6 +3028,7 @@ export const Constants = {
     Enums: {
       action_status: ["Open", "In Progress", "Done"],
       bau_health_enum: ["Excellent", "Good", "Watch", "AtRisk"],
+      bau_health_simple: ["green", "red"],
       change_req_status_enum: [
         "Proposed",
         "Approved",

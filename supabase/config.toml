@@ -15,3 +15,6 @@ verify_jwt = false
 
 [functions.create-action]
 verify_jwt = false
+
+[functions.bau-weekly-import]
+verify_jwt = false

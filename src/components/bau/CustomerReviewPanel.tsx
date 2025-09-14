@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ChevronRight, TrendingUp, Calendar, UserPlus, Target } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -67,6 +67,33 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
     enabled: !!customer && !!selectedWeek,
   });
 
+  // Track previous customer to detect customer changes
+  const previousCustomerId = useRef(customer?.id);
+  useEffect(() => {
+    previousCustomerId.current = customer?.id;
+  }, [customer?.id]);
+
+  // Save review mutation
+  const saveReviewMutation = useMutation({
+    mutationFn: saveReview,
+    onSuccess: () => {
+      // Invalidate related queries
+      queryClient.invalidateQueries({ 
+        queryKey: ['bau-customers-week-health'] 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['customer-review'] 
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Auto-save Error",
+        description: `Failed to save review: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+
   // Update form state when customer or existing review changes
   useEffect(() => {
     if (existingReview) {
@@ -86,76 +113,68 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
     }
   }, [existingReview, customer?.id]);
 
-  // Track previous customer to detect customer changes
-  const previousCustomerId = useRef(customer?.id);
-  useEffect(() => {
-    previousCustomerId.current = customer?.id;
-  }, [customer?.id]);
+  // Auto-save with debouncing
+  const autoSave = useCallback(
+    async (healthValue: 'green' | 'red', reasonCodeValue: string, escalationValue: string) => {
+      if (!customer || !selectedWeek) return;
 
-  // Save review mutation
-  const saveReviewMutation = useMutation({
-    mutationFn: saveReview,
-    onSuccess: () => {
-      // Invalidate related queries
-      queryClient.invalidateQueries({ 
-        queryKey: ['bau-customers-week-health'] 
-      });
-      queryClient.invalidateQueries({ 
-        queryKey: ['customer-review'] 
-      });
-      
-      toast({
-        title: "Review Saved",
-        description: `Saved review for ${customer?.name}`,
-      });
+      // Validate required fields when health is red
+      if (healthValue === 'red') {
+        if (!reasonCodeValue.trim() || !escalationValue.trim()) {
+          return; // Don't save if validation fails
+        }
+      }
+
+      try {
+        await saveReviewMutation.mutateAsync({
+          customerId: customer.id,
+          weekFrom: selectedWeek.date_from,
+          weekTo: selectedWeek.date_to,
+          health: healthValue,
+          reasonCode: reasonCodeValue,
+          escalation: escalationValue
+        });
+      } catch (error) {
+        console.error('Auto-save failed:', error);
+      }
     },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: `Failed to save review: ${error.message}`,
-        variant: "destructive",
-      });
-    }
-  });
+    [customer, selectedWeek, saveReviewMutation]
+  );
 
-  const handleSave = async () => {
-    if (!customer || !selectedWeek) return;
-
-    // Validate required fields when health is red
-    if (health === 'red') {
-      if (!reasonCode.trim()) {
-        toast({
-          title: "Validation Error",
-          description: "Please select a reason code",
-          variant: "destructive",
-        });
-        return;
+  // Debounced auto-save for text fields
+  const debouncedAutoSave = useRef<NodeJS.Timeout>();
+  const triggerAutoSave = useCallback(
+    (healthValue: 'green' | 'red', reasonCodeValue: string, escalationValue: string) => {
+      if (debouncedAutoSave.current) {
+        clearTimeout(debouncedAutoSave.current);
       }
-      if (!escalation.trim()) {
-        toast({
-          title: "Validation Error",
-          description: "Please provide a reason for marking this customer as red",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
+      debouncedAutoSave.current = setTimeout(() => {
+        autoSave(healthValue, reasonCodeValue, escalationValue);
+      }, 1000); // 1 second delay for text fields
+    },
+    [autoSave]
+  );
 
-    await saveReviewMutation.mutateAsync({
-      customerId: customer.id,
-      weekFrom: selectedWeek.date_from,
-      weekTo: selectedWeek.date_to,
-      health,
-      escalation
-    });
-  };
-
-  const handleSaveAndNext = async () => {
-    await handleSave();
-    if (hasNext) {
-      onNext();
+  // Auto-save when health changes (immediate)
+  useEffect(() => {
+    if (customer && selectedWeek) {
+      autoSave(health, reasonCode, escalation);
     }
-  };
+  }, [health]); // Only trigger on health changes
+
+  // Auto-save when reason code changes (immediate, since it's a select)
+  useEffect(() => {
+    if (customer && selectedWeek && reasonCode) {
+      autoSave(health, reasonCode, escalation);
+    }
+  }, [reasonCode]); // Only trigger on reason code changes
+
+  // Auto-save when escalation changes (debounced)
+  useEffect(() => {
+    if (customer && selectedWeek && escalation) {
+      triggerAutoSave(health, reasonCode, escalation);
+    }
+  }, [escalation]); // Only trigger on escalation changes
 
   const openTrendDrawer = (metricKey: string) => {
     setTrendDrawer({ isOpen: true, metricKey });
@@ -196,7 +215,15 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
       {/* Header */}
       <div className="p-6 border-b">
         <div className="space-y-1">
-          <h2 className="text-2xl font-semibold">{customer.name}</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-semibold">{customer.name}</h2>
+            {saveReviewMutation.isPending && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="animate-spin h-3 w-3 border border-primary rounded-full border-t-transparent"></div>
+                Auto-saving...
+              </div>
+            )}
+          </div>
           {customer.site_name && (
             <p className="text-muted-foreground">{customer.site_name}</p>
           )}
@@ -388,34 +415,6 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
               <Calendar className="h-4 w-4" />
               Schedule Meeting
             </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Sticky Bottom Actions */}
-      <div className="border-t bg-background p-4">
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            {existingReview ? 'Review already saved' : 'Unsaved changes'}
-          </div>
-          <div className="flex gap-2">
-            <Button
-              onClick={handleSave}
-              disabled={saveReviewMutation.isPending}
-              variant="outline"
-            >
-              {saveReviewMutation.isPending ? 'Saving...' : 'Save'}
-            </Button>
-            {hasNext && (
-              <Button
-                onClick={handleSaveAndNext}
-                disabled={saveReviewMutation.isPending}
-                className="flex items-center gap-2"
-              >
-                {saveReviewMutation.isPending ? 'Saving...' : 'Save & Next'}
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            )}
           </div>
         </div>
       </div>

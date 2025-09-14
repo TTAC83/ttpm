@@ -725,6 +725,7 @@ export type Database = {
           escalation: string | null
           health: Database["public"]["Enums"]["bau_health_simple"]
           id: string
+          reason_code: string | null
           reviewed_at: string
           reviewed_by: string
         }
@@ -735,6 +736,7 @@ export type Database = {
           escalation?: string | null
           health?: Database["public"]["Enums"]["bau_health_simple"]
           id?: string
+          reason_code?: string | null
           reviewed_at?: string
           reviewed_by: string
         }
@@ -745,6 +747,7 @@ export type Database = {
           escalation?: string | null
           health?: Database["public"]["Enums"]["bau_health_simple"]
           id?: string
+          reason_code?: string | null
           reviewed_at?: string
           reviewed_by?: string
         }
@@ -2825,13 +2828,22 @@ export type Database = {
         Returns: undefined
       }
       set_bau_weekly_review: {
-        Args: {
-          p_bau_customer_id: string
-          p_date_from: string
-          p_date_to: string
-          p_escalation: string
-          p_health: Database["public"]["Enums"]["bau_health_simple"]
-        }
+        Args:
+          | {
+              p_bau_customer_id: string
+              p_date_from: string
+              p_date_to: string
+              p_escalation: string
+              p_health: Database["public"]["Enums"]["bau_health_simple"]
+            }
+          | {
+              p_bau_customer_id: string
+              p_date_from: string
+              p_date_to: string
+              p_escalation?: string
+              p_health: Database["public"]["Enums"]["bau_health_simple"]
+              p_reason_code?: string
+            }
         Returns: undefined
       }
       snapshot_project_tasks: {

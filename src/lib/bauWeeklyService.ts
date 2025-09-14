@@ -148,18 +148,20 @@ export const getMetricTrend = async (
   return data.reverse(); // Return in chronological order for chart
 };
 
-// Save weekly review (health + escalation)
+// Save weekly review (health + escalation + reason_code)
 export const saveReview = async ({
   customerId,
   weekFrom,
   weekTo,
   health,
+  reasonCode,
   escalation
 }: {
   customerId: string;
   weekFrom: string;
   weekTo: string;
   health: 'green' | 'red';
+  reasonCode?: string;
   escalation?: string;
 }): Promise<void> => {
   const { error } = await supabase.rpc('set_bau_weekly_review', {
@@ -167,6 +169,7 @@ export const saveReview = async ({
     p_date_from: weekFrom,
     p_date_to: weekTo,
     p_health: health,
+    p_reason_code: reasonCode || null,
     p_escalation: escalation || null
   });
 

@@ -226,6 +226,16 @@ const App = () => (
               <Route path="calendar" element={<GlobalCalendar />} />
               <Route path="models" element={<GlobalModels />} />
               <Route path="expenses" element={<Expenses />} />
+              <Route path="bau" element={<BAU />} />
+              <Route 
+                path="bau/new" 
+                element={
+                  <AuthGuard requiredRole="internal_admin">
+                    <NewBAUCustomer />
+                  </AuthGuard>
+                } 
+              />
+              <Route path="bau/:id" element={<BAUDetail />} />
               <Route 
                 path="admin/users" 
                 element={

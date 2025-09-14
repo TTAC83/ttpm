@@ -31,7 +31,7 @@ export const UnassignedExpensesBatch = () => {
   const [suggestions, setSuggestions] = useState<Record<string, AssigneeSuggestion[]>>({});
   const [currentPage, setCurrentPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
-  const pageSize = 20;
+  const pageSize = 500;
 
   const formatCurrency = (amount: number | undefined | null) => {
     if (!amount) return '£0.00';

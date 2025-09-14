@@ -52,7 +52,7 @@ export const BAUWeeklyReviewsTab = ({ customerId }: BAUWeeklyReviewsTabProps) =>
   const [reviews, setReviews] = useState<WeeklyReview[]>([]);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activeSubTab, setActiveSubTab] = useState('upload');
+  const [activeSubTab, setActiveSubTab] = useState('metrics');
   
   // Review form state
   const [reviewDateFrom, setReviewDateFrom] = useState('');
@@ -258,67 +258,11 @@ export const BAUWeeklyReviewsTab = ({ customerId }: BAUWeeklyReviewsTabProps) =>
   return (
     <div className="space-y-6">
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="upload">Upload Excel</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="metrics">Metrics</TabsTrigger>
           <TabsTrigger value="reviews">Reviews</TabsTrigger>
           <TabsTrigger value="trends">Trends</TabsTrigger>
         </TabsList>
-
-        {/* Upload Tab */}
-        <TabsContent value="upload">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Upload className="h-5 w-5" />
-                Weekly Excel Upload
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
-                <FileSpreadsheet className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">Upload Weekly Metrics</h3>
-                <p className="text-muted-foreground mb-4">
-                  Excel format: Column 1 = Date From, Column 2 = Date To, Column 3 = Customer Name, 
-                  Columns 4+ = Metrics (Uptime %, Calls, Incidents, etc.)
-                </p>
-                <Label htmlFor="excel-upload" className="cursor-pointer">
-                  <Button disabled={uploading} className="mb-2">
-                    {uploading ? 'Processing...' : 'Choose Excel File'}
-                  </Button>
-                </Label>
-                <Input
-                  id="excel-upload"
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-              </div>
-
-              {isInternalAdmin && uploads.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium mb-3">Recent Uploads</h4>
-                  <div className="space-y-2">
-                    {uploads.slice(0, 5).map((upload) => (
-                      <div key={upload.id} className="flex items-center justify-between p-3 border rounded">
-                        <div>
-                          <div className="font-medium">{upload.storage_path}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {format(new Date(upload.uploaded_at), 'MMM d, yyyy HH:mm')}
-                          </div>
-                        </div>
-                        <Badge variant={upload.processed_at ? "default" : "secondary"}>
-                          {upload.processed_at ? "Processed" : "Pending"}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         {/* Metrics Tab */}
         <TabsContent value="metrics">

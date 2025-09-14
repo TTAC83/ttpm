@@ -84,21 +84,31 @@ serve(async (req) => {
       }
 
       try {
-        // Handle Excel date parsing - Excel stores dates as numbers (days since 1900)
-        let dateFrom: Date;
-        let dateTo: Date;
-        
-        if (typeof r[0] === 'number') {
-          dateFrom = XLSX.SSF.parse_date_code(r[0]);
-        } else {
-          dateFrom = new Date(r[0]);
-        }
-        
-        if (typeof r[1] === 'number') {
-          dateTo = XLSX.SSF.parse_date_code(r[1]);
-        } else {
-          dateTo = new Date(r[1]);
-        }
+        // Parse dates from Excel (handles both numeric serials and text like DD/MM/YYYY)
+        const parseExcelDate = (v: any): Date => {
+          if (v == null || v === '') return new Date(NaN);
+          if (typeof v === 'number') {
+            const dc: any = XLSX.SSF.parse_date_code(v);
+            // Construct a UTC date from components to avoid timezone shifts
+            return new Date(Date.UTC(dc.y, (dc.m || 1) - 1, dc.d || 1, dc.H || 0, dc.M || 0, Math.floor(dc.s || 0)));
+          }
+          if (typeof v === 'string') {
+            const s = v.trim();
+            // Support UK format DD/MM/YYYY
+            const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+            if (m) {
+              const d = parseInt(m[1], 10);
+              const mth = parseInt(m[2], 10) - 1;
+              const y = parseInt(m[3], 10);
+              return new Date(Date.UTC(y, mth, d));
+            }
+            const d2 = new Date(s);
+            if (!isNaN(d2.getTime())) return d2;
+          }
+          return new Date(NaN);
+        };
+        const dateFrom = parseExcelDate(r[0]);
+        const dateTo = parseExcelDate(r[1]);
         
         const customerName = String(r[2] ?? "").trim();
         

@@ -50,10 +50,13 @@ export const listWeeks = async (): Promise<WeekOption[]> => {
     if (!acc.find(w => `${w.date_from}-${w.date_to}` === key)) {
       const fromDate = new Date(curr.date_from);
       const toDate = new Date(curr.date_to);
+      const fmt = (d: Date) => d.toLocaleDateString('en-GB', {
+        day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/London'
+      });
       acc.push({
         date_from: curr.date_from,
         date_to: curr.date_to,
-        label: `Week ${fromDate.toLocaleDateString()} - ${toDate.toLocaleDateString()}`
+        label: `Week ${fmt(fromDate)} - ${fmt(toDate)}`
       });
     }
     return acc;

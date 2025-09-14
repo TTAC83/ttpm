@@ -96,11 +96,63 @@ serve(async (req) => {
           throw idErr;
         }
         
-        const bau_customer_id = bauIdRes as string | null;
+        let bau_customer_id = bauIdRes as string | null;
+        
+        // If customer doesn't exist, create a new one
         if (!bau_customer_id) {
-          console.warn(`No BAU customer match for "${customerName}" on row ${i + 1}`);
-          errorRows++;
-          continue;
+          console.log(`Customer "${customerName}" not found, creating new BAU customer`);
+          
+          // First, create or find a default company for external customers
+          let companyId: string | null = null;
+          
+          // Try to find or create a company based on customer name
+          const { data: existingCompanies, error: companySearchErr } = await supabase
+            .from('companies')
+            .select('id, name')
+            .ilike('name', `%${customerName}%`)
+            .limit(1);
+            
+          if (companySearchErr) {
+            console.error('Error searching for companies:', companySearchErr);
+          } else if (existingCompanies && existingCompanies.length > 0) {
+            companyId = existingCompanies[0].id;
+            console.log(`Found existing company for customer: ${existingCompanies[0].name}`);
+          } else {
+            // Create a new company
+            const { data: newCompany, error: createCompanyErr } = await supabase
+              .from('companies')
+              .insert({ name: customerName, is_internal: false })
+              .select('id')
+              .single();
+              
+            if (createCompanyErr) {
+              console.error('Error creating company:', createCompanyErr);
+              // Fall back to no company
+              companyId = null;
+            } else {
+              companyId = newCompany.id;
+              console.log(`Created new company: ${customerName}`);
+            }
+          }
+          
+          // Create the BAU customer
+          const { data: newCustomerRes, error: createErr } = await supabase.rpc("bau_create_customer", {
+            p_company_id: companyId,
+            p_name: customerName,
+            p_site_name: null,
+            p_plan: 'Standard',
+            p_sla_response_mins: 60,
+            p_sla_resolution_hours: 24
+          });
+          
+          if (createErr) {
+            console.error(`Error creating BAU customer "${customerName}":`, createErr);
+            errorRows++;
+            continue;
+          }
+          
+          bau_customer_id = newCustomerRes as string;
+          console.log(`Created new BAU customer "${customerName}" with ID: ${bau_customer_id}`);
         }
 
         // Upsert each metric

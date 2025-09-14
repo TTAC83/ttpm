@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Users, Lightbulb, Save } from 'lucide-react';
+import { Loader2, Users, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
   listUnassignedExpenses, 
@@ -54,6 +54,25 @@ export const UnassignedExpensesBatch = () => {
       setExpenses(expensesResult.data);
       setTotalCount(expensesResult.count);
       setUsers(usersResult);
+
+      // Automatically fetch suggestions for all expenses
+      if (expensesResult.data.length > 0) {
+        const suggestionPromises = expensesResult.data.map(expense => 
+          getAssigneeSuggestions(expense.id).catch(error => {
+            console.error(`Error getting suggestions for expense ${expense.id}:`, error);
+            return [];
+          })
+        );
+        
+        const allSuggestions = await Promise.all(suggestionPromises);
+        const suggestionsMap: Record<string, AssigneeSuggestion[]> = {};
+        
+        expensesResult.data.forEach((expense, index) => {
+          suggestionsMap[expense.id] = allSuggestions[index];
+        });
+        
+        setSuggestions(suggestionsMap);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -77,19 +96,6 @@ export const UnassignedExpensesBatch = () => {
     }));
   };
 
-  const handleGetSuggestions = async (expenseId: string) => {
-    try {
-      const result = await getAssigneeSuggestions(expenseId);
-      setSuggestions(prev => ({ ...prev, [expenseId]: result }));
-    } catch (error) {
-      console.error('Error getting suggestions:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to get assignee suggestions',
-        variant: 'destructive'
-      });
-    }
-  };
 
   const handleSaveAll = async () => {
     const assignmentEntries = Object.entries(assignments).filter(([_, userId]) => userId);
@@ -189,7 +195,7 @@ export const UnassignedExpensesBatch = () => {
                   <TableHead>Net</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Assign to User</TableHead>
-                  <TableHead>Suggestions</TableHead>
+                  <TableHead>Auto Suggestions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -223,30 +229,22 @@ export const UnassignedExpensesBatch = () => {
                       </Select>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleGetSuggestions(expense.id)}
-                        >
-                          <Lightbulb className="h-4 w-4 mr-1" />
-                          Suggest
-                        </Button>
-                        {suggestions[expense.id] && (
-                          <div className="flex gap-1">
-                            {suggestions[expense.id].slice(0, 3).map((suggestion, index) => (
-                              <Badge
-                                key={index}
-                                variant="secondary"
-                                className="cursor-pointer"
-                                onClick={() => handleUserAssignment(expense.id, suggestion.user_id)}
-                              >
-                                {suggestion.matched_text}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      {suggestions[expense.id] && suggestions[expense.id].length > 0 ? (
+                        <div className="flex gap-1">
+                          {suggestions[expense.id].slice(0, 3).map((suggestion, index) => (
+                            <Badge
+                              key={index}
+                              variant="secondary"
+                              className="cursor-pointer hover:bg-secondary/80"
+                              onClick={() => handleUserAssignment(expense.id, suggestion.user_id)}
+                            >
+                              {suggestion.matched_text}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">No suggestions</span>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

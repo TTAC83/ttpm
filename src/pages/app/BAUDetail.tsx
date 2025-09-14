@@ -20,6 +20,7 @@ import { BAUChangesTab } from './bau/tabs/BAUChangesTab';
 import { BAUContactsTab } from './bau/tabs/BAUContactsTab';
 import { BAUExpensesTab } from './bau/tabs/BAUExpensesTab';
 import { BAUAuditTab } from './bau/tabs/BAUAuditTab';
+import { BAUWeeklyReviewsTab } from './bau/tabs/BAUWeeklyReviewsTab';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
@@ -176,13 +177,14 @@ export const BAUDetail = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="tickets">Tickets</TabsTrigger>
           <TabsTrigger value="visits">Visits</TabsTrigger>
           <TabsTrigger value="changes">Changes</TabsTrigger>
           <TabsTrigger value="contacts">Contacts</TabsTrigger>
           <TabsTrigger value="expenses">Expenses</TabsTrigger>
+          <TabsTrigger value="weekly">Weekly</TabsTrigger>
           <TabsTrigger value="audit">Audit</TabsTrigger>
         </TabsList>
 
@@ -208,6 +210,10 @@ export const BAUDetail = () => {
 
         <TabsContent value="expenses">
           <BAUExpensesTab customerId={customer.id} />
+        </TabsContent>
+
+        <TabsContent value="weekly">
+          <BAUWeeklyReviewsTab customerId={customer.id} />
         </TabsContent>
 
         <TabsContent value="audit">

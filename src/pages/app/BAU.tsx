@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Search, Upload, ArrowUpDown } from 'lucide-react';
+import { Plus, Search, Upload, ArrowUpDown, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -319,6 +319,13 @@ const CustomerTable = ({
           >
             <Upload className="h-4 w-4 mr-2" />
             {uploading ? 'Uploading...' : 'Upload Weekly Excel'}
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/app/bau/weekly-review')}
+          >
+            <Calendar className="h-4 w-4 mr-2" />
+            Weekly Review
           </Button>
           <Button onClick={() => navigate('/app/bau/new')}>
             <Plus className="h-4 w-4 mr-2" />

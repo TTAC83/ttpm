@@ -48,6 +48,9 @@ import { Expenses } from "./pages/app/Expenses";
 import { SolutionsList } from "./pages/app/solutions/SolutionsList";
 import { NewSolutionsProject } from "./pages/app/solutions/NewSolutionsProject";
 import { SolutionsProjectDetail } from "./pages/app/solutions/SolutionsProjectDetail";
+import { BAU } from "./pages/app/BAU";
+import { NewBAUCustomer } from "./pages/app/NewBAUCustomer";
+import { BAUDetail } from "./pages/app/BAUDetail";
 
 const queryClient = new QueryClient();
 

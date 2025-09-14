@@ -154,6 +154,437 @@ export type Database = {
           },
         ]
       }
+      bau_audit_logs: {
+        Row: {
+          actor: string | null
+          at: string
+          entity_id: string
+          entity_type: string
+          field: string | null
+          id: number
+          new_value: Json | null
+          old_value: Json | null
+        }
+        Insert: {
+          actor?: string | null
+          at?: string
+          entity_id: string
+          entity_type: string
+          field?: string | null
+          id?: number
+          new_value?: Json | null
+          old_value?: Json | null
+        }
+        Update: {
+          actor?: string | null
+          at?: string
+          entity_id?: string
+          entity_type?: string
+          field?: string | null
+          id?: number
+          new_value?: Json | null
+          old_value?: Json | null
+        }
+        Relationships: []
+      }
+      bau_change_requests: {
+        Row: {
+          bau_customer_id: string
+          created_at: string
+          description: string | null
+          id: string
+          owner: string | null
+          requested_by: string | null
+          status: Database["public"]["Enums"]["change_req_status_enum"]
+          target_date: string | null
+          title: string
+        }
+        Insert: {
+          bau_customer_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          owner?: string | null
+          requested_by?: string | null
+          status?: Database["public"]["Enums"]["change_req_status_enum"]
+          target_date?: string | null
+          title: string
+        }
+        Update: {
+          bau_customer_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          owner?: string | null
+          requested_by?: string | null
+          status?: Database["public"]["Enums"]["change_req_status_enum"]
+          target_date?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bau_change_requests_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "bau_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_change_requests_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_change_requests_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_projects_like"
+            referencedColumns: ["bau_customer_id"]
+          },
+        ]
+      }
+      bau_contacts: {
+        Row: {
+          bau_customer_id: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          profile_id: string | null
+          role: string | null
+        }
+        Insert: {
+          bau_customer_id: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          profile_id?: string | null
+          role?: string | null
+        }
+        Update: {
+          bau_customer_id?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          profile_id?: string | null
+          role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bau_contacts_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "bau_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_contacts_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_contacts_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_projects_like"
+            referencedColumns: ["bau_customer_id"]
+          },
+          {
+            foreignKeyName: "bau_contacts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      bau_customers: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string
+          devices_deployed: number | null
+          go_live_date: string | null
+          health: Database["public"]["Enums"]["bau_health_enum"]
+          id: string
+          name: string
+          notes: string | null
+          primary_contact: string | null
+          site_name: string | null
+          sla_resolution_hours: number | null
+          sla_response_mins: number | null
+          subscription_plan: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by: string
+          devices_deployed?: number | null
+          go_live_date?: string | null
+          health?: Database["public"]["Enums"]["bau_health_enum"]
+          id?: string
+          name: string
+          notes?: string | null
+          primary_contact?: string | null
+          site_name?: string | null
+          sla_resolution_hours?: number | null
+          sla_response_mins?: number | null
+          subscription_plan?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          devices_deployed?: number | null
+          go_live_date?: string | null
+          health?: Database["public"]["Enums"]["bau_health_enum"]
+          id?: string
+          name?: string
+          notes?: string | null
+          primary_contact?: string | null
+          site_name?: string | null
+          sla_resolution_hours?: number | null
+          sla_response_mins?: number | null
+          subscription_plan?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bau_customers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_customers_primary_contact_fkey"
+            columns: ["primary_contact"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      bau_expense_links: {
+        Row: {
+          bau_customer_id: string
+          created_at: string
+          expense_assignment_id: string
+          id: string
+          is_billable: boolean | null
+        }
+        Insert: {
+          bau_customer_id: string
+          created_at?: string
+          expense_assignment_id: string
+          id?: string
+          is_billable?: boolean | null
+        }
+        Update: {
+          bau_customer_id?: string
+          created_at?: string
+          expense_assignment_id?: string
+          id?: string
+          is_billable?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bau_expense_links_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "bau_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_expense_links_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_expense_links_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_projects_like"
+            referencedColumns: ["bau_customer_id"]
+          },
+          {
+            foreignKeyName: "bau_expense_links_expense_assignment_id_fkey"
+            columns: ["expense_assignment_id"]
+            isOneToOne: true
+            referencedRelation: "expense_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bau_sites: {
+        Row: {
+          address: string | null
+          bau_customer_id: string
+          id: string
+          site_name: string
+          timezone: string | null
+        }
+        Insert: {
+          address?: string | null
+          bau_customer_id: string
+          id?: string
+          site_name: string
+          timezone?: string | null
+        }
+        Update: {
+          address?: string | null
+          bau_customer_id?: string
+          id?: string
+          site_name?: string
+          timezone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bau_sites_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "bau_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_sites_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_sites_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_projects_like"
+            referencedColumns: ["bau_customer_id"]
+          },
+        ]
+      }
+      bau_tickets: {
+        Row: {
+          assigned_to: string | null
+          bau_customer_id: string
+          created_at: string
+          description: string | null
+          id: string
+          priority: number | null
+          raised_by: string | null
+          status: Database["public"]["Enums"]["ticket_status_enum"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          bau_customer_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          priority?: number | null
+          raised_by?: string | null
+          status?: Database["public"]["Enums"]["ticket_status_enum"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          bau_customer_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          priority?: number | null
+          raised_by?: string | null
+          status?: Database["public"]["Enums"]["ticket_status_enum"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bau_tickets_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "bau_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_tickets_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_tickets_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_projects_like"
+            referencedColumns: ["bau_customer_id"]
+          },
+        ]
+      }
+      bau_visits: {
+        Row: {
+          attendee: string | null
+          bau_customer_id: string
+          created_at: string
+          id: string
+          next_actions: string | null
+          summary: string | null
+          visit_date: string
+          visit_type: Database["public"]["Enums"]["visit_type_enum"]
+        }
+        Insert: {
+          attendee?: string | null
+          bau_customer_id: string
+          created_at?: string
+          id?: string
+          next_actions?: string | null
+          summary?: string | null
+          visit_date: string
+          visit_type?: Database["public"]["Enums"]["visit_type_enum"]
+        }
+        Update: {
+          attendee?: string | null
+          bau_customer_id?: string
+          created_at?: string
+          id?: string
+          next_actions?: string | null
+          summary?: string | null
+          visit_date?: string
+          visit_type?: Database["public"]["Enums"]["visit_type_enum"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bau_visits_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "bau_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_visits_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_visits_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_projects_like"
+            referencedColumns: ["bau_customer_id"]
+          },
+        ]
+      }
       cameras: {
         Row: {
           camera_type: string
@@ -426,6 +857,13 @@ export type Database = {
             columns: ["expense_id"]
             isOneToOne: false
             referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_expense_assignments_expense_id"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_expenses"
             referencedColumns: ["id"]
           },
         ]
@@ -1776,6 +2214,116 @@ export type Database = {
         }
         Relationships: []
       }
+      v_bau_expenses: {
+        Row: {
+          account: string | null
+          account_code: string | null
+          assignee_description: string | null
+          assignment_status:
+            | Database["public"]["Enums"]["expense_status_enum"]
+            | null
+          bau_billable: boolean | null
+          bau_customer_name: string | null
+          bau_site_name: string | null
+          category: Database["public"]["Enums"]["expense_category_enum"] | null
+          company_name: string | null
+          created_at: string | null
+          customer: string | null
+          description: string | null
+          expense_customer: string | null
+          expense_date: string | null
+          gross: number | null
+          id: string | null
+          invoice_number: string | null
+          is_billable: boolean | null
+          net: number | null
+          reference: string | null
+          source: string | null
+          updated_at: string | null
+          vat: number | null
+          vat_rate: number | null
+          vat_rate_name: string | null
+        }
+        Relationships: []
+      }
+      v_bau_list: {
+        Row: {
+          company_id: string | null
+          company_name: string | null
+          created_at: string | null
+          devices_deployed: number | null
+          go_live_date: string | null
+          health: Database["public"]["Enums"]["bau_health_enum"] | null
+          id: string | null
+          name: string | null
+          open_tickets: number | null
+          site_name: string | null
+          sla_resolution_hours: number | null
+          sla_response_mins: number | null
+          subscription_plan: string | null
+          total_tickets: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bau_customers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_bau_my_tickets: {
+        Row: {
+          assigned_to: string | null
+          assigned_to_name: string | null
+          bau_customer_id: string | null
+          created_at: string | null
+          customer_name: string | null
+          description: string | null
+          id: string | null
+          priority: number | null
+          raised_by: string | null
+          raised_by_name: string | null
+          site_name: string | null
+          status: Database["public"]["Enums"]["ticket_status_enum"] | null
+          title: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bau_tickets_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "bau_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_tickets_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_tickets_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_projects_like"
+            referencedColumns: ["bau_customer_id"]
+          },
+        ]
+      }
+      v_bau_projects_like: {
+        Row: {
+          bau_customer_id: string | null
+          customer_name: string | null
+          name: string | null
+          project_type: string | null
+          site_name: string | null
+        }
+        Relationships: []
+      }
       v_distinct_customers: {
         Row: {
           customer: string | null
@@ -1795,6 +2343,51 @@ export type Database = {
       auth_user_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      bau_create_customer: {
+        Args: {
+          p_company_id: string
+          p_name: string
+          p_plan?: string
+          p_site_name?: string
+          p_sla_resolution_hours?: number
+          p_sla_response_mins?: number
+        }
+        Returns: string
+      }
+      bau_create_ticket: {
+        Args: {
+          p_bau_customer_id: string
+          p_description?: string
+          p_priority?: number
+          p_title: string
+        }
+        Returns: string
+      }
+      bau_log_visit: {
+        Args: {
+          p_attendee: string
+          p_bau_customer_id: string
+          p_next_actions?: string
+          p_summary?: string
+          p_visit_date: string
+          p_visit_type: Database["public"]["Enums"]["visit_type_enum"]
+        }
+        Returns: string
+      }
+      bau_update_health: {
+        Args: {
+          p_bau_customer_id: string
+          p_health: Database["public"]["Enums"]["bau_health_enum"]
+        }
+        Returns: undefined
+      }
+      bau_update_ticket_status: {
+        Args: {
+          p_status: Database["public"]["Enums"]["ticket_status_enum"]
+          p_ticket_id: string
+        }
+        Returns: undefined
       }
       can_access_profile_field: {
         Args: {
@@ -1888,6 +2481,14 @@ export type Database = {
         Args: { d: string }
         Returns: boolean
       }
+      link_expense_to_bau: {
+        Args: {
+          p_bau_customer_id: string
+          p_expense_assignment_id: string
+          p_is_billable?: boolean
+        }
+        Returns: undefined
+      }
       snapshot_project_tasks: {
         Args: { p_project_id: string }
         Returns: undefined
@@ -1907,6 +2508,13 @@ export type Database = {
     }
     Enums: {
       action_status: "Open" | "In Progress" | "Done"
+      bau_health_enum: "Excellent" | "Good" | "Watch" | "AtRisk"
+      change_req_status_enum:
+        | "Proposed"
+        | "Approved"
+        | "Rejected"
+        | "Scheduled"
+        | "Completed"
       expense_category_enum:
         | "FoodDrink"
         | "Hotel"
@@ -1924,6 +2532,13 @@ export type Database = {
         | "ReadyForSignoff"
         | "Approved"
       task_status: "Planned" | "In Progress" | "Blocked" | "Done"
+      ticket_status_enum:
+        | "Open"
+        | "InProgress"
+        | "WaitingCustomer"
+        | "Resolved"
+        | "Closed"
+      visit_type_enum: "Onsite" | "Remote" | "Review" | "Training"
       work_domain: "IoT" | "Vision" | "Hybrid"
     }
     CompositeTypes: {
@@ -2053,6 +2668,14 @@ export const Constants = {
   public: {
     Enums: {
       action_status: ["Open", "In Progress", "Done"],
+      bau_health_enum: ["Excellent", "Good", "Watch", "AtRisk"],
+      change_req_status_enum: [
+        "Proposed",
+        "Approved",
+        "Rejected",
+        "Scheduled",
+        "Completed",
+      ],
       expense_category_enum: [
         "FoodDrink",
         "Hotel",
@@ -2072,6 +2695,14 @@ export const Constants = {
         "Approved",
       ],
       task_status: ["Planned", "In Progress", "Blocked", "Done"],
+      ticket_status_enum: [
+        "Open",
+        "InProgress",
+        "WaitingCustomer",
+        "Resolved",
+        "Closed",
+      ],
+      visit_type_enum: ["Onsite", "Remote", "Review", "Training"],
       work_domain: ["IoT", "Vision", "Hybrid"],
     },
   },

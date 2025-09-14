@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Users, Lightbulb } from 'lucide-react';
+import { Loader2, Users, Lightbulb, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
   listUnassignedExpenses, 
@@ -17,14 +16,18 @@ import {
   type AssigneeSuggestion 
 } from '@/lib/expenseService';
 
+interface ExpenseAssignment {
+  expenseId: string;
+  userId: string;
+}
+
 export const UnassignedExpensesBatch = () => {
   const { toast } = useToast();
   const [expenses, setExpenses] = useState<UnassignedExpense[]>([]);
   const [users, setUsers] = useState<InternalUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedExpenses, setSelectedExpenses] = useState<Set<string>>(new Set());
-  const [selectedUser, setSelectedUser] = useState<string>('');
-  const [assigning, setAssigning] = useState(false);
+  const [assignments, setAssignments] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
   const [suggestions, setSuggestions] = useState<Record<string, AssigneeSuggestion[]>>({});
   const [currentPage, setCurrentPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
@@ -67,22 +70,11 @@ export const UnassignedExpensesBatch = () => {
     fetchData();
   }, [currentPage]);
 
-  const handleSelectExpense = (expenseId: string, checked: boolean) => {
-    const newSelection = new Set(selectedExpenses);
-    if (checked) {
-      newSelection.add(expenseId);
-    } else {
-      newSelection.delete(expenseId);
-    }
-    setSelectedExpenses(newSelection);
-  };
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedExpenses(new Set(expenses.map(e => e.id)));
-    } else {
-      setSelectedExpenses(new Set());
-    }
+  const handleUserAssignment = (expenseId: string, userId: string) => {
+    setAssignments(prev => ({
+      ...prev,
+      [expenseId]: userId
+    }));
   };
 
   const handleGetSuggestions = async (expenseId: string) => {
@@ -99,27 +91,43 @@ export const UnassignedExpensesBatch = () => {
     }
   };
 
-  const handleAssignSelected = async () => {
-    if (selectedExpenses.size === 0 || !selectedUser) {
+  const handleSaveAll = async () => {
+    const assignmentEntries = Object.entries(assignments).filter(([_, userId]) => userId);
+    
+    if (assignmentEntries.length === 0) {
       toast({
-        title: 'Invalid Selection',
-        description: 'Please select expenses and a user to assign them to',
+        title: 'No Assignments',
+        description: 'Please assign users to expenses before saving',
         variant: 'destructive'
       });
       return;
     }
 
     try {
-      setAssigning(true);
-      await assignExpensesToUser(Array.from(selectedExpenses), selectedUser);
+      setSaving(true);
+      
+      // Group assignments by user to make fewer API calls
+      const userGroups: Record<string, string[]> = {};
+      assignmentEntries.forEach(([expenseId, userId]) => {
+        if (!userGroups[userId]) {
+          userGroups[userId] = [];
+        }
+        userGroups[userId].push(expenseId);
+      });
+
+      // Assign expenses in parallel for each user
+      await Promise.all(
+        Object.entries(userGroups).map(([userId, expenseIds]) =>
+          assignExpensesToUser(expenseIds, userId)
+        )
+      );
       
       toast({
         title: 'Success',
-        description: `Assigned ${selectedExpenses.size} expenses successfully`
+        description: `Assigned ${assignmentEntries.length} expenses successfully`
       });
       
-      setSelectedExpenses(new Set());
-      setSelectedUser('');
+      setAssignments({});
       fetchData();
     } catch (error) {
       console.error('Error assigning expenses:', error);
@@ -129,7 +137,7 @@ export const UnassignedExpensesBatch = () => {
         variant: 'destructive'
       });
     } finally {
-      setAssigning(false);
+      setSaving(false);
     }
   };
 
@@ -157,28 +165,18 @@ export const UnassignedExpensesBatch = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Assign to:</span>
-              <Select value={selectedUser} onValueChange={setSelectedUser}>
-                <SelectTrigger className="w-64">
-                  <SelectValue placeholder="Select user" />
-                </SelectTrigger>
-                <SelectContent>
-                  {users.map(user => (
-                    <SelectItem key={user.user_id} value={user.user_id}>
-                      {user.name || user.email}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="flex items-center justify-between mb-6">
+            <div className="text-sm text-muted-foreground">
+              Assign users to expenses and save all changes at once
             </div>
             <Button
-              onClick={handleAssignSelected}
-              disabled={selectedExpenses.size === 0 || !selectedUser || assigning}
+              onClick={handleSaveAll}
+              disabled={Object.keys(assignments).length === 0 || saving}
+              className="bg-primary hover:bg-primary/90"
             >
-              {assigning && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Assign Selected ({selectedExpenses.size})
+              {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              <Save className="h-4 w-4 mr-2" />
+              Save All Assignments ({Object.entries(assignments).filter(([_, userId]) => userId).length})
             </Button>
           </div>
 
@@ -186,30 +184,17 @@ export const UnassignedExpensesBatch = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-12">
-                    <Checkbox
-                      checked={selectedExpenses.size === expenses.length && expenses.length > 0}
-                      onCheckedChange={handleSelectAll}
-                    />
-                  </TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Net</TableHead>
                   <TableHead>Customer</TableHead>
-                  <TableHead>Reference</TableHead>
-                  <TableHead>Invoice #</TableHead>
                   <TableHead>Assign to User</TableHead>
+                  <TableHead>Suggestions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {expenses.map(expense => (
                   <TableRow key={expense.id}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selectedExpenses.has(expense.id)}
-                        onCheckedChange={(checked) => handleSelectExpense(expense.id, checked as boolean)}
-                      />
-                    </TableCell>
                     <TableCell>{formatDate(expense.expense_date)}</TableCell>
                     <TableCell className="max-w-48">
                       <div className="truncate" title={expense.description || ''}>
@@ -220,8 +205,23 @@ export const UnassignedExpensesBatch = () => {
                       {formatCurrency(expense.net)}
                     </TableCell>
                     <TableCell>{expense.customer || 'N/A'}</TableCell>
-                    <TableCell>{expense.reference || 'N/A'}</TableCell>
-                    <TableCell>{expense.invoice_number || 'N/A'}</TableCell>
+                    <TableCell className="w-64">
+                      <Select 
+                        value={assignments[expense.id] || ''} 
+                        onValueChange={(userId) => handleUserAssignment(expense.id, userId)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Assign to user" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {users.map(user => (
+                            <SelectItem key={user.user_id} value={user.user_id}>
+                              {user.name || user.email}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Button
@@ -239,7 +239,7 @@ export const UnassignedExpensesBatch = () => {
                                 key={index}
                                 variant="secondary"
                                 className="cursor-pointer"
-                                onClick={() => setSelectedUser(suggestion.user_id)}
+                                onClick={() => handleUserAssignment(expense.id, suggestion.user_id)}
                               >
                                 {suggestion.matched_text}
                               </Badge>

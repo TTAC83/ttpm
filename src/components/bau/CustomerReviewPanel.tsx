@@ -4,6 +4,7 @@ import { ChevronRight, TrendingUp, Calendar, UserPlus, Target } from 'lucide-rea
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -31,6 +32,7 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
   hasNext
 }) => {
   const [health, setHealth] = useState<'green' | 'red'>('green');
+  const [reasonCode, setReasonCode] = useState('');
   const [escalation, setEscalation] = useState('');
   const [trendDrawer, setTrendDrawer] = useState<{
     isOpen: boolean;
@@ -69,9 +71,11 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
   useEffect(() => {
     if (existingReview) {
       setHealth(existingReview.health);
+      setReasonCode(existingReview.reason_code || '');
       setEscalation(existingReview.escalation || '');
     } else {
       setHealth('green');
+      setReasonCode('');
       setEscalation('');
     }
   }, [existingReview, customer?.id]);
@@ -105,14 +109,24 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
   const handleSave = async () => {
     if (!customer || !selectedWeek) return;
 
-    // Validate required reason when health is red
-    if (health === 'red' && !escalation.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Please provide a reason for marking this customer as red",
-        variant: "destructive",
-      });
-      return;
+    // Validate required fields when health is red
+    if (health === 'red') {
+      if (!reasonCode.trim()) {
+        toast({
+          title: "Validation Error",
+          description: "Please select a reason code",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!escalation.trim()) {
+        toast({
+          title: "Validation Error",
+          description: "Please provide a reason for marking this customer as red",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     await saveReviewMutation.mutateAsync({
@@ -311,17 +325,38 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
                 </ToggleGroup>
 
                 {health === 'red' && (
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">
-                      Reason for red <span className="text-destructive">*</span>
-                    </label>
-                    <Textarea
-                      value={escalation}
-                      onChange={(e) => setEscalation(e.target.value)}
-                      placeholder="Please explain why this customer is marked as red..."
-                      className="mt-1"
-                      rows={3}
-                    />
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">
+                        Reason Code <span className="text-destructive">*</span>
+                      </label>
+                      <Select value={reasonCode} onValueChange={setReasonCode}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Select a reason code..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="data-inaccuracy">Data Inaccuracy</SelectItem>
+                          <SelectItem value="feature-product-gap">Feature/Product Gap</SelectItem>
+                          <SelectItem value="implementation-delay-tt">Implementations Delay - TT</SelectItem>
+                          <SelectItem value="implementation-delay-customer">Implementation Delay - Customer</SelectItem>
+                          <SelectItem value="portal-issues">Portal Issues</SelectItem>
+                          <SelectItem value="hardware-issue">Hardware Issue</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">
+                        Reason for red <span className="text-destructive">*</span>
+                      </label>
+                      <Textarea
+                        value={escalation}
+                        onChange={(e) => setEscalation(e.target.value)}
+                        placeholder="Please explain why this customer is marked as red..."
+                        className="mt-1"
+                        rows={3}
+                      />
+                    </div>
                   </div>
                 )}
               </div>

@@ -94,7 +94,7 @@ serve(async (req) => {
         console.log(`Processing row ${i + 1} for customer: ${customerName}`);
 
         // Find BAU customer id
-        const { data: bauIdRes, error: idErr } = await supabase.rpc("find_bau_customer_id", { 
+        const { data: bauIdRes, error: idErr } = await client.rpc("find_bau_customer_id", { 
           p_customer_name: customerName 
         });
         
@@ -113,7 +113,7 @@ serve(async (req) => {
           let companyId: string | null = null;
           
           // Try to find or create a company based on customer name
-          const { data: existingCompanies, error: companySearchErr } = await supabase
+          const { data: existingCompanies, error: companySearchErr } = await client
             .from('companies')
             .select('id, name')
             .ilike('name', `%${customerName}%`)
@@ -126,7 +126,7 @@ serve(async (req) => {
             console.log(`Found existing company for customer: ${existingCompanies[0].name}`);
           } else {
             // Create a new company
-            const { data: newCompany, error: createCompanyErr } = await supabase
+            const { data: newCompany, error: createCompanyErr } = await client
               .from('companies')
               .insert({ name: customerName, is_internal: false })
               .select('id')
@@ -143,7 +143,7 @@ serve(async (req) => {
           }
           
           // Create the BAU customer
-          const { data: newCustomerRes, error: createErr } = await supabase.rpc("bau_create_customer", {
+          const { data: newCustomerRes, error: createErr } = await client.rpc("bau_create_customer", {
             p_company_id: companyId,
             p_name: customerName,
             p_site_name: null,
@@ -185,7 +185,7 @@ serve(async (req) => {
             }
           }
 
-          const { error: upErr } = await supabase.rpc("upsert_bau_weekly_metric", {
+          const { error: upErr } = await client.rpc("upsert_bau_weekly_metric", {
             p_bau_customer_id: bau_customer_id,
             p_date_from: dateFrom.toISOString().slice(0, 10),
             p_date_to: dateTo.toISOString().slice(0, 10),
@@ -211,7 +211,7 @@ serve(async (req) => {
     // Mark upload as processed
     if (upload_id) {
       console.log('Marking upload as processed:', upload_id);
-      const { error: updateErr } = await supabase
+      const { error: updateErr } = await client
         .from("bau_weekly_uploads")
         .update({ processed_at: new Date().toISOString() })
         .eq("id", upload_id);

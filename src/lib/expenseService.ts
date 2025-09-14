@@ -199,12 +199,15 @@ export async function getInternalUsers(): Promise<InternalUser[]> {
   })) || [];
 }
 
-// Get assigned expenses for current user
+// Get assigned expenses for current user only
 export async function listAssignedToMe() {
-  // Check if user has full expense access (Allan and Paul)
-  const { data: hasFullAccess } = await supabase.rpc('has_expense_access');
+  const { data: { user } } = await supabase.auth.getUser();
   
-  let query = supabase
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+
+  const { data, error } = await supabase
     .from('expense_assignments')
     .select(`
       *,
@@ -220,18 +223,10 @@ export async function listAssignedToMe() {
         vat
       )
     `)
+    .eq('assigned_to_user_id', user.id)
     .in('status', ['Assigned', 'ConfirmedByAssignee', 'PendingLeadReview', 'ReadyForSignoff'])
     .order('assigned_at', { ascending: false });
 
-  // If user doesn't have full access, only show their own assignments
-  if (!hasFullAccess) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      query = query.eq('assigned_to_user_id', user.id);
-    }
-  }
-
-  const { data, error } = await query;
   if (error) throw error;
   return data || [];
 }

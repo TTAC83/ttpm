@@ -201,8 +201,12 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
                   {numericKPIs.map((kpi) => {
                     // Determine card styling based on KPI values
                     const getCardStyle = () => {
-                      if (kpi.metric_key === 'Jobs over 150% Complete' && (kpi.metric_value_numeric || 0) > 1) {
-                        return 'border-destructive bg-destructive/5';
+                      if (kpi.metric_key === 'Jobs over 150% Complete') {
+                        if ((kpi.metric_value_numeric || 0) > 1) {
+                          return 'border-destructive bg-destructive/5';
+                        } else {
+                          return 'border-green-500 bg-green-500/5';
+                        }
                       }
                       if (kpi.metric_key === 'Percentage of Uncategorized') {
                         const percentage = (kpi.metric_value_numeric || 0) * 100;

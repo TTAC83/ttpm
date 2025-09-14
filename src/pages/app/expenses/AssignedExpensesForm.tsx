@@ -352,7 +352,15 @@ export const AssignedExpensesForm = () => {
                                       </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                      {projects.map(project => (
+                                      {projects
+                                        .filter(project => {
+                                          const assignmentData = formData[currentAssignmentId || ''];
+                                          if (!assignmentData?.customer || assignmentData.customer === 'No Customer') {
+                                            return true; // Show all projects if no customer selected
+                                          }
+                                          return project.customer_name === assignmentData.customer;
+                                        })
+                                        .map(project => (
                                         <TableRow key={`${project.kind}-${project.project_id || project.solutions_project_id}`}>
                                           <TableCell>
                                             <Badge variant={project.kind === 'implementation' ? 'default' : 'secondary'}>

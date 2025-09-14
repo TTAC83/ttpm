@@ -198,38 +198,64 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
               {/* Numeric KPIs as cards */}
               {numericKPIs.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {numericKPIs.map((kpi) => (
-                    <Card key={kpi.metric_key} className="cursor-pointer hover:shadow-md transition-shadow">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                          {kpi.metric_key}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex items-center justify-between">
-                          <div className="text-2xl font-bold">
-                            {kpi.metric_value_numeric?.toLocaleString() || 'N/A'}
+                  {numericKPIs.map((kpi) => {
+                    // Determine card styling based on KPI values
+                    const getCardStyle = () => {
+                      if (kpi.metric_key === 'Jobs over 150% Complete' && (kpi.metric_value_numeric || 0) > 1) {
+                        return 'border-destructive bg-destructive/5';
+                      }
+                      if (kpi.metric_key === 'Percentage of Uncategorized') {
+                        const percentage = (kpi.metric_value_numeric || 0) * 100;
+                        if (percentage > 25) {
+                          return 'border-destructive bg-destructive/5';
+                        } else {
+                          return 'border-green-500 bg-green-500/5';
+                        }
+                      }
+                      return '';
+                    };
+
+                    // Format the display value
+                    const getDisplayValue = () => {
+                      if (kpi.metric_key === 'Percentage of Uncategorized') {
+                        return `${((kpi.metric_value_numeric || 0) * 100).toFixed(1)}%`;
+                      }
+                      return kpi.metric_value_numeric?.toLocaleString() || 'N/A';
+                    };
+
+                    return (
+                      <Card key={kpi.metric_key} className={`cursor-pointer hover:shadow-md transition-shadow ${getCardStyle()}`}>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm font-medium text-muted-foreground">
+                            {kpi.metric_key}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-center justify-between">
+                            <div className="text-2xl font-bold">
+                              {getDisplayValue()}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openTrendDrawer(kpi.metric_key)}
+                              className="text-primary hover:text-primary"
+                            >
+                              <TrendingUp className="h-4 w-4" />
+                            </Button>
                           </div>
                           <Button
-                            variant="ghost"
+                            variant="link"
                             size="sm"
                             onClick={() => openTrendDrawer(kpi.metric_key)}
-                            className="text-primary hover:text-primary"
+                            className="p-0 h-auto text-xs text-muted-foreground hover:text-primary"
                           >
-                            <TrendingUp className="h-4 w-4" />
+                            View trend
                           </Button>
-                        </div>
-                        <Button
-                          variant="link"
-                          size="sm"
-                          onClick={() => openTrendDrawer(kpi.metric_key)}
-                          className="p-0 h-auto text-xs text-muted-foreground hover:text-primary"
-                        >
-                          View trend
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               )}
 

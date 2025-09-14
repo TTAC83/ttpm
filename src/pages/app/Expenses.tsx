@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Upload, FileSpreadsheet, Shield } from 'lucide-react';
-import { UnassignedExpenses } from './expenses/UnassignedExpenses';
-import { AssignedExpenses } from './expenses/AssignedExpenses';
+import { UnassignedExpensesBatch } from './expenses/UnassignedExpensesBatch';
+import { AssignedExpensesForm } from './expenses/AssignedExpensesForm';
+import { ProjectCosts } from './expenses/ProjectCosts';
+import { AdminExpenseApproval } from './expenses/AdminExpenseApproval';
 import { ExpenseUpload } from '@/components/ExpenseUpload';
 import { useExpenseAccess } from '@/hooks/useExpenseAccess';
 
@@ -53,23 +55,27 @@ export const Expenses = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="unassigned" className="flex items-center gap-2">
-            <FileSpreadsheet className="h-4 w-4" />
-            Unassigned Expenses
-          </TabsTrigger>
-          <TabsTrigger value="assigned" className="flex items-center gap-2">
-            <Upload className="h-4 w-4" />
-            Assigned Expenses
-          </TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="unassigned">Batch Assign</TabsTrigger>
+          <TabsTrigger value="assigned">My Expenses</TabsTrigger>
+          <TabsTrigger value="projects">Project Costs</TabsTrigger>
+          <TabsTrigger value="admin">Admin Approval</TabsTrigger>
         </TabsList>
         
         <TabsContent value="unassigned" className="space-y-4">
-          <UnassignedExpenses key={`unassigned-${refreshKey}`} />
+          <UnassignedExpensesBatch key={`unassigned-${refreshKey}`} />
         </TabsContent>
         
         <TabsContent value="assigned" className="space-y-4">
-          <AssignedExpenses key={`assigned-${refreshKey}`} />
+          <AssignedExpensesForm key={`assigned-${refreshKey}`} />
+        </TabsContent>
+        
+        <TabsContent value="projects" className="space-y-4">
+          <ProjectCosts key={`projects-${refreshKey}`} />
+        </TabsContent>
+        
+        <TabsContent value="admin" className="space-y-4">
+          <AdminExpenseApproval key={`admin-${refreshKey}`} />
         </TabsContent>
       </Tabs>
     </div>

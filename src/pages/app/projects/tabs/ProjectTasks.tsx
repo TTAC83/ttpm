@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { Filter, Users, Edit, CalendarIcon, Save, X, List, Calendar as CalendarPlus } from 'lucide-react';
 import SubtasksDialog from '@/components/SubtasksDialog';
 import CreateEventDialog from '@/components/CreateEventDialog';
+import { useTasksStatus } from '@/hooks/useTaskStatus';
 
 interface Task {
   id: string;
@@ -221,27 +222,34 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
     }
   };
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'Done': return 'default';
-      case 'In Progress': return 'secondary';
-      case 'Blocked': return 'destructive';
-      case 'Planned': return 'outline';
+  const getStatusBadgeVariant = (color: string) => {
+    switch (color) {
+      case 'success': return 'default';
+      case 'destructive': return 'destructive';
+      case 'warning': return 'secondary';
+      case 'secondary': return 'outline';
       default: return 'outline';
     }
   };
 
-  const filteredTasks = tasks.filter(task => {
+  // Compute task statuses using the custom hook
+  const taskStatuses = useTasksStatus(tasks);
+  const tasksWithComputedStatus = tasks.map((task, index) => ({
+    ...task,
+    computedStatus: taskStatuses[index]
+  }));
+
+  const filteredTasks = tasksWithComputedStatus.filter(task => {
     if (filters.step_name && filters.step_name !== 'all' && task.step_name !== filters.step_name) return false;
-    if (filters.status && filters.status !== 'all' && task.status !== filters.status) return false;
+    if (filters.status && filters.status !== 'all' && !task.computedStatus.status.toLowerCase().includes(filters.status.toLowerCase())) return false;
     if (filters.assignee && filters.assignee !== 'all' && task.assignee !== filters.assignee) return false;
     return true;
   });
 
   const canEditTasks = profile?.is_internal || isProjectMember;
 
-  const uniqueSteps = [...new Set(tasks.map(task => task.step_name))];
-  const uniqueStatuses = [...new Set(tasks.map(task => task.status))];
+  const uniqueSteps = [...new Set(tasksWithComputedStatus.map(task => task.step_name))];
+  const uniqueStatuses = [...new Set(tasksWithComputedStatus.map(task => task.computedStatus.status))];
 
   return (
     <div className="space-y-6">
@@ -377,9 +385,11 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={getStatusBadgeVariant(task.status)}>
-                            {task.status}
-                          </Badge>
+                          <div className={task.computedStatus.bgColor}>
+                            <Badge variant={getStatusBadgeVariant(task.computedStatus.color)}>
+                              {task.computedStatus.status}
+                            </Badge>
+                          </div>
                         </TableCell>
                         <TableCell>
                           {task.profiles?.name || (task.assignee ? 'Unknown User' : 'Unassigned')}</TableCell>

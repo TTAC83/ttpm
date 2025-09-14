@@ -59,40 +59,97 @@ export interface InternalUser {
 
 // Unassigned expenses for batch assignment
 export async function listUnassignedExpenses(page = 0, pageSize = 20) {
-  const offset = page * pageSize;
-  
-  // First get assigned expense IDs
-  const { data: assignments } = await supabase
-    .from('expense_assignments')
-    .select('expense_id');
+  try {
+    console.log('listUnassignedExpenses: Starting with page:', page, 'pageSize:', pageSize);
+    const offset = page * pageSize;
     
-  const assignedIds = assignments?.map(a => a.expense_id) || [];
-  
-  let query = supabase
-    .from('expenses')
-    .select(`
-      id,
-      expense_date,
-      description,
-      customer,
-      reference,
-      invoice_number,
-      net,
-      gross,
-      vat
-    `, { count: 'exact' })
-    .order('expense_date', { ascending: false })
-    .range(offset, offset + pageSize - 1);
+    // First get assigned expense IDs
+    const { data: assignments, error: assignmentError } = await supabase
+      .from('expense_assignments')
+      .select('expense_id');
+      
+    if (assignmentError) {
+      console.error('Error fetching assignments:', assignmentError);
+      throw assignmentError;
+    }
+      
+    const assignedIds = assignments?.map(a => a.expense_id) || [];
+    console.log('listUnassignedExpenses: Found', assignedIds.length, 'assigned expenses');
     
-  // Filter out assigned expenses if there are any
-  if (assignedIds.length > 0) {
-    query = query.not('id', 'in', `(${assignedIds.join(',')})`);
+    let query = supabase
+      .from('expenses')
+      .select(`
+        id,
+        expense_date,
+        description,
+        customer,
+        reference,
+        invoice_number,
+        net,
+        gross,
+        vat
+      `, { count: 'exact' })
+      .order('expense_date', { ascending: false })
+      .range(offset, offset + pageSize - 1);
+      
+    // Filter out assigned expenses if there are any
+    // Split into chunks if too many IDs to avoid URL length limits
+    if (assignedIds.length > 0) {
+      if (assignedIds.length > 100) {
+        // For large lists, we need to do this differently
+        // Get all expenses first, then filter in memory
+        const { data: allExpenses, error: allError, count } = await supabase
+          .from('expenses')
+          .select(`
+            id,
+            expense_date,
+            description,
+            customer,
+            reference,
+            invoice_number,
+            net,
+            gross,
+            vat
+          `, { count: 'exact' })
+          .order('expense_date', { ascending: false });
+          
+        if (allError) {
+          console.error('Error fetching all expenses:', allError);
+          throw allError;
+        }
+        
+        const assignedSet = new Set(assignedIds);
+        const unassignedExpenses = (allExpenses || []).filter(expense => !assignedSet.has(expense.id));
+        
+        console.log('listUnassignedExpenses: Filtered to', unassignedExpenses.length, 'unassigned expenses');
+        
+        // Apply pagination manually
+        const startIndex = offset;
+        const endIndex = Math.min(startIndex + pageSize, unassignedExpenses.length);
+        const paginatedData = unassignedExpenses.slice(startIndex, endIndex);
+        
+        return { 
+          data: paginatedData, 
+          count: unassignedExpenses.length 
+        };
+      } else {
+        query = query.not('id', 'in', `(${assignedIds.join(',')})`);
+      }
+    }
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      console.error('Error executing query:', error);
+      throw error;
+    }
+    
+    console.log('listUnassignedExpenses: Query returned', data?.length || 0, 'expenses, count:', count);
+    return { data: data || [], count: count || 0 };
+  } catch (error) {
+    console.error('listUnassignedExpenses: Exception:', error);
+    throw error;
   }
-
-  const { data, error, count } = await query;
-
-  if (error) throw error;
-  return { data: data || [], count: count || 0 };
 }
 
 // Assign expenses to user

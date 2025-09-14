@@ -51,6 +51,7 @@ import { SolutionsProjectDetail } from "./pages/app/solutions/SolutionsProjectDe
 import { BAU } from "./pages/app/BAU";
 import { NewBAUCustomer } from "./pages/app/NewBAUCustomer";
 import { BAUDetail } from "./pages/app/BAUDetail";
+import { WeeklyReview } from "./pages/app/bau/WeeklyReview";
 
 const queryClient = new QueryClient();
 
@@ -235,6 +236,7 @@ const App = () => (
                   </AuthGuard>
                 } 
               />
+              <Route path="bau/weekly-review" element={<WeeklyReview />} />
               <Route path="bau/:id" element={<BAUDetail />} />
               <Route 
                 path="admin/users" 

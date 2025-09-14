@@ -367,39 +367,57 @@ export type Database = {
       }
       expense_assignments: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
           assigned_at: string
           assigned_by: string
           assigned_to_project_id: string | null
           assigned_to_solutions_project_id: string | null
           assigned_to_user_id: string | null
+          assignee_description: string | null
           assignment_notes: string | null
+          category: Database["public"]["Enums"]["expense_category_enum"] | null
+          customer: string | null
           expense_id: string
           id: string
           is_billable: boolean
+          status: Database["public"]["Enums"]["expense_status_enum"]
           updated_at: string
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
           assigned_at?: string
           assigned_by: string
           assigned_to_project_id?: string | null
           assigned_to_solutions_project_id?: string | null
           assigned_to_user_id?: string | null
+          assignee_description?: string | null
           assignment_notes?: string | null
+          category?: Database["public"]["Enums"]["expense_category_enum"] | null
+          customer?: string | null
           expense_id: string
           id?: string
           is_billable?: boolean
+          status?: Database["public"]["Enums"]["expense_status_enum"]
           updated_at?: string
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
           assigned_at?: string
           assigned_by?: string
           assigned_to_project_id?: string | null
           assigned_to_solutions_project_id?: string | null
           assigned_to_user_id?: string | null
+          assignee_description?: string | null
           assignment_notes?: string | null
+          category?: Database["public"]["Enums"]["expense_category_enum"] | null
+          customer?: string | null
           expense_id?: string
           id?: string
           is_billable?: boolean
+          status?: Database["public"]["Enums"]["expense_status_enum"]
           updated_at?: string
         }
         Relationships: [
@@ -1746,7 +1764,24 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_all_projects_for_selection: {
+        Row: {
+          customer_name: string | null
+          implementation_lead: string | null
+          kind: string | null
+          project_id: string | null
+          project_name: string | null
+          site_name: string | null
+          solutions_project_id: string | null
+        }
+        Relationships: []
+      }
+      v_distinct_customers: {
+        Row: {
+          customer: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_working_days: {
@@ -1757,6 +1792,10 @@ export type Database = {
         Args: { company_name?: string; new_role: string; target_email: string }
         Returns: undefined
       }
+      auth_user_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       can_access_profile_field: {
         Args: {
           field_name: string
@@ -1764,6 +1803,27 @@ export type Database = {
           requesting_user_id?: string
         }
         Returns: boolean
+      }
+      expense_admin_signoff: {
+        Args: { p_approved: boolean; p_assignment_id: string }
+        Returns: undefined
+      }
+      expense_confirm: {
+        Args: {
+          p_assign_to_project: boolean
+          p_assignee_description: string
+          p_assignment_id: string
+          p_billable: boolean
+          p_category: Database["public"]["Enums"]["expense_category_enum"]
+          p_customer: string
+          p_project_id: string
+          p_project_kind: string
+        }
+        Returns: undefined
+      }
+      expense_lead_approve: {
+        Args: { p_assignment_id: string; p_billable: boolean }
+        Returns: undefined
       }
       get_all_users_with_profiles: {
         Args: Record<PropertyKey, never>
@@ -1816,6 +1876,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_internal: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_project_impl_lead: {
+        Args: { p_project_id: string }
+        Returns: boolean
+      }
       is_working_day: {
         Args: { d: string }
         Returns: boolean
@@ -1824,9 +1892,37 @@ export type Database = {
         Args: { p_project_id: string }
         Returns: undefined
       }
+      suggest_assignee: {
+        Args: { expense_id: string }
+        Returns: {
+          confidence: number
+          matched_text: string
+          user_id: string
+        }[]
+      }
+      user_company_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       action_status: "Open" | "In Progress" | "Done"
+      expense_category_enum:
+        | "FoodDrink"
+        | "Hotel"
+        | "Tools"
+        | "Software"
+        | "Hardware"
+        | "Postage"
+        | "Transport"
+        | "Other"
+      expense_status_enum:
+        | "Unassigned"
+        | "Assigned"
+        | "ConfirmedByAssignee"
+        | "PendingLeadReview"
+        | "ReadyForSignoff"
+        | "Approved"
       task_status: "Planned" | "In Progress" | "Blocked" | "Done"
       work_domain: "IoT" | "Vision" | "Hybrid"
     }
@@ -1957,6 +2053,24 @@ export const Constants = {
   public: {
     Enums: {
       action_status: ["Open", "In Progress", "Done"],
+      expense_category_enum: [
+        "FoodDrink",
+        "Hotel",
+        "Tools",
+        "Software",
+        "Hardware",
+        "Postage",
+        "Transport",
+        "Other",
+      ],
+      expense_status_enum: [
+        "Unassigned",
+        "Assigned",
+        "ConfirmedByAssignee",
+        "PendingLeadReview",
+        "ReadyForSignoff",
+        "Approved",
+      ],
       task_status: ["Planned", "In Progress", "Blocked", "Done"],
       work_domain: ["IoT", "Vision", "Hybrid"],
     },

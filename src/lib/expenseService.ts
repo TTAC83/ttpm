@@ -236,15 +236,53 @@ export async function listAssignedToMe() {
   return data || [];
 }
 
-// Get customers from view
+// Get customers from both implementation and solutions projects
 export async function getCustomers(): Promise<Customer[]> {
-  const { data, error } = await supabase
-    .from('v_distinct_customers')
-    .select('customer')
-    .order('customer');
+  try {
+    // Get customers from implementation projects via companies table
+    const { data: implProjects, error: implError } = await supabase
+      .from('projects')
+      .select(`
+        companies!inner(name)
+      `)
+      .not('companies.name', 'is', null);
 
-  if (error) throw error;
-  return data || [];
+    if (implError) throw implError;
+
+    // Get customers from solutions projects
+    const { data: solProjects, error: solError } = await supabase
+      .from('solutions_projects')
+      .select('company_name')
+      .not('company_name', 'is', null);
+
+    if (solError) throw solError;
+
+    const allCustomers = new Set<string>();
+    
+    // Add implementation project customer names
+    implProjects?.forEach((project: any) => {
+      if (project.companies?.name) {
+        allCustomers.add(project.companies.name);
+      }
+    });
+    
+    // Add solutions project customer names
+    solProjects?.forEach((project: any) => {
+      if (project.company_name) {
+        allCustomers.add(project.company_name);
+      }
+    });
+
+    // Convert to array and sort, with "No Customer" at the top
+    const customerList = Array.from(allCustomers).sort();
+    return [
+      { customer: 'No Customer' },
+      ...customerList.map(customer => ({ customer }))
+    ];
+  } catch (error) {
+    console.error('Error fetching customers:', error);
+    return [{ customer: 'No Customer' }];
+  }
 }
 
 // Get all projects for selection

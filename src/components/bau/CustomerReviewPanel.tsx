@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ChevronRight, TrendingUp, Calendar, UserPlus, Target } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -75,10 +75,20 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
       setEscalation(existingReview.escalation || '');
     } else {
       setHealth('green');
-      setReasonCode('');
-      setEscalation('');
+      // Only reset reason code and escalation when switching customers
+      // to preserve data during save operations
+      if (!customer?.id || customer.id !== previousCustomerId.current) {
+        setReasonCode('');
+        setEscalation('');
+      }
     }
   }, [existingReview, customer?.id]);
+
+  // Track previous customer to detect customer changes
+  const previousCustomerId = useRef(customer?.id);
+  useEffect(() => {
+    previousCustomerId.current = customer?.id;
+  }, [customer?.id]);
 
   // Save review mutation
   const saveReviewMutation = useMutation({

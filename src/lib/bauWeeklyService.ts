@@ -25,6 +25,7 @@ export interface WeeklyReview {
   date_from: string;
   date_to: string;
   health: 'green' | 'red';
+  reason_code?: string | null;
   escalation: string | null;
   reviewed_by: string;
   reviewed_at: string;

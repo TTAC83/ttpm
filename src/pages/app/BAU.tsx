@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Search, Filter, Upload } from 'lucide-react';
+import { Plus, Search, Upload, ArrowUpDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,17 +14,19 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { useAuth } from '@/hooks/useAuth';
-import { getBauCustomers, BAUCustomer } from '@/lib/bauService';
+import { getBauCustomers, BAUCustomer, toggleCustomerType } from '@/lib/bauService';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 export const BAU = () => {
-  const [customers, setCustomers] = useState<BAUCustomer[]>([]);
+  const [bauCustomers, setBauCustomers] = useState<BAUCustomer[]>([]);
+  const [implementationCustomers, setImplementationCustomers] = useState<BAUCustomer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
+  const [bauTotalCount, setBauTotalCount] = useState(0);
+  const [implementationTotalCount, setImplementationTotalCount] = useState(0);
   const [uploading, setUploading] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -36,18 +38,47 @@ export const BAU = () => {
   const loadCustomers = async () => {
     try {
       setLoading(true);
-      const { data, count } = await getBauCustomers(page, pageSize, search);
-      setCustomers(data);
-      setTotalCount(count);
+      
+      // Load BAU customers
+      const { data: bauData, count: bauCount } = await getBauCustomers(page, pageSize, search, 'bau');
+      setBauCustomers(bauData);
+      setBauTotalCount(bauCount);
+      
+      // Load implementation customers  
+      const { data: implData, count: implCount } = await getBauCustomers(page, pageSize, search, 'implementation');
+      setImplementationCustomers(implData);
+      setImplementationTotalCount(implCount);
     } catch (error) {
-      console.error('Error loading BAU customers:', error);
+      console.error('Error loading customers:', error);
       toast({
         title: "Error",
-        description: "Failed to load BAU customers",
+        description: "Failed to load customers",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleToggleCustomerType = async (customerId: string, currentType: 'bau' | 'implementation') => {
+    try {
+      const newType = currentType === 'bau' ? 'implementation' : 'bau';
+      await toggleCustomerType(customerId, newType);
+      
+      toast({
+        title: "Success",
+        description: `Customer moved to ${newType === 'bau' ? 'BAU' : 'Implementation'} list`,
+      });
+      
+      // Reload customers
+      await loadCustomers();
+    } catch (error) {
+      console.error('Error toggling customer type:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update customer type",
+        variant: "destructive",
+      });
     }
   };
 
@@ -141,7 +172,108 @@ export const BAU = () => {
     }
   };
 
-  if (loading && customers.length === 0) {
+  const CustomerTable = ({ 
+    customers, 
+    type, 
+    totalCount 
+  }: { 
+    customers: BAUCustomer[]; 
+    type: 'bau' | 'implementation';
+    totalCount: number;
+  }) => (
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          {type === 'bau' ? 'BAU Customers' : 'Implementation Customers'} ({totalCount})
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Customer</TableHead>
+                <TableHead>Company</TableHead>
+                <TableHead>Health</TableHead>
+                <TableHead>Plan</TableHead>
+                <TableHead>Devices</TableHead>
+                <TableHead>Open Tickets</TableHead>
+                <TableHead>Go Live</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {customers.map((customer) => (
+                <TableRow 
+                  key={customer.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => navigate(`/app/bau/${customer.id}`)}
+                >
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{customer.name}</div>
+                      {customer.site_name && (
+                        <div className="text-sm text-muted-foreground">{customer.site_name}</div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>{customer.company_name}</TableCell>
+                  <TableCell>
+                    <Badge className={`${getHealthColor(customer.health)} text-white`}>
+                      {customer.health}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{customer.subscription_plan || '-'}</TableCell>
+                  <TableCell>{customer.devices_deployed || '-'}</TableCell>
+                  <TableCell>
+                    {customer.open_tickets > 0 ? (
+                      <Badge variant="destructive">{customer.open_tickets}</Badge>
+                    ) : (
+                      <span className="text-muted-foreground">0</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {customer.go_live_date 
+                      ? format(new Date(customer.go_live_date), 'MMM d, yyyy')
+                      : '-'
+                    }
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="sm">
+                        View
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleCustomerType(customer.id, customer.customer_type);
+                        }}
+                      >
+                        <ArrowUpDown className="h-3 w-3 mr-1" />
+                        Move to {type === 'bau' ? 'Impl' : 'BAU'}
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        
+        {customers.length === 0 && !loading && (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">
+              No {type === 'bau' ? 'BAU' : 'implementation'} customers found.
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  if (loading && bauCustomers.length === 0 && implementationCustomers.length === 0) {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-center h-48">
@@ -154,7 +286,7 @@ export const BAU = () => {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">BAU Customers</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Customer Management</h1>
         <div className="flex items-center gap-2">
           <input
             ref={fileInputRef}
@@ -173,7 +305,7 @@ export const BAU = () => {
           </Button>
           <Button onClick={() => navigate('/app/bau/new')}>
             <Plus className="h-4 w-4 mr-2" />
-            New BAU Customer
+            New Customer
           </Button>
         </div>
       </div>
@@ -198,107 +330,19 @@ export const BAU = () => {
         </CardContent>
       </Card>
 
-      {/* Customers Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>BAU Customers ({totalCount})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Health</TableHead>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>Devices</TableHead>
-                  <TableHead>Open Tickets</TableHead>
-                  <TableHead>Go Live</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {customers.map((customer) => (
-                  <TableRow 
-                    key={customer.id}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => navigate(`/app/bau/${customer.id}`)}
-                  >
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{customer.name}</div>
-                        {customer.site_name && (
-                          <div className="text-sm text-muted-foreground">{customer.site_name}</div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>{customer.company_name}</TableCell>
-                    <TableCell>
-                      <Badge className={`${getHealthColor(customer.health)} text-white`}>
-                        {customer.health}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{customer.subscription_plan || '-'}</TableCell>
-                    <TableCell>{customer.devices_deployed || '-'}</TableCell>
-                    <TableCell>
-                      {customer.open_tickets > 0 ? (
-                        <Badge variant="destructive">{customer.open_tickets}</Badge>
-                      ) : (
-                        <span className="text-muted-foreground">0</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {customer.go_live_date 
-                        ? format(new Date(customer.go_live_date), 'MMM d, yyyy')
-                        : '-'
-                      }
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="sm">
-                        View
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-          
-          {customers.length === 0 && !loading && (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No BAU customers found.</p>
-            </div>
-          )}
+      {/* BAU Customers Table */}
+      <CustomerTable 
+        customers={bauCustomers} 
+        type="bau" 
+        totalCount={bauTotalCount} 
+      />
 
-          {/* Pagination */}
-          {totalCount > pageSize && (
-            <div className="flex items-center justify-between mt-4">
-              <div className="text-sm text-muted-foreground">
-                Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, totalCount)} of {totalCount} customers
-              </div>
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(page - 1)}
-                  disabled={page === 1}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(page + 1)}
-                  disabled={page * pageSize >= totalCount}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Implementation Customers Table */}
+      <CustomerTable 
+        customers={implementationCustomers} 
+        type="implementation" 
+        totalCount={implementationTotalCount} 
+      />
     </div>
   );
 };

@@ -15,6 +15,7 @@ export interface BAUCustomer {
   notes?: string;
   created_by?: string;
   created_at: string;
+  customer_type: 'bau' | 'implementation';
   company_name?: string;
   open_tickets?: number;
   total_tickets?: number;
@@ -88,7 +89,7 @@ export interface BAUExpenseLink {
 }
 
 // Get BAU customers list
-export const getBauCustomers = async (page = 1, pageSize = 20, search?: string) => {
+export const getBauCustomers = async (page = 1, pageSize = 20, search?: string, customerType?: 'bau' | 'implementation') => {
   let query = supabase
     .from('bau_customers')
     .select('*', { count: 'exact' })
@@ -96,6 +97,10 @@ export const getBauCustomers = async (page = 1, pageSize = 20, search?: string) 
 
   if (search) {
     query = query.or(`name.ilike.%${search}%,site_name.ilike.%${search}%`);
+  }
+
+  if (customerType) {
+    query = query.eq('customer_type', customerType);
   }
 
   const from = (page - 1) * pageSize;
@@ -108,8 +113,31 @@ export const getBauCustomers = async (page = 1, pageSize = 20, search?: string) 
     ...row,
     company_name: row.company_name ?? null,
     open_tickets: row.open_tickets ?? 0,
+    customer_type: row.customer_type as 'bau' | 'implementation',
   }));
   return { data: mapped, count: count || 0 };
+};
+
+// Toggle customer type between BAU and implementation
+export const toggleCustomerType = async (customerId: string, newType: 'bau' | 'implementation') => {
+  try {
+    const { data, error } = await supabase
+      .from('bau_customers')
+      .update({ customer_type: newType })
+      .eq('id', customerId)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating customer type:', error);
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error in toggleCustomerType:', error);
+    throw error;
+  }
 };
 
 // Create BAU customer

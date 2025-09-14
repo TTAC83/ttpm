@@ -42,7 +42,10 @@ export const BAUDetail = () => {
     try {
       setLoading(true);
       const data = await getBauCustomer(id);
-      setCustomer(data);
+      setCustomer({
+        ...data,
+        customer_type: data.customer_type as 'bau' | 'implementation'
+      });
     } catch (error) {
       console.error('Error loading BAU customer:', error);
       toast({

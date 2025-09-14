@@ -349,6 +349,7 @@ export type Database = {
           company_id: string
           created_at: string
           created_by: string
+          customer_type: string
           devices_deployed: number | null
           go_live_date: string | null
           health: Database["public"]["Enums"]["bau_health_enum"]
@@ -365,6 +366,7 @@ export type Database = {
           company_id: string
           created_at?: string
           created_by: string
+          customer_type?: string
           devices_deployed?: number | null
           go_live_date?: string | null
           health?: Database["public"]["Enums"]["bau_health_enum"]
@@ -381,6 +383,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           created_by?: string
+          customer_type?: string
           devices_deployed?: number | null
           go_live_date?: string | null
           health?: Database["public"]["Enums"]["bau_health_enum"]

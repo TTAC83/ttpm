@@ -71,13 +71,15 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
   useEffect(() => {
     if (existingReview) {
       setHealth(existingReview.health);
-      setReasonCode(existingReview.reason_code || '');
+      // Only update reason code if it exists in the review, otherwise preserve current state
+      if (existingReview.reason_code) {
+        setReasonCode(existingReview.reason_code);
+      }
       setEscalation(existingReview.escalation || '');
     } else {
-      setHealth('green');
-      // Only reset reason code and escalation when switching customers
-      // to preserve data during save operations
-      if (!customer?.id || customer.id !== previousCustomerId.current) {
+      // Only reset when switching to a different customer
+      if (customer?.id !== previousCustomerId.current) {
+        setHealth('green');
         setReasonCode('');
         setEscalation('');
       }

@@ -7,14 +7,22 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { createBauCustomer, getCompanies } from '@/lib/bauService';
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { createBauCustomer, getCompanies, createCompany } from '@/lib/bauService';
 import { useToast } from '@/hooks/use-toast';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Company {
   id: string;
@@ -35,6 +43,8 @@ export const NewBAUCustomer = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(false);
   const [companiesLoading, setCompaniesLoading] = useState(true);
+  const [companySearchOpen, setCompanySearchOpen] = useState(false);
+  const [companySearchValue, setCompanySearchValue] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -58,13 +68,43 @@ export const NewBAUCustomer = () => {
     loadCompanies();
   }, []);
 
-  const handleCompanyChange = (companyId: string) => {
-    const selectedCompany = companies.find(c => c.id === companyId);
-    setFormData(prev => ({
-      ...prev,
-      company_id: companyId,
-      name: selectedCompany?.name || prev.name
-    }));
+  const handleCompanyChange = async (value: string) => {
+    const existingCompany = companies.find(c => c.name.toLowerCase() === value.toLowerCase());
+    
+    if (existingCompany) {
+      // Use existing company
+      setFormData(prev => ({
+        ...prev,
+        company_id: existingCompany.id,
+        name: existingCompany.name
+      }));
+      setCompanySearchValue(existingCompany.name);
+    } else {
+      // Create new company
+      try {
+        const newCompanyId = await createCompany(value);
+        const newCompany = { id: newCompanyId, name: value };
+        setCompanies(prev => [...prev, newCompany]);
+        setFormData(prev => ({
+          ...prev,
+          company_id: newCompanyId,
+          name: value
+        }));
+        setCompanySearchValue(value);
+        toast({
+          title: "Company Created",
+          description: `New company "${value}" has been added to master data`,
+        });
+      } catch (error) {
+        console.error('Error creating company:', error);
+        toast({
+          title: "Error",
+          description: "Failed to create new company",
+          variant: "destructive",
+        });
+      }
+    }
+    setCompanySearchOpen(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -136,18 +176,65 @@ export const NewBAUCustomer = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="company">Company *</Label>
-                <Select value={formData.company_id} onValueChange={handleCompanyChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a company" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {companies.map((company) => (
-                      <SelectItem key={company.id} value={company.id}>
-                        {company.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={companySearchOpen} onOpenChange={setCompanySearchOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={companySearchOpen}
+                      className="w-full justify-between"
+                    >
+                      {companySearchValue || "Select or type company name..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0">
+                    <Command>
+                      <CommandInput 
+                        placeholder="Search or type new company..." 
+                        value={companySearchValue}
+                        onValueChange={setCompanySearchValue}
+                      />
+                      <CommandList>
+                        <CommandEmpty>
+                          <div className="p-2">
+                            <p className="text-sm text-muted-foreground mb-2">
+                              No company found.
+                            </p>
+                            <Button
+                              size="sm"
+                              onClick={() => handleCompanyChange(companySearchValue)}
+                              disabled={!companySearchValue.trim()}
+                            >
+                              Create "{companySearchValue}"
+                            </Button>
+                          </div>
+                        </CommandEmpty>
+                        <CommandGroup>
+                          {companies
+                            .filter((company) =>
+                              company.name.toLowerCase().includes(companySearchValue.toLowerCase())
+                            )
+                            .map((company) => (
+                              <CommandItem
+                                key={company.id}
+                                value={company.name}
+                                onSelect={() => handleCompanyChange(company.name)}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    formData.company_id === company.id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {company.name}
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="space-y-2">

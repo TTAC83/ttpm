@@ -341,3 +341,15 @@ export const getInternalUsers = async () => {
   if (error) throw error;
   return data || [];
 };
+
+// Create a new company
+export const createCompany = async (name: string): Promise<string> => {
+  const { data, error } = await supabase
+    .from('companies')
+    .insert({ name, is_internal: false })
+    .select('id')
+    .single();
+
+  if (error) throw error;
+  return data.id;
+};

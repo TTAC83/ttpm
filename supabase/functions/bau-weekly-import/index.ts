@@ -9,8 +9,10 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+// Admin client (service role) for storage access only
+const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false }
 });
 
@@ -26,9 +28,9 @@ serve(async (req) => {
     const { path, upload_id } = await req.json();
     console.log('Processing upload:', { path, upload_id });
 
-    // Create a per-request client that carries the caller's JWT
+    // Create a per-request DB client that carries the caller's JWT
     const authHeader = req.headers.get('Authorization') || '';
-    const client = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: { persistSession: false },
       global: { headers: { Authorization: authHeader } }
     });
@@ -42,7 +44,7 @@ serve(async (req) => {
 
     // 1) Download from Storage
     console.log('Downloading file from storage:', path);
-    const { data: fileData, error: dlErr } = await supabase.storage
+    const { data: fileData, error: dlErr } = await admin.storage
       .from("bau-weekly-uploads")
       .download(path);
     
@@ -94,7 +96,7 @@ serve(async (req) => {
         console.log(`Processing row ${i + 1} for customer: ${customerName}`);
 
         // Find BAU customer id
-        const { data: bauIdRes, error: idErr } = await client.rpc("find_bau_customer_id", { 
+        const { data: bauIdRes, error: idErr } = await db.rpc("find_bau_customer_id", { 
           p_customer_name: customerName 
         });
         
@@ -113,7 +115,7 @@ serve(async (req) => {
           let companyId: string | null = null;
           
           // Try to find or create a company based on customer name
-          const { data: existingCompanies, error: companySearchErr } = await client
+          const { data: existingCompanies, error: companySearchErr } = await db
             .from('companies')
             .select('id, name')
             .ilike('name', `%${customerName}%`)
@@ -126,7 +128,7 @@ serve(async (req) => {
             console.log(`Found existing company for customer: ${existingCompanies[0].name}`);
           } else {
             // Create a new company
-            const { data: newCompany, error: createCompanyErr } = await client
+            const { data: newCompany, error: createCompanyErr } = await db
               .from('companies')
               .insert({ name: customerName, is_internal: false })
               .select('id')
@@ -143,7 +145,7 @@ serve(async (req) => {
           }
           
           // Create the BAU customer
-          const { data: newCustomerRes, error: createErr } = await client.rpc("bau_create_customer", {
+          const { data: newCustomerRes, error: createErr } = await db.rpc("bau_create_customer", {
             p_company_id: companyId,
             p_name: customerName,
             p_site_name: null,
@@ -185,7 +187,7 @@ serve(async (req) => {
             }
           }
 
-          const { error: upErr } = await client.rpc("upsert_bau_weekly_metric", {
+          const { error: upErr } = await db.rpc("upsert_bau_weekly_metric", {
             p_bau_customer_id: bau_customer_id,
             p_date_from: dateFrom.toISOString().slice(0, 10),
             p_date_to: dateTo.toISOString().slice(0, 10),

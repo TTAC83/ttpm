@@ -96,6 +96,33 @@ export const UnassignedExpensesBatch = () => {
     }));
   };
 
+  const handleAutoAssignSuggestions = () => {
+    const newAssignments = { ...assignments };
+    let assignedCount = 0;
+
+    Object.entries(suggestions).forEach(([expenseId, expenseSuggestions]) => {
+      if (expenseSuggestions.length > 0 && !assignments[expenseId]) {
+        newAssignments[expenseId] = expenseSuggestions[0].user_id;
+        assignedCount++;
+      }
+    });
+
+    setAssignments(newAssignments);
+    
+    if (assignedCount > 0) {
+      toast({
+        title: 'Auto-assigned suggestions',
+        description: `Automatically assigned ${assignedCount} expenses based on suggestions`,
+      });
+    } else {
+      toast({
+        title: 'No assignments made',
+        description: 'All expenses either already have assignments or no suggestions available',
+        variant: 'destructive'
+      });
+    }
+  };
+
 
   const handleSaveAll = async () => {
     const assignmentEntries = Object.entries(assignments).filter(([_, userId]) => userId);
@@ -172,8 +199,18 @@ export const UnassignedExpensesBatch = () => {
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between mb-6">
-            <div className="text-sm text-muted-foreground">
-              Assign users to expenses and save all changes at once
+            <div className="flex items-center gap-4">
+              <div className="text-sm text-muted-foreground">
+                Assign users to expenses and save all changes at once
+              </div>
+              <Button
+                onClick={handleAutoAssignSuggestions}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Users className="h-4 w-4" />
+                Auto-assign Suggestions
+              </Button>
             </div>
             <Button
               onClick={handleSaveAll}

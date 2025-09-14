@@ -351,7 +351,7 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
               <div className="space-y-4">
                 <ToggleGroup
                   type="single"
-                  value={health}
+                  value={health || undefined}
                   onValueChange={(value) => {
                     if (value) {
                       setHealth(value as 'green' | 'red');

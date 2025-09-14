@@ -19,7 +19,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { createBauCustomer, getCompanies, createCompany } from '@/lib/bauService';
+import { createBauCustomer, getCompanies } from '@/lib/bauService';
 import { useToast } from '@/hooks/use-toast';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -80,8 +80,9 @@ export const NewBAUCustomer = () => {
       }));
       setCompanySearchValue(existingCompany.name);
     } else {
-      // Create new company
+      // Create new company with dynamic import to avoid caching issues
       try {
+        const { createCompany } = await import('@/lib/bauService');
         const newCompanyId = await createCompany(value);
         const newCompany = { id: newCompanyId, name: value };
         setCompanies(prev => [...prev, newCompany]);

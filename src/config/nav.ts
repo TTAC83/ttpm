@@ -79,13 +79,18 @@ export const NAV: NavItem[] = [
     ]
   },
 
-  // 3) BAU Customers
+  // 3) BAU
   {
-    label: "BAU Customers",
+    label: "BAU",
     iconName: "Headphones",
-    to: "/app/bau",
     roles: ["internal_admin", "internal_user", "external_admin", "external_user"],
-    matchPaths: ["/app/bau"]
+    children: [
+      {
+        label: "Projects",
+        to: "/app/bau",
+        matchPaths: ["/app/bau"],
+      }
+    ]
   },
 
   // 4) Expenses

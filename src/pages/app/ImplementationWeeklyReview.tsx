@@ -496,7 +496,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
                     <td className="py-2 pr-3">{e.start_date ?? "-"}</td>
                     <td className="py-2 pr-3">{e.end_date ?? "-"}</td>
                     <td className="py-2 pr-3">{e.is_critical ? "Yes" : "No"}</td>
-                    <td className="py-2 pr-3">{e.created_by ?? "-"}</td>
+                    <td className="py-2 pr-3">{e.creator_profile?.name ?? "-"}</td>
                   </tr>
                 ))}
               </tbody>

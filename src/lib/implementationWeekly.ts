@@ -109,6 +109,7 @@ export type EventRow = {
   end_date: string | null;
   is_critical: boolean | null;
   created_by: string | null;
+  creator_profile: { name: string } | null;
 };
 
 export async function loadEventsAroundWeek(companyId: string, mondayISO: string): Promise<EventRow[]> {
@@ -120,15 +121,33 @@ export async function loadEventsAroundWeek(companyId: string, mondayISO: string)
   if (projIdsRes.error) throw projIdsRes.error;
   const projIds = (projIdsRes.data ?? []).map(r => r.id);
 
-  const { data, error } = await supabase
+  // Get events
+  const { data: events, error: eventsError } = await supabase
     .from("project_events")
     .select("id,project_id,title,description,start_date,end_date,is_critical,created_by")
     .in("project_id", projIds)
     .gte("start_date", new Date(new Date(mondayISO).getTime() - 7*24*3600*1000).toISOString().slice(0,10))
     .lte("start_date", new Date(new Date(mondayISO).getTime() + 7*24*3600*1000).toISOString().slice(0,10))
     .order("start_date", { ascending: true });
-  if (error) throw error;
-  return data ?? [];
+  if (eventsError) throw eventsError;
+
+  if (!events || events.length === 0) return [];
+
+  // Get creator profiles
+  const creatorIds = [...new Set(events.map(e => e.created_by).filter(Boolean))];
+  const { data: profiles, error: profilesError } = await supabase
+    .from("profiles")
+    .select("user_id,name")
+    .in("user_id", creatorIds);
+  if (profilesError) throw profilesError;
+
+  // Join the data
+  const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
+  
+  return events.map(event => ({
+    ...event,
+    creator_profile: event.created_by ? profileMap.get(event.created_by) || null : null
+  }));
 }
 
 export type ImplWeeklyReview = {

@@ -12,7 +12,12 @@ type Company = { company_id: string; company_name: string };
 type Week = { week_start: string; week_end: string; available_at: string };
 
 function formatWeekLabel(w: Week) {
-  const fmt = (d: string) => new Date(d + "T00:00:00").toLocaleDateString(undefined, { weekday: "short", day: "2-digit", month: "short" });
+  const fmt = (d: string) => new Date(d + "T00:00:00").toLocaleDateString('en-GB', { 
+    weekday: "short", 
+    day: "2-digit", 
+    month: "short",
+    timeZone: 'Europe/London'
+  });
   return `${fmt(w.week_start)} — ${fmt(w.week_end)}`;
 }
 

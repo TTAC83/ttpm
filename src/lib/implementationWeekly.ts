@@ -12,9 +12,15 @@ export async function listWeeks(): Promise<ImplWeek[]> {
   const { data, error } = await supabase
     .from("impl_weekly_weeks")
     .select("week_start,week_end,available_at")
+    .gte("week_start", "2024-08-05")  // Only include proper Monday weeks
     .order("week_start", { ascending: false });
   if (error) throw error;
-  return data ?? [];
+  // Filter to ensure we only get weeks that start on Monday (dow = 1)
+  const mondayWeeks = (data ?? []).filter(week => {
+    const weekStart = new Date(week.week_start + "T00:00:00");
+    return weekStart.getDay() === 1; // Monday
+  });
+  return mondayWeeks;
 }
 
 export async function listImplCompanies(): Promise<ImplCompany[]> {

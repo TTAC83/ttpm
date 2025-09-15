@@ -23,7 +23,7 @@ interface Action {
   profiles?: {
     name: string;
   };
-  project_tasks: {
+  project_tasks?: {
     task_title: string;
     step_name: string;
     projects: {
@@ -31,6 +31,12 @@ interface Action {
       companies: {
         name: string;
       };
+    };
+  };
+  projects?: {
+    name: string;
+    companies: {
+      name: string;
     };
   };
 }
@@ -89,13 +95,17 @@ export const Actions = () => {
         .select(`
           *,
           profiles:assignee(name),
-          project_tasks!inner(
+          project_tasks(
             task_title,
             step_name,
             projects!inner(
               name,
               companies!inner(name)
             )
+          ),
+          projects(
+            name,
+            companies!inner(name)
           )
         `)
         .order('created_at', { ascending: false });
@@ -154,8 +164,8 @@ export const Actions = () => {
 
     // Apply filters
     filtered = filtered.filter(action => {
-      const projectName = action.project_tasks?.projects?.name || '';
-      const companyName = action.project_tasks?.projects?.companies?.name || '';
+      const projectName = action.project_tasks?.projects?.name || action.projects?.name || '';
+      const companyName = action.project_tasks?.projects?.companies?.name || action.projects?.companies?.name || '';
       const taskName = action.project_tasks?.task_title || '';
       const assigneeName = action.profiles?.name || '';
       
@@ -180,12 +190,12 @@ export const Actions = () => {
 
         switch (sortConfig.key) {
           case 'project_name':
-            aValue = a.project_tasks?.projects?.name || '';
-            bValue = b.project_tasks?.projects?.name || '';
+            aValue = a.project_tasks?.projects?.name || a.projects?.name || '';
+            bValue = b.project_tasks?.projects?.name || b.projects?.name || '';
             break;
           case 'company_name':
-            aValue = a.project_tasks?.projects?.companies?.name || '';
-            bValue = b.project_tasks?.projects?.companies?.name || '';
+            aValue = a.project_tasks?.projects?.companies?.name || a.projects?.companies?.name || '';
+            bValue = b.project_tasks?.projects?.companies?.name || b.projects?.companies?.name || '';
             break;
           case 'task_name':
             aValue = a.project_tasks?.task_title || '';
@@ -214,8 +224,8 @@ export const Actions = () => {
   };
 
   // Get unique values for filter dropdowns
-  const uniqueProjects = [...new Set(actions.map(action => action.project_tasks?.projects?.name).filter(name => name && name.trim() !== ''))];
-  const uniqueCompanies = [...new Set(actions.map(action => action.project_tasks?.projects?.companies?.name).filter(name => name && name.trim() !== ''))];
+  const uniqueProjects = [...new Set(actions.map(action => action.project_tasks?.projects?.name || action.projects?.name).filter(name => name && name.trim() !== ''))];
+  const uniqueCompanies = [...new Set(actions.map(action => action.project_tasks?.projects?.companies?.name || action.projects?.companies?.name).filter(name => name && name.trim() !== ''))];
   const uniqueTasks = [...new Set(actions.map(action => action.project_tasks?.task_title).filter(task => task && task.trim() !== ''))];
   const uniqueStatuses = [...new Set(actions.map(action => action.status).filter(status => status && status.trim() !== ''))];
   const uniqueAssignees = [...new Set(actions.map(action => action.profiles?.name).filter(name => name && name.trim() !== ''))];
@@ -468,19 +478,25 @@ export const Actions = () => {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{action.project_tasks.projects.name}</div>
+                          <div className="font-medium">
+                            {action.project_tasks?.projects?.name || action.projects?.name || 'Unknown Project'}
+                          </div>
                           <div className="text-sm text-muted-foreground">
-                            {action.project_tasks.projects.companies.name}
+                            {action.project_tasks?.projects?.companies?.name || action.projects?.companies?.name || 'Unknown Company'}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div>
-                          <div className="font-medium">{action.project_tasks.step_name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {action.project_tasks.task_title}
+                        {action.project_tasks ? (
+                          <div>
+                            <div className="font-medium">{action.project_tasks.step_name}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {action.project_tasks.task_title}
+                            </div>
                           </div>
-                        </div>
+                        ) : (
+                          <div className="text-muted-foreground">Project-level action</div>
+                        )}
                       </TableCell>
                       <TableCell>
                         {action.profiles?.name || 'Unassigned'}

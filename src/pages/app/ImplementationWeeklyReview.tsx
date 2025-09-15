@@ -294,11 +294,16 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
       console.error('Auto-save failed:', e);
       toast.error("Auto-save failed: " + (e.message ?? "Unknown error"));
     },
+    retry: 1, // Only retry once
+    retryDelay: 1000, // 1 second delay before retry
   });
 
   // Auto-save functionality
   const autoSave = useCallback(
     async (projectStatusValue: "on_track"|"off_track"|null, customerHealthValue: "green"|"red"|null, notesValue: string, reasonCodeValue: string) => {
+      // Don't auto-save if another save is already in progress
+      if (autoSaveMutation.isPending) return;
+      
       if (!projectStatusValue || !customerHealthValue) return; // Don't save if required fields are missing
 
       // Validate required fields when health is red
@@ -317,7 +322,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
         console.error('Auto-save failed:', error);
       }
     },
-    [companyId, weekStart, autoSaveMutation]
+    [autoSaveMutation]
   );
 
   // Debounced auto-save for text fields
@@ -339,28 +344,28 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     if (projectStatus && customerHealth) {
       autoSave(projectStatus, customerHealth, notes, reasonCode);
     }
-  }, [projectStatus, autoSave, customerHealth, notes, reasonCode]);
+  }, [projectStatus]);
 
   // Auto-save when customer health changes (immediate)
   useEffect(() => {
     if (projectStatus && customerHealth) {
       autoSave(projectStatus, customerHealth, notes, reasonCode);
     }
-  }, [customerHealth, autoSave, projectStatus, notes, reasonCode]);
+  }, [customerHealth]);
 
   // Auto-save when reason code changes (immediate, since it's a select)
   useEffect(() => {
     if (projectStatus && customerHealth && reasonCode) {
       autoSave(projectStatus, customerHealth, notes, reasonCode);
     }
-  }, [reasonCode, autoSave, projectStatus, customerHealth, notes]);
+  }, [reasonCode]);
 
   // Auto-save when notes change (debounced)
   useEffect(() => {
-    if (projectStatus && customerHealth && notes) {
+    if (projectStatus && customerHealth) {
       triggerAutoSave(projectStatus, customerHealth, notes, reasonCode);
     }
-  }, [notes, triggerAutoSave, projectStatus, customerHealth, reasonCode]);
+  }, [notes]);
 
   const handleEditTask = (task: TaskRow) => {
     setEditingTask(task);

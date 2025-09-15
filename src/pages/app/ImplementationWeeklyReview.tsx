@@ -250,6 +250,8 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   const [customerHealth, setCustomerHealth] = useState<"green"|"red"|null>(null);
   const [reasonCode, setReasonCode] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
+  const [statusTouched, setStatusTouched] = useState(false);
+  const [healthTouched, setHealthTouched] = useState(false);
 
   // Track previous values to detect customer/week changes
   const previousCompanyId = useRef(companyId);
@@ -614,22 +616,22 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
             <div className="text-sm mb-1">Project Status</div>
             <div className="flex gap-2">
               <Button 
-                variant={projectStatus === "on_track" ? "default" : "outline"} 
+                variant={statusTouched ? (projectStatus === "on_track" ? "default" : "outline") : "outline"}
                 className={
-                  projectStatus === null ? "bg-gray-400 text-gray-600 border-gray-400" :
+                  !statusTouched ? "bg-muted text-muted-foreground border-muted" :
                   projectStatus === "on_track" ? "bg-green-600 hover:bg-green-700 text-white" : ""
                 }
-                onClick={() => setProjectStatus("on_track")}
+                onClick={() => { setProjectStatus("on_track"); setStatusTouched(true); }}
               >
                 On track
               </Button>
               <Button 
-                variant={projectStatus === "off_track" ? "default" : "outline"} 
+                variant={statusTouched ? (projectStatus === "off_track" ? "default" : "outline") : "outline"}
                 className={
-                  projectStatus === null ? "bg-gray-400 text-gray-600 border-gray-400" :
+                  !statusTouched ? "bg-muted text-muted-foreground border-muted" :
                   projectStatus === "off_track" ? "bg-red-600 hover:bg-red-700 text-white" : ""
                 }
-                onClick={() => setProjectStatus("off_track")}
+                onClick={() => { setProjectStatus("off_track"); setStatusTouched(true); }}
               >
                 Off track
               </Button>
@@ -639,22 +641,22 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
             <div className="text-sm mb-1">Customer Health</div>
             <div className="flex gap-2">
               <Button 
-                variant={customerHealth === "green" ? "default" : "outline"} 
+                variant={healthTouched ? (customerHealth === "green" ? "default" : "outline") : "outline"} 
                 className={
-                  customerHealth === null ? "bg-gray-400 text-gray-600 border-gray-400" :
+                  !healthTouched ? "bg-muted text-muted-foreground border-muted" :
                   customerHealth === "green" ? "bg-green-600 hover:bg-green-700 text-white" : ""
                 }
-                onClick={() => setCustomerHealth("green")}
+                onClick={() => { setCustomerHealth("green"); setHealthTouched(true); }}
               >
                 Green
               </Button>
               <Button 
-                variant={customerHealth === "red" ? "default" : "outline"} 
+                variant={healthTouched ? (customerHealth === "red" ? "default" : "outline") : "outline"} 
                 className={
-                  customerHealth === null ? "bg-gray-400 text-gray-600 border-gray-400" :
+                  !healthTouched ? "bg-muted text-muted-foreground border-muted" :
                   customerHealth === "red" ? "bg-red-600 hover:bg-red-700 text-white" : ""
                 }
-                onClick={() => setCustomerHealth("red")}
+                onClick={() => { setCustomerHealth("red"); setHealthTouched(true); }}
               >
                 Red
               </Button>

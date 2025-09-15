@@ -45,7 +45,7 @@ export type TaskRow = {
   actual_end: string | null;
 };
 
-export async function loadOverdueTasks(companyId: string): Promise<TaskRow[]> {
+export async function loadOverdueTasks(companyId: string): Promise<(TaskRow & { subtasks: any[] })[]> {
   const today = new Date().toISOString().split('T')[0]; // Today as YYYY-MM-DD
   
   const { data, error } = await supabase
@@ -55,9 +55,32 @@ export async function loadOverdueTasks(companyId: string): Promise<TaskRow[]> {
       (await supabase.from("projects").select("id").eq("company_id", companyId).in("domain", ["IoT","Vision","Hybrid"])).data?.map(r => r.id) ?? []
     )
     .or(`and(planned_end.lte.${today},actual_end.is.null),and(planned_start.lte.${today},actual_start.is.null)`);
-  
+
   if (error) throw error;
-  return data ?? [];
+  
+  const tasks = data ?? [];
+  
+  // Fetch subtasks for all overdue tasks
+  const taskIds = tasks.map(task => task.id);
+  let subtasksData: any[] = [];
+  
+  if (taskIds.length > 0) {
+    const { data: subtasks, error: subtasksError } = await supabase
+      .from('subtasks')
+      .select('*')
+      .in('task_id', taskIds);
+    
+    if (subtasksError) throw subtasksError;
+    subtasksData = subtasks || [];
+  }
+
+  // Attach subtasks to their parent tasks
+  const tasksWithSubtasks = tasks.map(task => ({
+    ...task,
+    subtasks: subtasksData.filter(subtask => subtask.task_id === task.id)
+  }));
+
+  return tasksWithSubtasks;
 }
 
 export type ActionRow = {

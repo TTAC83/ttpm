@@ -532,23 +532,43 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
                                      computedStatus.color as "default" | "destructive" | "outline" | "secondary";
                   
                   return (
-                    <tr key={t.id} className="border-t">
-                      <td className="py-2 pr-3">{t.task_title ?? "-"}</td>
-                      <td className="py-2 pr-3">{t.step_name ?? "-"}</td>
-                      <td className="py-2 pr-3">{t.assignee ?? "-"}</td>
-                      <td className="py-2 pr-3">
-                        <Badge variant="outline" className="bg-red-500 text-black border-red-600 font-medium">
-                          {computedStatus.status}
-                        </Badge>
-                      </td>
-                      <td className="py-2 pr-3">{t.planned_start ?? "-"}</td>
-                      <td className="py-2 pr-3">{t.planned_end ?? "-"}</td>
-                      <td className="py-2 pr-3">
-                        <Button variant="outline" onClick={() => handleEditTask(t)}>
-                          Edit
-                        </Button>
-                      </td>
-                    </tr>
+                    <>
+                      <tr key={t.id} className="border-t">
+                        <td className="py-2 pr-3">{t.task_title ?? "-"}</td>
+                        <td className="py-2 pr-3">{t.step_name ?? "-"}</td>
+                        <td className="py-2 pr-3">{t.assignee ?? "-"}</td>
+                        <td className="py-2 pr-3">
+                          <Badge variant="outline" className="bg-red-500 text-black border-red-600 font-medium">
+                            {computedStatus.status}
+                          </Badge>
+                        </td>
+                        <td className="py-2 pr-3">{t.planned_start ?? "-"}</td>
+                        <td className="py-2 pr-3">{t.planned_end ?? "-"}</td>
+                        <td className="py-2 pr-3">
+                          <Button variant="outline" onClick={() => handleEditTask(t)}>
+                            Edit
+                          </Button>
+                        </td>
+                      </tr>
+                      {/* Display subtasks */}
+                      {t.subtasks && t.subtasks.length > 0 && t.subtasks.map((subtask: any) => (
+                        <tr key={`subtask-${subtask.id}`} className="border-t bg-muted/30">
+                          <td className="py-2 pr-3 pl-6 text-sm opacity-75">
+                            ↳ {subtask.title}
+                          </td>
+                          <td className="py-2 pr-3 text-sm opacity-75">-</td>
+                          <td className="py-2 pr-3 text-sm opacity-75">{subtask.assignee ?? "-"}</td>
+                          <td className="py-2 pr-3 text-sm opacity-75">
+                            <Badge variant="outline" className="text-xs">
+                              {subtask.status ?? "Not Started"}
+                            </Badge>
+                          </td>
+                          <td className="py-2 pr-3 text-sm opacity-75">{subtask.planned_start ?? "-"}</td>
+                          <td className="py-2 pr-3 text-sm opacity-75">{subtask.planned_end ?? "-"}</td>
+                          <td className="py-2 pr-3"></td>
+                        </tr>
+                      ))}
+                    </>
                   );
                 })}
               </tbody>

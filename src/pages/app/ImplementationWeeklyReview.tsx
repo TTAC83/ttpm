@@ -616,8 +616,8 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
               <Button 
                 variant={projectStatus === "on_track" ? "default" : "outline"} 
                 className={
-                  projectStatus === "on_track" ? "bg-green-600 hover:bg-green-700 text-white" :
-                  projectStatus === null ? "bg-gray-400 text-gray-600 border-gray-400" : ""
+                  projectStatus === null ? "bg-gray-400 text-gray-600 border-gray-400" :
+                  projectStatus === "on_track" ? "bg-green-600 hover:bg-green-700 text-white" : ""
                 }
                 onClick={() => setProjectStatus("on_track")}
               >
@@ -626,8 +626,8 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
               <Button 
                 variant={projectStatus === "off_track" ? "default" : "outline"} 
                 className={
-                  projectStatus === "off_track" ? "bg-red-600 hover:bg-red-700 text-white" :
-                  projectStatus === null ? "bg-gray-400 text-gray-600 border-gray-400" : ""
+                  projectStatus === null ? "bg-gray-400 text-gray-600 border-gray-400" :
+                  projectStatus === "off_track" ? "bg-red-600 hover:bg-red-700 text-white" : ""
                 }
                 onClick={() => setProjectStatus("off_track")}
               >
@@ -641,8 +641,8 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
               <Button 
                 variant={customerHealth === "green" ? "default" : "outline"} 
                 className={
-                  customerHealth === "green" ? "bg-green-600 hover:bg-green-700 text-white" :
-                  customerHealth === null ? "bg-gray-400 text-gray-600 border-gray-400" : ""
+                  customerHealth === null ? "bg-gray-400 text-gray-600 border-gray-400" :
+                  customerHealth === "green" ? "bg-green-600 hover:bg-green-700 text-white" : ""
                 }
                 onClick={() => setCustomerHealth("green")}
               >
@@ -651,8 +651,8 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
               <Button 
                 variant={customerHealth === "red" ? "default" : "outline"} 
                 className={
-                  customerHealth === "red" ? "bg-red-600 hover:bg-red-700 text-white" :
-                  customerHealth === null ? "bg-gray-400 text-gray-600 border-gray-400" : ""
+                  customerHealth === null ? "bg-gray-400 text-gray-600 border-gray-400" :
+                  customerHealth === "red" ? "bg-red-600 hover:bg-red-700 text-white" : ""
                 }
                 onClick={() => setCustomerHealth("red")}
               >

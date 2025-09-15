@@ -39,20 +39,23 @@ export type TaskRow = {
   step_name: string | null;
   assignee: string | null;
   status: string | null;
+  planned_start: string | null;
   planned_end: string | null;
+  actual_start: string | null;
   actual_end: string | null;
 };
 
 export async function loadOverdueTasks(companyId: string): Promise<TaskRow[]> {
+  const today = new Date().toISOString().split('T')[0]; // Today as YYYY-MM-DD
+  
   const { data, error } = await supabase
     .from("project_tasks")
-    .select("id,project_id,task_title,step_name,assignee,status,planned_end,actual_end")
+    .select("id,project_id,task_title,step_name,assignee,status,planned_start,planned_end,actual_start,actual_end")
     .in("project_id",
       (await supabase.from("projects").select("id").eq("company_id", companyId).in("domain", ["IoT","Vision","Hybrid"])).data?.map(r => r.id) ?? []
     )
-    .in("status", ["Planned", "In Progress", "Blocked"])
-    .not("planned_end", "is", null)
-    .lt("planned_end", new Date().toISOString().split('T')[0]);
+    .or(`and(planned_end.lte.${today},actual_end.is.null),and(planned_start.lte.${today},actual_start.is.null)`);
+  
   if (error) throw error;
   return data ?? [];
 }

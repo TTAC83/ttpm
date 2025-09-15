@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { computeTaskStatus } from "@/lib/taskStatus";
 
 type Company = { company_id: string; company_name: string };
 type Week = { week_start: string; week_end: string; available_at: string };
@@ -217,30 +219,46 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
                   <th className="py-2 pr-3">Task</th>
                   <th className="py-2 pr-3">Step</th>
                   <th className="py-2 pr-3">Assignee</th>
-                  <th className="py-2 pr-3">Status</th>
+                  <th className="py-2 pr-3">Computed Status</th>
+                  <th className="py-2 pr-3">Planned Start</th>
                   <th className="py-2 pr-3">Planned End</th>
                   <th className="py-2 pr-3"></th>
                 </tr>
               </thead>
               <tbody>
-                {overdueQ.data!.map((t) => (
-                  <tr key={t.id} className="border-t">
-                    <td className="py-2 pr-3">{t.task_title ?? "-"}</td>
-                    <td className="py-2 pr-3">{t.step_name ?? "-"}</td>
-                    <td className="py-2 pr-3">{t.assignee ?? "-"}</td>
-                    <td className="py-2 pr-3">{t.status ?? "-"}</td>
-                    <td className="py-2 pr-3">{t.planned_end ?? "-"}</td>
-                    <td className="py-2 pr-3">
-                      {/* Hook up to your existing Edit Task flow; replace with your component/navigation */}
-                      <Button variant="outline" onClick={()=>{
-                        // Example: navigate(`/app/projects/task/${t.id}?from=impl-weekly`)
-                        // Or open your existing modal:
-                        // openEditTaskModal(t.id, { onClose: ()=> overdueQ.refetch() })
-                        toast.message("Open your existing Edit Task UI for task " + t.id);
-                      }}>Edit</Button>
-                    </td>
-                  </tr>
-                ))}
+                {overdueQ.data!.map((t) => {
+                  const computedStatus = computeTaskStatus({
+                    planned_start: t.planned_start,
+                    planned_end: t.planned_end,
+                    actual_start: t.actual_start,
+                    actual_end: t.actual_end
+                  });
+                  
+                  // Map status colors to available Badge variants
+                  const badgeVariant = computedStatus.color === 'success' ? 'default' : 
+                                     computedStatus.color === 'warning' ? 'secondary' : 
+                                     computedStatus.color as "default" | "destructive" | "outline" | "secondary";
+                  
+                  return (
+                    <tr key={t.id} className="border-t">
+                      <td className="py-2 pr-3">{t.task_title ?? "-"}</td>
+                      <td className="py-2 pr-3">{t.step_name ?? "-"}</td>
+                      <td className="py-2 pr-3">{t.assignee ?? "-"}</td>
+                      <td className="py-2 pr-3">
+                        <Badge variant={badgeVariant} className={computedStatus.bgColor}>
+                          {computedStatus.status}
+                        </Badge>
+                      </td>
+                      <td className="py-2 pr-3">{t.planned_start ?? "-"}</td>
+                      <td className="py-2 pr-3">{t.planned_end ?? "-"}</td>
+                      <td className="py-2 pr-3">
+                        <Button variant="outline" onClick={()=>{
+                          toast.message("Open your existing Edit Task UI for task " + t.id);
+                        }}>Edit</Button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

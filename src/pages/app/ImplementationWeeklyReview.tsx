@@ -356,6 +356,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["impl-review", companyId, weekStart] });
+      qc.invalidateQueries({ queryKey: ["impl-stats", weekStart] });
     },
     onError: (e: any) => {
       console.error('Auto-save failed:', e);

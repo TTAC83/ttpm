@@ -26,16 +26,21 @@ export type NavItem = {
 };
 
 export const NAV: NavItem[] = [
-  // 1) Solutions Consulting
+  // 1) BAU
   {
-    label: "Solutions Consulting",
-    iconName: "Briefcase",
+    label: "BAU",
+    iconName: "Headphones",
     roles: ["internal_admin", "internal_user", "external_admin", "external_user"],
     children: [
       {
         label: "Projects",
-        to: "/app/solutions",
-        matchPaths: ["/app/solutions"],
+        to: "/app/bau",
+        matchPaths: ["/app/bau"],
+      },
+      {
+        label: "Weekly Review",
+        to: "/app/bau/weekly-review-page",
+        matchPaths: ["/app/bau/weekly-review-page"],
       }
     ]
   },
@@ -85,21 +90,16 @@ export const NAV: NavItem[] = [
     ]
   },
 
-  // 3) BAU
+  // 3) Solutions Consulting
   {
-    label: "BAU",
-    iconName: "Headphones",
+    label: "Solutions Consulting",
+    iconName: "Briefcase",
     roles: ["internal_admin", "internal_user", "external_admin", "external_user"],
     children: [
       {
         label: "Projects",
-        to: "/app/bau",
-        matchPaths: ["/app/bau"],
-      },
-      {
-        label: "Weekly Review",
-        to: "/app/bau/weekly-review-page",
-        matchPaths: ["/app/bau/weekly-review-page"],
+        to: "/app/solutions",
+        matchPaths: ["/app/solutions"],
       }
     ]
   },

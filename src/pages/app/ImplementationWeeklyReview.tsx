@@ -613,15 +613,51 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
           <div>
             <div className="text-sm mb-1">Project Status</div>
             <div className="flex gap-2">
-              <Button variant={projectStatus === "on_track" ? "default":"outline"} onClick={()=>setProjectStatus("on_track")}>On track</Button>
-              <Button variant={projectStatus === "off_track" ? "default":"outline"} onClick={()=>setProjectStatus("off_track")}>Off track</Button>
+              <Button 
+                variant={projectStatus === "on_track" ? "default" : "outline"} 
+                className={
+                  projectStatus === "on_track" ? "bg-green-600 hover:bg-green-700 text-white" :
+                  projectStatus === null ? "bg-gray-400 text-gray-600 border-gray-400" : ""
+                }
+                onClick={() => setProjectStatus("on_track")}
+              >
+                On track
+              </Button>
+              <Button 
+                variant={projectStatus === "off_track" ? "default" : "outline"} 
+                className={
+                  projectStatus === "off_track" ? "bg-red-600 hover:bg-red-700 text-white" :
+                  projectStatus === null ? "bg-gray-400 text-gray-600 border-gray-400" : ""
+                }
+                onClick={() => setProjectStatus("off_track")}
+              >
+                Off track
+              </Button>
             </div>
           </div>
           <div>
             <div className="text-sm mb-1">Customer Health</div>
             <div className="flex gap-2">
-              <Button variant={customerHealth === "green" ? "default":"outline"} onClick={()=>setCustomerHealth("green")}>Green</Button>
-              <Button variant={customerHealth === "red" ? "default":"outline"} onClick={()=>setCustomerHealth("red")}>Red</Button>
+              <Button 
+                variant={customerHealth === "green" ? "default" : "outline"} 
+                className={
+                  customerHealth === "green" ? "bg-green-600 hover:bg-green-700 text-white" :
+                  customerHealth === null ? "bg-gray-400 text-gray-600 border-gray-400" : ""
+                }
+                onClick={() => setCustomerHealth("green")}
+              >
+                Green
+              </Button>
+              <Button 
+                variant={customerHealth === "red" ? "default" : "outline"} 
+                className={
+                  customerHealth === "red" ? "bg-red-600 hover:bg-red-700 text-white" :
+                  customerHealth === null ? "bg-gray-400 text-gray-600 border-gray-400" : ""
+                }
+                onClick={() => setCustomerHealth("red")}
+              >
+                Red
+              </Button>
             </div>
           </div>
           

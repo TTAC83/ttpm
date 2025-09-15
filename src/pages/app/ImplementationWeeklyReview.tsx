@@ -536,7 +536,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
                   return (
                     <tr 
                       key={a.id} 
-                      className={`border-t ${isOverdue ? 'bg-red-50' : ''}`}
+                      className={`border-t ${isOverdue ? 'bg-red-50' : ''} ${a.is_critical ? 'border-2 border-red-500' : ''}`}
                     >
                       <td className="py-2 pr-3">{a.title ?? "-"}</td>
                       <td className="py-2 pr-3">{a.profiles?.name ?? "-"}</td>
@@ -589,7 +589,10 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
               </thead>
               <tbody>
                 {eventsQ.data!.map(e => (
-                  <tr key={e.id} className="border-t">
+                  <tr 
+                    key={e.id} 
+                    className={`border-t ${e.is_critical ? 'border-2 border-red-500' : ''}`}
+                  >
                     <td className="py-2 pr-3">{e.title ?? "-"}</td>
                     <td className="py-2 pr-3">{e.start_date ?? "-"}</td>
                     <td className="py-2 pr-3">{e.end_date ?? "-"}</td>

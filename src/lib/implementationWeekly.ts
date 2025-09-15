@@ -190,3 +190,52 @@ export async function saveReview(params: {
   });
   if (error) throw error;
 }
+
+export type WeeklyStats = {
+  total_companies: number;
+  on_track: number;
+  off_track: number;
+  green_health: number;
+  red_health: number;
+  no_status: number;
+  no_health: number;
+};
+
+export async function loadWeeklyStats(weekStartISO: string): Promise<WeeklyStats> {
+  // Get all implementation companies
+  const companiesRes = await supabase
+    .from("v_impl_companies")
+    .select("company_id");
+  if (companiesRes.error) throw companiesRes.error;
+  
+  const companyIds = (companiesRes.data || []).map(c => c.company_id);
+  
+  // Get all reviews for this week
+  const { data: reviews, error } = await supabase
+    .from("impl_weekly_reviews")
+    .select("project_status, customer_health")
+    .eq("week_start", weekStartISO)
+    .in("company_id", companyIds);
+  
+  if (error) throw error;
+  
+  const total_companies = companyIds.length;
+  const reviewsData = reviews || [];
+  
+  const on_track = reviewsData.filter(r => r.project_status === "on_track").length;
+  const off_track = reviewsData.filter(r => r.project_status === "off_track").length;
+  const green_health = reviewsData.filter(r => r.customer_health === "green").length;
+  const red_health = reviewsData.filter(r => r.customer_health === "red").length;
+  const no_status = total_companies - on_track - off_track;
+  const no_health = total_companies - green_health - red_health;
+  
+  return {
+    total_companies,
+    on_track,
+    off_track,
+    green_health,
+    red_health,
+    no_status,
+    no_health
+  };
+}

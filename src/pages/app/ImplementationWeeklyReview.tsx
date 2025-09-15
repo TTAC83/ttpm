@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ensureWeeks, listWeeks, listImplCompanies, loadOverdueTasks, loadOpenActions, loadEventsAroundWeek, loadReview, saveReview } from "@/lib/implementationWeekly";
+import { ensureWeeks, listWeeks, listImplCompanies, loadOverdueTasks, loadOpenActions, loadEventsAroundWeek, loadReview, saveReview, loadWeeklyStats } from "@/lib/implementationWeekly";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,6 +50,14 @@ export default function ImplementationWeeklyReviewPage() {
   const [search, setSearch] = useState("");
   const [selectedWeek, setSelectedWeek] = useState<string | null>(null);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
+
+  // Stats query for selected week
+  const statsQ = useQuery({
+    queryKey: ["impl-stats", selectedWeek],
+    queryFn: () => selectedWeek ? loadWeeklyStats(selectedWeek) : Promise.resolve(null),
+    enabled: !!selectedWeek,
+    staleTime: 5 * 60 * 1000,
+  });
 
   // Ensure weeks exist (current + next)
   useEffect(() => { 
@@ -127,6 +135,63 @@ export default function ImplementationWeeklyReviewPage() {
           </div>
         </div>
       </Card>
+
+      {/* Stats Banner */}
+      {selectedWeek && (
+        <Card className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">
+                {statsQ.data?.total_companies || 0}
+              </div>
+              <div className="text-sm text-muted-foreground">Total Companies</div>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-lg">
+                <span className="text-green-600 font-semibold">
+                  {statsQ.data?.on_track || 0}
+                </span>
+                {" / "}
+                <span className="text-red-600 font-semibold">
+                  {statsQ.data?.off_track || 0}
+                </span>
+                {" / "}
+                <span className="text-gray-500">
+                  {statsQ.data?.no_status || 0}
+                </span>
+              </div>
+              <div className="text-sm text-muted-foreground">On Track / Off Track / No Status</div>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-lg">
+                <span className="text-green-600 font-semibold">
+                  {statsQ.data?.green_health || 0}
+                </span>
+                {" / "}
+                <span className="text-red-600 font-semibold">
+                  {statsQ.data?.red_health || 0}
+                </span>
+                {" / "}
+                <span className="text-gray-500">
+                  {statsQ.data?.no_health || 0}
+                </span>
+              </div>
+              <div className="text-sm text-muted-foreground">Green Health / Red Health / No Health</div>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-lg">
+                <span className="text-green-600 font-semibold">
+                  {statsQ.data ? Math.round(((statsQ.data.on_track + statsQ.data.green_health) / (statsQ.data.total_companies * 2)) * 100) : 0}%
+                </span>
+              </div>
+              <div className="text-sm text-muted-foreground">Overall Health</div>
+            </div>
+          </div>
+        </Card>
+      )}
 
       <div className="grid grid-cols-12 gap-4">
         {/* LEFT: Companies */}

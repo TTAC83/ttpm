@@ -21,6 +21,7 @@ import { BAUContactsTab } from './bau/tabs/BAUContactsTab';
 import { BAUExpensesTab } from './bau/tabs/BAUExpensesTab';
 import { BAUAuditTab } from './bau/tabs/BAUAuditTab';
 import { BAUWeeklyReviewsTab } from './bau/tabs/BAUWeeklyReviewsTab';
+import { useExpenseAccess } from '@/hooks/useExpenseAccess';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
@@ -31,6 +32,7 @@ export const BAUDetail = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const navigate = useNavigate();
+  const { hasAccess: hasExpenseAccess } = useExpenseAccess();
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -180,13 +182,13 @@ export const BAUDetail = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className={`grid w-full ${hasExpenseAccess ? 'grid-cols-8' : 'grid-cols-7'}`}>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="tickets">Tickets</TabsTrigger>
           <TabsTrigger value="visits">Visits</TabsTrigger>
           <TabsTrigger value="changes">Changes</TabsTrigger>
           <TabsTrigger value="contacts">Contacts</TabsTrigger>
-          <TabsTrigger value="expenses">Expenses</TabsTrigger>
+          {hasExpenseAccess && <TabsTrigger value="expenses">Expenses</TabsTrigger>}
           <TabsTrigger value="weekly">Weekly</TabsTrigger>
           <TabsTrigger value="audit">Audit</TabsTrigger>
         </TabsList>

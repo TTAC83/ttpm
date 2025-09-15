@@ -23,10 +23,12 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { LogOut, ChevronRight } from 'lucide-react';
 import { NAV, visibleItemsForRole, ICON_MAP, type Role, type NavItem } from '@/config/nav';
+import { useExpenseAccess } from '@/hooks/useExpenseAccess';
 import { useState, useEffect } from 'react';
 
 export const AppLayout = () => {
   const { user, profile, signOut } = useAuth();
+  const { hasAccess: hasExpenseAccess } = useExpenseAccess();
   const navigate = useNavigate();
   const location = useLocation();
   const [openGroups, setOpenGroups] = useState<string[]>([]);
@@ -140,7 +142,15 @@ export const AppLayout = () => {
   };
 
   const currentRole = profile?.role as Role;
-  const visibleItems = visibleItemsForRole(currentRole);
+  let visibleItems = visibleItemsForRole(currentRole);
+  
+  // Filter out expenses if user doesn't have expense access
+  visibleItems = visibleItems.filter(item => {
+    if (item.label === 'Expenses' && !hasExpenseAccess) {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <SidebarProvider>

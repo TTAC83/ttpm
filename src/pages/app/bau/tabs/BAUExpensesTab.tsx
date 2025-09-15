@@ -10,8 +10,10 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { getBauExpenses } from '@/lib/bauService';
+import { useExpenseAccess } from '@/hooks/useExpenseAccess';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { Shield } from 'lucide-react';
 
 interface BAUExpensesTabProps {
   customerId: string;
@@ -20,6 +22,7 @@ interface BAUExpensesTabProps {
 export const BAUExpensesTab = ({ customerId }: BAUExpensesTabProps) => {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { hasAccess: hasExpenseAccess, loading: accessLoading } = useExpenseAccess();
   const { toast } = useToast();
 
   const loadExpenses = async () => {
@@ -51,11 +54,27 @@ export const BAUExpensesTab = ({ customerId }: BAUExpensesTabProps) => {
     }).format(amount);
   };
 
-  if (loading) {
+  if (accessLoading || loading) {
     return (
       <div className="flex items-center justify-center h-48">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
+    );
+  }
+
+  if (!hasExpenseAccess) {
+    return (
+      <Card>
+        <CardContent className="p-8">
+          <div className="text-center">
+            <Shield className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-semibold mb-2">Access Restricted</h3>
+            <p className="text-muted-foreground">
+              You don't have permission to view expense data.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 

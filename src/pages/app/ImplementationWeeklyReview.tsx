@@ -247,21 +247,23 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     if (!editingTask) return;
 
     try {
-      const response = await fetch('/functions/v1/update-task', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-        },
-        body: JSON.stringify({
-          id: editingTask.id,
-          ...taskData,
-        }),
+      // Sanitize payload: convert empty strings to null for nullable fields
+      const payload: any = {
+        id: editingTask.id,
+        task_title: taskData.task_title,
+        status: taskData.status,
+        assignee: taskData.assignee && taskData.assignee !== '' ? taskData.assignee : null,
+        planned_start: taskData.planned_start || null,
+        planned_end: taskData.planned_end || null,
+        actual_start: taskData.actual_start || null,
+        actual_end: taskData.actual_end || null,
+      };
+
+      const { error } = await supabase.functions.invoke('update-task', {
+        body: payload,
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to update task');
-      }
+      if (error) throw error;
 
       toast.success("Task updated successfully");
       setEditingTask(null);

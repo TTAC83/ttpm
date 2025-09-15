@@ -50,7 +50,9 @@ export async function loadOverdueTasks(companyId: string): Promise<TaskRow[]> {
     .in("project_id",
       (await supabase.from("projects").select("id").eq("company_id", companyId).in("domain", ["IoT","Vision","Hybrid"])).data?.map(r => r.id) ?? []
     )
-    .ilike("status", "Overdue%");
+    .in("status", ["Planned", "In Progress", "Blocked"])
+    .not("planned_end", "is", null)
+    .lt("planned_end", new Date().toISOString().split('T')[0]);
   if (error) throw error;
   return data ?? [];
 }

@@ -53,7 +53,7 @@ import { NewBAUCustomer } from "./pages/app/NewBAUCustomer";
 import { BAUDetail } from "./pages/app/BAUDetail";
 import { WeeklyReview } from "./pages/app/bau/WeeklyReview";
 import WeeklyReviewPage from "./pages/app/bau/WeeklyReviewPage";
-import ImplementationWeeklyReview from "./pages/app/implementation/weekly-review";
+import ImplementationWeeklyReview from "./pages/app/ImplementationWeeklyReview";
 
 const queryClient = new QueryClient();
 

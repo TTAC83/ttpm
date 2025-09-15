@@ -469,7 +469,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
                       <td className="py-2 pr-3">{t.step_name ?? "-"}</td>
                       <td className="py-2 pr-3">{t.assignee ?? "-"}</td>
                       <td className="py-2 pr-3">
-                        <Badge variant={badgeVariant} className={computedStatus.bgColor}>
+                        <Badge variant="outline" className="bg-black text-red-900 border-gray-600">
                           {computedStatus.status}
                         </Badge>
                       </td>

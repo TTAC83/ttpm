@@ -241,14 +241,7 @@ const App = () => (
               <Route path="bau/weekly-review" element={<WeeklyReview />} />
               <Route path="bau/weekly-review-page" element={<WeeklyReviewPage />} />
               <Route path="bau/:id" element={<BAUDetail />} />
-              <Route 
-                path="implementation/weekly-review" 
-                element={
-                  <AuthGuard requiredRole="internal_user">
-                    <ImplementationWeeklyReview />
-                  </AuthGuard>
-                } 
-              />
+              <Route path="implementation/weekly-review" element={<ImplementationWeeklyReview />} />
               <Route 
                 path="admin/users" 
                 element={

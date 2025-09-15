@@ -79,7 +79,8 @@ export const NAV: NavItem[] = [
       {
         label: "Weekly Review",
         to: "/app/implementation/weekly-review",
-        matchPaths: ["/app/implementation/weekly-review"]
+        matchPaths: ["/app/implementation/weekly-review"],
+        roles: ["internal_admin", "internal_user"]
       },
     ]
   },

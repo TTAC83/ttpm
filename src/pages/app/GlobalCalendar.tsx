@@ -120,6 +120,14 @@ export const GlobalCalendar = () => {
         });
 
         setEvents(enriched as any);
+        console.log('Loaded events:', enriched.length, 'events');
+        const criticalEvents = enriched.filter(e => e.is_critical);
+        console.log('Critical events found:', criticalEvents.length, criticalEvents.map(e => ({
+          title: e.title,
+          start_date: e.start_date,
+          end_date: e.end_date,
+          is_critical: e.is_critical
+        })));
       } catch (error) {
         console.error('Error fetching events:', error);
         setEvents([]);
@@ -153,11 +161,33 @@ export const GlobalCalendar = () => {
   };
 
   const getEventsForDate = (date: Date) => {
-    return events.filter(event => {
+    const dateEventsFound = events.filter(event => {
       const eventStart = new Date(event.start_date);
       const eventEnd = new Date(event.end_date);
-      return date >= eventStart && date <= eventEnd;
+      
+      // Set time to beginning of day for accurate date comparison
+      const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const startDate = new Date(eventStart.getFullYear(), eventStart.getMonth(), eventStart.getDate());
+      const endDate = new Date(eventEnd.getFullYear(), eventEnd.getMonth(), eventEnd.getDate());
+      
+      const isInRange = checkDate >= startDate && checkDate <= endDate;
+      
+      // Debug logging for critical events
+      if (event.is_critical) {
+        console.log(`Critical event "${event.title}" check for ${checkDate.toDateString()}:`, {
+          eventStart: startDate.toDateString(),
+          eventEnd: endDate.toDateString(),
+          isInRange,
+          checkDate: checkDate.getTime(),
+          startDate: startDate.getTime(),
+          endDate: endDate.getTime()
+        });
+      }
+      
+      return isInRange;
     });
+    
+    return dateEventsFound;
   };
 
   const currentMonth = new Date();

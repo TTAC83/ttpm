@@ -98,14 +98,14 @@ export const Actions = () => {
           project_tasks(
             task_title,
             step_name,
-            projects!inner(
+            projects(
               name,
-              companies!inner(name)
+              companies(name)
             )
           ),
           projects(
             name,
-            companies!inner(name)
+            companies(name)
           )
         `)
         .order('created_at', { ascending: false });
@@ -115,7 +115,14 @@ export const Actions = () => {
         return;
       }
 
-      setActions(data || []);
+      console.log('Actions data:', data);
+      // Add safety check for data structure
+      const safeActions = (data || []).map(action => {
+        console.log('Processing action:', action.id, action);
+        return action;
+      });
+
+      setActions(safeActions);
     } catch (error) {
       console.error('Error fetching actions:', error);
     } finally {
@@ -223,10 +230,26 @@ export const Actions = () => {
     return filtered;
   };
 
-  // Get unique values for filter dropdowns
-  const uniqueProjects = [...new Set(actions.map(action => action.project_tasks?.projects?.name || action.projects?.name).filter(name => name && name.trim() !== ''))];
-  const uniqueCompanies = [...new Set(actions.map(action => action.project_tasks?.projects?.companies?.name || action.projects?.companies?.name).filter(name => name && name.trim() !== ''))];
-  const uniqueTasks = [...new Set(actions.map(action => action.project_tasks?.task_title).filter(task => task && task.trim() !== ''))];
+  // Get unique values for filter dropdowns with safe null checking
+  console.log('Computing unique values from actions:', actions.length);
+  
+  const uniqueProjects = [...new Set(actions.map(action => {
+    const projectName = action.project_tasks?.projects?.name || action.projects?.name;
+    console.log('Project name for action', action.id, ':', projectName);
+    return projectName && projectName.trim() !== '' ? projectName : null;
+  }).filter(Boolean))];
+  
+  const uniqueCompanies = [...new Set(actions.map(action => {
+    const companyName = action.project_tasks?.projects?.companies?.name || action.projects?.companies?.name;
+    console.log('Company name for action', action.id, ':', companyName);
+    return companyName && companyName.trim() !== '' ? companyName : null;
+  }).filter(Boolean))];
+  
+  const uniqueTasks = [...new Set(actions.map(action => {
+    const taskTitle = action.project_tasks?.task_title;
+    return taskTitle && taskTitle.trim() !== '' ? taskTitle : null;
+  }).filter(Boolean))];
+  
   const uniqueStatuses = [...new Set(actions.map(action => action.status).filter(status => status && status.trim() !== ''))];
   const uniqueAssignees = [...new Set(actions.map(action => action.profiles?.name).filter(name => name && name.trim() !== ''))];
 

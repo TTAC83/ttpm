@@ -1218,6 +1218,7 @@ export type Database = {
           id: string
           notes: string | null
           project_status: Database["public"]["Enums"]["impl_week_status"] | null
+          reason_code: string | null
           reviewed_at: string
           reviewed_by: string
           week_end: string
@@ -1233,6 +1234,7 @@ export type Database = {
           project_status?:
             | Database["public"]["Enums"]["impl_week_status"]
             | null
+          reason_code?: string | null
           reviewed_at?: string
           reviewed_by: string
           week_end: string
@@ -1248,6 +1250,7 @@ export type Database = {
           project_status?:
             | Database["public"]["Enums"]["impl_week_status"]
             | null
+          reason_code?: string | null
           reviewed_at?: string
           reviewed_by?: string
           week_end?: string
@@ -2928,13 +2931,22 @@ export type Database = {
         Returns: undefined
       }
       impl_set_weekly_review: {
-        Args: {
-          p_company_id: string
-          p_customer_health: Database["public"]["Enums"]["impl_health_simple"]
-          p_notes?: string
-          p_project_status: Database["public"]["Enums"]["impl_week_status"]
-          p_week_start: string
-        }
+        Args:
+          | {
+              p_company_id: string
+              p_customer_health: Database["public"]["Enums"]["impl_health_simple"]
+              p_notes?: string
+              p_project_status: Database["public"]["Enums"]["impl_week_status"]
+              p_reason_code?: string
+              p_week_start: string
+            }
+          | {
+              p_company_id: string
+              p_customer_health: Database["public"]["Enums"]["impl_health_simple"]
+              p_notes?: string
+              p_project_status: Database["public"]["Enums"]["impl_week_status"]
+              p_week_start: string
+            }
         Returns: undefined
       }
       is_current_user_internal: {

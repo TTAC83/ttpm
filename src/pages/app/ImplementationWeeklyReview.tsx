@@ -252,6 +252,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
 
   const [projectStatus, setProjectStatus] = useState<"on_track"|"off_track"|null>(null);
   const [customerHealth, setCustomerHealth] = useState<"green"|"red"|null>(null);
+  const [reasonCode, setReasonCode] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
 
   useEffect(() => {
@@ -273,6 +274,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
       projectStatus,
       customerHealth,
       notes,
+      reasonCode,
     }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["impl-review", companyId, weekStart] });
@@ -523,6 +525,30 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
               <Button variant={customerHealth === "red" ? "default":"outline"} onClick={()=>setCustomerHealth("red")}>Red</Button>
             </div>
           </div>
+          
+          {/* Reason Code for Red Health */}
+          {customerHealth === "red" && (
+            <div>
+              <div className="text-sm mb-1">
+                Reason Code <span className="text-destructive">*</span>
+              </div>
+              <Select value={reasonCode} onValueChange={setReasonCode}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a reason code..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="data-inaccuracy">Data Inaccuracy</SelectItem>
+                  <SelectItem value="feature-product-gap">Feature/Product Gap</SelectItem>
+                  <SelectItem value="implementation-delay-tt">Implementations Delay - TT</SelectItem>
+                  <SelectItem value="implementation-delay-customer">Implementation Delay - Customer</SelectItem>
+                  <SelectItem value="portal-issues">Portal Issues</SelectItem>
+                  <SelectItem value="hardware-issue">Hardware Issue</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
           <div className="md:col-span-3">
             <div className="text-sm mb-1">Notes / Escalation (optional)</div>
             <textarea className="w-full border rounded px-2 py-1 min-h-[90px]" value={notes} onChange={(e)=>setNotes(e.target.value)} />
@@ -530,7 +556,17 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
         </div>
 
         <div className="flex gap-2">
-          <Button onClick={()=>mut.mutate()} disabled={mut.isPending || !projectStatus || !customerHealth}>Save</Button>
+          <Button 
+            onClick={()=>mut.mutate()} 
+            disabled={
+              mut.isPending || 
+              !projectStatus || 
+              !customerHealth || 
+              (customerHealth === "red" && !reasonCode.trim())
+            }
+          >
+            Save
+          </Button>
           <Button
             variant="outline"
             onClick={async ()=>{
@@ -539,7 +575,12 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
               // The outer list can listen and move selection. If not implemented, keep simple toast:
               toast.message("Saved. Select the next customer from the list.");
             }}
-            disabled={mut.isPending || !projectStatus || !customerHealth}
+            disabled={
+              mut.isPending || 
+              !projectStatus || 
+              !customerHealth || 
+              (customerHealth === "red" && !reasonCode.trim())
+            }
           >
           Save & Next
         </Button>

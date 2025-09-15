@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ensureWeeks, listWeeks, listImplCompanies, loadOverdueTasks, loadOpenActions, loadEventsAroundWeek, loadReview, saveReview, loadWeeklyStats } from "@/lib/implementationWeekly";
+import { ensureWeeks, listWeeks, listImplCompanies, loadOverdueTasks, loadOpenActions, loadEventsAroundWeek, loadReview, saveReview, loadWeeklyStats, loadOpenVisionModels, VisionModelRow } from "@/lib/implementationWeekly";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { computeTaskStatus } from "@/lib/taskStatus";
 import { supabase } from "@/integrations/supabase/client";
 import CreateEventDialog from "@/components/CreateEventDialog";
+import { VisionModelDialog } from "@/components/VisionModelDialog";
 
 type Company = { company_id: string; company_name: string };
 type Week = { week_start: string; week_end: string; available_at: string };
@@ -235,6 +236,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   const [createActionDialogOpen, setCreateActionDialogOpen] = useState(false);
   const [createEventDialogOpen, setCreateEventDialogOpen] = useState(false);
   const [projectId, setProjectId] = useState<string | null>(null);
+  const [createVisionModelDialogOpen, setCreateVisionModelDialogOpen] = useState(false);
 
   const overdueQ = useQuery({
     queryKey: ["impl-overdue", companyId],
@@ -244,6 +246,11 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   const actionsQ = useQuery({
     queryKey: ["impl-actions", companyId],
     queryFn: () => loadOpenActions(companyId),
+  });
+
+  const visionModelsQ = useQuery({
+    queryKey: ["impl-vision-models", companyId],
+    queryFn: () => loadOpenVisionModels(companyId),
   });
 
   // Get project ID by querying the projects for this company
@@ -490,6 +497,11 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     }
   };
 
+  const handleCreateVisionModel = () => {
+    setCreateVisionModelDialogOpen(false);
+    qc.invalidateQueries({ queryKey: ["impl-vision-models", companyId] });
+  };
+
   return (
     <div className="space-y-6">
       {/* Overdue Tasks */}
@@ -694,6 +706,65 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
         )}
       </Card>
 
+      {/* Vision Models */}
+      <Card className="p-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold">Vision Models (Open)</h2>
+          <div className="flex items-center gap-2">
+            <span className="text-sm opacity-75">{visionModelsQ.data?.length ?? 0} items</span>
+            {projectId && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setCreateVisionModelDialogOpen(true)}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Model
+              </Button>
+            )}
+          </div>
+        </div>
+        <Separator className="my-3" />
+        {visionModelsQ.isLoading ? (
+          <div>Loading…</div>
+        ) : (visionModelsQ.data?.length ?? 0) === 0 ? (
+          <div>No open vision models</div>
+        ) : (
+          <div className="overflow-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left">
+                  <th className="py-2 pr-3">Product Title</th>
+                  <th className="py-2 pr-3">Line</th>
+                  <th className="py-2 pr-3">Position</th>
+                  <th className="py-2 pr-3">Use Case</th>
+                  <th className="py-2 pr-3">Status</th>
+                  <th className="py-2 pr-3">Start Date</th>
+                  <th className="py-2 pr-3">End Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visionModelsQ.data!.map(vm => (
+                  <tr key={vm.id} className="border-t">
+                    <td className="py-2 pr-3">{vm.product_title ?? "-"}</td>
+                    <td className="py-2 pr-3">{vm.line_name ?? "-"}</td>
+                    <td className="py-2 pr-3">{vm.position ?? "-"}</td>
+                    <td className="py-2 pr-3">{vm.use_case ?? "-"}</td>
+                    <td className="py-2 pr-3">
+                      <Badge variant="outline">
+                        {vm.status}
+                      </Badge>
+                    </td>
+                    <td className="py-2 pr-3">{vm.start_date ?? "-"}</td>
+                    <td className="py-2 pr-3">{vm.end_date ?? "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+
       {/* Weekly Review Controls */}
       <Card className="p-4 space-y-4">
         <h2 className="font-semibold">Weekly Review</h2>
@@ -819,6 +890,17 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
           setCreateEventDialogOpen(false);
           qc.invalidateQueries({ queryKey: ["impl-events", companyId, weekStart] });
         }}
+      />
+    )}
+
+    {/* Create Vision Model Dialog */}
+    {createVisionModelDialogOpen && projectId && (
+      <VisionModelDialog
+        open={createVisionModelDialogOpen}
+        onOpenChange={setCreateVisionModelDialogOpen}
+        onClose={handleCreateVisionModel}
+        projectId={projectId}
+        mode="create"
       />
     )}
   </div>

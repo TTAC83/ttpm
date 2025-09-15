@@ -262,3 +262,52 @@ export async function loadWeeklyStats(weekStartISO: string): Promise<WeeklyStats
     no_health
   };
 }
+
+export type VisionModelRow = {
+  id: string;
+  project_id: string;
+  line_name: string;
+  position: string;
+  equipment: string;
+  product_sku: string;
+  product_title: string;
+  use_case: string;
+  start_date: string | null;
+  end_date: string | null;
+  product_run_start: string | null;
+  product_run_end: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function loadOpenVisionModels(companyId: string): Promise<VisionModelRow[]> {
+  const { data, error } = await supabase
+    .from("vision_models")
+    .select(`
+      id,
+      project_id,
+      line_name,
+      position,
+      equipment,
+      product_sku,
+      product_title,
+      use_case,
+      start_date,
+      end_date,
+      product_run_start,
+      product_run_end,
+      status,
+      created_at,
+      updated_at,
+      projects!inner(
+        company_id
+      )
+    `)
+    .eq('projects.company_id', companyId)
+    .neq('status', 'Complete')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data ?? [];
+}

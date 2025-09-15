@@ -68,6 +68,7 @@ export type ActionRow = {
   status: string | null;
   planned_date: string | null;
   is_critical: boolean | null;
+  assignee_profile: { name: string } | null;
 };
 
 export async function loadOpenActions(companyId: string): Promise<ActionRow[]> {
@@ -81,7 +82,16 @@ export async function loadOpenActions(companyId: string): Promise<ActionRow[]> {
 
   const { data, error } = await supabase
     .from("actions")
-    .select("id,project_id,title,assignee,status,planned_date,is_critical")
+    .select(`
+      id,
+      project_id,
+      title,
+      assignee,
+      status,
+      planned_date,
+      is_critical,
+      assignee_profile:profiles!assignee(name)
+    `)
     .in("project_id", projIds)
     .in("status", ["Open","In Progress"])
     .order("is_critical", { ascending: false })

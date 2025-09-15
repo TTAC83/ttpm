@@ -440,7 +440,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
                 {actionsQ.data!.map(a => (
                   <tr key={a.id} className="border-t">
                     <td className="py-2 pr-3">{a.title ?? "-"}</td>
-                    <td className="py-2 pr-3">{a.assignee ?? "-"}</td>
+                    <td className="py-2 pr-3">{a.assignee_profile?.name ?? "-"}</td>
                     <td className="py-2 pr-3">{a.status ?? "-"}</td>
                     <td className="py-2 pr-3">{a.planned_date ?? "-"}</td>
                     <td className="py-2 pr-3">{a.is_critical ? "Yes" : "No"}</td>

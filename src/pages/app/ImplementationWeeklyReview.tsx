@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarIcon, Plus, Smile, Frown } from "lucide-react";
+import { CalendarIcon, Plus, Smile, Frown, CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { computeTaskStatus } from "@/lib/taskStatus";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,7 +22,7 @@ import CreateEventDialog from "@/components/CreateEventDialog";
 import { VisionModelDialog } from "@/components/VisionModelDialog";
 
 type Company = { company_id: string; company_name: string };
-type CompanyWithHealth = { company_id: string; company_name: string; customer_health?: "green" | "red" | null };
+type CompanyWithHealth = { company_id: string; company_name: string; customer_health?: "green" | "red" | null; project_status?: "on_track" | "off_track" | null };
 type Week = { week_start: string; week_end: string; available_at: string };
 type Profile = { user_id: string; name: string };
 type TaskRow = {
@@ -88,7 +88,7 @@ export default function ImplementationWeeklyReviewPage() {
       
       const { data, error } = await supabase
         .from('impl_weekly_reviews')
-        .select('company_id, customer_health')
+        .select('company_id, customer_health, project_status')
         .eq('week_start', selectedWeek);
       
       if (error) {
@@ -118,12 +118,13 @@ export default function ImplementationWeeklyReviewPage() {
     const list = companiesQ.data ?? [];
     const healthData = companiesHealthQ.data ?? [];
     
-    // Merge companies with their health status
+    // Merge companies with their health status and project status
     const companiesWithHealth: CompanyWithHealth[] = list.map(company => {
       const healthInfo = healthData.find(h => h.company_id === company.company_id);
       return {
         ...company,
-        customer_health: healthInfo?.customer_health || null
+        customer_health: healthInfo?.customer_health || null,
+        project_status: healthInfo?.project_status || null
       };
     });
     
@@ -246,12 +247,20 @@ export default function ImplementationWeeklyReviewPage() {
                 >
                   <div className="flex items-center gap-2">
                     <div className="font-medium flex-1">{c.company_name}</div>
-                    {c.customer_health === "green" && (
-                      <Smile className="h-4 w-4 text-green-600" />
-                    )}
-                    {c.customer_health === "red" && (
-                      <Frown className="h-4 w-4 text-red-600" />
-                    )}
+                    <div className="flex items-center gap-1">
+                      {c.customer_health === "green" && (
+                        <Smile className="h-4 w-4 text-green-600" />
+                      )}
+                      {c.customer_health === "red" && (
+                        <Frown className="h-4 w-4 text-red-600" />
+                      )}
+                      {c.project_status === "on_track" && (
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                      )}
+                      {c.project_status === "off_track" && (
+                        <AlertCircle className="h-4 w-4 text-red-600" />
+                      )}
+                    </div>
                   </div>
                 </button>
               ))}

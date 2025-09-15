@@ -76,6 +76,11 @@ export const NAV: NavItem[] = [
         to: "/app/models", 
         matchPaths: ["/app/models"] 
       },
+      {
+        label: "Weekly Review",
+        to: "/app/implementation/weekly-review",
+        matchPaths: ["/app/implementation/weekly-review"]
+      },
     ]
   },
 

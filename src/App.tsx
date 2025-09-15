@@ -53,6 +53,7 @@ import { NewBAUCustomer } from "./pages/app/NewBAUCustomer";
 import { BAUDetail } from "./pages/app/BAUDetail";
 import { WeeklyReview } from "./pages/app/bau/WeeklyReview";
 import WeeklyReviewPage from "./pages/app/bau/WeeklyReviewPage";
+import ImplementationWeeklyReview from "./pages/app/implementation/weekly-review";
 
 const queryClient = new QueryClient();
 
@@ -240,6 +241,14 @@ const App = () => (
               <Route path="bau/weekly-review" element={<WeeklyReview />} />
               <Route path="bau/weekly-review-page" element={<WeeklyReviewPage />} />
               <Route path="bau/:id" element={<BAUDetail />} />
+              <Route 
+                path="implementation/weekly-review" 
+                element={
+                  <AuthGuard requiredRole="internal_user">
+                    <ImplementationWeeklyReview />
+                  </AuthGuard>
+                } 
+              />
               <Route 
                 path="admin/users" 
                 element={

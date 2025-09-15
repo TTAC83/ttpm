@@ -405,6 +405,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "bau_customers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_impl_companies"
+            referencedColumns: ["company_id"]
+          },
+          {
             foreignKeyName: "bau_customers_primary_contact_fkey"
             columns: ["primary_contact"]
             isOneToOne: false
@@ -1202,6 +1209,95 @@ export type Database = {
         }
         Relationships: []
       }
+      impl_weekly_reviews: {
+        Row: {
+          company_id: string
+          customer_health:
+            | Database["public"]["Enums"]["impl_health_simple"]
+            | null
+          id: string
+          notes: string | null
+          project_status: Database["public"]["Enums"]["impl_week_status"] | null
+          reviewed_at: string
+          reviewed_by: string
+          week_end: string
+          week_start: string
+        }
+        Insert: {
+          company_id: string
+          customer_health?:
+            | Database["public"]["Enums"]["impl_health_simple"]
+            | null
+          id?: string
+          notes?: string | null
+          project_status?:
+            | Database["public"]["Enums"]["impl_week_status"]
+            | null
+          reviewed_at?: string
+          reviewed_by: string
+          week_end: string
+          week_start: string
+        }
+        Update: {
+          company_id?: string
+          customer_health?:
+            | Database["public"]["Enums"]["impl_health_simple"]
+            | null
+          id?: string
+          notes?: string | null
+          project_status?:
+            | Database["public"]["Enums"]["impl_week_status"]
+            | null
+          reviewed_at?: string
+          reviewed_by?: string
+          week_end?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "impl_weekly_reviews_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "impl_weekly_reviews_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_impl_companies"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "impl_weekly_reviews_week_start_fkey"
+            columns: ["week_start"]
+            isOneToOne: false
+            referencedRelation: "impl_weekly_weeks"
+            referencedColumns: ["week_start"]
+          },
+        ]
+      }
+      impl_weekly_weeks: {
+        Row: {
+          available_at: string
+          created_at: string | null
+          week_end: string
+          week_start: string
+        }
+        Insert: {
+          available_at: string
+          created_at?: string | null
+          week_end: string
+          week_start: string
+        }
+        Update: {
+          available_at?: string
+          created_at?: string | null
+          week_end?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       iot_devices: {
         Row: {
           created_at: string
@@ -1600,6 +1696,13 @@ export type Database = {
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_impl_companies"
+            referencedColumns: ["company_id"]
+          },
         ]
       }
       project_events: {
@@ -1807,6 +1910,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_impl_companies"
+            referencedColumns: ["company_id"]
           },
           {
             foreignKeyName: "projects_customer_project_lead_fkey"
@@ -2522,6 +2632,13 @@ export type Database = {
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bau_customers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_impl_companies"
+            referencedColumns: ["company_id"]
+          },
         ]
       }
       v_bau_metric_agg: {
@@ -2664,6 +2781,13 @@ export type Database = {
         }
         Relationships: []
       }
+      v_impl_companies: {
+        Row: {
+          company_id: string | null
+          company_name: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_working_days: {
@@ -2799,6 +2923,20 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      impl_generate_weeks: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      impl_set_weekly_review: {
+        Args: {
+          p_company_id: string
+          p_customer_health: Database["public"]["Enums"]["impl_health_simple"]
+          p_notes?: string
+          p_project_status: Database["public"]["Enums"]["impl_week_status"]
+          p_week_start: string
+        }
+        Returns: undefined
+      }
       is_current_user_internal: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -2905,6 +3043,8 @@ export type Database = {
         | "PendingLeadReview"
         | "ReadyForSignoff"
         | "Approved"
+      impl_health_simple: "green" | "red"
+      impl_week_status: "on_track" | "off_track"
       task_status: "Planned" | "In Progress" | "Blocked" | "Done"
       ticket_status_enum:
         | "Open"
@@ -3069,6 +3209,8 @@ export const Constants = {
         "ReadyForSignoff",
         "Approved",
       ],
+      impl_health_simple: ["green", "red"],
+      impl_week_status: ["on_track", "off_track"],
       task_status: ["Planned", "In Progress", "Blocked", "Done"],
       ticket_status_enum: [
         "Open",

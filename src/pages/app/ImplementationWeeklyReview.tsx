@@ -18,6 +18,7 @@ import { CalendarIcon, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { computeTaskStatus } from "@/lib/taskStatus";
 import { supabase } from "@/integrations/supabase/client";
+import CreateEventDialog from "@/components/CreateEventDialog";
 
 type Company = { company_id: string; company_name: string };
 type Week = { week_start: string; week_end: string; available_at: string };
@@ -171,6 +172,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   const [editingTask, setEditingTask] = useState<TaskRow | null>(null);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [createActionDialogOpen, setCreateActionDialogOpen] = useState(false);
+  const [createEventDialogOpen, setCreateEventDialogOpen] = useState(false);
   const [projectId, setProjectId] = useState<string | null>(null);
 
   const overdueQ = useQuery({
@@ -456,7 +458,19 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
       <Card className="p-4">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold">Events (±7 days)</h2>
-          <span className="text-sm opacity-75">{eventsQ.data?.length ?? 0} items</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm opacity-75">{eventsQ.data?.length ?? 0} items</span>
+            {projectId && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setCreateEventDialogOpen(true)}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Event
+              </Button>
+            )}
+          </div>
         </div>
         <Separator className="my-3" />
         {eventsQ.isLoading ? (
@@ -552,6 +566,19 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
           />
         </DialogContent>
       </Dialog>
+    )}
+    
+    {/* Create Event Dialog */}
+    {createEventDialogOpen && projectId && (
+      <CreateEventDialog
+        open={createEventDialogOpen}
+        onOpenChange={setCreateEventDialogOpen}
+        projectId={projectId}
+        onEventCreated={() => {
+          setCreateEventDialogOpen(false);
+          qc.invalidateQueries({ queryKey: ["impl-events", companyId, weekStart] });
+        }}
+      />
     )}
   </div>
 );

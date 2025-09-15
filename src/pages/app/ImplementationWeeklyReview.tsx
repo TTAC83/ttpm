@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarIcon, Plus } from "lucide-react";
+import { CalendarIcon, Plus, Smile, Frown } from "lucide-react";
 import { toast } from "sonner";
 import { computeTaskStatus } from "@/lib/taskStatus";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,6 +22,7 @@ import CreateEventDialog from "@/components/CreateEventDialog";
 import { VisionModelDialog } from "@/components/VisionModelDialog";
 
 type Company = { company_id: string; company_name: string };
+type CompanyWithHealth = { company_id: string; company_name: string; customer_health?: "green" | "red" | null };
 type Week = { week_start: string; week_end: string; available_at: string };
 type Profile = { user_id: string; name: string };
 type TaskRow = {
@@ -79,6 +80,28 @@ export default function ImplementationWeeklyReviewPage() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
+  // Query to get health status for all companies for the selected week
+  const companiesHealthQ = useQuery({
+    queryKey: ["impl-companies-health", selectedWeek],
+    queryFn: async () => {
+      if (!selectedWeek) return [];
+      
+      const { data, error } = await supabase
+        .from('impl_weekly_reviews')
+        .select('company_id, customer_health')
+        .eq('week_start', selectedWeek);
+      
+      if (error) {
+        console.error('Error fetching companies health:', error);
+        return [];
+      }
+      
+      return data || [];
+    },
+    enabled: !!selectedWeek,
+    staleTime: 5 * 60 * 1000,
+  });
+
   useEffect(() => {
     if (!selectedWeek && weeksQ.data && weeksQ.data.length > 0) {
       setSelectedWeek(weeksQ.data[0].week_start); // latest first
@@ -93,25 +116,37 @@ export default function ImplementationWeeklyReviewPage() {
 
   const filteredCompanies = useMemo(() => {
     const list = companiesQ.data ?? [];
-    if (!search) return list;
+    const healthData = companiesHealthQ.data ?? [];
+    
+    // Merge companies with their health status
+    const companiesWithHealth: CompanyWithHealth[] = list.map(company => {
+      const healthInfo = healthData.find(h => h.company_id === company.company_id);
+      return {
+        ...company,
+        customer_health: healthInfo?.customer_health || null
+      };
+    });
+    
+    if (!search) return companiesWithHealth;
     const q = search.toLowerCase();
-    return list.filter(c => c.company_name.toLowerCase().includes(q));
-  }, [companiesQ.data, search]);
+    return companiesWithHealth.filter(c => c.company_name.toLowerCase().includes(q));
+  }, [companiesQ.data, companiesHealthQ.data, search]);
 
   return (
     <div className="p-4 space-y-4">
       {/* Debug Information */}
-      {(weeksQ.isLoading || companiesQ.isLoading) && (
+      {(weeksQ.isLoading || companiesQ.isLoading || companiesHealthQ.isLoading) && (
         <Card className="p-3 bg-blue-50">
           <div>Loading data...</div>
         </Card>
       )}
       
-      {(weeksQ.error || companiesQ.error) && (
+      {(weeksQ.error || companiesQ.error || companiesHealthQ.error) && (
         <Card className="p-3 bg-red-50">
           <div>Error loading data:</div>
           {weeksQ.error && <div>Weeks: {(weeksQ.error as Error).message}</div>}
           {companiesQ.error && <div>Companies: {(companiesQ.error as Error).message}</div>}
+          {companiesHealthQ.error && <div>Health Data: {(companiesHealthQ.error as Error).message}</div>}
         </Card>
       )}
 
@@ -200,7 +235,7 @@ export default function ImplementationWeeklyReviewPage() {
           <Card className="p-3 space-y-3">
             <Input placeholder="Search customers…" value={search} onChange={(e)=>setSearch(e.target.value)} />
             <div className="max-h-[70vh] overflow-auto space-y-1">
-              {(filteredCompanies ?? []).map((c: Company) => (
+              {(filteredCompanies ?? []).map((c: CompanyWithHealth) => (
                 <button
                   key={c.company_id}
                   className={cn(
@@ -209,7 +244,15 @@ export default function ImplementationWeeklyReviewPage() {
                   )}
                   onClick={()=>setSelectedCompanyId(c.company_id)}
                 >
-                  <div className="font-medium">{c.company_name}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="font-medium flex-1">{c.company_name}</div>
+                    {c.customer_health === "green" && (
+                      <Smile className="h-4 w-4 text-green-600" />
+                    )}
+                    {c.customer_health === "red" && (
+                      <Frown className="h-4 w-4 text-red-600" />
+                    )}
+                  </div>
                 </button>
               ))}
             </div>

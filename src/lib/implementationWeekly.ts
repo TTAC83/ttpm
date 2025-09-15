@@ -244,13 +244,15 @@ export async function loadWeeklyStats(weekStartISO: string): Promise<WeeklyStats
   
   const reviewsData = reviews || [];
   
-  // Only count assigned customers (those that have reviews)
-  const total_companies = reviewsData.length;
+  // Total companies should be all implementation companies
+  const total_companies = companyIds.length;
   
   const on_track = reviewsData.filter(r => r.project_status === "on_track").length;
   const off_track = reviewsData.filter(r => r.project_status === "off_track").length;
   const green_health = reviewsData.filter(r => r.customer_health === "green").length;
   const red_health = reviewsData.filter(r => r.customer_health === "red").length;
+  
+  // No status/health should be total companies minus those with assigned status/health
   const no_status = total_companies - on_track - off_track;
   const no_health = total_companies - green_health - red_health;
   

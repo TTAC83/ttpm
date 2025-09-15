@@ -7,11 +7,31 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { computeTaskStatus } from "@/lib/taskStatus";
+import { supabase } from "@/integrations/supabase/client";
 
 type Company = { company_id: string; company_name: string };
 type Week = { week_start: string; week_end: string; available_at: string };
+type Profile = { user_id: string; name: string };
+type TaskRow = {
+  id: string;
+  task_title: string;
+  step_name: string;
+  assignee: string;
+  planned_start: string;
+  planned_end: string;
+  actual_start: string;
+  actual_end: string;
+  status: string;
+  project_id: string;
+};
 
 function formatWeekLabel(w: Week) {
   return new Date(w.week_start + "T00:00:00").toLocaleDateString('en-GB', { 
@@ -146,6 +166,8 @@ export default function ImplementationWeeklyReviewPage() {
 
 function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekStart: string }) {
   const qc = useQueryClient();
+  const [editingTask, setEditingTask] = useState<TaskRow | null>(null);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
 
   const overdueQ = useQuery({
     queryKey: ["impl-overdue", companyId],
@@ -166,6 +188,25 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     queryKey: ["impl-review", companyId, weekStart],
     queryFn: () => loadReview(companyId, weekStart),
   });
+
+  // Load profiles for task assignment
+  useEffect(() => {
+    const loadProfiles = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, name')
+        .order('name');
+      
+      if (error) {
+        console.error('Error loading profiles:', error);
+        return;
+      }
+      
+      setProfiles(data || []);
+    };
+    
+    loadProfiles();
+  }, []);
 
   const [projectStatus, setProjectStatus] = useState<"on_track"|"off_track"|null>(null);
   const [customerHealth, setCustomerHealth] = useState<"green"|"red"|null>(null);
@@ -197,6 +238,39 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     },
     onError: (e:any) => toast.error(e.message ?? "Failed to save review"),
   });
+
+  const handleEditTask = (task: TaskRow) => {
+    setEditingTask(task);
+  };
+
+  const handleSaveTask = async (taskData: Partial<TaskRow>) => {
+    if (!editingTask) return;
+
+    try {
+      const response = await fetch('/functions/v1/update-task', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+        body: JSON.stringify({
+          id: editingTask.id,
+          ...taskData,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update task');
+      }
+
+      toast.success("Task updated successfully");
+      setEditingTask(null);
+      qc.invalidateQueries({ queryKey: ["impl-overdue", companyId] });
+    } catch (error) {
+      console.error('Error updating task:', error);
+      toast.error("Failed to update task");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -252,9 +326,9 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
                       <td className="py-2 pr-3">{t.planned_start ?? "-"}</td>
                       <td className="py-2 pr-3">{t.planned_end ?? "-"}</td>
                       <td className="py-2 pr-3">
-                        <Button variant="outline" onClick={()=>{
-                          toast.message("Open your existing Edit Task UI for task " + t.id);
-                        }}>Edit</Button>
+                        <Button variant="outline" onClick={() => handleEditTask(t)}>
+                          Edit
+                        </Button>
                       </td>
                     </tr>
                   );
@@ -379,10 +453,245 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
             }}
             disabled={mut.isPending || !projectStatus || !customerHealth}
           >
-            Save & Next
-          </Button>
-        </div>
-      </Card>
-    </div>
-  );
+          Save & Next
+        </Button>
+      </div>
+    </Card>
+
+    {/* Edit Task Dialog */}
+    {editingTask && (
+      <TaskEditDialog
+        task={editingTask}
+        profiles={profiles}
+        onSave={handleSaveTask}
+        onClose={() => setEditingTask(null)}
+      />
+    )}
+  </div>
+);
 }
+
+// Task Edit Dialog Component
+const TaskEditDialog = ({ 
+  task, 
+  profiles, 
+  onSave, 
+  onClose 
+}: {
+  task: TaskRow;
+  profiles: Profile[];
+  onSave: (data: Partial<TaskRow>) => void;
+  onClose: () => void;
+}) => {
+  const [formData, setFormData] = useState({
+    task_title: task.task_title,
+    planned_start: task.planned_start || '',
+    planned_end: task.planned_end || '',
+    actual_start: task.actual_start || '',
+    actual_end: task.actual_end || '',
+    status: task.status,
+    assignee: task.assignee || '',
+  });
+
+  const [datePopoverOpen, setDatePopoverOpen] = useState({
+    planned_start: false,
+    planned_end: false,
+    actual_start: false,
+    actual_end: false,
+  });
+
+  const handleDateSelect = (field: string, date: Date | undefined) => {
+    if (date) {
+      setFormData(prev => ({
+        ...prev,
+        [field]: date.toISOString().split('T')[0]
+      }));
+    }
+    setDatePopoverOpen(prev => ({ ...prev, [field]: false }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  const formatDateForDisplay = (dateStr: string) => {
+    if (!dateStr) return "Pick a date";
+    return new Date(dateStr).toLocaleDateString();
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit Task</DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="task_title">Task Title</Label>
+              <Input
+                id="task_title"
+                value={formData.task_title}
+                onChange={(e) => setFormData(prev => ({ ...prev, task_title: e.target.value }))}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Planned">Planned</SelectItem>
+                  <SelectItem value="In Progress">In Progress</SelectItem>
+                  <SelectItem value="Done">Done</SelectItem>
+                  <SelectItem value="Blocked">Blocked</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="assignee">Assignee</Label>
+              <Select value={formData.assignee} onValueChange={(value) => setFormData(prev => ({ ...prev, assignee: value === "unassigned" ? "" : value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select assignee" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
+                  {profiles
+                    .filter((profile) => profile.user_id && profile.user_id.trim() !== '')
+                    .map((profile) => (
+                      <SelectItem key={profile.user_id} value={profile.user_id}>
+                        {profile.name || 'Unnamed User'}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Planned Start Date */}
+            <div className="space-y-2">
+              <Label>Planned Start</Label>
+              <Popover open={datePopoverOpen.planned_start} onOpenChange={(open) => setDatePopoverOpen(prev => ({ ...prev, planned_start: open }))}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !formData.planned_start && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formatDateForDisplay(formData.planned_start)}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.planned_start ? new Date(formData.planned_start) : undefined}
+                    onSelect={(date) => handleDateSelect('planned_start', date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Planned End Date */}
+            <div className="space-y-2">
+              <Label>Planned End</Label>
+              <Popover open={datePopoverOpen.planned_end} onOpenChange={(open) => setDatePopoverOpen(prev => ({ ...prev, planned_end: open }))}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !formData.planned_end && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formatDateForDisplay(formData.planned_end)}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.planned_end ? new Date(formData.planned_end) : undefined}
+                    onSelect={(date) => handleDateSelect('planned_end', date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Actual Start Date */}
+            <div className="space-y-2">
+              <Label>Actual Start</Label>
+              <Popover open={datePopoverOpen.actual_start} onOpenChange={(open) => setDatePopoverOpen(prev => ({ ...prev, actual_start: open }))}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !formData.actual_start && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formatDateForDisplay(formData.actual_start)}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.actual_start ? new Date(formData.actual_start) : undefined}
+                    onSelect={(date) => handleDateSelect('actual_start', date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Actual End Date */}
+            <div className="space-y-2">
+              <Label>Actual End</Label>
+              <Popover open={datePopoverOpen.actual_end} onOpenChange={(open) => setDatePopoverOpen(prev => ({ ...prev, actual_end: open }))}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !formData.actual_end && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formatDateForDisplay(formData.actual_end)}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.actual_end ? new Date(formData.actual_end) : undefined}
+                    onSelect={(date) => handleDateSelect('actual_end', date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit">
+              Update Task
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};

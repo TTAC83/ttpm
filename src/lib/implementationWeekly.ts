@@ -68,7 +68,7 @@ export type ActionRow = {
   status: string | null;
   planned_date: string | null;
   is_critical: boolean | null;
-  assignee_profile: { name: string } | null;
+  profiles: { name: string } | null;
 };
 
 export async function loadOpenActions(companyId: string): Promise<ActionRow[]> {
@@ -90,7 +90,7 @@ export async function loadOpenActions(companyId: string): Promise<ActionRow[]> {
       status,
       planned_date,
       is_critical,
-      assignee_profile:profiles!assignee(name)
+      profiles:assignee(name)
     `)
     .in("project_id", projIds)
     .in("status", ["Open","In Progress"])

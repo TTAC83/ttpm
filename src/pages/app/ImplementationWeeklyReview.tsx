@@ -23,16 +23,22 @@ export default function ImplementationWeeklyReviewPage() {
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
 
   // Ensure weeks exist (current + next)
-  useEffect(() => { ensureWeeks().catch(() => {/* ignore for initial render */}); }, []);
+  useEffect(() => { 
+    ensureWeeks().catch((error) => {
+      console.error("Failed to ensure weeks:", error);
+    }); 
+  }, []);
 
   const weeksQ = useQuery({
     queryKey: ["impl-weeks"],
     queryFn: listWeeks,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const companiesQ = useQuery({
     queryKey: ["impl-companies"],
     queryFn: listImplCompanies,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   useEffect(() => {
@@ -54,8 +60,27 @@ export default function ImplementationWeeklyReviewPage() {
     return list.filter(c => c.company_name.toLowerCase().includes(q));
   }, [companiesQ.data, search]);
 
+  // Debug logging
+  console.log("weeksQ:", { data: weeksQ.data, isLoading: weeksQ.isLoading, error: weeksQ.error });
+  console.log("companiesQ:", { data: companiesQ.data, isLoading: companiesQ.isLoading, error: companiesQ.error });
+
   return (
     <div className="p-4 space-y-4">
+      {/* Debug Information */}
+      {(weeksQ.isLoading || companiesQ.isLoading) && (
+        <Card className="p-3 bg-blue-50">
+          <div>Loading data...</div>
+        </Card>
+      )}
+      
+      {(weeksQ.error || companiesQ.error) && (
+        <Card className="p-3 bg-red-50">
+          <div>Error loading data:</div>
+          {weeksQ.error && <div>Weeks: {(weeksQ.error as Error).message}</div>}
+          {companiesQ.error && <div>Companies: {(companiesQ.error as Error).message}</div>}
+        </Card>
+      )}
+
       {/* Header */}
       <Card className="p-3 sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex gap-3 items-center flex-wrap">
@@ -67,6 +92,7 @@ export default function ImplementationWeeklyReviewPage() {
               value={selectedWeek ?? ""}
               onChange={(e) => setSelectedWeek(e.target.value || null)}
             >
+              <option value="">Select a week...</option>
               {(weeksQ.data ?? []).map(w => (
                 <option key={w.week_start} value={w.week_start}>
                   {formatWeekLabel(w)}

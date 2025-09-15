@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ensureWeeks, listWeeks, listImplCompanies, loadOverdueTasks, loadOpenActions, loadEventsAroundWeek, loadReview, saveReview } from "@/lib/implementationWeekly";
 import { cn } from "@/lib/utils";
@@ -255,6 +255,15 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   const [reasonCode, setReasonCode] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
 
+  // Track previous values to detect customer/week changes
+  const previousCompanyId = useRef(companyId);
+  const previousWeekStart = useRef(weekStart);
+
+  useEffect(() => {
+    previousCompanyId.current = companyId;
+    previousWeekStart.current = weekStart;
+  }, [companyId, weekStart]);
+
   useEffect(() => {
     if (reviewQ.data) {
       setProjectStatus(reviewQ.data.project_status ?? null);
@@ -262,28 +271,100 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
       setNotes(reviewQ.data.notes ?? "");
       setReasonCode(reviewQ.data.reason_code ?? "");
     } else {
-      setProjectStatus(null);
-      setCustomerHealth(null);
-      setNotes("");
-      setReasonCode("");
+      // Only reset when switching to a different company/week
+      if (companyId !== previousCompanyId.current || weekStart !== previousWeekStart.current) {
+        setProjectStatus(null);
+        setCustomerHealth(null);
+        setNotes("");
+        setReasonCode("");
+      }
     }
   }, [reviewQ.data, companyId, weekStart]);
 
-  const mut = useMutation({
-    mutationFn: () => saveReview({
-      companyId,
-      weekStartISO: weekStart,
-      projectStatus,
-      customerHealth,
-      notes,
-      reasonCode,
-    }),
+  const autoSaveMutation = useMutation({
+    mutationFn: (params: { projectStatus: "on_track"|"off_track"|null, customerHealth: "green"|"red"|null, notes: string, reasonCode: string }) => 
+      saveReview({
+        companyId,
+        weekStartISO: weekStart,
+        projectStatus: params.projectStatus,
+        customerHealth: params.customerHealth,
+        notes: params.notes,
+        reasonCode: params.reasonCode,
+      }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["impl-review", companyId, weekStart] });
-      toast.success("Weekly review saved");
     },
-    onError: (e:any) => toast.error(e.message ?? "Failed to save review"),
+    onError: (e: any) => {
+      console.error('Auto-save failed:', e);
+      toast.error("Auto-save failed: " + (e.message ?? "Unknown error"));
+    },
   });
+
+  // Auto-save functionality
+  const autoSave = useCallback(
+    async (projectStatusValue: "on_track"|"off_track"|null, customerHealthValue: "green"|"red"|null, notesValue: string, reasonCodeValue: string) => {
+      if (!projectStatusValue || !customerHealthValue) return; // Don't save if required fields are missing
+
+      // Validate required fields when health is red
+      if (customerHealthValue === 'red' && !reasonCodeValue.trim()) {
+        return; // Don't save if validation fails
+      }
+
+      try {
+        await autoSaveMutation.mutateAsync({
+          projectStatus: projectStatusValue,
+          customerHealth: customerHealthValue,
+          notes: notesValue,
+          reasonCode: reasonCodeValue,
+        });
+      } catch (error) {
+        console.error('Auto-save failed:', error);
+      }
+    },
+    [companyId, weekStart, autoSaveMutation]
+  );
+
+  // Debounced auto-save for text fields
+  const debouncedAutoSave = useRef<NodeJS.Timeout>();
+  const triggerAutoSave = useCallback(
+    (projectStatusValue: "on_track"|"off_track"|null, customerHealthValue: "green"|"red"|null, notesValue: string, reasonCodeValue: string) => {
+      if (debouncedAutoSave.current) {
+        clearTimeout(debouncedAutoSave.current);
+      }
+      debouncedAutoSave.current = setTimeout(() => {
+        autoSave(projectStatusValue, customerHealthValue, notesValue, reasonCodeValue);
+      }, 1000); // 1 second delay for text fields
+    },
+    [autoSave]
+  );
+
+  // Auto-save when project status changes (immediate)
+  useEffect(() => {
+    if (projectStatus && customerHealth) {
+      autoSave(projectStatus, customerHealth, notes, reasonCode);
+    }
+  }, [projectStatus, autoSave, customerHealth, notes, reasonCode]);
+
+  // Auto-save when customer health changes (immediate)
+  useEffect(() => {
+    if (projectStatus && customerHealth) {
+      autoSave(projectStatus, customerHealth, notes, reasonCode);
+    }
+  }, [customerHealth, autoSave, projectStatus, notes, reasonCode]);
+
+  // Auto-save when reason code changes (immediate, since it's a select)
+  useEffect(() => {
+    if (projectStatus && customerHealth && reasonCode) {
+      autoSave(projectStatus, customerHealth, notes, reasonCode);
+    }
+  }, [reasonCode, autoSave, projectStatus, customerHealth, notes]);
+
+  // Auto-save when notes change (debounced)
+  useEffect(() => {
+    if (projectStatus && customerHealth && notes) {
+      triggerAutoSave(projectStatus, customerHealth, notes, reasonCode);
+    }
+  }, [notes, triggerAutoSave, projectStatus, customerHealth, reasonCode]);
 
   const handleEditTask = (task: TaskRow) => {
     setEditingTask(task);
@@ -557,36 +638,13 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
           </div>
         </div>
 
-        <div className="flex gap-2">
-          <Button 
-            onClick={()=>mut.mutate()} 
-            disabled={
-              mut.isPending || 
-              !projectStatus || 
-              !customerHealth || 
-              (customerHealth === "red" && !reasonCode.trim())
-            }
-          >
-            Save
-          </Button>
-          <Button
-            variant="outline"
-            onClick={async ()=>{
-              await mut.mutateAsync();
-              // Advance to next company in outer list by dispatching a custom event;
-              // The outer list can listen and move selection. If not implemented, keep simple toast:
-              toast.message("Saved. Select the next customer from the list.");
-            }}
-            disabled={
-              mut.isPending || 
-              !projectStatus || 
-              !customerHealth || 
-              (customerHealth === "red" && !reasonCode.trim())
-            }
-          >
-          Save & Next
-        </Button>
-      </div>
+        {/* Auto-save indicator */}
+        {autoSaveMutation.isPending && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="animate-spin h-3 w-3 border border-primary rounded-full border-t-transparent"></div>
+            Auto-saving...
+          </div>
+        )}
     </Card>
 
     {/* Edit Task Dialog */}

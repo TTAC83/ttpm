@@ -260,10 +260,12 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
       setProjectStatus(reviewQ.data.project_status ?? null);
       setCustomerHealth(reviewQ.data.customer_health ?? null);
       setNotes(reviewQ.data.notes ?? "");
+      setReasonCode(reviewQ.data.reason_code ?? "");
     } else {
       setProjectStatus(null);
       setCustomerHealth(null);
       setNotes("");
+      setReasonCode("");
     }
   }, [reviewQ.data, companyId, weekStart]);
 
@@ -536,7 +538,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
                 <SelectTrigger>
                   <SelectValue placeholder="Select a reason code..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-50 bg-popover text-popover-foreground shadow-md">
                   <SelectItem value="data-inaccuracy">Data Inaccuracy</SelectItem>
                   <SelectItem value="feature-product-gap">Feature/Product Gap</SelectItem>
                   <SelectItem value="implementation-delay-tt">Implementations Delay - TT</SelectItem>

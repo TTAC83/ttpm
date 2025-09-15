@@ -242,8 +242,10 @@ export async function loadWeeklyStats(weekStartISO: string): Promise<WeeklyStats
   
   if (error) throw error;
   
-  const total_companies = companyIds.length;
   const reviewsData = reviews || [];
+  
+  // Only count assigned customers (those that have reviews)
+  const total_companies = reviewsData.length;
   
   const on_track = reviewsData.filter(r => r.project_status === "on_track").length;
   const off_track = reviewsData.filter(r => r.project_status === "off_track").length;

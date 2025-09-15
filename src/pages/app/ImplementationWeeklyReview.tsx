@@ -525,15 +525,27 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
                 </tr>
               </thead>
               <tbody>
-                {actionsQ.data!.map(a => (
-                  <tr key={a.id} className="border-t">
-                    <td className="py-2 pr-3">{a.title ?? "-"}</td>
-                    <td className="py-2 pr-3">{a.profiles?.name ?? "-"}</td>
-                    <td className="py-2 pr-3">{a.status ?? "-"}</td>
-                    <td className="py-2 pr-3">{a.planned_date ?? "-"}</td>
-                    <td className="py-2 pr-3">{a.is_critical ? "Yes" : "No"}</td>
-                  </tr>
-                ))}
+                {actionsQ.data!.map(a => {
+                  // Check if action is overdue (open/in progress and planned date < today)
+                  const today = new Date();
+                  const plannedDate = a.planned_date ? new Date(a.planned_date) : null;
+                  const isOverdue = plannedDate && 
+                    plannedDate < today && 
+                    (a.status === 'open' || a.status === 'in_progress');
+                  
+                  return (
+                    <tr 
+                      key={a.id} 
+                      className={`border-t ${isOverdue ? 'bg-red-50' : ''}`}
+                    >
+                      <td className="py-2 pr-3">{a.title ?? "-"}</td>
+                      <td className="py-2 pr-3">{a.profiles?.name ?? "-"}</td>
+                      <td className="py-2 pr-3">{a.status ?? "-"}</td>
+                      <td className="py-2 pr-3">{a.planned_date ?? "-"}</td>
+                      <td className="py-2 pr-3">{a.is_critical ? "Yes" : "No"}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

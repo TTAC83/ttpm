@@ -358,29 +358,6 @@ export default function GlobalModels() {
           {models.length} models found • {showProductRunDates ? 'Product run dates' : 'Regular dates'}
         </div>
       </div>
-      
-      {/* Debug info */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Debug: All Models</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {models.map(model => (
-              <div key={model.id} className="p-2 border rounded text-sm">
-                <div><strong>Project:</strong> {model.project_name} ({model.company_name})</div>
-                <div><strong>Product:</strong> {model.product_title} - {model.line_name}</div>
-                <div><strong>Regular dates:</strong> {model.start_date || 'None'} to {model.end_date || 'None'}</div>
-                <div><strong>Product run dates:</strong> {model.product_run_start || 'None'} to {model.product_run_end || 'None'}</div>
-                <div><strong>Status:</strong> {model.status}</div>
-              </div>
-            ))}
-            {models.length === 0 && (
-              <div className="text-muted-foreground">No models loaded</div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
 
       <div className="space-y-6">
         {renderCalendar(currentDate)}

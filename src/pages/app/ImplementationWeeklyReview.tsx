@@ -151,19 +151,6 @@ export default function ImplementationWeeklyReviewPage() {
         </Card>
       )}
 
-      {/* Debug - show health data */}
-      {companiesHealthQ.data && companiesHealthQ.data.length > 0 && (
-        <Card className="p-3 bg-yellow-50">
-          <div className="text-sm">
-            <div>Health Data for week {selectedWeek}:</div>
-            {companiesHealthQ.data.map((item: any) => (
-              <div key={item.company_id} className="text-xs">
-                Company: {item.company_id.slice(0, 8)}... | Health: {item.customer_health} | Status: {item.project_status}
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
 
       {/* Header */}
       <Card className="p-3 sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-background/60">

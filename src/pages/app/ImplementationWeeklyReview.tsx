@@ -222,7 +222,7 @@ export default function ImplementationWeeklyReviewPage() {
             <div className="text-center">
               <div className="text-lg">
                 <span className="text-green-600 font-semibold">
-                  {statsQ.data ? Math.round(((statsQ.data.on_track + statsQ.data.green_health) / (statsQ.data.total_companies * 2)) * 100) : 0}%
+                  {statsQ.data ? (() => { const assigned = (statsQ.data.green_health + statsQ.data.red_health); return assigned > 0 ? Math.round((statsQ.data.green_health / assigned) * 100) : 0; })() : 0}%
                 </span>
               </div>
               <div className="text-sm text-muted-foreground">Overall Health</div>

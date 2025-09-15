@@ -89,10 +89,6 @@ export default function ImplementationWeeklyReviewPage() {
     return list.filter(c => c.company_name.toLowerCase().includes(q));
   }, [companiesQ.data, search]);
 
-  // Debug logging
-  console.log("weeksQ:", { data: weeksQ.data, isLoading: weeksQ.isLoading, error: weeksQ.error });
-  console.log("companiesQ:", { data: companiesQ.data, isLoading: companiesQ.isLoading, error: companiesQ.error });
-
   return (
     <div className="p-4 space-y-4">
       {/* Debug Information */}
@@ -645,7 +641,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
             Auto-saving...
           </div>
         )}
-    </Card>
+      </Card>
 
     {/* Edit Task Dialog */}
     {editingTask && (

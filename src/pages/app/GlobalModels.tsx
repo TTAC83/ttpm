@@ -155,6 +155,15 @@ export default function GlobalModels() {
       });
 
       setModels(enriched as any);
+      console.log('All loaded models:', enriched.length, enriched.map(m => ({
+        id: m.id,
+        project_name: m.project_name,
+        company_name: m.company_name,
+        start_date: m.start_date,
+        end_date: m.end_date,
+        product_run_start: m.product_run_start,
+        product_run_end: m.product_run_end
+      })));
     } catch (error: any) {
       console.error('Error fetching models:', error);
       toast({
@@ -187,13 +196,27 @@ export default function GlobalModels() {
   };
 
   const getModelsForDate = (date: Date) => {
-    return models.filter(model => {
+    const filteredModels = models.filter(model => {
       if (showProductRunDates) {
-        return isDateInRange(date, model.product_run_start, model.product_run_end);
+        const inRange = isDateInRange(date, model.product_run_start, model.product_run_end);
+        if (inRange) {
+          console.log(`Model ${model.id} appears on ${date.toDateString()} (product run dates)`);
+        }
+        return inRange;
       } else {
-        return isDateInRange(date, model.start_date, model.end_date);
+        const inRange = isDateInRange(date, model.start_date, model.end_date);
+        if (inRange) {
+          console.log(`Model ${model.id} appears on ${date.toDateString()} (regular dates)`);
+        }
+        return inRange;
       }
     });
+    
+    if (filteredModels.length > 0) {
+      console.log(`Date ${date.toDateString()} has ${filteredModels.length} models:`, filteredModels.map(m => m.id));
+    }
+    
+    return filteredModels;
   };
 
   const handleModelClick = (model: VisionModel) => {
@@ -335,6 +358,29 @@ export default function GlobalModels() {
           {models.length} models found • {showProductRunDates ? 'Product run dates' : 'Regular dates'}
         </div>
       </div>
+      
+      {/* Debug info */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Debug: All Models</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {models.map(model => (
+              <div key={model.id} className="p-2 border rounded text-sm">
+                <div><strong>Project:</strong> {model.project_name} ({model.company_name})</div>
+                <div><strong>Product:</strong> {model.product_title} - {model.line_name}</div>
+                <div><strong>Regular dates:</strong> {model.start_date || 'None'} to {model.end_date || 'None'}</div>
+                <div><strong>Product run dates:</strong> {model.product_run_start || 'None'} to {model.product_run_end || 'None'}</div>
+                <div><strong>Status:</strong> {model.status}</div>
+              </div>
+            ))}
+            {models.length === 0 && (
+              <div className="text-muted-foreground">No models loaded</div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="space-y-6">
         {renderCalendar(currentDate)}

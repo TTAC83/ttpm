@@ -177,7 +177,7 @@ export default function ImplementationWeeklyReviewPage() {
       {/* Stats Banner */}
       {selectedWeek && (
         <Card className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">
                 {statsQ.data?.total_companies || 0}
@@ -226,6 +226,15 @@ export default function ImplementationWeeklyReviewPage() {
                 </span>
               </div>
               <div className="text-sm text-muted-foreground">Overall Health</div>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-lg">
+                <span className="text-green-600 font-semibold">
+                  {statsQ.data ? (() => { const assigned = (statsQ.data.on_track + statsQ.data.off_track); return assigned > 0 ? Math.round((statsQ.data.on_track / assigned) * 100) : 0; })() : 0}%
+                </span>
+              </div>
+              <div className="text-sm text-muted-foreground">Projects on Track</div>
             </div>
           </div>
         </Card>

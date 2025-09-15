@@ -7,12 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import { CalendarIcon, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { computeTaskStatus } from "@/lib/taskStatus";
 import { supabase } from "@/integrations/supabase/client";
@@ -168,6 +170,8 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   const qc = useQueryClient();
   const [editingTask, setEditingTask] = useState<TaskRow | null>(null);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [createActionDialogOpen, setCreateActionDialogOpen] = useState(false);
+  const [projectId, setProjectId] = useState<string | null>(null);
 
   const overdueQ = useQuery({
     queryKey: ["impl-overdue", companyId],
@@ -178,6 +182,42 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     queryKey: ["impl-actions", companyId],
     queryFn: () => loadOpenActions(companyId),
   });
+
+  // Get project ID by querying the projects for this company
+  useEffect(() => {
+    const getProjectId = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('projects')
+          .select('id')
+          .eq('company_id', companyId)
+          .in('domain', ['IoT', 'Vision', 'Hybrid'])
+          .limit(1);
+        
+        if (error) {
+          console.error('Error fetching project ID:', error);
+          return;
+        }
+        
+        if (data && data.length > 0) {
+          setProjectId(data[0].id);
+        }
+      } catch (error) {
+        console.error('Error getting project ID:', error);
+      }
+    };
+
+    if (companyId) {
+      getProjectId();
+    }
+  }, [companyId]);
+
+  // Extract project ID from the first action as fallback
+  useEffect(() => {
+    if (!projectId && actionsQ.data && actionsQ.data.length > 0) {
+      setProjectId(actionsQ.data[0].project_id);
+    }
+  }, [actionsQ.data, projectId]);
 
   const eventsQ = useQuery({
     queryKey: ["impl-events", companyId, weekStart],
@@ -274,6 +314,26 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     }
   };
 
+  const handleCreateAction = async (actionData: any) => {
+    try {
+      const { error } = await supabase.functions.invoke('create-action', {
+        body: {
+          ...actionData,
+          project_id: projectId
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success("Action created successfully");
+      setCreateActionDialogOpen(false);
+      qc.invalidateQueries({ queryKey: ["impl-actions", companyId] });
+    } catch (error) {
+      console.error('Error creating action:', error);
+      toast.error("Failed to create action");
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Overdue Tasks */}
@@ -345,7 +405,19 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
       <Card className="p-4">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold">Actions (Open / In Progress)</h2>
-          <span className="text-sm opacity-75">{actionsQ.data?.length ?? 0} items</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm opacity-75">{actionsQ.data?.length ?? 0} items</span>
+            {projectId && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setCreateActionDialogOpen(true)}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Action
+              </Button>
+            )}
+          </div>
         </div>
         <Separator className="my-3" />
         {actionsQ.isLoading ? (
@@ -468,6 +540,18 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
         onSave={handleSaveTask}
         onClose={() => setEditingTask(null)}
       />
+    )}
+    {/* Create Action Dialog */}
+    {createActionDialogOpen && projectId && (
+      <Dialog open={createActionDialogOpen} onOpenChange={setCreateActionDialogOpen}>
+        <DialogContent>
+          <CreateActionDialog
+            profiles={profiles}
+            onSave={handleCreateAction}
+            onClose={() => setCreateActionDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     )}
   </div>
 );
@@ -695,5 +779,157 @@ const TaskEditDialog = ({
         </form>
       </DialogContent>
     </Dialog>
+  );
+};
+
+// Create Action Dialog Component  
+const CreateActionDialog = ({ 
+  profiles, 
+  onSave, 
+  onClose 
+}: {
+  profiles: Profile[];
+  onSave: (data: any) => void;
+  onClose: () => void;
+}) => {
+  const [formData, setFormData] = useState({
+    title: '',
+    details: '',
+    assignee: '',
+    planned_date: undefined as Date | undefined,
+    notes: '',
+    is_critical: false,
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+        await onSave({
+          title: formData.title,
+          details: formData.details || null,
+          assignee: formData.assignee || null,
+          planned_date: formData.planned_date ? formData.planned_date.toISOString().split('T')[0] : null,
+          notes: formData.notes || null,
+          is_critical: formData.is_critical,
+        });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDateForDisplay = (date: Date | undefined) => {
+    if (!date) return "Pick a date";
+    return date.toLocaleDateString();
+  };
+
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>Create New Action</DialogTitle>
+        <DialogDescription>
+          Add a new action item for this project
+        </DialogDescription>
+      </DialogHeader>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="title">Title *</Label>
+          <Input
+            id="title"
+            value={formData.title}
+            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="details">Details</Label>
+          <Textarea
+            id="details"
+            value={formData.details}
+            onChange={(e) => setFormData(prev => ({ ...prev, details: e.target.value }))}
+            rows={3}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="assignee">Assignee</Label>
+            <Select
+              value={formData.assignee}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, assignee: value === "unassigned" ? "" : value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select assignee" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="unassigned">Unassigned</SelectItem>
+                {profiles.map((profile) => (
+                  <SelectItem key={profile.user_id} value={profile.user_id}>
+                    {profile.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Planned Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !formData.planned_date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formatDateForDisplay(formData.planned_date)}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={formData.planned_date}
+                  onSelect={(date) => setFormData(prev => ({ ...prev, planned_date: date }))}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="notes">Notes</Label>
+          <Textarea
+            id="notes"
+            value={formData.notes}
+            onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+            rows={2}
+          />
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="is_critical"
+            checked={formData.is_critical}
+            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_critical: checked === true }))}
+          />
+          <Label htmlFor="is_critical">Mark as critical</Label>
+        </div>
+
+        <div className="flex justify-end space-x-2">
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={loading || !formData.title}>
+            {loading ? "Creating..." : "Create Action"}
+          </Button>
+        </div>
+      </form>
+    </>
   );
 };

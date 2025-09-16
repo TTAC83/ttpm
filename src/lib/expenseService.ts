@@ -353,7 +353,7 @@ export async function confirmMyExpense(
 }
 
 // Get expense categories for dropdown
-export function getExpenseCategories() {
+export const getExpenseCategories = () => {
   return [
     { value: 'FoodDrink', label: 'Food & Drink' },
     { value: 'Hotel', label: 'Hotel' },
@@ -364,7 +364,7 @@ export function getExpenseCategories() {
     { value: 'Transport', label: 'Transport' },
     { value: 'Other', label: 'Other' }
   ];
-}
+};
 
 // List expenses pending project lead review
 export async function listPendingLeadReview() {

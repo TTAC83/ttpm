@@ -25,6 +25,8 @@ import { LogOut, ChevronRight } from 'lucide-react';
 import { NAV, visibleItemsForRole, ICON_MAP, type Role, type NavItem } from '@/config/nav';
 import { useExpenseAccess } from '@/hooks/useExpenseAccess';
 import { useState, useEffect } from 'react';
+import InstallButton from '@/components/pwa/InstallButton';
+import InstallHelpModal from '@/components/pwa/InstallHelpModal';
 
 export const AppLayout = () => {
   const { user, profile, signOut } = useAuth();
@@ -214,8 +216,12 @@ export const AppLayout = () => {
         
         <main className="flex-1 overflow-auto">
           <div className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="flex h-14 items-center px-4">
+            <div className="flex h-14 items-center justify-between px-4">
               <SidebarTrigger />
+              <div className="flex items-center gap-2">
+                <InstallButton />
+                <InstallHelpModal />
+              </div>
             </div>
           </div>
           <div className="p-6">

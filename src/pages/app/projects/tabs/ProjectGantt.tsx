@@ -392,7 +392,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                   <div className="min-w-[800px] space-y-2 relative">
                     {/* X-axis date labels for events */}
                     <div className="relative h-8 border-b border-gray-200">
-                      <div className="absolute inset-0" style={{ marginLeft: '264px' }}>
+                      <div className="absolute inset-0" style={{ marginLeft: '344px' }}>
                         {dateMarkers.map((marker, index) => (
                           <div
                             key={index}
@@ -412,7 +412,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                     <div
                       className="absolute top-8 bottom-0 w-0.5 bg-red-500 z-10 opacity-80"
                       style={{
-                        left: `${264 + todayPosition}px` // 264px is the width of the info column
+                        left: `${344 + todayPosition}px` // 344px is the width of the info + status columns
                       }}
                     >
                       <div className="absolute -top-6 -left-8 bg-red-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
@@ -438,6 +438,13 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                           )}
                         </div>
 
+                        {/* Event Status */}
+                        <div className="w-20 flex-shrink-0 text-xs">
+                          <span className="px-2 py-1 rounded bg-purple-100 text-purple-700">
+                            Event
+                          </span>
+                        </div>
+
                         {/* Event Gantt Bar */}
                         <div className="flex-1 relative h-8 bg-purple-100 rounded">
                           <div
@@ -451,13 +458,6 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                           >
                             📅
                           </div>
-                        </div>
-
-                        {/* Event Type */}
-                        <div className="w-20 flex-shrink-0 text-xs">
-                          <span className="px-2 py-1 rounded bg-purple-100 text-purple-700">
-                            Event
-                          </span>
                         </div>
                       </div>
                     ))}
@@ -476,7 +476,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                   <div className="min-w-[800px] space-y-2 relative">
                     {/* X-axis date labels for tasks */}
                     <div className="relative h-8 border-b border-gray-200">
-                      <div className="absolute inset-0" style={{ marginLeft: '264px' }}>
+                      <div className="absolute inset-0" style={{ marginLeft: '344px' }}>
                         {dateMarkers.map((marker, index) => (
                           <div
                             key={index}
@@ -496,7 +496,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                     <div
                       className="absolute top-8 bottom-0 w-0.5 bg-red-500 z-10 opacity-80"
                       style={{
-                        left: `${264 + todayPosition}px` // 264px is the width of the info column
+                        left: `${344 + todayPosition}px` // 344px is the width of the info + status columns
                       }}
                     >
                       <div className="absolute -top-6 -left-8 bg-red-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
@@ -525,10 +525,22 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                               </div>
                             </div>
 
+                            {/* Status */}
+                            <div className="w-20 flex-shrink-0 text-xs">
+                              <span className={`px-2 py-1 rounded ${
+                                task.status === 'Done' ? 'bg-green-100 text-green-700' :
+                                task.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
+                                task.status === 'Blocked' ? 'bg-red-100 text-red-700' :
+                                'bg-gray-100 text-gray-700'
+                              }`}>
+                                {task.status}
+                              </span>
+                            </div>
+
                             {/* Gantt Bar */}
                             <div className="flex-1 relative h-8 bg-gray-100 rounded">
                               <div
-                                className="absolute top-1 h-6 rounded flex items-center justify-center text-xs text-white font-medium"
+                                className="absolute top-1 h-6 rounded"
                                 style={{
                                   left: `${getItemPosition(task, allItems)}px`,
                                   width: `${getItemWidth(task)}px`,
@@ -536,7 +548,6 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                                   minWidth: '20px'
                                 }}
                               >
-                                {task.status === 'Done' && '✓'}
                               </div>
 
                               {/* Actual bar (if different from planned) */}
@@ -550,18 +561,6 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                                   }}
                                 />
                               )}
-                            </div>
-
-                            {/* Status */}
-                            <div className="w-20 flex-shrink-0 text-xs">
-                              <span className={`px-2 py-1 rounded ${
-                                task.status === 'Done' ? 'bg-green-100 text-green-700' :
-                                task.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
-                                task.status === 'Blocked' ? 'bg-red-100 text-red-700' :
-                                'bg-gray-100 text-gray-700'
-                              }`}>
-                                {task.status}
-                              </span>
                             </div>
                           </div>
 
@@ -582,10 +581,22 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                                 </div>
                               </div>
 
+                              {/* Subtask Status */}
+                              <div className="w-20 flex-shrink-0 text-xs">
+                                <span className={`px-1 py-0.5 rounded text-xs ${
+                                  subtask.status === 'Done' ? 'bg-green-100 text-green-700' :
+                                  subtask.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
+                                  subtask.status === 'Blocked' ? 'bg-red-100 text-red-700' :
+                                  'bg-gray-100 text-gray-700'
+                                }`}>
+                                  {subtask.status}
+                                </span>
+                              </div>
+
                               {/* Subtask Gantt Bar */}
                               <div className="flex-1 relative h-6 bg-gray-50 rounded">
                                 <div
-                                  className="absolute top-1 h-4 rounded flex items-center justify-center text-xs text-white font-medium"
+                                  className="absolute top-1 h-4 rounded"
                                   style={{
                                     left: `${getItemPosition(subtask, allItems)}px`,
                                     width: `${getItemWidth(subtask)}px`,
@@ -594,7 +605,6 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                                     opacity: 0.8
                                   }}
                                 >
-                                  {subtask.status === 'Done' && '✓'}
                                 </div>
 
                                 {/* Actual bar for subtask */}
@@ -608,18 +618,6 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                                     }}
                                   />
                                 )}
-                              </div>
-
-                              {/* Subtask Status */}
-                              <div className="w-20 flex-shrink-0 text-xs">
-                                <span className={`px-1 py-0.5 rounded text-xs ${
-                                  subtask.status === 'Done' ? 'bg-green-100 text-green-700' :
-                                  subtask.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
-                                  subtask.status === 'Blocked' ? 'bg-red-100 text-red-700' :
-                                  'bg-gray-100 text-gray-700'
-                                }`}>
-                                  {subtask.status}
-                                </span>
                               </div>
                             </div>
                           ))}

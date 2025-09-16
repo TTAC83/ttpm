@@ -447,64 +447,60 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
           Visual timeline showing planned vs actual {viewMode === 'step' ? 'step' : 'task'} completion and calendar events
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-3">
         {(viewMode === 'step' ? stepsWithDates.length === 0 : tasksWithDates.length === 0) && events.length === 0 ? (
-          <div className="text-center py-8">
-            <BarChart className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-            <p className="text-muted-foreground">No {viewMode === 'step' ? 'steps' : 'tasks'} or events with dates found</p>
+          <div className="text-center py-4">
+            <BarChart className="h-6 w-6 mx-auto text-muted-foreground mb-2" />
+            <p className="text-sm text-muted-foreground">No {viewMode === 'step' ? 'steps' : 'tasks'} or events with dates found</p>
           </div>
         ) : (
-          <div className="space-y-6">
-            {/* Legend */}
-            <div className="flex flex-wrap gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-green-500 rounded"></div>
-                <span>Completed on time</span>
+          <div className="space-y-3">
+            {/* Compact Legend */}
+            <div className="flex flex-wrap gap-3 text-xs bg-muted/30 p-2 rounded-md">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-green-500 rounded-sm"></div>
+                <span>On time</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-red-500 rounded"></div>
-                <span>Completed late</span>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-red-500 rounded-sm"></div>
+                <span>Late</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-red-200 rounded"></div>
-                <span>Overdue (not completed)</span>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-red-200 rounded-sm"></div>
+                <span>Overdue</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-gray-300 rounded"></div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-gray-300 rounded-sm"></div>
                 <span>On track</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-purple-500 rounded"></div>
-                <span>Calendar Events</span>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-purple-500 rounded-sm"></div>
+                <span>Events</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-red-500 rounded"></div>
-                <span>Critical Events</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-0.5 h-4 bg-red-500"></div>
+              <div className="flex items-center gap-1">
+                <div className="w-0.5 h-3 bg-red-500"></div>
                 <span>Today</span>
               </div>
             </div>
 
             {/* Calendar Events Section */}
             {events.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold text-purple-700 border-b border-purple-200 pb-2">
-                  📅 Calendar Events
+              <div className="space-y-1">
+                <h3 className="text-sm font-medium text-purple-700 border-b border-purple-200/50 pb-1">
+                  📅 Events
                 </h3>
                 <div className="overflow-x-auto">
-                  <div className="min-w-[800px] space-y-2 relative">
-                    {/* X-axis date labels for events */}
-                    <div className="relative h-8 border-b border-gray-200">
-                      <div className="absolute inset-0" style={{ marginLeft: '344px' }}>
+                  <div className="min-w-full space-y-1 relative">
+                    {/* Compact X-axis date labels for events */}
+                    <div className="relative h-6 border-b border-gray-200">
+                      <div className="absolute inset-0" style={{ marginLeft: '240px' }}>
                         {dateMarkers.map((marker, index) => (
                           <div
                             key={index}
-                            className="absolute text-xs text-gray-600 transform -rotate-45 origin-bottom-left"
+                            className="absolute text-[10px] text-gray-600 transform -rotate-45 origin-bottom-left"
                             style={{
                               left: `${marker.position}px`,
-                              bottom: '4px'
+                              bottom: '2px'
                             }}
                           >
                             {marker.label}
@@ -513,52 +509,44 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                       </div>
                     </div>
                     
-                    {/* Today line for events */}
+                    {/* Compact Today line for events */}
                     <div
-                      className="absolute top-8 bottom-0 w-0.5 bg-red-500 z-10 opacity-80"
+                      className="absolute top-6 bottom-0 w-0.5 bg-red-500 z-10 opacity-80"
                       style={{
-                        left: `${344 + todayPosition}px` // 344px is the width of the info + status columns
+                        left: `${240 + todayPosition}px` // 240px is the new compact width
                       }}
                     >
-                      <div className="absolute -top-6 -left-8 bg-red-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-                        Today ({formatDateUK(new Date().toISOString().split('T')[0])})
+                      <div className="absolute -top-5 -left-6 bg-red-500 text-white text-[10px] px-1 py-0.5 rounded whitespace-nowrap">
+                        Today
                       </div>
                     </div>
                     {events.map((event) => (
-                      <div key={event.id} className="flex items-center gap-4 py-2 bg-purple-50 rounded-lg">
-                        {/* Event Info */}
-                        <div className="w-64 flex-shrink-0 px-2">
-                          <div className="text-sm font-medium truncate text-purple-900">{event.title}</div>
-                          {event.description && (
-                            <div className="text-xs text-purple-700 truncate">{event.description}</div>
-                          )}
-                          <div className="text-xs text-purple-600">
+                      <div key={event.id} className="flex items-center gap-2 py-1 bg-purple-50/50 rounded">
+                        {/* Compact Event Info */}
+                        <div className="w-48 flex-shrink-0 px-1">
+                          <div className="text-xs font-medium truncate text-purple-900">{event.title}</div>
+                          <div className="text-[10px] text-purple-600">
                             {formatDateUK(event.start_date)}
                             {event.start_date !== event.end_date && ` - ${formatDateUK(event.end_date)}`}
                           </div>
-                          {event.attendees.length > 0 && (
-                            <div className="text-xs text-purple-600 truncate">
-                              👥 {event.attendees.map(a => a.profiles?.name || 'Unknown').join(', ')}
-                            </div>
-                          )}
                         </div>
 
-                        {/* Event Status */}
-                        <div className="w-20 flex-shrink-0 text-xs">
-                          <span className="px-2 py-1 rounded bg-purple-100 text-purple-700">
+                        {/* Compact Event Status */}
+                        <div className="w-12 flex-shrink-0 text-[10px]">
+                          <span className="px-1 py-0.5 rounded bg-purple-100 text-purple-700">
                             Event
                           </span>
                         </div>
 
-                        {/* Event Gantt Bar */}
-                        <div className="flex-1 relative h-8 bg-purple-100 rounded">
+                        {/* Compact Event Gantt Bar */}
+                        <div className="flex-1 relative h-4 bg-purple-100/50 rounded">
                           <div
-                            className="absolute top-1 h-6 rounded flex items-center justify-center text-xs text-white font-medium shadow-sm"
+                            className="absolute top-0.5 h-3 rounded flex items-center justify-center text-[10px] text-white font-medium"
                             style={{
                               left: `${getEventPosition(event, allItems)}px`,
                               width: `${getEventWidth(event)}px`,
                               backgroundColor: getEventColor(event),
-                              minWidth: '20px'
+                              minWidth: '15px'
                             }}
                           >
                             📅
@@ -573,22 +561,22 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
 
             {/* Tasks/Steps Section */}
             {(viewMode === 'step' ? stepsWithDates.length > 0 : tasksWithDates.length > 0) && (
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold text-blue-700 border-b border-blue-200 pb-2">
-                  🔧 Project {viewMode === 'step' ? 'Steps' : 'Tasks'}
+              <div className="space-y-1">
+                <h3 className="text-sm font-medium text-blue-700 border-b border-blue-200/50 pb-1">
+                  🔧 {viewMode === 'step' ? 'Steps' : 'Tasks'}
                 </h3>
                 <div className="overflow-x-auto">
-                  <div className="min-w-[800px] space-y-2 relative">
-                    {/* X-axis date labels for tasks */}
-                    <div className="relative h-8 border-b border-gray-200">
-                      <div className="absolute inset-0" style={{ marginLeft: '344px' }}>
+                  <div className="min-w-full space-y-1 relative">
+                    {/* Compact X-axis date labels for tasks */}
+                    <div className="relative h-6 border-b border-gray-200">
+                      <div className="absolute inset-0" style={{ marginLeft: '240px' }}>
                         {dateMarkers.map((marker, index) => (
                           <div
                             key={index}
-                            className="absolute text-xs text-gray-600 transform -rotate-45 origin-bottom-left"
+                            className="absolute text-[10px] text-gray-600 transform -rotate-45 origin-bottom-left"
                             style={{
                               left: `${marker.position}px`,
-                              bottom: '4px'
+                              bottom: '2px'
                             }}
                           >
                             {marker.label}
@@ -597,78 +585,78 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                       </div>
                     </div>
                     
-                    {/* Today line for tasks */}
+                    {/* Compact Today line for tasks */}
                     <div
-                      className="absolute top-8 bottom-0 w-0.5 bg-red-500 z-10 opacity-80"
+                      className="absolute top-6 bottom-0 w-0.5 bg-red-500 z-10 opacity-80"
                       style={{
-                        left: `${344 + todayPosition}px` // 344px is the width of the info + status columns
+                        left: `${240 + todayPosition}px` // 240px is the new compact width
                       }}
                     >
-                      <div className="absolute -top-6 -left-8 bg-red-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-                        Today ({formatDateUK(new Date().toISOString().split('T')[0])})
+                      <div className="absolute -top-5 -left-6 bg-red-500 text-white text-[10px] px-1 py-0.5 rounded whitespace-nowrap">
+                        Today
                       </div>
                     </div>
                     {viewMode === 'step' ? (
                       // Step View
                       stepsWithDates.map((step) => (
                         <div key={step.step_name} className="space-y-1">
-                          {/* Step */}
-                          <div className="flex items-center gap-4 py-2 bg-blue-50 rounded-lg">
-                            {/* Step Info */}
-                            <div className="w-64 flex-shrink-0 px-2">
-                              <div className="text-sm font-medium truncate flex items-center gap-2">
-                                {step.step_name}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {step.tasks.length} task{step.tasks.length !== 1 ? 's' : ''}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {step.planned_start && step.planned_end && (
-                                  <>
-                                    {formatDateUK(step.planned_start)} - {formatDateUK(step.planned_end)}
-                                  </>
-                                )}
-                              </div>
-                            </div>
+                           {/* Step */}
+                           <div className="flex items-center gap-2 py-1 bg-blue-50/50 rounded">
+                             {/* Compact Step Info */}
+                             <div className="w-48 flex-shrink-0 px-1">
+                               <div className="text-xs font-medium truncate">
+                                 {step.step_name}
+                               </div>
+                               <div className="text-[10px] text-muted-foreground">
+                                 {step.tasks.length} task{step.tasks.length !== 1 ? 's' : ''}
+                               </div>
+                               <div className="text-[10px] text-muted-foreground">
+                                 {step.planned_start && step.planned_end && (
+                                   <>
+                                     {formatDateUK(step.planned_start)} - {formatDateUK(step.planned_end)}
+                                   </>
+                                 )}
+                               </div>
+                             </div>
 
-                            {/* Status */}
-                            <div className="w-20 flex-shrink-0 text-xs">
-                              <span className={`px-2 py-1 rounded ${
-                                step.status === 'Done' ? 'bg-green-100 text-green-700' :
-                                step.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
-                                step.status === 'Blocked' ? 'bg-red-100 text-red-700' :
-                                'bg-gray-100 text-gray-700'
-                              }`}>
-                                {step.status}
-                              </span>
-                            </div>
+                             {/* Compact Status */}
+                             <div className="w-12 flex-shrink-0 text-[10px]">
+                               <span className={`px-1 py-0.5 rounded ${
+                                 step.status === 'Done' ? 'bg-green-100 text-green-700' :
+                                 step.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
+                                 step.status === 'Blocked' ? 'bg-red-100 text-red-700' :
+                                 'bg-gray-100 text-gray-700'
+                               }`}>
+                                 {step.status}
+                               </span>
+                             </div>
 
-                            {/* Gantt Bar */}
-                            <div className="flex-1 relative h-8 bg-gray-100 rounded">
-                              <div
-                                className="absolute top-1 h-6 rounded"
-                                style={{
-                                  left: `${getItemPosition(step as any, allItems)}px`,
-                                  width: `${getItemWidth(step as any)}px`,
-                                  backgroundColor: getItemColor(step as any),
-                                  minWidth: '20px'
-                                }}
-                              >
-                              </div>
+                             {/* Compact Gantt Bar */}
+                             <div className="flex-1 relative h-4 bg-gray-100/50 rounded">
+                               <div
+                                 className="absolute top-0.5 h-3 rounded"
+                                 style={{
+                                   left: `${getItemPosition(step as any, allItems)}px`,
+                                   width: `${getItemWidth(step as any)}px`,
+                                   backgroundColor: getItemColor(step as any),
+                                   minWidth: '15px'
+                                 }}
+                               >
+                               </div>
 
-                              {/* Actual bar (if different from planned) */}
-                              {step.actual_start && step.actual_end && (
-                                <div
-                                  className="absolute bottom-1 h-2 bg-blue-600 rounded opacity-70"
-                                  style={{
-                                    left: `${getItemPosition({ ...step, planned_start: step.actual_start } as any, allItems)}px`,
-                                    width: `${getItemWidth({ ...step, planned_start: step.actual_start, planned_end: step.actual_end } as any)}px`,
-                                    minWidth: '4px'
-                                  }}
-                                />
-                              )}
-                            </div>
-                          </div>
+                               {/* Compact Actual bar */}
+                               {step.actual_start && step.actual_end && (
+                                 <div
+                                   className="absolute bottom-0.5 h-1 bg-blue-600 rounded opacity-70"
+                                   style={{
+                                     left: `${getItemPosition({ ...step, planned_start: step.actual_start } as any, allItems)}px`,
+                                     width: `${getItemWidth({ ...step, planned_start: step.actual_start, planned_end: step.actual_end } as any)}px`,
+                                     minWidth: '3px'
+                                   }}
+                                 />
+                               )}
+                             </div>
+                           </div>
                         </div>
                       ))
                     ) : (
@@ -678,119 +666,119 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                         
                         return (
                           <div key={task.id} className="space-y-1">
-                            {/* Main Task */}
-                            <div className="flex items-center gap-4 py-2">
-                              {/* Task Info */}
-                              <div className="w-64 flex-shrink-0">
-                                <div className="text-sm font-medium truncate flex items-center gap-2">
-                                  {task.task_title}
-                                </div>
-                                <div className="text-xs text-muted-foreground">{task.step_name}</div>
-                                <div className="text-xs text-muted-foreground">
-                                  {task.planned_start && task.planned_end && (
-                                    <>
-                                      {formatDateUK(task.planned_start)} - {formatDateUK(task.planned_end)}
-                                    </>
-                                  )}
-                                </div>
-                              </div>
+                             {/* Main Task */}
+                             <div className="flex items-center gap-2 py-1">
+                               {/* Compact Task Info */}
+                               <div className="w-48 flex-shrink-0 px-1">
+                                 <div className="text-xs font-medium truncate">
+                                   {task.task_title}
+                                 </div>
+                                 <div className="text-[10px] text-muted-foreground">{task.step_name}</div>
+                                 <div className="text-[10px] text-muted-foreground">
+                                   {task.planned_start && task.planned_end && (
+                                     <>
+                                       {formatDateUK(task.planned_start)} - {formatDateUK(task.planned_end)}
+                                     </>
+                                   )}
+                                 </div>
+                               </div>
 
-                              {/* Status */}
-                              <div className="w-20 flex-shrink-0 text-xs">
-                                <span className={`px-2 py-1 rounded ${
-                                  task.status === 'Done' ? 'bg-green-100 text-green-700' :
-                                  task.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
-                                  task.status === 'Blocked' ? 'bg-red-100 text-red-700' :
-                                  'bg-gray-100 text-gray-700'
-                                }`}>
-                                  {task.status}
-                                </span>
-                              </div>
+                               {/* Compact Status */}
+                               <div className="w-12 flex-shrink-0 text-[10px]">
+                                 <span className={`px-1 py-0.5 rounded ${
+                                   task.status === 'Done' ? 'bg-green-100 text-green-700' :
+                                   task.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
+                                   task.status === 'Blocked' ? 'bg-red-100 text-red-700' :
+                                   'bg-gray-100 text-gray-700'
+                                 }`}>
+                                   {task.status}
+                                 </span>
+                               </div>
 
-                              {/* Gantt Bar */}
-                              <div className="flex-1 relative h-8 bg-gray-100 rounded">
-                                <div
-                                  className="absolute top-1 h-6 rounded"
-                                  style={{
-                                    left: `${getItemPosition(task, allItems)}px`,
-                                    width: `${getItemWidth(task)}px`,
-                                    backgroundColor: getItemColor(task),
-                                    minWidth: '20px'
-                                  }}
-                                >
-                                </div>
+                               {/* Compact Gantt Bar */}
+                               <div className="flex-1 relative h-4 bg-gray-100/50 rounded">
+                                 <div
+                                   className="absolute top-0.5 h-3 rounded"
+                                   style={{
+                                     left: `${getItemPosition(task, allItems)}px`,
+                                     width: `${getItemWidth(task)}px`,
+                                     backgroundColor: getItemColor(task),
+                                     minWidth: '15px'
+                                   }}
+                                 >
+                                 </div>
 
-                                {/* Actual bar (if different from planned) */}
-                                {task.actual_start && task.actual_end && (
-                                  <div
-                                    className="absolute bottom-1 h-2 bg-blue-600 rounded opacity-70"
-                                    style={{
-                                      left: `${getItemPosition({ ...task, planned_start: task.actual_start }, allItems)}px`,
-                                      width: `${getItemWidth({ ...task, planned_start: task.actual_start, planned_end: task.actual_end })}px`,
-                                      minWidth: '4px'
-                                    }}
-                                  />
-                                )}
-                              </div>
-                            </div>
+                                 {/* Compact Actual bar */}
+                                 {task.actual_start && task.actual_end && (
+                                   <div
+                                     className="absolute bottom-0.5 h-1 bg-blue-600 rounded opacity-70"
+                                     style={{
+                                       left: `${getItemPosition({ ...task, planned_start: task.actual_start }, allItems)}px`,
+                                       width: `${getItemWidth({ ...task, planned_start: task.actual_start, planned_end: task.actual_end })}px`,
+                                       minWidth: '3px'
+                                     }}
+                                   />
+                                 )}
+                               </div>
+                             </div>
 
-                            {/* Subtasks */}
-                            {taskSubtasks.map((subtask) => (
-                              <div key={subtask.id} className="flex items-center gap-4 py-1 ml-4">
-                                {/* Subtask Info */}
-                                <div className="w-64 flex-shrink-0">
-                                  <div className="text-xs font-medium truncate text-muted-foreground">
-                                    ├─ {subtask.title}
-                                  </div>
-                                  <div className="text-xs text-muted-foreground ml-3">
-                                    {subtask.planned_start && subtask.planned_end && (
-                                      <>
-                                        {formatDateUK(subtask.planned_start)} - {formatDateUK(subtask.planned_end)}
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
+                             {/* Compact Subtasks */}
+                             {taskSubtasks.map((subtask) => (
+                               <div key={subtask.id} className="flex items-center gap-2 py-0.5 ml-3">
+                                 {/* Compact Subtask Info */}
+                                 <div className="w-48 flex-shrink-0 px-1">
+                                   <div className="text-[10px] font-medium truncate text-muted-foreground">
+                                     ├─ {subtask.title}
+                                   </div>
+                                   <div className="text-[9px] text-muted-foreground ml-2">
+                                     {subtask.planned_start && subtask.planned_end && (
+                                       <>
+                                         {formatDateUK(subtask.planned_start)} - {formatDateUK(subtask.planned_end)}
+                                       </>
+                                     )}
+                                   </div>
+                                 </div>
 
-                                {/* Subtask Status */}
-                                <div className="w-20 flex-shrink-0 text-xs">
-                                  <span className={`px-1 py-0.5 rounded text-xs ${
-                                    subtask.status === 'Done' ? 'bg-green-100 text-green-700' :
-                                    subtask.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
-                                    subtask.status === 'Blocked' ? 'bg-red-100 text-red-700' :
-                                    'bg-gray-100 text-gray-700'
-                                  }`}>
-                                    {subtask.status}
-                                  </span>
-                                </div>
+                                 {/* Compact Subtask Status */}
+                                 <div className="w-12 flex-shrink-0 text-[9px]">
+                                   <span className={`px-1 py-0.5 rounded ${
+                                     subtask.status === 'Done' ? 'bg-green-100 text-green-700' :
+                                     subtask.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
+                                     subtask.status === 'Blocked' ? 'bg-red-100 text-red-700' :
+                                     'bg-gray-100 text-gray-700'
+                                   }`}>
+                                     {subtask.status}
+                                   </span>
+                                 </div>
 
-                                {/* Subtask Gantt Bar */}
-                                <div className="flex-1 relative h-6 bg-gray-50 rounded">
-                                  <div
-                                    className="absolute top-1 h-4 rounded"
-                                    style={{
-                                      left: `${getItemPosition(subtask, allItems)}px`,
-                                      width: `${getItemWidth(subtask)}px`,
-                                      backgroundColor: getItemColor(subtask),
-                                      minWidth: '15px',
-                                      opacity: 0.8
-                                    }}
-                                  >
-                                  </div>
+                                 {/* Compact Subtask Gantt Bar */}
+                                 <div className="flex-1 relative h-3 bg-gray-50/50 rounded">
+                                   <div
+                                     className="absolute top-0.5 h-2 rounded"
+                                     style={{
+                                       left: `${getItemPosition(subtask, allItems)}px`,
+                                       width: `${getItemWidth(subtask)}px`,
+                                       backgroundColor: getItemColor(subtask),
+                                       minWidth: '10px',
+                                       opacity: 0.8
+                                     }}
+                                   >
+                                   </div>
 
-                                  {/* Actual bar for subtask */}
-                                  {subtask.actual_start && subtask.actual_end && (
-                                    <div
-                                      className="absolute bottom-1 h-1 bg-blue-600 rounded opacity-70"
-                                      style={{
-                                        left: `${getItemPosition({ ...subtask, planned_start: subtask.actual_start }, allItems)}px`,
-                                        width: `${getItemWidth({ ...subtask, planned_start: subtask.actual_start, planned_end: subtask.actual_end })}px`,
-                                        minWidth: '3px'
-                                      }}
-                                    />
-                                  )}
-                                </div>
-                              </div>
-                            ))}
+                                   {/* Compact Actual bar for subtask */}
+                                   {subtask.actual_start && subtask.actual_end && (
+                                     <div
+                                       className="absolute bottom-0.5 h-0.5 bg-blue-600 rounded opacity-70"
+                                       style={{
+                                         left: `${getItemPosition({ ...subtask, planned_start: subtask.actual_start }, allItems)}px`,
+                                         width: `${getItemWidth({ ...subtask, planned_start: subtask.actual_start, planned_end: subtask.actual_end })}px`,
+                                         minWidth: '2px'
+                                       }}
+                                     />
+                                   )}
+                                 </div>
+                               </div>
+                             ))}
                           </div>
                         );
                       })
@@ -801,8 +789,8 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
             )}
 
             {/* Print Instructions */}
-            <div className="text-xs text-muted-foreground border-t pt-4">
-              <p><strong>Print/Export:</strong> Use your browser's print function (Ctrl+P) to print or save as PDF.</p>
+            <div className="text-[10px] text-muted-foreground border-t pt-2">
+              <p><strong>Print/Export:</strong> Use browser print (Ctrl+P) to save as PDF.</p>
             </div>
           </div>
         )}

@@ -489,25 +489,32 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                 <h3 className="text-sm font-medium text-purple-700 border-b border-purple-200/50 pb-1">
                   📅 Events
                 </h3>
-                <div className="overflow-x-auto">
-                  <div className="min-w-full space-y-1 relative">
-                    {/* Compact X-axis date labels for events */}
-                    <div className="relative h-6 border-b border-gray-200">
-                      <div className="absolute inset-0" style={{ marginLeft: '240px' }}>
-                        {dateMarkers.map((marker, index) => (
-                          <div
-                            key={index}
-                            className="absolute text-[10px] text-gray-600 transform -rotate-45 origin-bottom-left"
-                            style={{
-                              left: `${marker.position}px`,
-                              bottom: '2px'
-                            }}
-                          >
-                            {marker.label}
-                          </div>
-                        ))}
+                <div className="relative">
+                  {/* Sticky header for events */}
+                  <div className="sticky top-0 z-30 bg-background border-b border-gray-200">
+                    <div className="flex">
+                      <div className="sticky left-0 z-40 bg-background w-60 h-6 border-r border-gray-200"></div>
+                      <div className="relative h-6 overflow-hidden">
+                        <div className="flex">
+                          {dateMarkers.map((marker, index) => (
+                            <div
+                              key={index}
+                              className="absolute text-[10px] text-gray-600 transform -rotate-45 origin-bottom-left whitespace-nowrap"
+                              style={{
+                                left: `${marker.position}px`,
+                                bottom: '2px'
+                              }}
+                            >
+                              {marker.label}
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
+                  </div>
+                  
+                  <div className="overflow-auto max-h-96">
+                    <div className="min-w-full space-y-1 relative">
                     
                     {/* Compact Today line for events */}
                     <div
@@ -520,40 +527,34 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                         Today
                       </div>
                     </div>
-                    {events.map((event) => (
-                      <div key={event.id} className="flex items-center gap-2 py-1 bg-purple-50/50 rounded">
-                        {/* Compact Event Info */}
-                        <div className="w-48 flex-shrink-0 px-1">
-                          <div className="text-xs font-medium truncate text-purple-900">{event.title}</div>
-                          <div className="text-[10px] text-purple-600">
-                            {formatDateUK(event.start_date)}
-                            {event.start_date !== event.end_date && ` - ${formatDateUK(event.end_date)}`}
+                      {events.map((event) => (
+                        <div key={event.id} className="flex items-center gap-2 py-1 bg-purple-50/50 rounded">
+                          {/* Sticky Event Info */}
+                          <div className="sticky left-0 z-30 bg-purple-50/50 w-60 flex-shrink-0 px-1 border-r border-gray-100">
+                            <div className="text-xs font-medium truncate text-purple-900">{event.title}</div>
+                            <div className="text-[10px] text-purple-600">
+                              {formatDateUK(event.start_date)}
+                              {event.start_date !== event.end_date && ` - ${formatDateUK(event.end_date)}`}
+                            </div>
+                          </div>
+
+                          {/* Event Gantt Bar */}
+                          <div className="flex-1 relative h-4 bg-purple-100/50 rounded">
+                            <div
+                              className="absolute top-0.5 h-3 rounded flex items-center justify-center text-[10px] text-white font-medium"
+                              style={{
+                                left: `${getEventPosition(event, allItems)}px`,
+                                width: `${getEventWidth(event)}px`,
+                                backgroundColor: getEventColor(event),
+                                minWidth: '15px'
+                              }}
+                            >
+                              📅
+                            </div>
                           </div>
                         </div>
-
-                        {/* Compact Event Status */}
-                        <div className="w-12 flex-shrink-0 text-[10px]">
-                          <span className="px-1 py-0.5 rounded bg-purple-100 text-purple-700">
-                            Event
-                          </span>
-                        </div>
-
-                        {/* Compact Event Gantt Bar */}
-                        <div className="flex-1 relative h-4 bg-purple-100/50 rounded">
-                          <div
-                            className="absolute top-0.5 h-3 rounded flex items-center justify-center text-[10px] text-white font-medium"
-                            style={{
-                              left: `${getEventPosition(event, allItems)}px`,
-                              width: `${getEventWidth(event)}px`,
-                              backgroundColor: getEventColor(event),
-                              minWidth: '15px'
-                            }}
-                          >
-                            📅
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                     </div>
                   </div>
                 </div>
               </div>
@@ -565,50 +566,63 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                 <h3 className="text-sm font-medium text-blue-700 border-b border-blue-200/50 pb-1">
                   🔧 {viewMode === 'step' ? 'Steps' : 'Tasks'}
                 </h3>
-                <div className="overflow-x-auto">
-                  <div className="min-w-full space-y-1 relative">
-                    {/* Compact X-axis date labels for tasks */}
-                    <div className="relative h-6 border-b border-gray-200">
-                      <div className="absolute inset-0" style={{ marginLeft: '240px' }}>
-                        {dateMarkers.map((marker, index) => (
-                          <div
-                            key={index}
-                            className="absolute text-[10px] text-gray-600 transform -rotate-45 origin-bottom-left"
-                            style={{
-                              left: `${marker.position}px`,
-                              bottom: '2px'
-                            }}
-                          >
-                            {marker.label}
-                          </div>
-                        ))}
+                <div className="relative">
+                  {/* Sticky header for tasks */}
+                  <div className="sticky top-0 z-30 bg-background border-b border-gray-200">
+                    <div className="flex">
+                      <div className="sticky left-0 z-40 bg-background w-60 h-6 border-r border-gray-200"></div>
+                      <div className="relative h-6 overflow-hidden">
+                        <div className="flex">
+                          {dateMarkers.map((marker, index) => (
+                            <div
+                              key={index}
+                              className="absolute text-[10px] text-gray-600 transform -rotate-45 origin-bottom-left whitespace-nowrap"
+                              style={{
+                                left: `${marker.position}px`,
+                                bottom: '2px'
+                              }}
+                            >
+                              {marker.label}
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
+                  </div>
+                  
+                  <div className="overflow-auto max-h-96">
+                    <div className="min-w-full space-y-1 relative">
                     
-                    {/* Compact Today line for tasks */}
-                    <div
-                      className="absolute top-6 bottom-0 w-0.5 bg-red-500 z-10 opacity-80"
-                      style={{
-                        left: `${240 + todayPosition}px` // 240px is the new compact width
-                      }}
-                    >
-                      <div className="absolute -top-5 -left-6 bg-red-500 text-white text-[10px] px-1 py-0.5 rounded whitespace-nowrap">
-                        Today
-                      </div>
-                    </div>
+                      {/* Today line for tasks */}
+                      <div 
+                        className="absolute w-0.5 bg-red-500 z-20"
+                        style={{ 
+                          left: `${240 + todayPosition}px`, 
+                          top: '0px',
+                          height: '100%'
+                        }}
+                      />
                     {viewMode === 'step' ? (
                       // Step View
                       stepsWithDates.map((step) => (
                         <div key={step.step_name} className="space-y-1">
                            {/* Step */}
                            <div className="flex items-center gap-2 py-1 bg-blue-50/50 rounded">
-                             {/* Compact Step Info */}
-                             <div className="w-48 flex-shrink-0 px-1">
+                             {/* Sticky Step Info */}
+                             <div className="sticky left-0 z-30 bg-blue-50/50 w-60 flex-shrink-0 px-1 border-r border-gray-100">
                                <div className="text-xs font-medium truncate">
                                  {step.step_name}
                                </div>
                                <div className="text-[10px] text-muted-foreground">
-                                 {step.tasks.length} task{step.tasks.length !== 1 ? 's' : ''}
+                                 {step.tasks.length} task{step.tasks.length !== 1 ? 's' : ''} | Status: 
+                                 <span className={`ml-1 px-1 py-0.5 rounded ${
+                                   step.status === 'Done' ? 'bg-green-100 text-green-700' :
+                                   step.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
+                                   step.status === 'Blocked' ? 'bg-red-100 text-red-700' :
+                                   'bg-gray-100 text-gray-700'
+                                 }`}>
+                                   {step.status}
+                                 </span>
                                </div>
                                <div className="text-[10px] text-muted-foreground">
                                  {step.planned_start && step.planned_end && (
@@ -617,18 +631,6 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                                    </>
                                  )}
                                </div>
-                             </div>
-
-                             {/* Compact Status */}
-                             <div className="w-12 flex-shrink-0 text-[10px]">
-                               <span className={`px-1 py-0.5 rounded ${
-                                 step.status === 'Done' ? 'bg-green-100 text-green-700' :
-                                 step.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
-                                 step.status === 'Blocked' ? 'bg-red-100 text-red-700' :
-                                 'bg-gray-100 text-gray-700'
-                               }`}>
-                                 {step.status}
-                               </span>
                              </div>
 
                              {/* Compact Gantt Bar */}
@@ -668,12 +670,22 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                           <div key={task.id} className="space-y-1">
                              {/* Main Task */}
                              <div className="flex items-center gap-2 py-1">
-                               {/* Compact Task Info */}
-                               <div className="w-48 flex-shrink-0 px-1">
+                               {/* Sticky Task Info */}
+                               <div className="sticky left-0 z-30 bg-background w-60 flex-shrink-0 px-1 border-r border-gray-100">
                                  <div className="text-xs font-medium truncate">
                                    {task.task_title}
                                  </div>
-                                 <div className="text-[10px] text-muted-foreground">{task.step_name}</div>
+                                 <div className="text-[10px] text-muted-foreground">
+                                   {task.step_name} | Status: 
+                                   <span className={`ml-1 px-1 py-0.5 rounded ${
+                                     task.status === 'Done' ? 'bg-green-100 text-green-700' :
+                                     task.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
+                                     task.status === 'Blocked' ? 'bg-red-100 text-red-700' :
+                                     'bg-gray-100 text-gray-700'
+                                   }`}>
+                                     {task.status}
+                                   </span>
+                                 </div>
                                  <div className="text-[10px] text-muted-foreground">
                                    {task.planned_start && task.planned_end && (
                                      <>
@@ -681,18 +693,6 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                                      </>
                                    )}
                                  </div>
-                               </div>
-
-                               {/* Compact Status */}
-                               <div className="w-12 flex-shrink-0 text-[10px]">
-                                 <span className={`px-1 py-0.5 rounded ${
-                                   task.status === 'Done' ? 'bg-green-100 text-green-700' :
-                                   task.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
-                                   task.status === 'Blocked' ? 'bg-red-100 text-red-700' :
-                                   'bg-gray-100 text-gray-700'
-                                 }`}>
-                                   {task.status}
-                                 </span>
                                </div>
 
                                {/* Compact Gantt Bar */}
@@ -782,20 +782,21 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                           </div>
                         );
                       })
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
+                     )}
+                     </div>
+                   </div>
+                 </div>
+               </div>
+             )}
 
-            {/* Print Instructions */}
-            <div className="text-[10px] text-muted-foreground border-t pt-2">
-              <p><strong>Print/Export:</strong> Use browser print (Ctrl+P) to save as PDF.</p>
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+             {/* Print Instructions */}
+             <div className="text-[10px] text-muted-foreground border-t pt-2">
+               <p><strong>Print/Export:</strong> Use browser print (Ctrl+P) to save as PDF.</p>
+             </div>
+           </div>
+         )}
+       </CardContent>
+     </Card>
   );
 };
 

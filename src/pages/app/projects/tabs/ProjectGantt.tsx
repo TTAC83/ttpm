@@ -419,7 +419,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
         @media print {
           @page {
             size: A4 landscape;
-            margin: 0.5cm;
+            margin: 0.3cm;
           }
           
           body * {
@@ -431,42 +431,119 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
           }
           
           .gantt-print {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            transform: scale(0.7);
-            transform-origin: top left;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            transform: scale(0.6) !important;
+            transform-origin: top left !important;
+            overflow: visible !important;
+          }
+          
+          .gantt-print * {
+            position: static !important;
+            overflow: visible !important;
+            max-height: none !important;
+            max-width: none !important;
+          }
+          
+          .gantt-print .overflow-auto,
+          .gantt-print .overflow-x-auto {
+            overflow: visible !important;
+            max-height: none !important;
+            height: auto !important;
           }
           
           .gantt-print .sticky {
             position: static !important;
+            left: auto !important;
+            top: auto !important;
+            z-index: auto !important;
           }
           
-          .gantt-print .overflow-auto {
-            overflow: visible !important;
-            max-height: none !important;
+          .gantt-print .relative {
+            position: static !important;
           }
           
-          .gantt-print .text-xs {
-            font-size: 8px !important;
+          .gantt-print .absolute {
+            position: static !important;
+            left: auto !important;
+            top: auto !important;
+          }
+          
+          .gantt-print .text-xs,
+          .gantt-print .text-\\[10px\\] {
+            font-size: 6px !important;
+            line-height: 8px !important;
           }
           
           .gantt-print .text-sm {
-            font-size: 10px !important;
+            font-size: 8px !important;
+            line-height: 10px !important;
           }
           
           .gantt-print h3 {
-            font-size: 12px !important;
+            font-size: 10px !important;
+            line-height: 12px !important;
           }
           
           .gantt-print .space-y-1 > * + * {
-            margin-top: 2px !important;
+            margin-top: 1px !important;
           }
           
           .gantt-print .py-1 {
-            padding-top: 1px !important;
-            padding-bottom: 1px !important;
+            padding-top: 0.5px !important;
+            padding-bottom: 0.5px !important;
+          }
+          
+          .gantt-print .px-1 {
+            padding-left: 1px !important;
+            padding-right: 1px !important;
+          }
+          
+          .gantt-print .gap-2 {
+            gap: 1px !important;
+          }
+          
+          .gantt-print .h-4 {
+            height: 8px !important;
+          }
+          
+          .gantt-print .h-3 {
+            height: 6px !important;
+          }
+          
+          .gantt-print .border-r {
+            border-right: 0.5px solid #e5e7eb !important;
+          }
+          
+          .gantt-print .border-b {
+            border-bottom: 0.5px solid #e5e7eb !important;
+          }
+          
+          .gantt-print .w-60 {
+            width: 120px !important;
+          }
+          
+          .gantt-print .w-57 {
+            width: 114px !important;
+          }
+          
+          /* Force all containers to expand */
+          .gantt-print .min-w-full {
+            min-width: 100% !important;
+            width: auto !important;
+          }
+          
+          /* Hide scroll indicators */
+          .gantt-print ::-webkit-scrollbar {
+            display: none !important;
+          }
+          
+          .gantt-print {
+            scrollbar-width: none !important;
+            -ms-overflow-style: none !important;
           }
         }
       `}</style>

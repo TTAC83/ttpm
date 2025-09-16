@@ -2922,6 +2922,10 @@ export type Database = {
         Args: { user_email: string }
         Returns: string
       }
+      get_user_company_projects: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
+      }
       has_expense_access: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -2963,6 +2967,10 @@ export type Database = {
       }
       is_project_impl_lead: {
         Args: { p_project_id: string }
+        Returns: boolean
+      }
+      is_project_member: {
+        Args: { project_id: string; user_id?: string }
         Returns: boolean
       }
       is_working_day: {

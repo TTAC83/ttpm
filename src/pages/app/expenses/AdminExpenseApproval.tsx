@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CheckCircle, Shield, Download } from 'lucide-react';
+import { Loader2, CheckCircle, Shield, Download, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { listReadyForSignoff, listApproved, adminApproveExpense } from '@/lib/expenseService';
 
@@ -14,6 +14,8 @@ export const AdminExpenseApproval = () => {
   const [approved, setApproved] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [approving, setApproving] = useState<Record<string, boolean>>({});
+  const [bulkUploading, setBulkUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const formatCurrency = (amount: number | undefined | null) => {
     if (!amount) return '£0.00';
@@ -73,6 +75,62 @@ export const AdminExpenseApproval = () => {
     }
   };
 
+  const handleBulkUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const processBulkUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setBulkUploading(true);
+    try {
+      const text = await file.text();
+      const lines = text.split('\n').filter(line => line.trim());
+      
+      // Skip header if present
+      const dataLines = lines[0].toLowerCase().includes('id') ? lines.slice(1) : lines;
+      
+      let successCount = 0;
+      let errorCount = 0;
+
+      // Process each expense ID
+      for (const line of dataLines) {
+        const expenseId = line.trim();
+        if (expenseId) {
+          try {
+            await adminApproveExpense(expenseId);
+            successCount++;
+          } catch (error) {
+            console.error(`Failed to approve expense ${expenseId}:`, error);
+            errorCount++;
+          }
+        }
+      }
+
+      toast({
+        title: "Bulk Upload Complete",
+        description: `${successCount} expenses approved, ${errorCount} failed`,
+        variant: errorCount > 0 ? "destructive" : "default"
+      });
+
+      fetchData();
+    } catch (error) {
+      console.error('Error processing bulk upload:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process bulk upload file",
+        variant: "destructive"
+      });
+    } finally {
+      setBulkUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -89,6 +147,34 @@ export const AdminExpenseApproval = () => {
           </TabsList>
           
           <TabsContent value="signoff" className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-medium">Expenses Ready for Approval</h3>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkUpload}
+                  disabled={bulkUploading}
+                >
+                  {bulkUploading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  <Upload className="h-4 w-4 mr-2" />
+                  Bulk Upload
+                </Button>
+              </div>
+            </div>
+            
+            <div className="bg-muted/50 p-3 rounded-lg text-sm">
+              <p className="font-medium mb-1">Bulk Upload Format:</p>
+              <p className="text-muted-foreground">Upload a CSV or TXT file with one expense assignment ID per line. Optional header row with "id" or "assignment_id".</p>
+            </div>
+            
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,.txt"
+              onChange={processBulkUpload}
+              className="hidden"
+            />
             {loading ? (
               <div className="flex items-center justify-center p-8">
                 <Loader2 className="h-8 w-8 animate-spin" />

@@ -3,8 +3,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateUK } from '@/lib/dateUtils';
-import { BarChart, List, Grid3X3 } from 'lucide-react';
+import { BarChart, List, Grid3X3, ZoomIn, ZoomOut, Maximize2, FileDown, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 interface Task {
   id: string;
@@ -70,10 +74,32 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
   const [events, setEvents] = useState<ProjectEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('task');
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [presentationMode, setPresentationMode] = useState(false);
+  const [project, setProject] = useState<any>(null);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [exportType, setExportType] = useState<'single' | 'multi'>('single');
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     fetchTasksSubtasksAndEvents();
+    fetchProjectDetails();
   }, [projectId]);
+
+  const fetchProjectDetails = async () => {
+    try {
+      const { data: projectData, error } = await supabase
+        .from('projects')
+        .select('project_name, customer_name')
+        .eq('id', projectId)
+        .single();
+
+      if (error) throw error;
+      setProject(projectData);
+    } catch (error) {
+      console.error('Error fetching project details:', error);
+    }
+  };
 
   const fetchTasksSubtasksAndEvents = async () => {
     try {
@@ -188,7 +214,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
     const end = new Date(item.planned_end);
     const duration = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
     
-    return Math.max(20, duration * 10); // 10px per day, minimum 20px
+    return Math.max(20, duration * 10 * zoomLevel); // 10px per day * zoom level, minimum 20px
   };
 
   const getItemPosition = (item: Task | Subtask | StepGroup, allItems: (Task | Subtask | ProjectEvent | StepGroup)[]): number => {
@@ -211,7 +237,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
     if (!projectStart) return 0;
     
     const daysDiff = Math.ceil((start.getTime() - projectStart.getTime()) / (1000 * 60 * 60 * 24));
-    return Math.max(0, daysDiff * 10); // 10px per day
+    return Math.max(0, daysDiff * 10 * zoomLevel); // 10px per day * zoom level
   };
 
   // Helper function for event bars
@@ -224,7 +250,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
     const end = new Date(event.end_date);
     const duration = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))) + 1; // +1 to include both start and end dates
     
-    return Math.max(20, duration * 10); // 10px per day, minimum 20px
+    return Math.max(20, duration * 10 * zoomLevel); // 10px per day * zoom level, minimum 20px
   };
 
   const getEventPosition = (event: ProjectEvent, allItems: (Task | Subtask | ProjectEvent | StepGroup)[]): number => {
@@ -245,7 +271,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
     if (!projectStart) return 0;
     
     const daysDiff = Math.ceil((start.getTime() - projectStart.getTime()) / (1000 * 60 * 60 * 24));
-    return Math.max(0, daysDiff * 10); // 10px per day
+    return Math.max(0, daysDiff * 10 * zoomLevel); // 10px per day * zoom level
   };
 
   // Helper function to get today's position
@@ -267,7 +293,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
     if (!projectStart) return 0;
     
     const daysDiff = Math.ceil((today.getTime() - projectStart.getTime()) / (1000 * 60 * 60 * 24));
-    return Math.max(0, daysDiff * 10); // 10px per day
+    return Math.max(0, daysDiff * 10 * zoomLevel); // 10px per day * zoom level
   };
 
   // Helper function to generate date markers for x-axis
@@ -316,7 +342,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
       
       markers.push({
         date: date,
-        position: day * 10, // 10px per day
+        position: day * 10 * zoomLevel, // 10px per day * zoom level
         label: formatDateUK(date.toISOString().split('T')[0])
       });
     }
@@ -401,6 +427,153 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
   
   const todayPosition = getTodayPosition(allItems);
   const dateMarkers = generateDateMarkers(allItems);
+
+  // Zoom and presentation mode handlers
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev * 1.2, 3));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev / 1.2, 0.3));
+  };
+
+  const handleFitToScreen = () => {
+    setZoomLevel(1);
+  };
+
+  const handleTogglePresentationMode = () => {
+    setPresentationMode(!presentationMode);
+  };
+
+  // PDF Export functionality
+  const exportToPDF = async () => {
+    if (!project) {
+      toast({
+        title: "Error",
+        description: "Project details not available for export",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsExporting(true);
+    setExportModalOpen(false);
+
+    try {
+      const element = document.querySelector('.gantt-chart-content') as HTMLElement;
+      if (!element) {
+        throw new Error('Gantt chart element not found');
+      }
+
+      toast({
+        title: "Exporting...",
+        description: "Generating PDF, please wait...",
+      });
+
+      // Create canvas from the chart
+      const canvas = await html2canvas(element, {
+        useCORS: true,
+        allowTaint: true,
+        scale: 2,
+        scrollX: 0,
+        scrollY: 0,
+        width: element.scrollWidth,
+        height: element.scrollHeight,
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight,
+        backgroundColor: '#ffffff'
+      });
+
+      // Create PDF with A3 landscape
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a3'
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      if (exportType === 'single') {
+        // Fit to single page
+        const imgWidth = pdfWidth - 20; // 10mm margin on each side
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        // Scale down if too tall
+        const finalHeight = Math.min(imgHeight, pdfHeight - 40); // 20mm margin top/bottom
+        const finalWidth = (canvas.width * finalHeight) / canvas.height;
+
+        // Add header
+        pdf.setFontSize(14);
+        pdf.text(`Project: ${project.project_name}`, 10, 15);
+        pdf.text(`Customer: ${project.customer_name}`, 10, 25);
+        pdf.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, pdfWidth - 60, 15);
+        
+        // Add logo if available
+        const logoImg = document.querySelector('img[src*="thingtrax"]') as HTMLImageElement;
+        if (logoImg) {
+          try {
+            pdf.addImage(logoImg, 'PNG', pdfWidth - 60, 20, 40, 15);
+          } catch (e) {
+            console.warn('Could not add logo to PDF');
+          }
+        }
+
+        // Add chart
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 35, finalWidth, finalHeight);
+      } else {
+        // Multi-page export
+        const pageHeight = pdfHeight - 60; // Space for header/footer
+        const pageWidth = pdfWidth - 20;
+        const totalPages = Math.ceil((canvas.height * pageWidth / canvas.width) / pageHeight);
+
+        for (let page = 0; page < totalPages; page++) {
+          if (page > 0) pdf.addPage();
+
+          // Header on each page
+          pdf.setFontSize(14);
+          pdf.text(`Project: ${project.project_name}`, 10, 15);
+          pdf.text(`Customer: ${project.customer_name}`, 10, 25);
+          pdf.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, pdfWidth - 60, 15);
+          
+          // Footer with page numbers
+          pdf.setFontSize(10);
+          pdf.text(`Page ${page + 1} of ${totalPages}`, pdfWidth / 2 - 10, pdfHeight - 10);
+
+          // Chart slice
+          const yOffset = -page * pageHeight;
+          const imgHeight = (canvas.height * pageWidth) / canvas.width;
+          
+          pdf.addImage(
+            canvas.toDataURL('image/png'),
+            'PNG',
+            10,
+            35 + yOffset,
+            pageWidth,
+            imgHeight
+          );
+        }
+      }
+
+      // Save PDF
+      const fileName = `gantt-${project.project_name?.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
+      pdf.save(fileName);
+
+      toast({
+        title: "Success",
+        description: "PDF exported successfully",
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to export PDF. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -555,34 +728,155 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
               <CardTitle className="flex items-center gap-2">
                 <BarChart className="h-4 w-4" />
                 Project Gantt Chart
+                {presentationMode && (
+                  <span className="text-sm font-normal text-muted-foreground ml-2">
+                    (Presentation Mode)
+                  </span>
+                )}
               </CardTitle>
             </div>
             <div className="flex gap-2 print:hidden">
+              {!presentationMode && (
+                <>
+                  <div className="flex gap-1 border-r pr-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleZoomOut}
+                      disabled={zoomLevel <= 0.3}
+                    >
+                      <ZoomOut className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleZoomIn}
+                      disabled={zoomLevel >= 3}
+                    >
+                      <ZoomIn className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleFitToScreen}
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  <Dialog open={exportModalOpen} onOpenChange={setExportModalOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={isExporting}
+                      >
+                        <FileDown className="h-4 w-4 mr-1" />
+                        Export PDF
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Export Gantt Chart to PDF</DialogTitle>
+                        <DialogDescription>
+                          Choose how you'd like to export the chart
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="space-y-3">
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              id="single"
+                              name="exportType"
+                              value="single"
+                              checked={exportType === 'single'}
+                              onChange={(e) => setExportType(e.target.value as 'single' | 'multi')}
+                              className="w-4 h-4"
+                            />
+                            <Label htmlFor="single" className="flex-1">
+                              <div className="font-medium">Fit to 1 Page</div>
+                              <div className="text-sm text-muted-foreground">
+                                Scale entire project to fit one A3 landscape page
+                              </div>
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              id="multi"
+                              name="exportType"
+                              value="multi"
+                              checked={exportType === 'multi'}
+                              onChange={(e) => setExportType(e.target.value as 'single' | 'multi')}
+                              className="w-4 h-4"
+                            />
+                            <Label htmlFor="multi" className="flex-1">
+                              <div className="font-medium">Multi-page</div>
+                              <div className="text-sm text-muted-foreground">
+                                Preserve current zoom level across multiple pages
+                              </div>
+                            </Label>
+                          </div>
+                        </div>
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" onClick={() => setExportModalOpen(false)}>
+                            Cancel
+                          </Button>
+                          <Button onClick={exportToPDF} disabled={isExporting}>
+                            {isExporting ? "Exporting..." : "Export"}
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </>
+              )}
+              
               <Button
-                variant={viewMode === 'step' ? 'default' : 'outline'}
+                variant={presentationMode ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setViewMode('step')}
+                onClick={handleTogglePresentationMode}
                 className="flex items-center gap-2"
               >
-                <Grid3X3 className="h-4 w-4" />
-                Step View
+                <Eye className="h-4 w-4" />
+                {presentationMode ? 'Exit' : 'Present'}
               </Button>
-              <Button
-                variant={viewMode === 'task' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('task')}
-                className="flex items-center gap-2"
-              >
-                <List className="h-4 w-4" />
-                Task View
-              </Button>
+              
+              {!presentationMode && (
+                <>
+                  <Button
+                    variant={viewMode === 'step' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setViewMode('step')}
+                    className="flex items-center gap-2"
+                  >
+                    <Grid3X3 className="h-4 w-4" />
+                    Step View
+                  </Button>
+                  <Button
+                    variant={viewMode === 'task' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setViewMode('task')}
+                    className="flex items-center gap-2"
+                  >
+                    <List className="h-4 w-4" />
+                    Task View
+                  </Button>
+                </>
+              )}
             </div>
           </div>
           <CardDescription>
-            Visual timeline showing planned vs actual {viewMode === 'step' ? 'step' : 'task'} completion and calendar events
+            {presentationMode ? (
+              `Clean view for customer presentations - Zoom: ${Math.round(zoomLevel * 100)}%`
+            ) : (
+              `Visual timeline showing planned vs actual ${viewMode === 'step' ? 'step' : 'task'} completion and calendar events - Zoom: ${Math.round(zoomLevel * 100)}%`
+            )}
           </CardDescription>
         </CardHeader>
       <CardContent className="p-3">
+        <div className="gantt-chart-content">
         {(viewMode === 'step' ? stepsWithDates.length === 0 : tasksWithDates.length === 0) && events.length === 0 ? (
           <div className="text-center py-4">
             <BarChart className="h-6 w-6 mx-auto text-muted-foreground mb-2" />
@@ -590,33 +884,35 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
           </div>
         ) : (
           <div className="space-y-3">
-            {/* Compact Legend */}
-            <div className="flex flex-wrap gap-3 text-xs bg-muted/30 p-2 rounded-md">
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-green-500 rounded-sm"></div>
-                <span>On time</span>
+            {/* Compact Legend - Hidden in presentation mode */}
+            {!presentationMode && (
+              <div className="flex flex-wrap gap-3 text-xs bg-muted/30 p-2 rounded-md">
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 bg-green-500 rounded-sm"></div>
+                  <span>On time</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 bg-red-500 rounded-sm"></div>
+                  <span>Late</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 bg-red-200 rounded-sm"></div>
+                  <span>Overdue</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 bg-gray-300 rounded-sm"></div>
+                  <span>On track</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 bg-purple-500 rounded-sm"></div>
+                  <span>Events</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-0.5 h-3 bg-red-500"></div>
+                  <span>Today</span>
+                </div>
               </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-red-500 rounded-sm"></div>
-                <span>Late</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-red-200 rounded-sm"></div>
-                <span>Overdue</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-gray-300 rounded-sm"></div>
-                <span>On track</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-purple-500 rounded-sm"></div>
-                <span>Events</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-0.5 h-3 bg-red-500"></div>
-                <span>Today</span>
-              </div>
-            </div>
+            )}
 
             {/* Calendar Events Section */}
             {events.length > 0 && (
@@ -648,7 +944,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                     </div>
                   </div>
                   
-                  <div className="overflow-auto max-h-96">
+                   <div className={`overflow-auto ${presentationMode ? 'max-h-none' : 'max-h-96'}`}>
                     <div className="min-w-full space-y-1 relative">
                     
                     {/* Compact Today line for events */}
@@ -725,7 +1021,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                     </div>
                   </div>
                   
-                  <div className="overflow-auto max-h-96">
+                  <div className={`overflow-auto ${presentationMode ? 'max-h-none' : 'max-h-96'}`}>
                     <div className="min-w-full space-y-1 relative">
                     
                       {/* Today line for tasks */}
@@ -928,10 +1224,11 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
              <div className="text-[10px] text-muted-foreground border-t pt-2 print:hidden">
                <p><strong>Print/Export:</strong> Use browser print (Ctrl+P) and select "Landscape" orientation to save as PDF.</p>
              </div>
-           </div>
-         )}
-       </CardContent>
-     </Card>
+          </div>
+        )}
+        </div>
+      </CardContent>
+    </Card>
     </>
   );
 };

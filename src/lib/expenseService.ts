@@ -411,11 +411,13 @@ export async function listApproved() {
 
 // Admin approve expense (final signoff)
 export async function adminApproveExpense(assignmentId: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  
   const { error } = await supabase
     .from('expense_assignments')
     .update({
       status: 'Approved',
-      approved_by: (await supabase.auth.getUser()).data.user?.id,
+      approved_by: user?.id,
       approved_at: new Date().toISOString()
     })
     .eq('id', assignmentId);

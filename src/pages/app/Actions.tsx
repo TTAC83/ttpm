@@ -8,8 +8,16 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { toast } from "sonner";
 import { format } from "date-fns";
-import { Filter, FilterX, User, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Filter, FilterX, User, ArrowUpDown, ArrowUp, ArrowDown, CalendarIcon, AlertTriangle, Save, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Action {
   id: string;
@@ -20,6 +28,7 @@ interface Action {
   is_critical: boolean;
   assignee: string | null;
   created_at: string;
+  notes?: string | null;
   profiles?: {
     name: string;
   };
@@ -41,6 +50,11 @@ interface Action {
   };
 }
 
+interface Profile {
+  user_id: string;
+  name: string;
+}
+
 export const Actions = () => {
   const { user, profile } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -49,6 +63,8 @@ export const Actions = () => {
   const [loading, setLoading] = useState(true);
   const [showMyActions, setShowMyActions] = useState(false);
   const [highlightedActionId, setHighlightedActionId] = useState<string | null>(null);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [editingAction, setEditingAction] = useState<Action | null>(null);
   const [sortConfig, setSortConfig] = useState<{
     key: keyof Action | 'project_name' | 'company_name' | 'assignee_name' | 'task_name' | null;
     direction: 'asc' | 'desc';
@@ -66,6 +82,7 @@ export const Actions = () => {
   useEffect(() => {
     if (user && profile) {
       fetchActions();
+      fetchProfiles();
     }
   }, [user, profile]);
 
@@ -128,6 +145,50 @@ export const Actions = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchProfiles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, name')
+        .order('name');
+
+      if (error) {
+        console.error('Error fetching profiles:', error);
+        return;
+      }
+
+      setProfiles(data || []);
+    } catch (error) {
+      console.error('Error fetching profiles:', error);
+    }
+  };
+
+  const handleUpdateAction = async (actionData: any) => {
+    if (!editingAction) return;
+
+    try {
+      const { error } = await supabase.functions.invoke('update-action', {
+        body: {
+          action_id: editingAction.id,
+          ...actionData
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success('Action updated successfully');
+      setEditingAction(null);
+      fetchActions(); // Refresh the actions list
+    } catch (error) {
+      console.error('Error updating action:', error);
+      toast.error('Failed to update action');
+    }
+  };
+
+  const toISODateString = (date: Date): string => {
+    return date.toISOString().split('T')[0];
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -484,7 +545,11 @@ export const Actions = () => {
                   filteredActions.map((action) => (
                     <TableRow 
                       key={action.id}
-                      className={highlightedActionId === action.id ? 'bg-primary/5 border-primary' : ''}
+                      className={cn(
+                        'cursor-pointer hover:bg-muted/50',
+                        highlightedActionId === action.id ? 'bg-primary/5 border-primary' : ''
+                      )}
+                      onDoubleClick={() => setEditingAction(action)}
                     >
                       <TableCell>
                         <div>
@@ -549,7 +614,207 @@ export const Actions = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Action Dialog */}
+      <Dialog open={!!editingAction} onOpenChange={() => setEditingAction(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {editingAction && (
+            <EditActionDialog
+              action={editingAction}
+              profiles={profiles}
+              onSave={handleUpdateAction}
+              onClose={() => setEditingAction(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+};
+
+// Edit Action Dialog Component
+const EditActionDialog = ({ 
+  action,
+  profiles, 
+  onSave, 
+  onClose 
+}: {
+  action: Action;
+  profiles: Profile[];
+  onSave: (data: any) => void;
+  onClose: () => void;
+}) => {
+  const [formData, setFormData] = useState({
+    title: action.title,
+    details: action.details || '',
+    assignee: action.assignee || '',
+    planned_date: action.planned_date ? new Date(action.planned_date) : undefined as Date | undefined,
+    notes: action.notes || '',
+    status: action.status,
+    is_critical: action.is_critical,
+  });
+  const [loading, setLoading] = useState(false);
+
+  const toISODateString = (date: Date): string => {
+    return date.toISOString().split('T')[0];
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      await onSave({
+        title: formData.title,
+        details: formData.details || null,
+        assignee: formData.assignee || null,
+        planned_date: formData.planned_date ? toISODateString(formData.planned_date) : null,
+        notes: formData.notes || null,
+        status: formData.status,
+        is_critical: formData.is_critical,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="space-y-1.5">
+        <h2 className="text-lg font-semibold leading-none tracking-tight">Edit Action</h2>
+        <p className="text-sm text-muted-foreground">
+          Update action details and status
+        </p>
+      </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="edit-title">Title *</Label>
+          <Input
+            id="edit-title"
+            value={formData.title}
+            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+            placeholder="Enter action title"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="edit-details">Details</Label>
+          <Textarea
+            id="edit-details"
+            value={formData.details}
+            onChange={(e) => setFormData(prev => ({ ...prev, details: e.target.value }))}
+            placeholder="Enter action details"
+            rows={3}
+          />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Status</Label>
+            <Select 
+              value={formData.status} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="open">Open</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Assignee *</Label>
+            <Select 
+              value={formData.assignee} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, assignee: value }))}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select assignee (required)" />
+              </SelectTrigger>
+              <SelectContent>
+                {profiles
+                  .filter((profile) => profile.user_id && profile.user_id.trim() !== '')
+                  .map((profile) => (
+                    <SelectItem key={profile.user_id} value={profile.user_id}>
+                      {profile.name || 'Unnamed User'}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Planned Date</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !formData.planned_date && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {formData.planned_date ? format(formData.planned_date, "dd/MM/yyyy") : <span>Pick a date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={formData.planned_date}
+                onSelect={(date) => setFormData(prev => ({ ...prev, planned_date: date }))}
+                initialFocus
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="edit_is_critical"
+              checked={formData.is_critical}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_critical: checked as boolean }))}
+            />
+            <Label htmlFor="edit_is_critical" className="flex items-center gap-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              <AlertTriangle className="h-4 w-4 text-red-500" />
+              Mark as Critical
+            </Label>
+          </div>
+          <p className="text-sm text-muted-foreground">Critical actions will appear at the top of the actions list</p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="edit-notes">Notes</Label>
+          <Textarea
+            id="edit-notes"
+            value={formData.notes}
+            onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+            placeholder="Additional notes"
+            rows={2}
+          />
+        </div>
+
+        <div className="flex gap-2 pt-4">
+          <Button type="submit" disabled={loading || !formData.title || !formData.assignee}>
+            <Save className="h-4 w-4 mr-2" />
+            {loading ? 'Updating...' : 'Update Action'}
+          </Button>
+          <Button type="button" variant="outline" onClick={onClose}>
+            <X className="h-4 w-4 mr-2" />
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </>
   );
 };
 

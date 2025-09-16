@@ -3,7 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateUK } from '@/lib/dateUtils';
-import { BarChart } from 'lucide-react';
+import { BarChart, List, Grid3X3 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface Task {
   id: string;
@@ -46,6 +47,18 @@ interface EventAttendee {
   } | null;
 }
 
+interface StepGroup {
+  step_name: string;
+  tasks: Task[];
+  planned_start: string | null;
+  planned_end: string | null;
+  actual_start: string | null;
+  actual_end: string | null;
+  status: string;
+}
+
+type ViewMode = 'step' | 'task';
+
 interface ProjectGanttProps {
   projectId: string;
 }
@@ -56,6 +69,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
   const [events, setEvents] = useState<ProjectEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<ViewMode>('task');
 
   useEffect(() => {
     fetchTasksSubtasksAndEvents();
@@ -151,7 +165,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
     }
   };
 
-  const getItemColor = (item: Task | Subtask): string => {
+  const getItemColor = (item: Task | Subtask | StepGroup): string => {
     if (!item.planned_end) return '#e5e7eb'; // gray for no planned date
     
     const plannedEnd = new Date(item.planned_end);
@@ -167,7 +181,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
     }
   };
 
-  const getItemWidth = (item: Task | Subtask): number => {
+  const getItemWidth = (item: Task | Subtask | StepGroup): number => {
     if (!item.planned_start || !item.planned_end) return 20; // minimum width
     
     const start = new Date(item.planned_start);
@@ -177,7 +191,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
     return Math.max(20, duration * 10); // 10px per day, minimum 20px
   };
 
-  const getItemPosition = (item: Task | Subtask, allItems: (Task | Subtask | ProjectEvent)[]): number => {
+  const getItemPosition = (item: Task | Subtask | StepGroup, allItems: (Task | Subtask | ProjectEvent | StepGroup)[]): number => {
     if (!item.planned_start) return 0;
     
     const start = new Date(item.planned_start);
@@ -213,7 +227,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
     return Math.max(20, duration * 10); // 10px per day, minimum 20px
   };
 
-  const getEventPosition = (event: ProjectEvent, allItems: (Task | Subtask | ProjectEvent)[]): number => {
+  const getEventPosition = (event: ProjectEvent, allItems: (Task | Subtask | ProjectEvent | StepGroup)[]): number => {
     const start = new Date(event.start_date);
     const projectStart = allItems.reduce((earliest, i) => {
       let itemStart: Date | null = null;
@@ -235,7 +249,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
   };
 
   // Helper function to get today's position
-  const getTodayPosition = (allItems: (Task | Subtask | ProjectEvent)[]): number => {
+  const getTodayPosition = (allItems: (Task | Subtask | ProjectEvent | StepGroup)[]): number => {
     const today = new Date();
     const projectStart = allItems.reduce((earliest, i) => {
       let itemStart: Date | null = null;
@@ -257,7 +271,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
   };
 
   // Helper function to generate date markers for x-axis
-  const generateDateMarkers = (allItems: (Task | Subtask | ProjectEvent)[]) => {
+  const generateDateMarkers = (allItems: (Task | Subtask | ProjectEvent | StepGroup)[]) => {
     if (allItems.length === 0) return [];
 
     const projectStart = allItems.reduce((earliest, i) => {
@@ -310,14 +324,81 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
     return markers;
   };
 
+  // Group tasks by step
+  const groupTasksByStep = (tasks: Task[]): StepGroup[] => {
+    const stepGroups: Record<string, StepGroup> = {};
+    
+    tasks.forEach(task => {
+      const stepName = task.step_name || 'Unknown Step';
+      
+      if (!stepGroups[stepName]) {
+        stepGroups[stepName] = {
+          step_name: stepName,
+          tasks: [],
+          planned_start: null,
+          planned_end: null,
+          actual_start: null,
+          actual_end: null,
+          status: 'Planning'
+        };
+      }
+      
+      stepGroups[stepName].tasks.push(task);
+      
+      // Calculate step dates based on task dates
+      if (task.planned_start) {
+        if (!stepGroups[stepName].planned_start || task.planned_start < stepGroups[stepName].planned_start!) {
+          stepGroups[stepName].planned_start = task.planned_start;
+        }
+      }
+      
+      if (task.planned_end) {
+        if (!stepGroups[stepName].planned_end || task.planned_end > stepGroups[stepName].planned_end!) {
+          stepGroups[stepName].planned_end = task.planned_end;
+        }
+      }
+      
+      if (task.actual_start) {
+        if (!stepGroups[stepName].actual_start || task.actual_start < stepGroups[stepName].actual_start!) {
+          stepGroups[stepName].actual_start = task.actual_start;
+        }
+      }
+      
+      if (task.actual_end) {
+        if (!stepGroups[stepName].actual_end || task.actual_end > stepGroups[stepName].actual_end!) {
+          stepGroups[stepName].actual_end = task.actual_end;
+        }
+      }
+    });
+    
+    // Determine step status based on task statuses
+    Object.values(stepGroups).forEach(step => {
+      const taskStatuses = step.tasks.map(t => t.status);
+      if (taskStatuses.every(s => s === 'Done')) {
+        step.status = 'Done';
+      } else if (taskStatuses.some(s => s === 'In Progress')) {
+        step.status = 'In Progress';
+      } else if (taskStatuses.some(s => s === 'Blocked')) {
+        step.status = 'Blocked';
+      } else {
+        step.status = 'Planning';
+      }
+    });
+    
+    return Object.values(stepGroups);
+  };
+
   // Create combined list for positioning calculation
-  const allItems: (Task | Subtask | ProjectEvent)[] = [
-    ...tasks,
+  const tasksWithDates = tasks.filter(task => task.planned_start && task.planned_end);
+  const stepGroups = groupTasksByStep(tasksWithDates);
+  const stepsWithDates = stepGroups.filter(step => step.planned_start && step.planned_end);
+  
+  const allItems: (Task | Subtask | ProjectEvent | StepGroup)[] = [
+    ...(viewMode === 'step' ? stepsWithDates : tasksWithDates),
     ...subtasks,
     ...events
   ];
   
-  const tasksWithDates = tasks.filter(task => task.planned_start && task.planned_end);
   const todayPosition = getTodayPosition(allItems);
   const dateMarkers = generateDateMarkers(allItems);
 
@@ -334,19 +415,43 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BarChart className="h-4 w-4" />
-          Project Gantt Chart
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart className="h-4 w-4" />
+              Project Gantt Chart
+            </CardTitle>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant={viewMode === 'step' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('step')}
+              className="flex items-center gap-2"
+            >
+              <Grid3X3 className="h-4 w-4" />
+              Step View
+            </Button>
+            <Button
+              variant={viewMode === 'task' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('task')}
+              className="flex items-center gap-2"
+            >
+              <List className="h-4 w-4" />
+              Task View
+            </Button>
+          </div>
+        </div>
         <CardDescription>
-          Visual timeline showing planned vs actual task completion and calendar events
+          Visual timeline showing planned vs actual {viewMode === 'step' ? 'step' : 'task'} completion and calendar events
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {tasksWithDates.length === 0 && events.length === 0 ? (
+        {(viewMode === 'step' ? stepsWithDates.length === 0 : tasksWithDates.length === 0) && events.length === 0 ? (
           <div className="text-center py-8">
             <BarChart className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-            <p className="text-muted-foreground">No tasks or events with dates found</p>
+            <p className="text-muted-foreground">No {viewMode === 'step' ? 'steps' : 'tasks'} or events with dates found</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -466,11 +571,11 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
               </div>
             )}
 
-            {/* Tasks Section */}
-            {tasksWithDates.length > 0 && (
+            {/* Tasks/Steps Section */}
+            {(viewMode === 'step' ? stepsWithDates.length > 0 : tasksWithDates.length > 0) && (
               <div className="space-y-2">
                 <h3 className="text-lg font-semibold text-blue-700 border-b border-blue-200 pb-2">
-                  🔧 Project Tasks
+                  🔧 Project {viewMode === 'step' ? 'Steps' : 'Tasks'}
                 </h3>
                 <div className="overflow-x-auto">
                   <div className="min-w-[800px] space-y-2 relative">
@@ -503,23 +608,24 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                         Today ({formatDateUK(new Date().toISOString().split('T')[0])})
                       </div>
                     </div>
-                    {tasksWithDates.map((task) => {
-                      const taskSubtasks = subtasks.filter(st => st.task_id === task.id && st.planned_start && st.planned_end);
-                      
-                      return (
-                        <div key={task.id} className="space-y-1">
-                          {/* Main Task */}
-                          <div className="flex items-center gap-4 py-2">
-                            {/* Task Info */}
-                            <div className="w-64 flex-shrink-0">
+                    {viewMode === 'step' ? (
+                      // Step View
+                      stepsWithDates.map((step) => (
+                        <div key={step.step_name} className="space-y-1">
+                          {/* Step */}
+                          <div className="flex items-center gap-4 py-2 bg-blue-50 rounded-lg">
+                            {/* Step Info */}
+                            <div className="w-64 flex-shrink-0 px-2">
                               <div className="text-sm font-medium truncate flex items-center gap-2">
-                                {task.task_title}
+                                {step.step_name}
                               </div>
-                              <div className="text-xs text-muted-foreground">{task.step_name}</div>
                               <div className="text-xs text-muted-foreground">
-                                {task.planned_start && task.planned_end && (
+                                {step.tasks.length} task{step.tasks.length !== 1 ? 's' : ''}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {step.planned_start && step.planned_end && (
                                   <>
-                                    {formatDateUK(task.planned_start)} - {formatDateUK(task.planned_end)}
+                                    {formatDateUK(step.planned_start)} - {formatDateUK(step.planned_end)}
                                   </>
                                 )}
                               </div>
@@ -528,12 +634,12 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                             {/* Status */}
                             <div className="w-20 flex-shrink-0 text-xs">
                               <span className={`px-2 py-1 rounded ${
-                                task.status === 'Done' ? 'bg-green-100 text-green-700' :
-                                task.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
-                                task.status === 'Blocked' ? 'bg-red-100 text-red-700' :
+                                step.status === 'Done' ? 'bg-green-100 text-green-700' :
+                                step.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
+                                step.status === 'Blocked' ? 'bg-red-100 text-red-700' :
                                 'bg-gray-100 text-gray-700'
                               }`}>
-                                {task.status}
+                                {step.status}
                               </span>
                             </div>
 
@@ -542,88 +648,153 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
                               <div
                                 className="absolute top-1 h-6 rounded"
                                 style={{
-                                  left: `${getItemPosition(task, allItems)}px`,
-                                  width: `${getItemWidth(task)}px`,
-                                  backgroundColor: getItemColor(task),
+                                  left: `${getItemPosition(step as any, allItems)}px`,
+                                  width: `${getItemWidth(step as any)}px`,
+                                  backgroundColor: getItemColor(step as any),
                                   minWidth: '20px'
                                 }}
                               >
                               </div>
 
                               {/* Actual bar (if different from planned) */}
-                              {task.actual_start && task.actual_end && (
+                              {step.actual_start && step.actual_end && (
                                 <div
                                   className="absolute bottom-1 h-2 bg-blue-600 rounded opacity-70"
                                   style={{
-                                    left: `${getItemPosition({ ...task, planned_start: task.actual_start }, allItems)}px`,
-                                    width: `${getItemWidth({ ...task, planned_start: task.actual_start, planned_end: task.actual_end })}px`,
+                                    left: `${getItemPosition({ ...step, planned_start: step.actual_start } as any, allItems)}px`,
+                                    width: `${getItemWidth({ ...step, planned_start: step.actual_start, planned_end: step.actual_end } as any)}px`,
                                     minWidth: '4px'
                                   }}
                                 />
                               )}
                             </div>
                           </div>
-
-                          {/* Subtasks */}
-                          {taskSubtasks.map((subtask) => (
-                            <div key={subtask.id} className="flex items-center gap-4 py-1 ml-4">
-                              {/* Subtask Info */}
+                        </div>
+                      ))
+                    ) : (
+                      // Task View
+                      tasksWithDates.map((task) => {
+                        const taskSubtasks = subtasks.filter(st => st.task_id === task.id && st.planned_start && st.planned_end);
+                        
+                        return (
+                          <div key={task.id} className="space-y-1">
+                            {/* Main Task */}
+                            <div className="flex items-center gap-4 py-2">
+                              {/* Task Info */}
                               <div className="w-64 flex-shrink-0">
-                                <div className="text-xs font-medium truncate text-muted-foreground">
-                                  ├─ {subtask.title}
+                                <div className="text-sm font-medium truncate flex items-center gap-2">
+                                  {task.task_title}
                                 </div>
-                                <div className="text-xs text-muted-foreground ml-3">
-                                  {subtask.planned_start && subtask.planned_end && (
+                                <div className="text-xs text-muted-foreground">{task.step_name}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {task.planned_start && task.planned_end && (
                                     <>
-                                      {formatDateUK(subtask.planned_start)} - {formatDateUK(subtask.planned_end)}
+                                      {formatDateUK(task.planned_start)} - {formatDateUK(task.planned_end)}
                                     </>
                                   )}
                                 </div>
                               </div>
 
-                              {/* Subtask Status */}
+                              {/* Status */}
                               <div className="w-20 flex-shrink-0 text-xs">
-                                <span className={`px-1 py-0.5 rounded text-xs ${
-                                  subtask.status === 'Done' ? 'bg-green-100 text-green-700' :
-                                  subtask.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
-                                  subtask.status === 'Blocked' ? 'bg-red-100 text-red-700' :
+                                <span className={`px-2 py-1 rounded ${
+                                  task.status === 'Done' ? 'bg-green-100 text-green-700' :
+                                  task.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
+                                  task.status === 'Blocked' ? 'bg-red-100 text-red-700' :
                                   'bg-gray-100 text-gray-700'
                                 }`}>
-                                  {subtask.status}
+                                  {task.status}
                                 </span>
                               </div>
 
-                              {/* Subtask Gantt Bar */}
-                              <div className="flex-1 relative h-6 bg-gray-50 rounded">
+                              {/* Gantt Bar */}
+                              <div className="flex-1 relative h-8 bg-gray-100 rounded">
                                 <div
-                                  className="absolute top-1 h-4 rounded"
+                                  className="absolute top-1 h-6 rounded"
                                   style={{
-                                    left: `${getItemPosition(subtask, allItems)}px`,
-                                    width: `${getItemWidth(subtask)}px`,
-                                    backgroundColor: getItemColor(subtask),
-                                    minWidth: '15px',
-                                    opacity: 0.8
+                                    left: `${getItemPosition(task, allItems)}px`,
+                                    width: `${getItemWidth(task)}px`,
+                                    backgroundColor: getItemColor(task),
+                                    minWidth: '20px'
                                   }}
                                 >
                                 </div>
 
-                                {/* Actual bar for subtask */}
-                                {subtask.actual_start && subtask.actual_end && (
+                                {/* Actual bar (if different from planned) */}
+                                {task.actual_start && task.actual_end && (
                                   <div
-                                    className="absolute bottom-1 h-1 bg-blue-600 rounded opacity-70"
+                                    className="absolute bottom-1 h-2 bg-blue-600 rounded opacity-70"
                                     style={{
-                                      left: `${getItemPosition({ ...subtask, planned_start: subtask.actual_start }, allItems)}px`,
-                                      width: `${getItemWidth({ ...subtask, planned_start: subtask.actual_start, planned_end: subtask.actual_end })}px`,
-                                      minWidth: '3px'
+                                      left: `${getItemPosition({ ...task, planned_start: task.actual_start }, allItems)}px`,
+                                      width: `${getItemWidth({ ...task, planned_start: task.actual_start, planned_end: task.actual_end })}px`,
+                                      minWidth: '4px'
                                     }}
                                   />
                                 )}
                               </div>
                             </div>
-                          ))}
-                        </div>
-                      );
-                    })}
+
+                            {/* Subtasks */}
+                            {taskSubtasks.map((subtask) => (
+                              <div key={subtask.id} className="flex items-center gap-4 py-1 ml-4">
+                                {/* Subtask Info */}
+                                <div className="w-64 flex-shrink-0">
+                                  <div className="text-xs font-medium truncate text-muted-foreground">
+                                    ├─ {subtask.title}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground ml-3">
+                                    {subtask.planned_start && subtask.planned_end && (
+                                      <>
+                                        {formatDateUK(subtask.planned_start)} - {formatDateUK(subtask.planned_end)}
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Subtask Status */}
+                                <div className="w-20 flex-shrink-0 text-xs">
+                                  <span className={`px-1 py-0.5 rounded text-xs ${
+                                    subtask.status === 'Done' ? 'bg-green-100 text-green-700' :
+                                    subtask.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
+                                    subtask.status === 'Blocked' ? 'bg-red-100 text-red-700' :
+                                    'bg-gray-100 text-gray-700'
+                                  }`}>
+                                    {subtask.status}
+                                  </span>
+                                </div>
+
+                                {/* Subtask Gantt Bar */}
+                                <div className="flex-1 relative h-6 bg-gray-50 rounded">
+                                  <div
+                                    className="absolute top-1 h-4 rounded"
+                                    style={{
+                                      left: `${getItemPosition(subtask, allItems)}px`,
+                                      width: `${getItemWidth(subtask)}px`,
+                                      backgroundColor: getItemColor(subtask),
+                                      minWidth: '15px',
+                                      opacity: 0.8
+                                    }}
+                                  >
+                                  </div>
+
+                                  {/* Actual bar for subtask */}
+                                  {subtask.actual_start && subtask.actual_end && (
+                                    <div
+                                      className="absolute bottom-1 h-1 bg-blue-600 rounded opacity-70"
+                                      style={{
+                                        left: `${getItemPosition({ ...subtask, planned_start: subtask.actual_start }, allItems)}px`,
+                                        width: `${getItemWidth({ ...subtask, planned_start: subtask.actual_start, planned_end: subtask.actual_end })}px`,
+                                        minWidth: '3px'
+                                      }}
+                                    />
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
               </div>

@@ -471,6 +471,41 @@ export type Database = {
             referencedRelation: "expense_assignments"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bau_expense_links_expense_assignment_id_fkey"
+            columns: ["expense_assignment_id"]
+            isOneToOne: true
+            referencedRelation: "v_approved_expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_expense_links_expense_assignment_id_fkey"
+            columns: ["expense_assignment_id"]
+            isOneToOne: true
+            referencedRelation: "v_bau_expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_expense_links_expense_assignment_id_fkey"
+            columns: ["expense_assignment_id"]
+            isOneToOne: true
+            referencedRelation: "v_expense_admin_queue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_expense_links_expense_assignment_id_fkey"
+            columns: ["expense_assignment_id"]
+            isOneToOne: true
+            referencedRelation: "v_impl_lead_queue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_expense_links_expense_assignment_id_fkey"
+            columns: ["expense_assignment_id"]
+            isOneToOne: true
+            referencedRelation: "v_my_assigned_expenses"
+            referencedColumns: ["id"]
+          },
         ]
       }
       bau_metric_catalog: {
@@ -1036,6 +1071,8 @@ export type Database = {
           expense_id: string
           id: string
           is_billable: boolean
+          reviewed_at: string | null
+          reviewed_by: string | null
           status: Database["public"]["Enums"]["expense_status_enum"]
           updated_at: string
         }
@@ -1054,6 +1091,8 @@ export type Database = {
           expense_id: string
           id?: string
           is_billable?: boolean
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: Database["public"]["Enums"]["expense_status_enum"]
           updated_at?: string
         }
@@ -1072,22 +1111,24 @@ export type Database = {
           expense_id?: string
           id?: string
           is_billable?: boolean
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: Database["public"]["Enums"]["expense_status_enum"]
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "fk_expense_assignments_expense_id"
-            columns: ["expense_id"]
+            foreignKeyName: "expense_assignments_reviewed_by_fkey"
+            columns: ["reviewed_by"]
             isOneToOne: false
-            referencedRelation: "expenses"
-            referencedColumns: ["id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "fk_expense_assignments_expense_id"
             columns: ["expense_id"]
             isOneToOne: false
-            referencedRelation: "v_bau_expenses"
+            referencedRelation: "expenses"
             referencedColumns: ["id"]
           },
         ]
@@ -1662,6 +1703,7 @@ export type Database = {
           avatar_url: string | null
           company_id: string | null
           created_at: string
+          expense_approver_user_id: string | null
           is_internal: boolean
           job_title: string | null
           name: string | null
@@ -1673,6 +1715,7 @@ export type Database = {
           avatar_url?: string | null
           company_id?: string | null
           created_at?: string
+          expense_approver_user_id?: string | null
           is_internal?: boolean
           job_title?: string | null
           name?: string | null
@@ -1684,6 +1727,7 @@ export type Database = {
           avatar_url?: string | null
           company_id?: string | null
           created_at?: string
+          expense_approver_user_id?: string | null
           is_internal?: boolean
           job_title?: string | null
           name?: string | null
@@ -1705,6 +1749,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_impl_companies"
             referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "profiles_expense_approver_user_id_fkey"
+            columns: ["expense_approver_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2544,37 +2595,105 @@ export type Database = {
         }
         Relationships: []
       }
+      v_approved_expenses: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          approved_by_name: string | null
+          assigned_at: string | null
+          assigned_by: string | null
+          assigned_to_project_id: string | null
+          assigned_to_solutions_project_id: string | null
+          assigned_to_user_id: string | null
+          assignee_description: string | null
+          assignee_name: string | null
+          assignment_notes: string | null
+          category: Database["public"]["Enums"]["expense_category_enum"] | null
+          customer: string | null
+          expense_date: string | null
+          expense_description: string | null
+          expense_id: string | null
+          gross: number | null
+          id: string | null
+          import_customer: string | null
+          is_billable: boolean | null
+          net: number | null
+          project_name: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["expense_status_enum"] | null
+          updated_at: string | null
+          vat: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_assignments_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_expense_assignments_expense_id"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_bau_expenses: {
         Row: {
           account: string | null
           account_code: string | null
+          assigned_at: string | null
+          assigned_to_user_id: string | null
           assignee_description: string | null
-          assignment_status:
-            | Database["public"]["Enums"]["expense_status_enum"]
-            | null
-          bau_billable: boolean | null
-          bau_customer_name: string | null
-          bau_site_name: string | null
+          assignment_notes: string | null
+          bau_customer_id: string | null
           category: Database["public"]["Enums"]["expense_category_enum"] | null
-          company_name: string | null
-          created_at: string | null
           customer: string | null
           description: string | null
-          expense_customer: string | null
           expense_date: string | null
+          expense_id: string | null
           gross: number | null
           id: string | null
-          invoice_number: string | null
           is_billable: boolean | null
           net: number | null
-          reference: string | null
-          source: string | null
-          updated_at: string | null
+          status: Database["public"]["Enums"]["expense_status_enum"] | null
           vat: number | null
           vat_rate: number | null
-          vat_rate_name: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bau_expense_links_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "bau_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_expense_links_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bau_expense_links_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_projects_like"
+            referencedColumns: ["bau_customer_id"]
+          },
+          {
+            foreignKeyName: "fk_expense_assignments_expense_id"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       v_bau_latest_review: {
         Row: {
@@ -2784,12 +2903,154 @@ export type Database = {
         }
         Relationships: []
       }
+      v_expense_admin_queue: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          assigned_at: string | null
+          assigned_by: string | null
+          assigned_to_project_id: string | null
+          assigned_to_solutions_project_id: string | null
+          assigned_to_user_id: string | null
+          assignee_description: string | null
+          assignee_name: string | null
+          assignment_notes: string | null
+          category: Database["public"]["Enums"]["expense_category_enum"] | null
+          customer: string | null
+          expense_date: string | null
+          expense_description: string | null
+          expense_id: string | null
+          gross: number | null
+          id: string | null
+          import_customer: string | null
+          is_billable: boolean | null
+          net: number | null
+          project_name: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["expense_status_enum"] | null
+          updated_at: string | null
+          vat: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_assignments_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_expense_assignments_expense_id"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_impl_companies: {
         Row: {
           company_id: string | null
           company_name: string | null
         }
         Relationships: []
+      }
+      v_impl_lead_queue: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          assigned_at: string | null
+          assigned_by: string | null
+          assigned_to_project_id: string | null
+          assigned_to_solutions_project_id: string | null
+          assigned_to_user_id: string | null
+          assignee_description: string | null
+          assignee_name: string | null
+          assignment_notes: string | null
+          category: Database["public"]["Enums"]["expense_category_enum"] | null
+          customer: string | null
+          expense_date: string | null
+          expense_description: string | null
+          expense_id: string | null
+          gross: number | null
+          id: string | null
+          import_customer: string | null
+          is_billable: boolean | null
+          net: number | null
+          project_name: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["expense_status_enum"] | null
+          updated_at: string | null
+          vat: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_assignments_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_expense_assignments_expense_id"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_my_assigned_expenses: {
+        Row: {
+          account: string | null
+          account_code: string | null
+          approved_at: string | null
+          approved_by: string | null
+          assigned_at: string | null
+          assigned_by: string | null
+          assigned_to_project_id: string | null
+          assigned_to_solutions_project_id: string | null
+          assigned_to_user_id: string | null
+          assignee_description: string | null
+          assignee_name: string | null
+          assignment_notes: string | null
+          category: Database["public"]["Enums"]["expense_category_enum"] | null
+          customer: string | null
+          expense_date: string | null
+          expense_description: string | null
+          expense_id: string | null
+          gross: number | null
+          id: string | null
+          import_customer: string | null
+          is_billable: boolean | null
+          net: number | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source: string | null
+          status: Database["public"]["Enums"]["expense_status_enum"] | null
+          updated_at: string | null
+          vat: number | null
+          vat_rate: number | null
+          vat_rate_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_assignments_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_expense_assignments_expense_id"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {
@@ -2930,6 +3191,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      has_expense_admin_access: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       impl_generate_weeks: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -2959,6 +3224,10 @@ export type Database = {
       }
       is_current_user_internal_admin: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_impl_lead_for: {
+        Args: { project_id: string }
         Returns: boolean
       }
       is_internal: {

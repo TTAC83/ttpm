@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CheckCircle, Shield } from 'lucide-react';
+import { Loader2, CheckCircle, Shield, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { listReadyForSignoff, listApproved, adminApproveExpense } from '@/lib/expenseService';
 
@@ -113,16 +113,16 @@ export const AdminExpenseApproval = () => {
                 </TableHeader>
                 <TableBody>
                   {readyForSignoff.map((expense: any) => (
-                    <TableRow key={expense.id}>
-                      <TableCell>{formatDate(expense.expenses.expense_date)}</TableCell>
-                      <TableCell className="max-w-48">
-                        <div className="truncate" title={expense.expenses.description || ''}>
-                          {expense.expenses.description || 'N/A'}
-                        </div>
-                      </TableCell>
-                      <TableCell>{expense.customer || expense.expenses.customer || 'N/A'}</TableCell>
-                      <TableCell className="font-medium">{formatCurrency(expense.expenses.net)}</TableCell>
-                      <TableCell>{expense.profiles?.name || 'Unknown'}</TableCell>
+                     <TableRow key={expense.id}>
+                       <TableCell>{formatDate(expense.expense_date)}</TableCell>
+                       <TableCell className="max-w-48">
+                         <div className="truncate" title={expense.expense_description || ''}>
+                           {expense.expense_description || 'N/A'}
+                         </div>
+                       </TableCell>
+                       <TableCell>{expense.customer || expense.import_customer || 'N/A'}</TableCell>
+                       <TableCell className="font-medium">{formatCurrency(expense.net)}</TableCell>
+                       <TableCell>{expense.assignee_name || 'Unknown'}</TableCell>
                       <TableCell>
                         {expense.category && <Badge variant="secondary">{expense.category}</Badge>}
                       </TableCell>
@@ -152,56 +152,73 @@ export const AdminExpenseApproval = () => {
           </TabsContent>
           
           <TabsContent value="approved" className="space-y-4">
-            {loading ? (
-              <div className="flex items-center justify-center p-8">
-                <Loader2 className="h-8 w-8 animate-spin" />
-              </div>
-            ) : approved.length === 0 ? (
-              <div className="text-center p-8">
-                <p className="text-muted-foreground">No approved expenses</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Approved Date</TableHead>
-                    <TableHead>Expense Date</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Assignee</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Billable</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {approved.map((expense: any) => (
-                    <TableRow key={expense.id}>
-                      <TableCell>{formatDate(expense.approved_at)}</TableCell>
-                      <TableCell>{formatDate(expense.expenses.expense_date)}</TableCell>
-                      <TableCell className="max-w-48">
-                        <div className="truncate" title={expense.expenses.description || ''}>
-                          {expense.expenses.description || 'N/A'}
-                        </div>
-                      </TableCell>
-                      <TableCell>{expense.customer || expense.expenses.customer || 'N/A'}</TableCell>
-                      <TableCell className="font-medium">{formatCurrency(expense.expenses.net)}</TableCell>
-                      <TableCell>{expense.profiles?.name || 'Unknown'}</TableCell>
-                      <TableCell>
-                        {expense.category && <Badge variant="secondary">{expense.category}</Badge>}
-                      </TableCell>
-                      <TableCell>
-                        {expense.is_billable ? (
-                          <Badge variant="default">Billable</Badge>
-                        ) : (
-                          <Badge variant="outline">Non-billable</Badge>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Approved Expenses</CardTitle>
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export CSV
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="flex items-center justify-center p-8">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : approved.length === 0 ? (
+                  <div className="text-center p-8">
+                    <p className="text-muted-foreground">No approved expenses</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Project/Site</TableHead>
+                        <TableHead>Billable</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Assignee</TableHead>
+                        <TableHead>Approved By</TableHead>
+                        <TableHead>Approved Date</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {approved.map((expense: any) => (
+                        <TableRow key={expense.id}>
+                          <TableCell>{formatDate(expense.expense_date)}</TableCell>
+                          <TableCell className="max-w-48">
+                            <div className="truncate" title={expense.expense_description || ''}>
+                              {expense.expense_description || 'N/A'}
+                            </div>
+                          </TableCell>
+                          <TableCell>{expense.customer || expense.import_customer || 'N/A'}</TableCell>
+                          <TableCell>{expense.project_name || 'N/A'}</TableCell>
+                          <TableCell>
+                            {expense.is_billable ? (
+                              <Badge variant="default">Billable</Badge>
+                            ) : (
+                              <Badge variant="outline">Non-billable</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {expense.category && <Badge variant="secondary">{expense.category}</Badge>}
+                          </TableCell>
+                          <TableCell>{formatCurrency(expense.gross)}</TableCell>
+                          <TableCell>{expense.assignee_name || 'Unknown'}</TableCell>
+                          <TableCell>{expense.approved_by_name || '-'}</TableCell>
+                          <TableCell>
+                            {expense.approved_at ? formatDate(expense.approved_at) : '-'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </CardContent>

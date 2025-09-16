@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Upload, FileSpreadsheet, Shield } from 'lucide-react';
 import { UnassignedExpensesBatch } from './expenses/UnassignedExpensesBatch';
-import { AssignedExpensesForm } from './expenses/AssignedExpensesForm';
+import { MyExpenses } from './expenses/MyExpenses';
 import { AssignedExpenses } from './expenses/AssignedExpenses';
 import { ProjectCosts } from './expenses/ProjectCosts';
 import { AdminExpenseApproval } from './expenses/AdminExpenseApproval';
@@ -73,7 +73,7 @@ export const Expenses = () => {
         </TabsContent>
         
         <TabsContent value="assigned" className="space-y-4">
-          <AssignedExpensesForm key={`assigned-${refreshKey}`} />
+          <MyExpenses key={`my-expenses-${refreshKey}`} />
         </TabsContent>
         
         <TabsContent value="projects" className="space-y-4">

@@ -11,7 +11,7 @@ export interface ExpenseAssignment {
   assignment_notes?: string;
   assigned_at: string;
   updated_at: string;
-  status: 'Unassigned' | 'Assigned' | 'ConfirmedByAssignee' | 'PendingLeadReview' | 'ReadyForSignoff' | 'Approved';
+  status: 'Unassigned' | 'Assigned' | 'ConfirmedByAssignee' | 'PendingLeadReview' | 'ReadyForSignoff' | 'Approved' | 'Rejected';
   category?: 'FoodDrink' | 'Hotel' | 'Tools' | 'Software' | 'Hardware' | 'Postage' | 'Transport' | 'Other';
   customer?: string;
   assignee_description?: string;
@@ -299,72 +299,80 @@ export async function getAllProjectsForSelection(): Promise<Project[]> {
   }));
 }
 
-// Confirm expense assignment
+// Get my assigned expenses for review
+export async function listMyAssignedExpenses() {
+  const { data, error } = await supabase
+    .from('v_my_assigned_expenses')
+    .select('*')
+    .order('expense_date', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
+// Confirm expense by assignee (user review & target selection)
 export async function confirmMyExpense(
   assignmentId: string,
   customer: string,
   billable: boolean,
-  category: 'FoodDrink' | 'Hotel' | 'Tools' | 'Software' | 'Hardware' | 'Postage' | 'Transport' | 'Other',
+  category: string,
   assigneeDescription: string,
   assignToProject: boolean,
-  projectKind?: string,
-  projectId?: string
+  projectKind: 'implementation' | 'solutions' | null,
+  projectId: string | null
 ) {
-  const { error } = await supabase.rpc('expense_confirm', {
-    p_assignment_id: assignmentId,
-    p_customer: customer,
-    p_billable: billable,
-    p_category: category,
-    p_assignee_description: assigneeDescription,
-    p_assign_to_project: assignToProject,
-    p_project_kind: projectKind || null,
-    p_project_id: projectId || null
-  });
+  const updates: any = {
+    customer,
+    is_billable: billable,
+    category,
+    assignee_description: assigneeDescription,
+    status: 'ConfirmedByAssignee'
+  };
+
+  // Set project assignment based on kind
+  if (assignToProject && projectKind === 'implementation' && projectId) {
+    updates.assigned_to_project_id = projectId;
+    updates.assigned_to_solutions_project_id = null;
+    updates.status = 'PendingLeadReview';
+  } else if (assignToProject && projectKind === 'solutions' && projectId) {
+    updates.assigned_to_solutions_project_id = projectId;
+    updates.assigned_to_project_id = null;
+    updates.status = 'ReadyForSignoff'; // Solutions don't have lead review
+  } else {
+    updates.assigned_to_project_id = null;
+    updates.assigned_to_solutions_project_id = null;
+    updates.status = 'ReadyForSignoff'; // BAU/Internal go straight to admin
+  }
+
+  const { error } = await supabase
+    .from('expense_assignments')
+    .update(updates)
+    .eq('id', assignmentId);
 
   if (error) throw error;
 }
 
-// Get pending lead review expenses
+// Get expense categories for dropdown
+export function getExpenseCategories() {
+  return [
+    { value: 'FoodDrink', label: 'Food & Drink' },
+    { value: 'Hotel', label: 'Hotel' },
+    { value: 'Tools', label: 'Tools' },
+    { value: 'Software', label: 'Software' },
+    { value: 'Hardware', label: 'Hardware' },
+    { value: 'Postage', label: 'Postage' },
+    { value: 'Transport', label: 'Transport' },
+    { value: 'Other', label: 'Other' }
+  ];
+}
+
+// List expenses pending project lead review
 export async function listPendingLeadReview() {
-  // Check if user has full expense access (Allan and Paul)
-  const { data: hasFullAccess } = await supabase.rpc('has_expense_access');
-  
-  let query = supabase
-    .from('expense_assignments')
-    .select(`
-      *,
-      expenses!inner(
-        id,
-        expense_date,
-        description,
-        customer,
-        reference,
-        invoice_number,
-        net,
-        gross,
-        vat
-      ),
-      projects!inner(
-        id,
-        name,
-        site_name
-      ),
-      profiles!assigned_to_user_id(
-        name
-      )
-    `)
-    .eq('status', 'PendingLeadReview')
-    .order('assigned_at', { ascending: false });
+  const { data, error } = await supabase
+    .from('v_impl_lead_queue')
+    .select('*')
+    .order('expense_date', { ascending: false });
 
-  // If user doesn't have full access, only show their own assignments
-  if (!hasFullAccess) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      query = query.eq('assigned_to_user_id', user.id);
-    }
-  }
-
-  const { data, error } = await query;
   if (error) throw error;
   return data || [];
 }
@@ -379,92 +387,51 @@ export async function leadApproveExpense(assignmentId: string, billable: boolean
   if (error) throw error;
 }
 
-// Get ready for signoff expenses
+// List expenses ready for admin signoff
 export async function listReadyForSignoff() {
-  // Check if user has full expense access (Allan and Paul)
-  const { data: hasFullAccess } = await supabase.rpc('has_expense_access');
-  
-  let query = supabase
-    .from('expense_assignments')
-    .select(`
-      *,
-      expenses!inner(
-        id,
-        expense_date,
-        description,
-        customer,
-        reference,
-        invoice_number,
-        net,
-        gross,
-        vat
-      ),
-      profiles!assigned_to_user_id(
-        name
-      )
-    `)
-    .eq('status', 'ReadyForSignoff')
-    .order('approved_at', { ascending: false });
+  const { data, error } = await supabase
+    .from('v_expense_admin_queue')
+    .select('*')
+    .order('expense_date', { ascending: false });
 
-  // If user doesn't have full access, only show their own assignments
-  if (!hasFullAccess) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      query = query.eq('assigned_to_user_id', user.id);
-    }
-  }
-
-  const { data, error } = await query;
   if (error) throw error;
   return data || [];
 }
 
-// Get approved expenses
+// List approved expenses
 export async function listApproved() {
-  // Check if user has full expense access (Allan and Paul)
-  const { data: hasFullAccess } = await supabase.rpc('has_expense_access');
-  
-  let query = supabase
-    .from('expense_assignments')
-    .select(`
-      *,
-      expenses!inner(
-        id,
-        expense_date,
-        description,
-        customer,
-        reference,
-        invoice_number,
-        net,
-        gross,
-        vat
-      ),
-      profiles!assigned_to_user_id(
-        name
-      )
-    `)
-    .eq('status', 'Approved')
+  const { data, error } = await supabase
+    .from('v_approved_expenses')
+    .select('*')
     .order('approved_at', { ascending: false });
 
-  // If user doesn't have full access, only show their own assignments
-  if (!hasFullAccess) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      query = query.eq('assigned_to_user_id', user.id);
-    }
-  }
-
-  const { data, error } = await query;
   if (error) throw error;
   return data || [];
 }
 
-// Admin approve expense
+// Admin approve expense (final signoff)
 export async function adminApproveExpense(assignmentId: string) {
-  const { error } = await supabase.rpc('expense_admin_signoff', {
-    p_assignment_id: assignmentId,
-    p_approved: true
-  });
+  const { error } = await supabase
+    .from('expense_assignments')
+    .update({
+      status: 'Approved',
+      approved_by: (await supabase.auth.getUser()).data.user?.id,
+      approved_at: new Date().toISOString()
+    })
+    .eq('id', assignmentId);
+
+  if (error) throw error;
+}
+
+// Reject expense with reason
+export async function rejectExpense(assignmentId: string, reason: string) {
+  const { error } = await supabase
+    .from('expense_assignments')
+    .update({
+      status: 'Rejected' as any,
+      assignment_notes: reason
+    })
+    .eq('id', assignmentId);
 
   if (error) throw error;
 }

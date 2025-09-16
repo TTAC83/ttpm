@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, CheckCircle, Building2 } from 'lucide-react';
@@ -13,29 +13,18 @@ import {
 
 interface PendingExpense {
   id: string;
-  status: string;
-  category?: string;
-  customer?: string;
+  expense_id: string;
+  expense_date: string;
+  expense_description: string;
+  project_name: string;
+  assignee_name: string;
+  import_customer: string;
+  net: number;
+  vat: number;
+  gross: number;
   is_billable: boolean;
-  expenses: {
-    id: string;
-    expense_date?: string;
-    description?: string;
-    customer?: string;
-    reference?: string;
-    invoice_number?: string;
-    net?: number;
-    gross?: number;
-    vat?: number;
-  };
-  projects: {
-    id: string;
-    name: string;
-    site_name?: string;
-  };
-  profiles: {
-    name?: string;
-  };
+  category: string;
+  status: string;
 }
 
 export const ProjectCosts = () => {
@@ -59,11 +48,11 @@ export const ProjectCosts = () => {
     try {
       setLoading(true);
       const result = await listPendingLeadReview();
-      setExpenses(result as any);
+      setExpenses(result);
       
       // Initialize billable settings
       const settings: Record<string, boolean> = {};
-      (result as any[]).forEach((expense: any) => {
+      result.forEach((expense: PendingExpense) => {
         settings[expense.id] = expense.is_billable;
       });
       setBillableSettings(settings);
@@ -164,60 +153,55 @@ export const ProjectCosts = () => {
                 <TableHead>Action</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {expenses.map(expense => (
-                <TableRow key={expense.id}>
-                  <TableCell>{formatDate(expense.expenses.expense_date)}</TableCell>
-                  <TableCell className="max-w-48">
-                    <div className="truncate" title={expense.expenses.description || ''}>
-                      {expense.expenses.description || 'N/A'}
-                    </div>
-                  </TableCell>
-                  <TableCell>{expense.customer || expense.expenses.customer || 'N/A'}</TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{expense.projects.name}</div>
-                      {expense.projects.site_name && (
-                        <div className="text-sm text-muted-foreground">
-                          {expense.projects.site_name}
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Checkbox
-                      checked={billableSettings[expense.id] || false}
-                      onCheckedChange={(checked) => handleBillableChange(expense.id, checked as boolean)}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {expense.category && (
-                      <Badge variant="secondary">{expense.category}</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    <div>
-                      <div>{formatCurrency(expense.expenses.net)}</div>
-                      <div className="text-sm text-muted-foreground">
-                        Gross: {formatCurrency(expense.expenses.gross)}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{expense.profiles.name || 'Unknown'}</TableCell>
-                  <TableCell>
-                    <Button
-                      size="sm"
-                      onClick={() => handleApprove(expense.id)}
-                      disabled={approving[expense.id]}
-                    >
-                      {approving[expense.id] && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                      Approve
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
+             <TableBody>
+               {expenses.map(expense => (
+                 <TableRow key={expense.id}>
+                   <TableCell>{formatDate(expense.expense_date)}</TableCell>
+                   <TableCell className="max-w-48">
+                     <div className="truncate" title={expense.expense_description || ''}>
+                       {expense.expense_description || 'N/A'}
+                     </div>
+                   </TableCell>
+                   <TableCell>{expense.import_customer || 'N/A'}</TableCell>
+                   <TableCell>
+                     <div className="font-medium">{expense.project_name}</div>
+                   </TableCell>
+                   <TableCell>
+                     <Switch
+                       checked={billableSettings[expense.id] ?? expense.is_billable}
+                       onCheckedChange={(checked) => 
+                         setBillableSettings(prev => ({ ...prev, [expense.id]: checked }))
+                       }
+                     />
+                   </TableCell>
+                   <TableCell>
+                     {expense.category && (
+                       <Badge variant="secondary">{expense.category}</Badge>
+                     )}
+                   </TableCell>
+                   <TableCell className="font-medium">
+                     <div>
+                       <div>{formatCurrency(expense.net)}</div>
+                       <div className="text-sm text-muted-foreground">
+                         Gross: {formatCurrency(expense.gross)}
+                       </div>
+                     </div>
+                   </TableCell>
+                   <TableCell>{expense.assignee_name || 'Unknown'}</TableCell>
+                   <TableCell>
+                     <Button
+                       size="sm"
+                       onClick={() => handleApprove(expense.id)}
+                       disabled={approving[expense.id]}
+                     >
+                       {approving[expense.id] && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                       <CheckCircle className="h-4 w-4 mr-1" />
+                       Approve
+                     </Button>
+                   </TableCell>
+                 </TableRow>
+               ))}
+             </TableBody>
           </Table>
         </div>
       </CardContent>

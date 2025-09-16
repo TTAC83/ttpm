@@ -90,12 +90,15 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
     try {
       const { data: projectData, error } = await supabase
         .from('projects')
-        .select('project_name, customer_name')
+        .select('name, companies(name)')
         .eq('id', projectId)
         .single();
 
       if (error) throw error;
-      setProject(projectData);
+      setProject({
+        project_name: projectData.name,
+        customer_name: projectData.companies?.name || 'Unknown Customer'
+      });
     } catch (error) {
       console.error('Error fetching project details:', error);
     }

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Upload, FileSpreadsheet, Shield } from 'lucide-react';
 import { UnassignedExpensesBatch } from './expenses/UnassignedExpensesBatch';
 import { AssignedExpensesForm } from './expenses/AssignedExpensesForm';
+import { AssignedExpenses } from './expenses/AssignedExpenses';
 import { ProjectCosts } from './expenses/ProjectCosts';
 import { AdminExpenseApproval } from './expenses/AdminExpenseApproval';
 import { ExpenseUpload } from '@/components/ExpenseUpload';
@@ -55,8 +56,9 @@ export const Expenses = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="unassigned">Batch Assign</TabsTrigger>
+          <TabsTrigger value="assigned-expenses">Assigned Expenses</TabsTrigger>
           <TabsTrigger value="assigned">My Expenses</TabsTrigger>
           <TabsTrigger value="projects">Project Costs</TabsTrigger>
           <TabsTrigger value="admin">Admin Approval</TabsTrigger>
@@ -64,6 +66,10 @@ export const Expenses = () => {
         
         <TabsContent value="unassigned" className="space-y-4">
           <UnassignedExpensesBatch key={`unassigned-${refreshKey}`} />
+        </TabsContent>
+        
+        <TabsContent value="assigned-expenses" className="space-y-4">
+          <AssignedExpenses key={`assigned-expenses-${refreshKey}`} />
         </TabsContent>
         
         <TabsContent value="assigned" className="space-y-4">

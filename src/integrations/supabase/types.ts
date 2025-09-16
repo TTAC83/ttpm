@@ -3332,6 +3332,7 @@ export type Database = {
         | "PendingLeadReview"
         | "ReadyForSignoff"
         | "Approved"
+        | "Rejected"
       impl_health_simple: "green" | "red"
       impl_week_status: "on_track" | "off_track"
       task_status: "Planned" | "In Progress" | "Blocked" | "Done"
@@ -3497,6 +3498,7 @@ export const Constants = {
         "PendingLeadReview",
         "ReadyForSignoff",
         "Approved",
+        "Rejected",
       ],
       impl_health_simple: ["green", "red"],
       impl_week_status: ["on_track", "off_track"],

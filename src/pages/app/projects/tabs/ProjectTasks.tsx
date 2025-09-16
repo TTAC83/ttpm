@@ -490,12 +490,12 @@ const TaskEditDialog = ({
   const [formData, setFormData] = useState({
     task_title: task.task_title,
     task_details: task.task_details || '',
-    planned_start: task.planned_start || '',
-    planned_end: task.planned_end || '',
-    actual_start: task.actual_start || '',
-    actual_end: task.actual_end || '',
+    planned_start: task.planned_start || null,
+    planned_end: task.planned_end || null,
+    actual_start: task.actual_start || null,
+    actual_end: task.actual_end || null,
     status: task.status,
-    assignee: task.assignee || '',
+    assignee: task.assignee || null,
   });
 
   const [datePopoverOpen, setDatePopoverOpen] = useState({
@@ -507,9 +507,32 @@ const TaskEditDialog = ({
 
   const handleDateSelect = (field: string, date: Date | undefined) => {
     if (date) {
+      const newDateValue = toISODateString(date);
+      
+      setFormData(prev => {
+        const newFormData = { ...prev, [field]: newDateValue };
+        
+        // Handle date dependencies
+        if (field === 'planned_start' && prev.planned_start && prev.planned_end) {
+          // Calculate the difference in days and adjust planned_end
+          const oldStart = new Date(prev.planned_start);
+          const newStart = date;
+          const oldEnd = new Date(prev.planned_end);
+          
+          const daysDiff = Math.floor((newStart.getTime() - oldStart.getTime()) / (1000 * 60 * 60 * 24));
+          const newEnd = new Date(oldEnd);
+          newEnd.setDate(newEnd.getDate() + daysDiff);
+          
+          newFormData.planned_end = toISODateString(newEnd);
+        }
+        
+        return newFormData;
+      });
+    } else {
+      // Handle clearing dates - set to null instead of empty string
       setFormData(prev => ({
         ...prev,
-        [field]: toISODateString(date)
+        [field]: null
       }));
     }
     setDatePopoverOpen(prev => ({ ...prev, [field]: false }));
@@ -517,7 +540,18 @@ const TaskEditDialog = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    
+    // Clean up form data - convert empty strings to null for date fields
+    const cleanedData = {
+      ...formData,
+      planned_start: formData.planned_start || null,
+      planned_end: formData.planned_end || null,
+      actual_start: formData.actual_start || null,
+      actual_end: formData.actual_end || null,
+      assignee: formData.assignee || null,
+    };
+    
+    onSave(cleanedData);
   };
 
   return (

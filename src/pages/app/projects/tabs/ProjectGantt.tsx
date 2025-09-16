@@ -413,40 +413,98 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart className="h-4 w-4" />
-              Project Gantt Chart
-            </CardTitle>
+    <>
+      {/* Print Styles */}
+      <style>{`
+        @media print {
+          @page {
+            size: A4 landscape;
+            margin: 0.5cm;
+          }
+          
+          body * {
+            visibility: hidden;
+          }
+          
+          .gantt-print, .gantt-print * {
+            visibility: visible;
+          }
+          
+          .gantt-print {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            transform: scale(0.7);
+            transform-origin: top left;
+          }
+          
+          .gantt-print .sticky {
+            position: static !important;
+          }
+          
+          .gantt-print .overflow-auto {
+            overflow: visible !important;
+            max-height: none !important;
+          }
+          
+          .gantt-print .text-xs {
+            font-size: 8px !important;
+          }
+          
+          .gantt-print .text-sm {
+            font-size: 10px !important;
+          }
+          
+          .gantt-print h3 {
+            font-size: 12px !important;
+          }
+          
+          .gantt-print .space-y-1 > * + * {
+            margin-top: 2px !important;
+          }
+          
+          .gantt-print .py-1 {
+            padding-top: 1px !important;
+            padding-bottom: 1px !important;
+          }
+        }
+      `}</style>
+      
+      <Card className="gantt-print">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart className="h-4 w-4" />
+                Project Gantt Chart
+              </CardTitle>
+            </div>
+            <div className="flex gap-2 print:hidden">
+              <Button
+                variant={viewMode === 'step' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('step')}
+                className="flex items-center gap-2"
+              >
+                <Grid3X3 className="h-4 w-4" />
+                Step View
+              </Button>
+              <Button
+                variant={viewMode === 'task' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('task')}
+                className="flex items-center gap-2"
+              >
+                <List className="h-4 w-4" />
+                Task View
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant={viewMode === 'step' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('step')}
-              className="flex items-center gap-2"
-            >
-              <Grid3X3 className="h-4 w-4" />
-              Step View
-            </Button>
-            <Button
-              variant={viewMode === 'task' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('task')}
-              className="flex items-center gap-2"
-            >
-              <List className="h-4 w-4" />
-              Task View
-            </Button>
-          </div>
-        </div>
-        <CardDescription>
-          Visual timeline showing planned vs actual {viewMode === 'step' ? 'step' : 'task'} completion and calendar events
-        </CardDescription>
-      </CardHeader>
+          <CardDescription>
+            Visual timeline showing planned vs actual {viewMode === 'step' ? 'step' : 'task'} completion and calendar events
+          </CardDescription>
+        </CardHeader>
       <CardContent className="p-3">
         {(viewMode === 'step' ? stepsWithDates.length === 0 : tasksWithDates.length === 0) && events.length === 0 ? (
           <div className="text-center py-4">
@@ -790,13 +848,14 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
              )}
 
              {/* Print Instructions */}
-             <div className="text-[10px] text-muted-foreground border-t pt-2">
-               <p><strong>Print/Export:</strong> Use browser print (Ctrl+P) to save as PDF.</p>
+             <div className="text-[10px] text-muted-foreground border-t pt-2 print:hidden">
+               <p><strong>Print/Export:</strong> Use browser print (Ctrl+P) and select "Landscape" orientation to save as PDF.</p>
              </div>
            </div>
          )}
        </CardContent>
      </Card>
+    </>
   );
 };
 

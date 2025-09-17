@@ -238,11 +238,11 @@ export default function ImplementationGapsEscalations() {
                     <TableCell>{gapEscalation.reason_code || '-'}</TableCell>
                     <TableCell>
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         onClick={() => handleEditGapEscalation(gapEscalation)}
                       >
-                        Open
+                        Edit
                       </Button>
                     </TableCell>
                   </TableRow>

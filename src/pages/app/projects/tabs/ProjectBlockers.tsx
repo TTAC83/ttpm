@@ -227,7 +227,11 @@ export function ProjectBlockers({ projectId }: ProjectBlockersProps) {
         onOpenChange={setDrawerOpen}
         projectId={projectId}
         blocker={selectedGapEscalation}
-        onSuccess={loadGapsEscalations}
+        onSuccess={() => {
+          setDrawerOpen(false);
+          setSelectedGapEscalation(undefined);
+          loadGapsEscalations();
+        }}
       />
     </div>
   );

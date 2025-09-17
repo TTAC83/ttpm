@@ -603,6 +603,76 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
 
   return (
     <div className="space-y-6">
+      {/* Gaps & Escalations */}
+      <Card className="p-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold">Gaps & Escalations</h2>
+          <span className="text-sm opacity-75">{blockersQ.data?.length ?? 0} open gaps & escalations</span>
+        </div>
+        <Separator className="my-3" />
+        {blockersQ.isLoading ? (
+          <div>Loading gaps & escalations...</div>
+        ) : (blockersQ.data?.length ?? 0) === 0 ? (
+          <div>No open gaps & escalations</div>
+        ) : (
+          <div className="overflow-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left">
+                  <th className="py-2 pr-3">Project</th>
+                  <th className="py-2 pr-3">Title</th>
+                  <th className="py-2 pr-3">Owner</th>
+                  <th className="py-2 pr-3">Est. Complete</th>
+                  <th className="py-2 pr-3">Age (days)</th>
+                  <th className="py-2 pr-3">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {blockersQ.data!.map(blocker => {
+                  const getRowClassName = () => {
+                    // Critical items get dark red background regardless of dates or completion
+                    if (blocker.is_critical) return "bg-red-200 dark:bg-red-900/50";
+                    
+                    // Overdue non-closed items get pale red background
+                    if (blocker.is_overdue) return "bg-red-50 dark:bg-red-950/20";
+                    
+                    return "";
+                  };
+
+                  const getStatusBadge = () => {
+                    if (blocker.is_overdue && blocker.is_critical) {
+                      return <Badge variant="destructive" className="bg-red-600">Critical Overdue</Badge>;
+                    }
+                    if (blocker.is_critical) {
+                      return <Badge variant="destructive" className="bg-red-600">Critical</Badge>;
+                    }
+                    if (blocker.is_overdue) {
+                      return <Badge variant="destructive">Overdue</Badge>;
+                    }
+                    return <Badge variant="default" className="bg-amber-500 hover:bg-amber-600">Live</Badge>;
+                  };
+
+                  return (
+                    <tr key={blocker.id} className={`border-t ${getRowClassName()}`}>
+                      <td className="py-2 pr-3">{blocker.project_name}</td>
+                      <td className="py-2 pr-3 font-medium">{blocker.title}</td>
+                      <td className="py-2 pr-3">{blocker.owner_name}</td>
+                      <td className="py-2 pr-3">
+                        {blocker.estimated_complete_date ? new Date(blocker.estimated_complete_date).toLocaleDateString('en-GB') : '-'}
+                      </td>
+                      <td className={`py-2 pr-3 ${blocker.is_overdue ? 'text-red-600 font-medium' : ''}`}>
+                        {blocker.age_days}
+                      </td>
+                      <td className="py-2 pr-3">{getStatusBadge()}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+
       {/* Overdue Tasks */}
       <Card className="p-4">
         <div className="flex items-center justify-between">
@@ -864,54 +934,6 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
         )}
       </Card>
 
-      {/* Implementation Blockers */}
-      <Card className="p-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold">Implementation Blockers</h2>
-          <span className="text-sm opacity-75">{blockersQ.data?.length ?? 0} open blockers</span>
-        </div>
-        <Separator className="my-3" />
-        {blockersQ.isLoading ? (
-          <div>Loading blockers...</div>
-        ) : (blockersQ.data?.length ?? 0) === 0 ? (
-          <div>No open blockers</div>
-        ) : (
-          <div className="overflow-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left">
-                  <th className="py-2 pr-3">Project</th>
-                  <th className="py-2 pr-3">Title</th>
-                  <th className="py-2 pr-3">Owner</th>
-                  <th className="py-2 pr-3">Est. Complete</th>
-                  <th className="py-2 pr-3">Age (days)</th>
-                  <th className="py-2 pr-3">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {blockersQ.data!.map(blocker => (
-                  <tr key={blocker.id} className={`border-t ${blocker.is_overdue ? 'bg-red-50' : ''}`}>
-                    <td className="py-2 pr-3">{blocker.project_name}</td>
-                    <td className="py-2 pr-3 font-medium">{blocker.title}</td>
-                    <td className="py-2 pr-3">{blocker.owner_name}</td>
-                    <td className="py-2 pr-3">
-                      {blocker.estimated_complete_date ? new Date(blocker.estimated_complete_date).toLocaleDateString('en-GB') : '-'}
-                    </td>
-                    <td className={`py-2 pr-3 ${blocker.is_overdue ? 'text-red-600 font-medium' : ''}`}>
-                      {blocker.age_days}
-                    </td>
-                    <td className="py-2 pr-3">
-                      <Badge variant={blocker.is_overdue ? "destructive" : "default"} className={blocker.is_overdue ? "" : "bg-amber-500 hover:bg-amber-600"}>
-                        {blocker.is_overdue ? "Overdue" : "Live"}
-                      </Badge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
 
       {/* Weekly Review Controls */}
       <Card className="p-4 space-y-4">

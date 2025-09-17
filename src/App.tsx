@@ -245,6 +245,14 @@ const App = () => (
               <Route path="bau/:id" element={<BAUDetail />} />
               <Route path="implementation/weekly-review" element={<ImplementationWeeklyReview />} />
               <Route 
+                path="implementation/blockers" 
+                element={
+                  <AuthGuard requiredRole="internal">
+                    <ImplementationBlockers />
+                  </AuthGuard>
+                } 
+              />
+              <Route 
                 path="admin/users" 
                 element={
                   <AuthGuard requiredRole="internal_admin">

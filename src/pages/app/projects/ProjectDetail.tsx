@@ -59,7 +59,7 @@ export const ProjectDetail = () => {
   useEffect(() => {
     // Handle URL parameters to set active tab
     const tab = searchParams.get('tab');
-    if (tab && ['overview', 'lines', 'tasks', 'gantt', 'actions', 'calendar', 'vision-models', 'audit'].includes(tab)) {
+    if (tab && ['overview', 'lines', 'tasks', 'gantt', 'actions', 'calendar', 'vision-models', 'audit', 'blockers'].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -198,7 +198,7 @@ export const ProjectDetail = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-8 lg:w-auto">
+        <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${profile?.is_internal && ['IoT', 'Vision', 'Hybrid'].includes(project.domain) ? '9' : profile?.is_internal ? '8' : '7'}, minmax(0, 1fr))` }}>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="lines">Lines</TabsTrigger>
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
@@ -207,12 +207,12 @@ export const ProjectDetail = () => {
           <TabsTrigger value="calendar">Calendar</TabsTrigger>
           <TabsTrigger value="vision-models">Vision Models</TabsTrigger>
           {profile?.is_internal && (
-                  <TabsTrigger value="audit">Audit</TabsTrigger>
-                )}
-                {profile?.is_internal && ['IoT', 'Vision', 'Hybrid'].includes(project.domain) && (
-                  <TabsTrigger value="blockers">Implementation Blocks</TabsTrigger>
-                )}
-              </TabsList>
+            <TabsTrigger value="audit">Audit</TabsTrigger>
+          )}
+          {profile?.is_internal && ['IoT', 'Vision', 'Hybrid'].includes(project.domain) && (
+            <TabsTrigger value="blockers">Blockers</TabsTrigger>
+          )}
+        </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
           <ProjectOverview project={project} onUpdate={fetchProject} />
@@ -245,6 +245,12 @@ export const ProjectDetail = () => {
         {profile?.is_internal && (
           <TabsContent value="audit" className="space-y-4">
             <ProjectAudit projectId={project.id} />
+          </TabsContent>
+        )}
+
+        {profile?.is_internal && ['IoT', 'Vision', 'Hybrid'].includes(project.domain) && (
+          <TabsContent value="blockers" className="space-y-4">
+            <ProjectBlockers projectId={project.id} />
           </TabsContent>
         )}
       </Tabs>

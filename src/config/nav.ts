@@ -11,7 +11,9 @@ import {
   Server,
   Wifi,
   Radio,
-  Monitor
+  Monitor,
+  Package,
+  AlertTriangle
 } from "lucide-react";
 
 export type Role = "internal_admin" | "internal_user" | "external_admin" | "external_user";
@@ -211,6 +213,8 @@ export const ICON_MAP = {
   Wifi,
   Radio,
   Monitor,
+  Package,
+  AlertTriangle
 };
 
 export function visibleItemsForRole(role: Role | null | undefined): NavItem[] {

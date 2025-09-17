@@ -20,6 +20,7 @@ import ProjectAudit from './tabs/ProjectAudit';
 import ProjectCalendar from './tabs/ProjectCalendar';
 import ProjectVisionModels from './tabs/ProjectVisionModels';
 import { ProjectBlockers } from './tabs/ProjectBlockers';
+import { ProjectProductGaps } from './tabs/ProjectProductGaps';
 
 interface Project {
   id: string;
@@ -254,6 +255,12 @@ export const ProjectDetail = () => {
         {profile?.is_internal && ['IoT', 'Vision', 'Hybrid'].includes(project.domain) && (
           <TabsContent value="blockers" className="space-y-4">
             <ProjectBlockers projectId={project.id} />
+          </TabsContent>
+        )}
+
+        {profile?.is_internal && (
+          <TabsContent value="product-gaps" className="space-y-4">
+            <ProjectProductGaps projectId={project.id} />
           </TabsContent>
         )}
       </Tabs>

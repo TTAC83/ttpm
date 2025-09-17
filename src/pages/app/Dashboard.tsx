@@ -495,6 +495,11 @@ export const Dashboard = () => {
         </p>
       </div>
       
+      {/* Implementation Blockers */}
+      {profile?.is_internal && (
+        <BlockersDashboardCard />
+      )}
+
       {/* 7-Day Calendar */}
       <Card>
         <CardHeader>
@@ -550,103 +555,24 @@ export const Dashboard = () => {
                         return 'bg-primary/10 text-primary border border-primary/20';
                       };
 
-                      const getEventIcon = () => {
-                        switch (event.type) {
-                          case 'task':
-                            return '📋';
-                          case 'action':
-                            return '⚡';
-                          case 'calendar':
-                            return '📅';
-                          default:
-                            return '📅';
-                        }
-                      };
-
                       return (
                         <div
                           key={event.id}
-                          className={`text-xs p-1 rounded text-left cursor-pointer ${getEventColor()}`}
+                          className={`text-xs p-2 rounded cursor-pointer transition-colors hover:opacity-80 ${getEventColor()}`}
                           onDoubleClick={() => handleEventDoubleClick(event)}
+                          title={`${event.title}\n${event.project.company.name}: ${event.project.name}\n\nDouble-click to navigate`}
                         >
-                          <div className="flex items-center gap-1">
-                            <span className="text-[10px]">{getEventIcon()}</span>
-                            <div className="font-medium truncate" title={event.title}>
-                              {event.title}
+                          <div className="flex flex-col">
+                            <div className="font-medium truncate mb-1" title={event.title}>
+                              {event.title.length > 20 ? `${event.title.slice(0, 20)}...` : event.title}
                             </div>
-                          </div>
-                          <div className="text-muted-foreground truncate" title={event.project.company.name}>
-                            {event.project.company.name}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* All Calendar Events */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">All Calendar Events</CardTitle>
-          <CardDescription>All project calendar events for the next 7 days</CardDescription>
-          
-          {/* Legend */}
-          <div className="flex flex-wrap gap-4 mt-4 p-3 bg-muted/50 rounded-lg">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-red-50 border-2 border-red-600 rounded"></div>
-              <span className="text-xs text-muted-foreground">📅 Critical Events</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-blue-50 border-2 border-blue-500 rounded"></div>
-              <span className="text-xs text-muted-foreground">📅 Regular Events</span>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-7 gap-2">
-            {dateRange.map((date, index) => {
-              const dayCalendarEvents = getAllCalendarEventsForDate(date);
-              const dayName = date.toLocaleDateString('en-GB', { weekday: 'short' });
-              const dayNumber = date.getDate();
-              
-              return (
-                <div
-                  key={index}
-                  className={`p-3 border rounded-lg min-h-[120px] ${
-                    isToday(date) ? 'bg-primary/5 border-primary' : ''
-                  }`}
-                >
-                  <div className="text-center mb-2">
-                    <div className="text-xs text-muted-foreground">{dayName}</div>
-                    <div className={`text-sm font-medium ${isToday(date) ? 'text-primary' : ''}`}>
-                      {dayNumber}
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    {dayCalendarEvents.map((event) => {
-                      const getEventColor = () => {
-                        if (event.is_critical) {
-                          return 'bg-red-50 text-red-800 border-2 border-red-600'; // Red border for critical events
-                        } else {
-                          return 'bg-blue-50 text-blue-800 border-2 border-blue-500'; // Blue border for regular events
-                        }
-                      };
-
-                      return (
-                        <div
-                          key={event.id}
-                          className={`text-xs p-1 rounded text-left cursor-pointer ${getEventColor()}`}
-                          onDoubleClick={() => handleEventDoubleClick(event)}
-                        >
-                          <div className="flex items-center gap-1">
-                            <span className="text-[10px]">📅</span>
-                            <div className="font-medium truncate" title={event.title}>
-                              {event.title}
+                            <div className="flex justify-between items-center">
+                              <div className="text-xs opacity-75 truncate flex-1" title={event.project.name}>
+                                {event.project.name.length > 12 ? `${event.project.name.slice(0, 12)}...` : event.project.name}
+                              </div>
+                              <div className="text-xs opacity-60 ml-1">
+                                {event.type === 'task' ? '📋' : event.type === 'action' ? '⚡' : '📅'}
+                              </div>
                             </div>
                           </div>
                           <div className="text-muted-foreground truncate" title={event.project.company.name}>
@@ -662,11 +588,6 @@ export const Dashboard = () => {
           </div>
         </CardContent>
        </Card>
-
-      {/* Implementation Blockers */}
-      {profile?.is_internal && (
-        <BlockersDashboardCard />
-      )}
 
       {/* Client Summary */}
       <Card>

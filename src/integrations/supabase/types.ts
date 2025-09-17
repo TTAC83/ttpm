@@ -3234,11 +3234,13 @@ export type Database = {
           customer_name: string | null
           estimated_complete_date: string | null
           id: string | null
+          is_critical: boolean | null
           is_overdue: boolean | null
           owner: string | null
           project_id: string | null
           project_name: string | null
           raised_at: string | null
+          reason_code: string | null
           status:
             | Database["public"]["Enums"]["implementation_blocker_status_enum"]
             | null

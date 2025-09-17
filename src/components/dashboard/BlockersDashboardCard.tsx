@@ -52,7 +52,7 @@ export function BlockersDashboardCard() {
         if (a.is_overdue && !b.is_overdue) return -1;
         if (!a.is_overdue && b.is_overdue) return 1;
         return b.age_days - a.age_days;
-      }));
+      }) as DashboardBlocker[]);
       
       setProductGaps(productGapsData.sort((a, b) => {
         const aOverdue = a.estimated_complete_date && new Date(a.estimated_complete_date) < new Date();
@@ -71,12 +71,6 @@ export function BlockersDashboardCard() {
     }
   };
 
-  const getBlockerStatusBadge = (blocker: DashboardBlocker) => {
-    if (blocker.is_overdue) {
-      return <Badge variant="destructive">Overdue</Badge>;
-    }
-    return <Badge variant="default" className="bg-amber-500 hover:bg-amber-600">Live</Badge>;
-  };
 
   const getProductGapStatusBadge = (gap: DashboardProductGap) => {
     const isOverdue = gap.estimated_complete_date && new Date(gap.estimated_complete_date) < new Date();
@@ -105,6 +99,14 @@ export function BlockersDashboardCard() {
             <AlertTriangle className="h-5 w-5 text-red-500" />
             Escalations
           </CardTitle>
+          <div className="text-sm text-muted-foreground">
+            <span className="font-medium">{blockers.length}</span> total escalations
+            {blockers.filter(b => b.is_critical).length > 0 && (
+              <span className="ml-2">
+                • <span className="font-medium text-red-600">{blockers.filter(b => b.is_critical).length}</span> critical
+              </span>
+            )}
+          </div>
           <Button asChild variant="outline" size="sm">
             <Link to="/app/implementation/blockers">
               View All <ExternalLink className="h-4 w-4 ml-1" />
@@ -146,7 +148,7 @@ export function BlockersDashboardCard() {
                       <TableHead>Title</TableHead>
                       <TableHead>Est. Complete</TableHead>
                       <TableHead>Age</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>Reason Code</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -179,7 +181,11 @@ export function BlockersDashboardCard() {
                             {blocker.age_days}d
                           </span>
                         </TableCell>
-                        <TableCell>{getBlockerStatusBadge(blocker)}</TableCell>
+                        <TableCell>
+                          <span className="text-sm">
+                            {blocker.reason_code || "-"}
+                          </span>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

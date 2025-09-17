@@ -613,11 +613,11 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
 
   const handleSaveEditedAction = async (actionData: any) => {
     try {
-      const { error } = await supabase.functions.invoke('update-task', {
+      const { error } = await supabase.functions.invoke('create-action', {
         body: {
-          task_id: editingAction.id,
-          task_data: actionData,
-          task_type: 'action'
+          ...actionData,
+          id: editingAction.id,
+          isUpdate: true
         },
       });
 

@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarIcon, Plus, Smile, Frown, CheckCircle, AlertCircle } from "lucide-react";
+import { CalendarIcon, Plus, Smile, Frown, CheckCircle, AlertCircle, Save, X, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { computeTaskStatus } from "@/lib/taskStatus";
 import { supabase } from "@/integrations/supabase/client";
@@ -298,8 +298,11 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   const [editingTask, setEditingTask] = useState<TaskRow | null>(null);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [createActionDialogOpen, setCreateActionDialogOpen] = useState(false);
+  const [editActionDialogOpen, setEditActionDialogOpen] = useState(false);
+  const [editingAction, setEditingAction] = useState<any>(null);
   const [createEventDialogOpen, setCreateEventDialogOpen] = useState(false);
   const [blockerDrawerOpen, setBlockerDrawerOpen] = useState(false);
+  const [editingBlocker, setEditingBlocker] = useState<any>(null);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [createVisionModelDialogOpen, setCreateVisionModelDialogOpen] = useState(false);
 
@@ -603,6 +606,38 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     qc.invalidateQueries({ queryKey: ["impl-vision-models", companyId] });
   };
 
+  const handleEditAction = (action: any) => {
+    setEditingAction(action);
+    setEditActionDialogOpen(true);
+  };
+
+  const handleSaveEditedAction = async (actionData: any) => {
+    try {
+      const { error } = await supabase.functions.invoke('update-task', {
+        body: {
+          task_id: editingAction.id,
+          task_data: actionData,
+          task_type: 'action'
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success("Action updated successfully");
+      setEditActionDialogOpen(false);
+      setEditingAction(null);
+      qc.invalidateQueries({ queryKey: ["impl-actions", companyId] });
+    } catch (error) {
+      console.error('Error updating action:', error);
+      toast.error("Failed to update action");
+    }
+  };
+
+  const handleEditBlocker = (blocker: any) => {
+    setEditingBlocker(blocker);
+    setBlockerDrawerOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       {/* Gaps & Escalations */}
@@ -639,6 +674,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
                   <th className="py-2 pr-3">Est. Complete</th>
                   <th className="py-2 pr-3">Age (days)</th>
                   <th className="py-2 pr-3">Status</th>
+                  <th className="py-2 pr-3"></th>
                 </tr>
               </thead>
               <tbody>
@@ -678,6 +714,11 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
                         {blocker.age_days}
                       </td>
                       <td className="py-2 pr-3">{getStatusBadge()}</td>
+                      <td className="py-2 pr-3">
+                        <Button variant="outline" size="sm" onClick={() => handleEditBlocker(blocker)}>
+                          Edit
+                        </Button>
+                      </td>
                     </tr>
                   );
                 })}
@@ -805,6 +846,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
                   <th className="py-2 pr-3">Status</th>
                   <th className="py-2 pr-3">Planned Date</th>
                   <th className="py-2 pr-3">Critical</th>
+                  <th className="py-2 pr-3"></th>
                 </tr>
               </thead>
               <tbody>
@@ -826,6 +868,11 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
                       <td className="py-2 pr-3">{a.status ?? "-"}</td>
                       <td className="py-2 pr-3">{a.planned_date ?? "-"}</td>
                       <td className="py-2 pr-3">{a.is_critical ? "Yes" : "No"}</td>
+                      <td className="py-2 pr-3">
+                        <Button variant="outline" size="sm" onClick={() => handleEditAction(a)}>
+                          Edit
+                        </Button>
+                      </td>
                     </tr>
                   );
                 })}
@@ -1092,14 +1139,37 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     {projectId && (
       <BlockerDrawer
         open={blockerDrawerOpen}
-        onOpenChange={setBlockerDrawerOpen}
+        onOpenChange={(open) => {
+          setBlockerDrawerOpen(open);
+          if (!open) {
+            setEditingBlocker(null);
+          }
+        }}
         projectId={projectId}
-        blocker={undefined}
+        blocker={editingBlocker}
         onSuccess={() => {
           setBlockerDrawerOpen(false);
+          setEditingBlocker(null);
           qc.invalidateQueries({ queryKey: ["impl-blockers", companyId] });
         }}
       />
+    )}
+
+    {/* Edit Action Dialog */}
+    {editActionDialogOpen && editingAction && (
+      <Dialog open={editActionDialogOpen} onOpenChange={setEditActionDialogOpen}>
+        <DialogContent>
+          <EditActionDialog
+            action={editingAction}
+            profiles={profiles}
+            onSave={handleSaveEditedAction}
+            onClose={() => {
+              setEditActionDialogOpen(false);
+              setEditingAction(null);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     )}
   </div>
 );
@@ -1475,6 +1545,188 @@ const CreateActionDialog = ({
           </Button>
           <Button type="submit" disabled={loading || !formData.title}>
             {loading ? "Creating..." : "Create Action"}
+          </Button>
+        </div>
+      </form>
+    </>
+  );
+};
+
+// Edit Action Dialog Component
+const EditActionDialog = ({ 
+  action,
+  profiles, 
+  onSave, 
+  onClose 
+}: {
+  action: any;
+  profiles: Profile[];
+  onSave: (data: any) => void;
+  onClose: () => void;
+}) => {
+  const [formData, setFormData] = useState({
+    title: action.title,
+    details: action.details || '',
+    assignee: action.assignee || '',
+    planned_date: action.planned_date ? new Date(action.planned_date) : undefined as Date | undefined,
+    notes: action.notes || '',
+    status: action.status,
+    is_critical: action.is_critical,
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      await onSave({
+        title: formData.title,
+        details: formData.details || null,
+        assignee: formData.assignee || null,
+        planned_date: formData.planned_date ? formData.planned_date.toISOString().split('T')[0] : null,
+        notes: formData.notes || null,
+        status: formData.status,
+        is_critical: formData.is_critical,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>Edit Action</DialogTitle>
+        <DialogDescription>
+          Update action details and status
+        </DialogDescription>
+      </DialogHeader>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="edit-title">Title *</Label>
+          <Input
+            id="edit-title"
+            value={formData.title}
+            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+            placeholder="Enter action title"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="edit-details">Details</Label>
+          <Textarea
+            id="edit-details"
+            value={formData.details}
+            onChange={(e) => setFormData(prev => ({ ...prev, details: e.target.value }))}
+            placeholder="Enter action details"
+            rows={3}
+          />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Status</Label>
+            <Select 
+              value={formData.status} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Open">Open</SelectItem>
+                <SelectItem value="In Progress">In Progress</SelectItem>
+                <SelectItem value="Done">Done</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Assignee *</Label>
+            <Select 
+              value={formData.assignee} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, assignee: value }))}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select assignee (required)" />
+              </SelectTrigger>
+              <SelectContent>
+                {profiles
+                  .filter((profile) => profile.user_id && profile.user_id.trim() !== '')
+                  .map((profile) => (
+                    <SelectItem key={profile.user_id} value={profile.user_id}>
+                      {profile.name || 'Unnamed User'}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Planned Date</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !formData.planned_date && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {formData.planned_date ? new Date(formData.planned_date).toLocaleDateString('en-GB') : <span>Pick a date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={formData.planned_date}
+                onSelect={(date) => setFormData(prev => ({ ...prev, planned_date: date }))}
+                initialFocus
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="edit_is_critical"
+              checked={formData.is_critical}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_critical: checked as boolean }))}
+            />
+            <Label htmlFor="edit_is_critical" className="flex items-center gap-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              <AlertTriangle className="h-4 w-4 text-red-500" />
+              Mark as Critical
+            </Label>
+          </div>
+          <p className="text-sm text-muted-foreground">Critical actions will appear at the top of the actions list</p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="edit-notes">Notes</Label>
+          <Textarea
+            id="edit-notes"
+            value={formData.notes}
+            onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+            placeholder="Additional notes"
+            rows={2}
+          />
+        </div>
+
+        <div className="flex gap-2 pt-4">
+          <Button type="submit" disabled={loading || !formData.title || !formData.assignee}>
+            <Save className="h-4 w-4 mr-2" />
+            {loading ? 'Updating...' : 'Update Action'}
+          </Button>
+          <Button type="button" variant="outline" onClick={onClose}>
+            <X className="h-4 w-4 mr-2" />
+            Cancel
           </Button>
         </div>
       </form>

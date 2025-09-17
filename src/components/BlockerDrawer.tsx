@@ -62,7 +62,8 @@ const reasonCodeOptions = [
   "Product Gap",
   "Project Management",
   "Scoping",
-  "Software stability"
+  "Software stability",
+  "Vision Model Training"
 ];
 
 const gapEscalationSchema = z.object({

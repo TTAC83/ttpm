@@ -98,6 +98,7 @@ export const NAV: NavItem[] = [
       {
         label: "Product Gaps",
         to: "/app/product-gaps",
+        iconName: "Package",
         matchPaths: ["/app/product-gaps"],
         roles: ["internal_admin", "internal_user"]
       },
@@ -215,7 +216,7 @@ export const ICON_MAP = {
   Monitor,
   Package,
   AlertTriangle
-};
+} as const;
 
 export function visibleItemsForRole(role: Role | null | undefined): NavItem[] {
   const canSee = (item: NavItem) =>

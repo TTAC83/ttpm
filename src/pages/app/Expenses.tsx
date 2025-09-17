@@ -7,13 +7,25 @@ import { MyExpenses } from './expenses/MyExpenses';
 import { AssignedExpenses } from './expenses/AssignedExpenses';
 import { ProjectCosts } from './expenses/ProjectCosts';
 import { AdminExpenseApproval } from './expenses/AdminExpenseApproval';
+import { AdminExpenseManagement } from './expenses/AdminExpenseManagement';
 import { ExpenseUpload } from '@/components/ExpenseUpload';
 import { useExpenseAccess } from '@/hooks/useExpenseAccess';
+import { useAuth } from '@/hooks/useAuth';
 
 export const Expenses = () => {
   const [activeTab, setActiveTab] = useState('unassigned');
   const [refreshKey, setRefreshKey] = useState(0);
   const { hasAccess, loading } = useExpenseAccess();
+  const { user } = useAuth();
+  
+  // Check if user is an admin expense approver
+  const isAdminApprover = user?.email && [
+    'allan@thingtrax.com',
+    'paul@thingtrax.com', 
+    'ishafqat@thingtrax.com',
+    'agupta@thingtrax.com',
+    'richard@thingtrax.com'
+  ].includes(user.email.toLowerCase());
 
   const handleUploadSuccess = () => {
     setRefreshKey(prev => prev + 1);
@@ -56,12 +68,15 @@ export const Expenses = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className={`grid w-full ${isAdminApprover ? 'grid-cols-6' : 'grid-cols-5'}`}>
           <TabsTrigger value="unassigned">Batch Assign</TabsTrigger>
           <TabsTrigger value="assigned-expenses">Assigned Expenses</TabsTrigger>
           <TabsTrigger value="assigned">My Expenses</TabsTrigger>
           <TabsTrigger value="projects">Project Costs</TabsTrigger>
           <TabsTrigger value="admin">Admin Approval</TabsTrigger>
+          {isAdminApprover && (
+            <TabsTrigger value="admin-manage">Manage All</TabsTrigger>
+          )}
         </TabsList>
         
         <TabsContent value="unassigned" className="space-y-4">
@@ -83,6 +98,12 @@ export const Expenses = () => {
         <TabsContent value="admin" className="space-y-4">
           <AdminExpenseApproval key={`admin-${refreshKey}`} />
         </TabsContent>
+        
+        {isAdminApprover && (
+          <TabsContent value="admin-manage" className="space-y-4">
+            <AdminExpenseManagement key={`admin-manage-${refreshKey}`} />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

@@ -310,6 +310,17 @@ export async function listMyAssignedExpenses() {
   return data || [];
 }
 
+// Get all assigned expenses for admin users
+export async function listAllAssignedExpenses() {
+  const { data, error } = await supabase
+    .from('v_my_assigned_expenses')
+    .select('*')
+    .order('expense_date', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
 // Confirm expense by assignee (user review & target selection)
 export async function confirmMyExpense(
   assignmentId: string,

@@ -249,6 +249,9 @@ const App = () => (
               <Route path="implementation/blockers" element={<InternalRoute>
                 <ImplementationGapsEscalations />
               </InternalRoute>} />
+              <Route path="blockers" element={<InternalRoute>
+                <ImplementationGapsEscalations />
+              </InternalRoute>} />
               <Route 
                 path="admin/users" 
                 element={

@@ -666,17 +666,17 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
         ) : (
           <div className="overflow-auto">
             <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left">
-                  <th className="py-2 pr-3">Project</th>
-                  <th className="py-2 pr-3">Title</th>
-                  <th className="py-2 pr-3">Owner</th>
-                  <th className="py-2 pr-3">Est. Complete</th>
-                  <th className="py-2 pr-3">Age (days)</th>
-                  <th className="py-2 pr-3">Status</th>
-                  <th className="py-2 pr-3"></th>
-                </tr>
-              </thead>
+               <thead>
+                 <tr className="text-left">
+                   <th className="py-2 pr-3">Project</th>
+                   <th className="py-2 pr-3">Title</th>
+                   <th className="py-2 pr-3">Owner</th>
+                   <th className="py-2 pr-3">Est. Complete</th>
+                   <th className="py-2 pr-3">Age (days)</th>
+                   <th className="py-2 pr-3">Reason Code</th>
+                   <th className="py-2 pr-3"></th>
+                 </tr>
+               </thead>
               <tbody>
                 {blockersQ.data!.map(blocker => {
                   const getRowClassName = () => {
@@ -710,10 +710,10 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
                       <td className="py-2 pr-3">
                         {blocker.estimated_complete_date ? new Date(blocker.estimated_complete_date).toLocaleDateString('en-GB') : '-'}
                       </td>
-                      <td className={`py-2 pr-3 ${blocker.is_overdue ? 'text-red-600 font-medium' : ''}`}>
-                        {blocker.age_days}
-                      </td>
-                      <td className="py-2 pr-3">{getStatusBadge()}</td>
+                       <td className={`py-2 pr-3 ${blocker.is_overdue ? 'text-red-600 font-medium' : ''}`}>
+                         {blocker.age_days}
+                       </td>
+                       <td className="py-2 pr-3">{blocker.reason_code || '-'}</td>
                       <td className="py-2 pr-3">
                         <Button variant="outline" size="sm" onClick={() => handleEditBlocker(blocker)}>
                           Edit

@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from "@/components/ui/sheet";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -144,8 +144,8 @@ export function ProductGapDrawer({ projectId, productGap, open, onOpenChange, tr
     }
   };
 
-  const drawerContent = (
-    <form onSubmit={handleSubmit} className="space-y-4 p-4">
+  const sheetContent = (
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="title">Title *</Label>
         <Input
@@ -282,32 +282,38 @@ export function ProductGapDrawer({ projectId, productGap, open, onOpenChange, tr
 
   if (trigger) {
     return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerTrigger asChild>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetTrigger asChild>
           {trigger}
-        </DrawerTrigger>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>
+        </SheetTrigger>
+        <SheetContent className="w-[600px] max-w-[90vw] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>
               {productGap ? "Edit Product Gap" : "Create Product Gap"}
-            </DrawerTitle>
-          </DrawerHeader>
-          {drawerContent}
-        </DrawerContent>
-      </Drawer>
+            </SheetTitle>
+            <SheetDescription>
+              {productGap ? "Update the product gap details" : "Create a new product gap for this project"}
+            </SheetDescription>
+          </SheetHeader>
+          {sheetContent}
+        </SheetContent>
+      </Sheet>
     );
   }
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="w-[600px] max-w-[90vw] overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>
             {productGap ? "Edit Product Gap" : "Create Product Gap"}
-          </DrawerTitle>
-        </DrawerHeader>
-        {drawerContent}
-      </DrawerContent>
-    </Drawer>
+          </SheetTitle>
+          <SheetDescription>
+            {productGap ? "Update the product gap details" : "Create a new product gap for this project"}
+          </SheetDescription>
+        </SheetHeader>
+        {sheetContent}
+      </SheetContent>
+    </Sheet>
   );
 }

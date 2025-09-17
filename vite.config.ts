@@ -18,7 +18,8 @@ export default defineConfig(({ mode }) => ({
       includeAssets: ["/offline.html", "/icons/icon-192.png", "/icons/icon-256.png", "/icons/icon-384.png", "/icons/icon-512.png", "/icons/maskable-192.png", "/icons/maskable-512.png"],
       manifest: false,
       workbox: {
-        navigateFallback: "/offline.html",
+        navigateFallback: "/",
+        navigateFallbackDenylist: [/^\/api\//, /^\/rest\//, /^\/storage\//],
         globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB limit
         runtimeCaching: [

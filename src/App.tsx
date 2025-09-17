@@ -54,6 +54,7 @@ import { BAUDetail } from "./pages/app/BAUDetail";
 import { WeeklyReview } from "./pages/app/bau/WeeklyReview";
 import WeeklyReviewPage from "./pages/app/bau/WeeklyReviewPage";
 import ImplementationWeeklyReview from "./pages/app/ImplementationWeeklyReview";
+import ImplementationBlockers from "./pages/app/ImplementationBlockers";
 
 const queryClient = new QueryClient();
 

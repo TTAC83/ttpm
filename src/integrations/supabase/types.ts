@@ -1342,6 +1342,153 @@ export type Database = {
         }
         Relationships: []
       }
+      implementation_blocker_attachments: {
+        Row: {
+          blocker_id: string
+          file_name: string
+          file_path: string
+          id: string
+          mime_type: string | null
+          size_bytes: number | null
+          uploaded_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          blocker_id: string
+          file_name: string
+          file_path: string
+          id?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          uploaded_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          blocker_id?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          uploaded_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "implementation_blocker_attachments_blocker_id_fkey"
+            columns: ["blocker_id"]
+            isOneToOne: false
+            referencedRelation: "implementation_blockers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementation_blocker_attachments_blocker_id_fkey"
+            columns: ["blocker_id"]
+            isOneToOne: false
+            referencedRelation: "v_impl_open_blockers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      implementation_blocker_updates: {
+        Row: {
+          blocker_id: string
+          created_at: string
+          created_by: string
+          id: string
+          note: string
+        }
+        Insert: {
+          blocker_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          note: string
+        }
+        Update: {
+          blocker_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          note?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "implementation_blocker_updates_blocker_id_fkey"
+            columns: ["blocker_id"]
+            isOneToOne: false
+            referencedRelation: "implementation_blockers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementation_blocker_updates_blocker_id_fkey"
+            columns: ["blocker_id"]
+            isOneToOne: false
+            referencedRelation: "v_impl_open_blockers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      implementation_blockers: {
+        Row: {
+          closed_at: string | null
+          created_by: string
+          description: string | null
+          estimated_complete_date: string | null
+          id: string
+          owner: string
+          project_id: string
+          raised_at: string
+          resolution_notes: string | null
+          status: Database["public"]["Enums"]["implementation_blocker_status_enum"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          created_by: string
+          description?: string | null
+          estimated_complete_date?: string | null
+          id?: string
+          owner: string
+          project_id: string
+          raised_at?: string
+          resolution_notes?: string | null
+          status?: Database["public"]["Enums"]["implementation_blocker_status_enum"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          created_by?: string
+          description?: string | null
+          estimated_complete_date?: string | null
+          id?: string
+          owner?: string
+          project_id?: string
+          raised_at?: string
+          resolution_notes?: string | null
+          status?: Database["public"]["Enums"]["implementation_blocker_status_enum"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "implementation_blockers_owner_fkey"
+            columns: ["owner"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "implementation_blockers_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       iot_devices: {
         Row: {
           created_at: string
@@ -3002,6 +3149,39 @@ export type Database = {
           },
         ]
       }
+      v_impl_open_blockers: {
+        Row: {
+          age_days: number | null
+          customer_name: string | null
+          estimated_complete_date: string | null
+          id: string | null
+          is_overdue: boolean | null
+          owner: string | null
+          project_id: string | null
+          project_name: string | null
+          raised_at: string | null
+          status:
+            | Database["public"]["Enums"]["implementation_blocker_status_enum"]
+            | null
+          title: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "implementation_blockers_owner_fkey"
+            columns: ["owner"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "implementation_blockers_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_my_assigned_expenses: {
         Row: {
           account: string | null
@@ -3335,6 +3515,7 @@ export type Database = {
         | "Rejected"
       impl_health_simple: "green" | "red"
       impl_week_status: "on_track" | "off_track"
+      implementation_blocker_status_enum: "Live" | "Closed"
       task_status: "Planned" | "In Progress" | "Blocked" | "Done"
       ticket_status_enum:
         | "Open"
@@ -3502,6 +3683,7 @@ export const Constants = {
       ],
       impl_health_simple: ["green", "red"],
       impl_week_status: ["on_track", "off_track"],
+      implementation_blocker_status_enum: ["Live", "Closed"],
       task_status: ["Planned", "In Progress", "Blocked", "Done"],
       ticket_status_enum: [
         "Open",

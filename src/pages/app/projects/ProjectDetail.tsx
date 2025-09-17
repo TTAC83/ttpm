@@ -19,6 +19,7 @@ import ProjectActions from './tabs/ProjectActions';
 import ProjectAudit from './tabs/ProjectAudit';
 import ProjectCalendar from './tabs/ProjectCalendar';
 import ProjectVisionModels from './tabs/ProjectVisionModels';
+import { ProjectBlockers } from './tabs/ProjectBlockers';
 
 interface Project {
   id: string;
@@ -206,9 +207,12 @@ export const ProjectDetail = () => {
           <TabsTrigger value="calendar">Calendar</TabsTrigger>
           <TabsTrigger value="vision-models">Vision Models</TabsTrigger>
           {profile?.is_internal && (
-            <TabsTrigger value="audit">Audit</TabsTrigger>
-          )}
-        </TabsList>
+                  <TabsTrigger value="audit">Audit</TabsTrigger>
+                )}
+                {profile?.is_internal && ['IoT', 'Vision', 'Hybrid'].includes(project.domain) && (
+                  <TabsTrigger value="blockers">Implementation Blocks</TabsTrigger>
+                )}
+              </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
           <ProjectOverview project={project} onUpdate={fetchProject} />

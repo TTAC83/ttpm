@@ -80,8 +80,15 @@ export function ProjectBlockers({ projectId }: ProjectBlockersProps) {
   };
 
   const getRowClassName = (gapEscalation: ImplementationBlocker) => {
+    // Critical items get dark red background regardless of dates or completion
+    if (gapEscalation.is_critical) return "bg-red-200 dark:bg-red-900/50";
+    
+    // Closed items get no special styling
     if (gapEscalation.status === 'Closed') return "";
+    
+    // Overdue non-closed items get pale red background
     if (gapEscalation.is_overdue) return "bg-red-50 dark:bg-red-950/20";
+    
     return "";
   };
 

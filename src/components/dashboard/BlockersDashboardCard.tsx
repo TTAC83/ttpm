@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { AlertTriangle, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,7 +20,7 @@ import { tasksService, DashboardTask } from "@/lib/tasksService";
 import { formatDateUK } from "@/lib/dateUtils";
 import { BlockerDrawer } from "@/components/BlockerDrawer";
 import { ProductGapDrawer } from "@/components/ProductGapDrawer";
-import CreateEventDialog from "@/components/CreateEventDialog";
+import { EditActionDialog } from "@/components/EditActionDialog";
 import SubtasksDialog from "@/components/SubtasksDialog";
 
 interface DashboardBlocker {
@@ -59,6 +60,7 @@ export function BlockersDashboardCard() {
   const [selectedAction, setSelectedAction] = useState<DashboardAction | undefined>();
   const [subtasksDialogOpen, setSubtasksDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<DashboardTask | undefined>();
+  const [profiles, setProfiles] = useState<any[]>([]);
 
   useEffect(() => {
     loadDashboardData();
@@ -66,6 +68,13 @@ export function BlockersDashboardCard() {
 
   const loadDashboardData = async () => {
     try {
+      // Load profiles first
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('user_id, name');
+      
+      setProfiles(profilesData || []);
+
       const [blockersData, productGapsData, actionsData, tasksData] = await Promise.all([
         blockersService.getDashboardBlockers(),
         productGapsService.getDashboardProductGaps(),
@@ -619,11 +628,29 @@ export function BlockersDashboardCard() {
 
       {/* Action Dialog */}
       {selectedAction && (
-        <CreateEventDialog
+        <EditActionDialog
           open={actionDialogOpen}
           onOpenChange={setActionDialogOpen}
-          projectId={selectedAction.project_id}
-          prefilledTitle={selectedAction.title}
+          action={{
+            ...selectedAction,
+            details: null,
+            notes: null,
+            planned_date: selectedAction.planned_date || null,
+            assignee: selectedAction.assignee || null,
+            created_at: new Date().toISOString()
+          }}
+          profiles={profiles}
+          onSave={async (actionData) => {
+            // Update action via API
+            const { error } = await supabase
+              .from('actions')
+              .update(actionData)
+              .eq('id', selectedAction.id);
+              
+            if (!error) {
+              loadDashboardData(); // Refresh data
+            }
+          }}
         />
       )}
 

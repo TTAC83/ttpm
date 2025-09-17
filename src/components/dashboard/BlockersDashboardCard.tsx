@@ -18,6 +18,9 @@ import { actionsService, DashboardAction } from "@/lib/actionsService";
 import { tasksService, DashboardTask } from "@/lib/tasksService";
 import { formatDateUK } from "@/lib/dateUtils";
 import { BlockerDrawer } from "@/components/BlockerDrawer";
+import { ProductGapDrawer } from "@/components/ProductGapDrawer";
+import CreateEventDialog from "@/components/CreateEventDialog";
+import SubtasksDialog from "@/components/SubtasksDialog";
 
 interface DashboardBlocker {
   id: string;
@@ -50,6 +53,12 @@ export function BlockersDashboardCard() {
   const [loading, setLoading] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedBlocker, setSelectedBlocker] = useState<DashboardBlocker | undefined>();
+  const [productGapDrawerOpen, setProductGapDrawerOpen] = useState(false);
+  const [selectedProductGap, setSelectedProductGap] = useState<DashboardProductGap | undefined>();
+  const [actionDialogOpen, setActionDialogOpen] = useState(false);
+  const [selectedAction, setSelectedAction] = useState<DashboardAction | undefined>();
+  const [subtasksDialogOpen, setSubtasksDialogOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<DashboardTask | undefined>();
 
   useEffect(() => {
     loadDashboardData();
@@ -313,7 +322,11 @@ export function BlockersDashboardCard() {
                       return (
                         <TableRow
                           key={`product-gap-${gap.id}`}
-                          className={getRowClassName(!!isOverdue)}
+                          className={`${getRowClassName(!!isOverdue)} cursor-pointer hover:bg-muted/50 transition-colors`}
+                          onClick={() => {
+                            setSelectedProductGap(gap);
+                            setProductGapDrawerOpen(true);
+                          }}
                         >
                           <TableCell className="font-medium">
                             {gap.company_name}
@@ -417,6 +430,10 @@ export function BlockersDashboardCard() {
                       <TableRow
                         key={`action-${action.id}`}
                         className={`${getRowClassName(action.is_overdue)} cursor-pointer hover:bg-muted/50 transition-colors`}
+                        onClick={() => {
+                          setSelectedAction(action);
+                          setActionDialogOpen(true);
+                        }}
                       >
                         <TableCell className="font-medium">
                           {action.company_name}
@@ -521,6 +538,10 @@ export function BlockersDashboardCard() {
                       <TableRow
                         key={`task-${task.id}`}
                         className={`${getRowClassName(task.is_overdue)} cursor-pointer hover:bg-muted/50 transition-colors`}
+                        onClick={() => {
+                          setSelectedTask(task);
+                          setSubtasksDialogOpen(true);
+                        }}
                       >
                         <TableCell className="font-medium">
                           {task.company_name}
@@ -576,6 +597,44 @@ export function BlockersDashboardCard() {
             setSelectedBlocker(undefined);
             loadDashboardData();
           }}
+        />
+      )}
+
+      {/* Product Gap Drawer */}
+      {selectedProductGap && (
+        <ProductGapDrawer
+          open={productGapDrawerOpen}
+          onOpenChange={setProductGapDrawerOpen}
+          productGap={{
+            ...selectedProductGap,
+            description: '',
+            created_at: new Date().toISOString(),
+            created_by: '',
+            updated_at: new Date().toISOString(),
+            status: 'Live' as const
+          }}
+          projectId={selectedProductGap.project_id}
+        />
+      )}
+
+      {/* Action Dialog */}
+      {selectedAction && (
+        <CreateEventDialog
+          open={actionDialogOpen}
+          onOpenChange={setActionDialogOpen}
+          projectId={selectedAction.project_id}
+          prefilledTitle={selectedAction.title}
+        />
+      )}
+
+      {/* Task Subtasks Dialog */}
+      {selectedTask && (
+        <SubtasksDialog
+          open={subtasksDialogOpen}
+          onOpenChange={setSubtasksDialogOpen}
+          taskId={selectedTask.id}
+          taskTitle={selectedTask.task_title}
+          projectId={selectedTask.project_id}
         />
       )}
     </div>

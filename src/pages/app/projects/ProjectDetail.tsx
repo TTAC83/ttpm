@@ -201,28 +201,34 @@ export const ProjectDetail = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="space-y-2">
           {/* First row of tabs */}
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="lines">Lines</TabsTrigger>
             <TabsTrigger value="tasks">Tasks</TabsTrigger>
             <TabsTrigger value="gantt">Gantt</TabsTrigger>
-            <TabsTrigger value="actions">Actions</TabsTrigger>
           </TabsList>
           
           {/* Second row of tabs */}
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="actions">Actions</TabsTrigger>
             <TabsTrigger value="calendar">Calendar</TabsTrigger>
             <TabsTrigger value="vision-models">Vision Models</TabsTrigger>
             {profile?.is_internal && (
               <TabsTrigger value="audit">Audit</TabsTrigger>
             )}
-            {profile?.is_internal && ['IoT', 'Vision', 'Hybrid'].includes(project.domain) && (
-              <TabsTrigger value="blockers">Escalations</TabsTrigger>
-            )}
             {profile?.is_internal && (
               <TabsTrigger value="product-gaps">Product Gaps</TabsTrigger>
             )}
           </TabsList>
+          
+          {/* Escalations tab only shows for internal users with specific domains, replaces Product Gaps */}
+          {profile?.is_internal && ['IoT', 'Vision', 'Hybrid'].includes(project.domain) && (
+            <div className="text-center">
+              <TabsList className="inline-grid grid-cols-1">
+                <TabsTrigger value="blockers">Escalations</TabsTrigger>
+              </TabsList>
+            </div>
+          )}
         </div>
 
         <TabsContent value="overview" className="space-y-4">

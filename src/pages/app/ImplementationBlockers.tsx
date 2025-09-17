@@ -102,9 +102,9 @@ export default function ImplementationEscalations() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gaps & Escalations</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Escalations</h1>
           <p className="text-muted-foreground">
-            View gaps & escalations across all projects. To add new ones, go to the specific project.
+            View escalations across all projects. To add new ones, go to the specific project.
           </p>
         </div>
       </div>

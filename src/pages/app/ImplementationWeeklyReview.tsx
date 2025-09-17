@@ -662,9 +662,9 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
       {/* Gaps & Escalations */}
       <Card className="p-4">
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold">Gaps & Escalations</h2>
+          <h2 className="font-semibold">Escalations</h2>
           <div className="flex items-center gap-2">
-            <span className="text-sm opacity-75">{blockersQ.data?.length ?? 0} open gaps & escalations</span>
+            <span className="text-sm opacity-75">{blockersQ.data?.length ?? 0} open escalations</span>
             {projectId && (
               <Button 
                 variant="outline" 
@@ -672,16 +672,16 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
                 onClick={() => setBlockerDrawerOpen(true)}
               >
                 <Plus className="h-4 w-4 mr-1" />
-                Add Gap/Escalation
+                Add Escalation
               </Button>
             )}
           </div>
         </div>
         <Separator className="my-3" />
         {blockersQ.isLoading ? (
-          <div>Loading gaps & escalations...</div>
+          <div>Loading escalations...</div>
         ) : (blockersQ.data?.length ?? 0) === 0 ? (
-          <div>No open gaps & escalations</div>
+          <div>No open escalations</div>
         ) : (
           <div className="overflow-auto">
             <table className="w-full text-sm">

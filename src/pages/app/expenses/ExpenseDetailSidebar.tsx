@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -15,6 +15,80 @@ import { FileText, Building2, Users, CheckCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { confirmMyExpense, type Customer, type Project } from '@/lib/expenseService';
 import { linkExpenseToBau, type BAUCustomer } from '@/lib/bauService';
+
+// Customer suggestion component - matching the one from AssignedExpensesForm
+interface CustomerSuggestComboboxProps {
+  customers: Customer[];
+  projects: Project[];
+  bauCustomers: BAUCustomer[];
+  assignmentType: 'none' | 'project' | 'bau';
+  value: string;
+  onValueChange: (value: string) => void;
+  originalCustomer?: string;
+}
+
+const CustomerSuggestCombobox = ({ 
+  customers, 
+  projects, 
+  bauCustomers, 
+  assignmentType, 
+  value, 
+  onValueChange,
+  originalCustomer 
+}: CustomerSuggestComboboxProps) => {
+  const suggestedCustomers = useMemo(() => {
+    const customerSet = new Set<string>();
+    
+    // Always include the original customer if it exists
+    if (originalCustomer && originalCustomer.trim()) {
+      customerSet.add(originalCustomer);
+    }
+    
+    // Add suggested customers based on assignment type
+    if (assignmentType === 'project') {
+      // Suggest customers from projects
+      projects.forEach(project => {
+        if (project.customer_name && project.customer_name.trim()) {
+          customerSet.add(project.customer_name);
+        }
+      });
+    } else if (assignmentType === 'bau') {
+      // Suggest customers from BAU customers
+      bauCustomers.forEach(bau => {
+        if (bau.name && bau.name.trim()) {
+          customerSet.add(bau.name);
+        }
+      });
+    }
+    
+    // Add all customers from the general customer list
+    customers.forEach(customer => {
+      if (customer.customer && customer.customer.trim()) {
+        customerSet.add(customer.customer);
+      }
+    });
+    
+    // Convert to array and sort
+    return Array.from(customerSet)
+      .filter(name => name !== 'No Customer' && name !== 'N/A')
+      .sort()
+      .map(name => ({
+        value: name,
+        label: name
+      }));
+  }, [customers, projects, bauCustomers, assignmentType, originalCustomer]);
+
+  return (
+    <Combobox
+      options={suggestedCustomers}
+      value={value}
+      onValueChange={onValueChange}
+      placeholder="Select or type customer name"
+      searchPlaceholder="Search customers..."
+      emptyMessage="No customers found."
+    />
+  );
+};
 
 const categoryOptions = [
   { value: 'FoodDrink', label: 'Food & Drink' },
@@ -79,42 +153,6 @@ export const ExpenseDetailSidebar = ({
   const formatDate = (dateString: string | undefined | null) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-GB');
-  };
-
-  const getCustomerOptions = () => {
-    const customerSet = new Set<string>();
-    
-    // Add the original customer if it exists
-    if (expense?.customer || expense?.import_customer) {
-      customerSet.add(expense.customer || expense.import_customer);
-    }
-    
-    // Add customers based on assignment type
-    if (formData.assignmentType === 'project') {
-      projects.forEach(project => {
-        if (project.customer_name?.trim()) {
-          customerSet.add(project.customer_name);
-        }
-      });
-    } else if (formData.assignmentType === 'bau') {
-      bauCustomers.forEach(bau => {
-        if (bau.name?.trim()) {
-          customerSet.add(bau.name);
-        }
-      });
-    }
-    
-    // Add all general customers
-    customers.forEach(customer => {
-      if (customer.customer?.trim()) {
-        customerSet.add(customer.customer);
-      }
-    });
-    
-    return Array.from(customerSet)
-      .filter(name => name !== 'No Customer' && name !== 'N/A')
-      .sort()
-      .map(name => ({ value: name, label: name }));
   };
 
   const handleProjectSelect = (project: Project) => {
@@ -212,62 +250,61 @@ export const ExpenseDetailSidebar = ({
           </CardContent>
         </Card>
 
-        {/* Assignment Form */}
+        {/* Assignment Form - Matching AssignedExpensesForm exactly */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Assignment</CardTitle>
+            <CardTitle className="text-sm">Assignment Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Customer */}
-            <div>
-              <Label className="text-sm font-medium">Customer</Label>
-              <div className="mt-1">
-                <Combobox
-                  options={getCustomerOptions()}
+            {/* Customer and Category - Grid Layout like original */}
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Customer</label>
+                <CustomerSuggestCombobox
+                  customers={customers}
+                  projects={projects}
+                  bauCustomers={bauCustomers}
+                  assignmentType={formData.assignmentType}
                   value={formData.customer}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, customer: value }))}
-                  placeholder="Select or type customer"
-                  searchPlaceholder="Search customers..."
-                  emptyMessage="No customers found."
+                  originalCustomer={expense.customer || expense.import_customer}
                 />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Category</label>
+                <Select
+                  value={formData.category}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categoryOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
-            {/* Category */}
-            <div>
-              <Label className="text-sm font-medium">Category</Label>
-              <Select
-                value={formData.category}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {categoryOptions.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Billable */}
+            {/* Billable - matching original layout */}
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="billable"
                 checked={formData.billable}
                 onCheckedChange={(checked) => setFormData(prev => ({ ...prev, billable: !!checked }))}
               />
-              <Label htmlFor="billable" className="text-sm font-medium">
+              <label htmlFor="billable" className="text-sm font-medium">
                 Billable
-              </Label>
+              </label>
             </div>
 
-            {/* Assignment Type */}
+            {/* Assignment Type - matching original layout */}
             <div>
-              <Label className="text-sm font-medium mb-2 block">Assignment Type</Label>
+              <label className="text-sm font-medium mb-3 block">Assignment Type</label>
               <RadioGroup
                 value={formData.assignmentType}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, assignmentType: value as any }))}
@@ -288,7 +325,7 @@ export const ExpenseDetailSidebar = ({
               </RadioGroup>
             </div>
 
-            {/* Project Selection */}
+            {/* Project Selection - matching original */}
             {formData.assignmentType === 'project' && (
               <div>
                 <Dialog open={projectDialogOpen} onOpenChange={setProjectDialogOpen}>
@@ -311,13 +348,19 @@ export const ExpenseDetailSidebar = ({
                           <TableRow>
                             <TableHead>Kind</TableHead>
                             <TableHead>Customer</TableHead>
+                            <TableHead>Site</TableHead>
                             <TableHead>Project Name</TableHead>
                             <TableHead>Action</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {projects
-                            .filter(project => !formData.customer || project.customer_name === formData.customer)
+                            .filter(project => {
+                              if (!formData.customer || formData.customer === 'No Customer') {
+                                return true; // Show all projects if no customer selected
+                              }
+                              return project.customer_name === formData.customer;
+                            })
                             .map(project => (
                             <TableRow key={`${project.kind}-${project.project_id || project.solutions_project_id}`}>
                               <TableCell>
@@ -326,6 +369,7 @@ export const ExpenseDetailSidebar = ({
                                 </Badge>
                               </TableCell>
                               <TableCell>{project.customer_name}</TableCell>
+                              <TableCell>{project.site_name || 'N/A'}</TableCell>
                               <TableCell>{project.project_name}</TableCell>
                               <TableCell>
                                 <Button size="sm" onClick={() => handleProjectSelect(project)}>
@@ -342,7 +386,7 @@ export const ExpenseDetailSidebar = ({
               </div>
             )}
 
-            {/* BAU Customer Selection */}
+            {/* BAU Customer Selection - matching original */}
             {formData.assignmentType === 'bau' && (
               <div>
                 <Dialog open={bauDialogOpen} onOpenChange={setBauDialogOpen}>
@@ -366,6 +410,7 @@ export const ExpenseDetailSidebar = ({
                             <TableHead>Customer Name</TableHead>
                             <TableHead>Site</TableHead>
                             <TableHead>Company</TableHead>
+                            <TableHead>Health</TableHead>
                             <TableHead>Action</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -375,6 +420,16 @@ export const ExpenseDetailSidebar = ({
                               <TableCell className="font-medium">{bauCustomer.name}</TableCell>
                               <TableCell>{bauCustomer.site_name || 'N/A'}</TableCell>
                               <TableCell>{bauCustomer.company_name}</TableCell>
+                              <TableCell>
+                                <Badge variant={
+                                  bauCustomer.health === 'Excellent' ? 'default' :
+                                  bauCustomer.health === 'Good' ? 'secondary' :
+                                  bauCustomer.health === 'Watch' ? 'outline' :
+                                  bauCustomer.health === 'AtRisk' ? 'destructive' : 'outline'
+                                }>
+                                  {bauCustomer.health}
+                                </Badge>
+                              </TableCell>
                               <TableCell>
                                 <Button size="sm" onClick={() => handleBauCustomerSelect(bauCustomer)}>
                                   Select
@@ -390,19 +445,18 @@ export const ExpenseDetailSidebar = ({
               </div>
             )}
 
-            {/* Description */}
+            {/* Description - matching original exactly */}
             <div>
-              <Label className="text-sm font-medium">Description</Label>
+              <label className="text-sm font-medium mb-2 block">Description (optional)</label>
               <Textarea
-                className="mt-1"
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Additional notes about this expense..."
+                placeholder="Add any additional notes..."
                 rows={3}
               />
             </div>
 
-            {/* Update Button */}
+            {/* Update Button - matching original */}
             <Button 
               onClick={handleUpdateExpense} 
               disabled={updating}
@@ -410,7 +464,7 @@ export const ExpenseDetailSidebar = ({
             >
               {updating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               <CheckCircle className="h-4 w-4 mr-2" />
-              Update Assignment
+              Confirm Assignment
             </Button>
           </CardContent>
         </Card>

@@ -1851,6 +1851,57 @@ export type Database = {
         }
         Relationships: []
       }
+      product_gaps: {
+        Row: {
+          assigned_to: string | null
+          closed_at: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          estimated_complete_date: string | null
+          id: string
+          is_critical: boolean
+          project_id: string
+          resolution_notes: string | null
+          status: string
+          ticket_link: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          closed_at?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          estimated_complete_date?: string | null
+          id?: string
+          is_critical?: boolean
+          project_id: string
+          resolution_notes?: string | null
+          status?: string
+          ticket_link?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          estimated_complete_date?: string | null
+          id?: string
+          is_critical?: boolean
+          project_id?: string
+          resolution_notes?: string | null
+          status?: string
+          ticket_link?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

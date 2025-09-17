@@ -212,6 +212,9 @@ export const ProjectDetail = () => {
           {profile?.is_internal && ['IoT', 'Vision', 'Hybrid'].includes(project.domain) && (
             <TabsTrigger value="blockers">Escalations</TabsTrigger>
           )}
+          {profile?.is_internal && (
+            <TabsTrigger value="product-gaps">Product Gaps</TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">

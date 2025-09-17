@@ -55,6 +55,7 @@ import { WeeklyReview } from "./pages/app/bau/WeeklyReview";
 import WeeklyReviewPage from "./pages/app/bau/WeeklyReviewPage";
 import ImplementationWeeklyReview from "./pages/app/ImplementationWeeklyReview";
 import ImplementationEscalations from "./pages/app/ImplementationBlockers";
+import ProductGaps from "./pages/app/ProductGaps";
 import { InternalRoute } from "@/components/auth/InternalRoute";
 
 const queryClient = new QueryClient();
@@ -251,6 +252,9 @@ const App = () => (
               </InternalRoute>} />
               <Route path="blockers" element={<InternalRoute>
                 <ImplementationEscalations />
+              </InternalRoute>} />
+              <Route path="product-gaps" element={<InternalRoute>
+                <ProductGaps />
               </InternalRoute>} />
               <Route 
                 path="admin/users" 

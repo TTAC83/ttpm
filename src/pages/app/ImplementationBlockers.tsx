@@ -199,7 +199,7 @@ export default function ImplementationGapsEscalations() {
                   <TableHead>Raised</TableHead>
                   <TableHead>Est. Complete</TableHead>
                   <TableHead>Age (days)</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Reason Code</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -235,7 +235,7 @@ export default function ImplementationGapsEscalations() {
                         {gapEscalation.age_days}
                       </span>
                     </TableCell>
-                    <TableCell>{getStatusBadge(gapEscalation)}</TableCell>
+                    <TableCell>{gapEscalation.reason_code || '-'}</TableCell>
                     <TableCell>
                       <Button
                         variant="ghost"

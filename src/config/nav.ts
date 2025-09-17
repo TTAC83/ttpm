@@ -58,8 +58,8 @@ export const NAV: NavItem[] = [
       },
       { 
         label: "Dashboard", 
-        to: "/app", 
-        matchPaths: ["/app", "/app/dashboard"] 
+        to: "/app/dashboard", 
+        matchPaths: ["/app/dashboard"] 
       },
       { 
         label: "Actions", 

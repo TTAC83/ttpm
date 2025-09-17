@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Combobox } from '@/components/ui/combobox';
 import { Loader2, CheckCircle, FileText, Building2, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -20,6 +21,80 @@ import {
   type Project 
 } from '@/lib/expenseService';
 import { getBauCustomers, linkExpenseToBau, type BAUCustomer } from '@/lib/bauService';
+
+// Customer suggestion component
+interface CustomerSuggestComboboxProps {
+  customers: Customer[];
+  projects: Project[];
+  bauCustomers: BAUCustomer[];
+  assignmentType: 'none' | 'project' | 'bau';
+  value: string;
+  onValueChange: (value: string) => void;
+  originalCustomer?: string;
+}
+
+const CustomerSuggestCombobox = ({ 
+  customers, 
+  projects, 
+  bauCustomers, 
+  assignmentType, 
+  value, 
+  onValueChange,
+  originalCustomer 
+}: CustomerSuggestComboboxProps) => {
+  const suggestedCustomers = useMemo(() => {
+    const customerSet = new Set<string>();
+    
+    // Always include the original customer if it exists
+    if (originalCustomer && originalCustomer.trim()) {
+      customerSet.add(originalCustomer);
+    }
+    
+    // Add suggested customers based on assignment type
+    if (assignmentType === 'project') {
+      // Suggest customers from projects
+      projects.forEach(project => {
+        if (project.customer_name && project.customer_name.trim()) {
+          customerSet.add(project.customer_name);
+        }
+      });
+    } else if (assignmentType === 'bau') {
+      // Suggest customers from BAU customers
+      bauCustomers.forEach(bau => {
+        if (bau.name && bau.name.trim()) {
+          customerSet.add(bau.name);
+        }
+      });
+    }
+    
+    // Add all customers from the general customer list
+    customers.forEach(customer => {
+      if (customer.customer && customer.customer.trim()) {
+        customerSet.add(customer.customer);
+      }
+    });
+    
+    // Convert to array and sort
+    return Array.from(customerSet)
+      .filter(name => name !== 'No Customer' && name !== 'N/A')
+      .sort()
+      .map(name => ({
+        value: name,
+        label: name
+      }));
+  }, [customers, projects, bauCustomers, assignmentType, originalCustomer]);
+
+  return (
+    <Combobox
+      options={suggestedCustomers}
+      value={value}
+      onValueChange={onValueChange}
+      placeholder="Select or type customer name"
+      searchPlaceholder="Search customers..."
+      emptyMessage="No customers found."
+    />
+  );
+};
 
 const categoryOptions = [
   { value: 'FoodDrink', label: 'Food & Drink' },
@@ -282,24 +357,18 @@ export const AssignedExpensesForm = () => {
                   <CardContent className="space-y-4">
                     {assignment.status === 'Assigned' && (
                       <>
-                        <div className="grid grid-cols-2 gap-4">
+                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <label className="text-sm font-medium mb-2 block">Customer</label>
-                            <Select
+                            <CustomerSuggestCombobox
+                              customers={customers}
+                              projects={projects}
+                              bauCustomers={bauCustomers}
+                              assignmentType={data.assignmentType}
                               value={data.customer}
                               onValueChange={(value) => updateFormData(assignment.id, 'customer', value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select customer" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {customers.map(customer => (
-                                  <SelectItem key={customer.customer} value={customer.customer}>
-                                    {customer.customer}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                              originalCustomer={assignment.expenses.customer}
+                            />
                           </div>
                           <div>
                             <label className="text-sm font-medium mb-2 block">Category</label>

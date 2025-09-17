@@ -96,7 +96,7 @@ export const NAV: NavItem[] = [
         roles: ["internal_admin", "internal_user"]
       },
       {
-        label: "Product Gaps",
+        label: "View All Product Gaps",
         to: "/app/product-gaps",
         iconName: "Package",
         matchPaths: ["/app/product-gaps"],

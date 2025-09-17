@@ -48,7 +48,23 @@ export default function ImplementationGapsEscalations() {
     setLoading(true);
     try {
       const data = await blockersService.getAllBlockers(filters);
-      setGapsEscalations(data);
+      // Sort critical items to the top, then by status, then by overdue status
+      const sortedData = data.sort((a, b) => {
+        // Critical items first
+        if (a.is_critical && !b.is_critical) return -1;
+        if (!a.is_critical && b.is_critical) return 1;
+        
+        // Then by status (Live before Closed)
+        if (a.status === 'Live' && b.status === 'Closed') return -1;
+        if (a.status === 'Closed' && b.status === 'Live') return 1;
+        
+        // Then by overdue status
+        if (a.is_overdue && !b.is_overdue) return -1;
+        if (!a.is_overdue && b.is_overdue) return 1;
+        
+        return 0;
+      });
+      setGapsEscalations(sortedData);
     } catch (error) {
       console.error("Failed to load gaps & escalations:", error);
       toast.error("Failed to load gaps & escalations");
@@ -73,6 +89,9 @@ export default function ImplementationGapsEscalations() {
   };
 
   const getRowClassName = (gapEscalation: ImplementationBlocker) => {
+    if (gapEscalation.is_critical) {
+      return "bg-red-100 dark:bg-red-950/30 border-l-4 border-l-red-500";
+    }
     if (gapEscalation.status === 'Closed') return "";
     if (gapEscalation.is_overdue) return "bg-red-50 dark:bg-red-950/20";
     return "";
@@ -214,13 +233,22 @@ export default function ImplementationGapsEscalations() {
                     </TableCell>
                     <TableCell>{gapEscalation.project_name}</TableCell>
                     <TableCell>
-                      <div>
-                        <p className="font-medium">{gapEscalation.title}</p>
-                        {gapEscalation.description && (
-                          <p className="text-sm text-muted-foreground line-clamp-1">
-                            {gapEscalation.description}
-                          </p>
-                        )}
+                      <div className="flex items-center gap-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{gapEscalation.title}</p>
+                            {gapEscalation.is_critical && (
+                              <Badge variant="destructive" className="text-xs">
+                                CRITICAL
+                              </Badge>
+                            )}
+                          </div>
+                          {gapEscalation.description && (
+                            <p className="text-sm text-muted-foreground line-clamp-1">
+                              {gapEscalation.description}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>{gapEscalation.owner_name}</TableCell>

@@ -67,10 +67,10 @@ const reasonCodeOptions = [
 const gapEscalationSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
+  update_note: z.string().optional(),
   owner: z.string().min(1, "Owner is required"),
   estimated_complete_date: z.date().optional(),
   reason_code: z.string().optional(),
-  initial_update: z.string().optional(),
 });
 
 type GapEscalationFormData = z.infer<typeof gapEscalationSchema>;
@@ -102,10 +102,10 @@ export function BlockerDrawer({
     defaultValues: {
       title: "",
       description: "",
+      update_note: "",
       owner: "",
       estimated_complete_date: undefined,
       reason_code: "",
-      initial_update: "",
     },
   });
 
@@ -116,22 +116,22 @@ export function BlockerDrawer({
         form.reset({
           title: blocker.title,
           description: blocker.description || "",
+          update_note: "",
           owner: blocker.owner,
           estimated_complete_date: blocker.estimated_complete_date 
             ? new Date(blocker.estimated_complete_date) 
             : undefined,
           reason_code: blocker.reason_code || "",
-          initial_update: "",
         });
         loadGapEscalationDetails();
       } else {
         form.reset({
           title: "",
           description: "",
+          update_note: "",
           owner: "",
           estimated_complete_date: undefined,
           reason_code: "",
-          initial_update: "",
         });
         setUpdates([]);
         setAttachments([]);
@@ -175,8 +175,8 @@ export function BlockerDrawer({
         });
         
         // Add update note if provided
-        if (data.initial_update?.trim()) {
-          await blockersService.addBlockerUpdate(blocker.id, data.initial_update);
+        if (data.update_note?.trim()) {
+          await blockersService.addBlockerUpdate(blocker.id, data.update_note);
         }
         
         toast.success("Gap/Escalation updated successfully");
@@ -190,9 +190,9 @@ export function BlockerDrawer({
           reason_code: data.reason_code,
         });
         
-        // Add initial update note if provided
-        if (data.initial_update?.trim()) {
-          await blockersService.addBlockerUpdate(newBlocker.id, data.initial_update);
+        // Add update note if provided
+        if (data.update_note?.trim()) {
+          await blockersService.addBlockerUpdate(newBlocker.id, data.update_note);
         }
         
         toast.success("Gap/Escalation created successfully");
@@ -331,6 +331,24 @@ export function BlockerDrawer({
 
               <FormField
                 control={form.control}
+                name="update_note"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Update Note</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        {...field} 
+                        placeholder="Add an update note (optional)..." 
+                        rows={3}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="owner"
                 render={({ field }) => (
                   <FormItem>
@@ -412,24 +430,6 @@ export function BlockerDrawer({
                         />
                       </PopoverContent>
                     </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="initial_update"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Initial Update Note</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        {...field} 
-                        placeholder="Add an initial update note (optional)..." 
-                        rows={3}
-                      />
-                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

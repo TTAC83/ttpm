@@ -1439,6 +1439,7 @@ export type Database = {
           owner: string
           project_id: string
           raised_at: string
+          reason_code: string | null
           resolution_notes: string | null
           status: Database["public"]["Enums"]["implementation_blocker_status_enum"]
           title: string
@@ -1453,6 +1454,7 @@ export type Database = {
           owner: string
           project_id: string
           raised_at?: string
+          reason_code?: string | null
           resolution_notes?: string | null
           status?: Database["public"]["Enums"]["implementation_blocker_status_enum"]
           title: string
@@ -1467,6 +1469,7 @@ export type Database = {
           owner?: string
           project_id?: string
           raised_at?: string
+          reason_code?: string | null
           resolution_notes?: string | null
           status?: Database["public"]["Enums"]["implementation_blocker_status_enum"]
           title?: string

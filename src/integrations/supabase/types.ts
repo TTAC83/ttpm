@@ -1436,6 +1436,7 @@ export type Database = {
           description: string | null
           estimated_complete_date: string | null
           id: string
+          is_critical: boolean
           owner: string
           project_id: string
           raised_at: string
@@ -1451,6 +1452,7 @@ export type Database = {
           description?: string | null
           estimated_complete_date?: string | null
           id?: string
+          is_critical?: boolean
           owner: string
           project_id: string
           raised_at?: string
@@ -1466,6 +1468,7 @@ export type Database = {
           description?: string | null
           estimated_complete_date?: string | null
           id?: string
+          is_critical?: boolean
           owner?: string
           project_id?: string
           raised_at?: string

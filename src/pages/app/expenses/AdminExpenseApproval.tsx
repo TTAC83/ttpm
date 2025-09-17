@@ -6,7 +6,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Loader2, CheckCircle, Shield, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { listReadyForSignoff, listApproved, adminApproveExpense } from '@/lib/expenseService';
+import { listReadyForSignoff, listApproved, adminApproveExpense, getCustomers, getAllProjectsForSelection, type Customer, type Project } from '@/lib/expenseService';
+import { getBauCustomers, type BAUCustomer } from '@/lib/bauService';
+import { Sidebar, SidebarContent, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { ExpenseDetailSidebar } from './ExpenseDetailSidebar';
 
 export const AdminExpenseApproval = () => {
   const { toast } = useToast();
@@ -15,6 +18,10 @@ export const AdminExpenseApproval = () => {
   const [loading, setLoading] = useState(true);
   const [approving, setApproving] = useState<Record<string, boolean>>({});
   const [bulkApproving, setBulkApproving] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<any>(null);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [bauCustomers, setBauCustomers] = useState<BAUCustomer[]>([]);
 
   const formatCurrency = (amount: number | undefined | null) => {
     if (!amount) return '£0.00';
@@ -29,12 +36,18 @@ export const AdminExpenseApproval = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [signoffResult, approvedResult] = await Promise.all([
+      const [signoffResult, approvedResult, customersResult, projectsResult, bauResult] = await Promise.all([
         listReadyForSignoff(),
-        listApproved()
+        listApproved(),
+        getCustomers(),
+        getAllProjectsForSelection(),
+        getBauCustomers(1, 100)
       ]);
       setReadyForSignoff(signoffResult);
       setApproved(approvedResult);
+      setCustomers(customersResult);
+      setProjects(projectsResult);
+      setBauCustomers(bauResult.data);
     } catch (error) {
       console.error('Error fetching admin expenses:', error);
       toast({
@@ -113,13 +126,24 @@ export const AdminExpenseApproval = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Shield className="h-5 w-5" />
-          Admin - Expense Approval
-        </CardTitle>
-      </CardHeader>
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full">
+        <ExpenseDetailSidebar 
+          expense={selectedExpense}
+          customers={customers}
+          projects={projects}
+          bauCustomers={bauCustomers}
+          onExpenseUpdate={fetchData}
+        />
+        <div className="flex-1">
+          <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              Admin - Expense Approval
+            </CardTitle>
+            <SidebarTrigger />
+          </CardHeader>
       <CardContent>
         <Tabs defaultValue="signoff" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
@@ -166,7 +190,11 @@ export const AdminExpenseApproval = () => {
                 </TableHeader>
                 <TableBody>
                   {readyForSignoff.map((expense: any) => (
-                     <TableRow key={expense.id}>
+                     <TableRow 
+                       key={expense.id}
+                       className={`cursor-pointer transition-colors ${selectedExpense?.id === expense.id ? 'bg-muted' : 'hover:bg-muted/50'}`}
+                       onClick={() => setSelectedExpense(expense)}
+                     >
                        <TableCell>{formatDate(expense.expense_date)}</TableCell>
                        <TableCell className="max-w-48">
                          <div className="truncate" title={expense.expense_description || ''}>
@@ -240,7 +268,11 @@ export const AdminExpenseApproval = () => {
                     </TableHeader>
                     <TableBody>
                       {approved.map((expense: any) => (
-                        <TableRow key={expense.id}>
+                        <TableRow 
+                          key={expense.id}
+                          className={`cursor-pointer transition-colors ${selectedExpense?.id === expense.id ? 'bg-muted' : 'hover:bg-muted/50'}`}
+                          onClick={() => setSelectedExpense(expense)}
+                        >
                           <TableCell>{formatDate(expense.expense_date)}</TableCell>
                           <TableCell className="max-w-48">
                             <div className="truncate" title={expense.expense_description || ''}>
@@ -276,5 +308,8 @@ export const AdminExpenseApproval = () => {
         </Tabs>
       </CardContent>
     </Card>
+        </div>
+      </div>
+    </SidebarProvider>
   );
 };

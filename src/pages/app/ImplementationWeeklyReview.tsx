@@ -20,6 +20,7 @@ import { computeTaskStatus } from "@/lib/taskStatus";
 import { supabase } from "@/integrations/supabase/client";
 import CreateEventDialog from "@/components/CreateEventDialog";
 import { VisionModelDialog } from "@/components/VisionModelDialog";
+import { BlockerDrawer } from "@/components/BlockerDrawer";
 import { blockersService } from "@/lib/blockersService";
 
 type Company = { company_id: string; company_name: string };
@@ -298,6 +299,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [createActionDialogOpen, setCreateActionDialogOpen] = useState(false);
   const [createEventDialogOpen, setCreateEventDialogOpen] = useState(false);
+  const [blockerDrawerOpen, setBlockerDrawerOpen] = useState(false);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [createVisionModelDialogOpen, setCreateVisionModelDialogOpen] = useState(false);
 
@@ -607,7 +609,19 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
       <Card className="p-4">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold">Gaps & Escalations</h2>
-          <span className="text-sm opacity-75">{blockersQ.data?.length ?? 0} open gaps & escalations</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm opacity-75">{blockersQ.data?.length ?? 0} open gaps & escalations</span>
+            {projectId && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setBlockerDrawerOpen(true)}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Gap/Escalation
+              </Button>
+            )}
+          </div>
         </div>
         <Separator className="my-3" />
         {blockersQ.isLoading ? (
@@ -1071,6 +1085,20 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
         onClose={handleCreateVisionModel}
         projectId={projectId}
         mode="create"
+      />
+    )}
+
+    {/* Blocker Drawer */}
+    {projectId && (
+      <BlockerDrawer
+        open={blockerDrawerOpen}
+        onOpenChange={setBlockerDrawerOpen}
+        projectId={projectId}
+        blocker={undefined}
+        onSuccess={() => {
+          setBlockerDrawerOpen(false);
+          qc.invalidateQueries({ queryKey: ["impl-blockers", companyId] });
+        }}
       />
     )}
   </div>

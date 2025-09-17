@@ -210,7 +210,7 @@ export const ProjectDetail = () => {
           </TabsList>
           
           {/* Second row of tabs */}
-          <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${profile?.is_internal && ['IoT', 'Vision', 'Hybrid'].includes(project.domain) ? '4' : profile?.is_internal ? '3' : '2'}, minmax(0, 1fr))` }}>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
             <TabsTrigger value="calendar">Calendar</TabsTrigger>
             <TabsTrigger value="vision-models">Vision Models</TabsTrigger>
             {profile?.is_internal && (

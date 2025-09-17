@@ -26,6 +26,8 @@ interface DashboardBlocker {
   age_days: number;
   is_overdue: boolean;
   status: string;
+  reason_code?: string;
+  is_critical: boolean;
 }
 
 type DashboardItem = (DashboardBlocker & { type: 'blocker' }) | (DashboardProductGap & { type: 'product_gap', customer_name: string, is_overdue: boolean });

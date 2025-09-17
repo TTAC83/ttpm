@@ -62,7 +62,7 @@ export function BlockersDashboardCard() {
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <CardTitle className="flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-red-500" />
-          Implementation Blockers
+          Gaps & Escalations
         </CardTitle>
         <Button asChild variant="outline" size="sm">
           <Link to="/app/blockers">
@@ -78,7 +78,7 @@ export function BlockersDashboardCard() {
         ) : blockers.length === 0 ? (
           <div className="text-center py-8">
             <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-green-500" />
-            <h3 className="text-lg font-semibold mb-2 text-green-700">No Active Blockers</h3>
+            <h3 className="text-lg font-semibold mb-2 text-green-700">No Active Gaps & Escalations</h3>
             <p className="text-muted-foreground">
               All implementation projects are running smoothly!
             </p>
@@ -87,7 +87,7 @@ export function BlockersDashboardCard() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
-                Showing {blockers.length} most urgent blocker{blockers.length !== 1 ? 's' : ''}
+                Showing {blockers.length} most urgent gap{blockers.length !== 1 ? 's' : ''} & escalation{blockers.length !== 1 ? 's' : ''}
               </p>
               {blockers.some(b => b.is_overdue) && (
                 <Badge variant="destructive" className="text-xs">
@@ -102,7 +102,7 @@ export function BlockersDashboardCard() {
                   <TableRow>
                     <TableHead>Customer</TableHead>
                     <TableHead>Project</TableHead>
-                    <TableHead>Blocker</TableHead>
+                    <TableHead>Gap/Escalation</TableHead>
                     <TableHead>Est. Complete</TableHead>
                     <TableHead>Age</TableHead>
                     <TableHead>Status</TableHead>

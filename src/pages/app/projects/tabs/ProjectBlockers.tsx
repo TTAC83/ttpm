@@ -30,58 +30,58 @@ interface ProjectBlockersProps {
 }
 
 export function ProjectBlockers({ projectId }: ProjectBlockersProps) {
-  const [blockers, setBlockers] = useState<ImplementationBlocker[]>([]);
+  const [gapsEscalations, setGapsEscalations] = useState<ImplementationBlocker[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<'Live' | 'Closed' | 'All'>('Live');
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedBlocker, setSelectedBlocker] = useState<ImplementationBlocker | undefined>();
+  const [selectedGapEscalation, setSelectedGapEscalation] = useState<ImplementationBlocker | undefined>();
 
   useEffect(() => {
-    loadBlockers();
+    loadGapsEscalations();
   }, [projectId, statusFilter]);
 
-  const loadBlockers = async () => {
+  const loadGapsEscalations = async () => {
     setLoading(true);
     try {
       const data = await blockersService.getProjectBlockers(projectId, statusFilter);
-      setBlockers(data);
+      setGapsEscalations(data);
     } catch (error) {
-      console.error("Failed to load blockers:", error);
-      toast.error("Failed to load blockers");
+      console.error("Failed to load gaps & escalations:", error);
+      toast.error("Failed to load gaps & escalations");
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredBlockers = blockers.filter(blocker =>
-    blocker.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    blocker.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredGapsEscalations = gapsEscalations.filter(gapEscalation =>
+    gapEscalation.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    gapEscalation.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleAddBlocker = () => {
-    setSelectedBlocker(undefined);
+  const handleAddGapEscalation = () => {
+    setSelectedGapEscalation(undefined);
     setDrawerOpen(true);
   };
 
-  const handleEditBlocker = (blocker: ImplementationBlocker) => {
-    setSelectedBlocker(blocker);
+  const handleEditGapEscalation = (gapEscalation: ImplementationBlocker) => {
+    setSelectedGapEscalation(gapEscalation);
     setDrawerOpen(true);
   };
 
-  const getStatusBadge = (blocker: ImplementationBlocker) => {
-    if (blocker.status === 'Closed') {
+  const getStatusBadge = (gapEscalation: ImplementationBlocker) => {
+    if (gapEscalation.status === 'Closed') {
       return <Badge variant="secondary">Closed</Badge>;
     }
-    if (blocker.is_overdue) {
+    if (gapEscalation.is_overdue) {
       return <Badge variant="destructive">Overdue</Badge>;
     }
     return <Badge variant="default" className="bg-amber-500 hover:bg-amber-600">Live</Badge>;
   };
 
-  const getRowClassName = (blocker: ImplementationBlocker) => {
-    if (blocker.status === 'Closed') return "";
-    if (blocker.is_overdue) return "bg-red-50 dark:bg-red-950/20";
+  const getRowClassName = (gapEscalation: ImplementationBlocker) => {
+    if (gapEscalation.status === 'Closed') return "";
+    if (gapEscalation.is_overdue) return "bg-red-50 dark:bg-red-950/20";
     return "";
   };
 
@@ -90,14 +90,14 @@ export function ProjectBlockers({ projectId }: ProjectBlockersProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Implementation Blockers</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Gaps & Escalations</h2>
           <p className="text-muted-foreground">
-            Track and manage blockers for this implementation project
+            Track and manage gaps & escalations for this implementation project
           </p>
         </div>
-        <Button onClick={handleAddBlocker}>
+        <Button onClick={handleAddGapEscalation}>
           <Plus className="h-4 w-4 mr-2" />
-          Add Blocker
+          Add Gap/Escalation
         </Button>
       </div>
 
@@ -138,28 +138,28 @@ export function ProjectBlockers({ projectId }: ProjectBlockersProps) {
         </CardContent>
       </Card>
 
-      {/* Blockers Table */}
+      {/* Gaps & Escalations Table */}
       <Card>
         <CardContent className="p-0">
           {loading ? (
             <div className="p-8 text-center">
-              <p className="text-muted-foreground">Loading blockers...</p>
+              <p className="text-muted-foreground">Loading gaps & escalations...</p>
             </div>
-          ) : filteredBlockers.length === 0 ? (
+          ) : filteredGapsEscalations.length === 0 ? (
             <div className="p-8 text-center">
               <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">No blockers found</h3>
+              <h3 className="text-lg font-semibold mb-2">No gaps & escalations found</h3>
               <p className="text-muted-foreground mb-4">
                 {statusFilter === 'Live' 
-                  ? "No active blockers for this project. Great work!"
+                  ? "No active gaps & escalations for this project. Great work!"
                   : searchTerm
-                  ? "No blockers match your search criteria."
-                  : "No blockers yet. Add the first one."}
+                  ? "No gaps & escalations match your search criteria."
+                  : "No gaps & escalations yet. Add the first one."}
               </p>
               {statusFilter === 'Live' && !searchTerm && (
-                <Button onClick={handleAddBlocker}>
+                <Button onClick={handleAddGapEscalation}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add First Blocker
+                  Add First Gap/Escalation
                 </Button>
               )}
             </div>
@@ -177,39 +177,39 @@ export function ProjectBlockers({ projectId }: ProjectBlockersProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredBlockers.map((blocker) => (
+                {filteredGapsEscalations.map((gapEscalation) => (
                   <TableRow
-                    key={blocker.id}
-                    className={getRowClassName(blocker)}
+                    key={gapEscalation.id}
+                    className={getRowClassName(gapEscalation)}
                   >
                     <TableCell>
                       <div>
-                        <p className="font-medium">{blocker.title}</p>
-                        {blocker.description && (
+                        <p className="font-medium">{gapEscalation.title}</p>
+                        {gapEscalation.description && (
                           <p className="text-sm text-muted-foreground line-clamp-2">
-                            {blocker.description}
+                            {gapEscalation.description}
                           </p>
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>{blocker.owner_name}</TableCell>
-                    <TableCell>{formatDateUK(blocker.raised_at)}</TableCell>
+                    <TableCell>{gapEscalation.owner_name}</TableCell>
+                    <TableCell>{formatDateUK(gapEscalation.raised_at)}</TableCell>
                     <TableCell>
-                      {blocker.estimated_complete_date
-                        ? formatDateUK(blocker.estimated_complete_date)
+                      {gapEscalation.estimated_complete_date
+                        ? formatDateUK(gapEscalation.estimated_complete_date)
                         : "-"}
                     </TableCell>
                     <TableCell>
-                      <span className={blocker.is_overdue ? "text-red-600 font-medium" : ""}>
-                        {blocker.age_days}
+                      <span className={gapEscalation.is_overdue ? "text-red-600 font-medium" : ""}>
+                        {gapEscalation.age_days}
                       </span>
                     </TableCell>
-                    <TableCell>{getStatusBadge(blocker)}</TableCell>
+                    <TableCell>{getStatusBadge(gapEscalation)}</TableCell>
                     <TableCell>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleEditBlocker(blocker)}
+                        onClick={() => handleEditGapEscalation(gapEscalation)}
                       >
                         Open
                       </Button>
@@ -226,8 +226,8 @@ export function ProjectBlockers({ projectId }: ProjectBlockersProps) {
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
         projectId={projectId}
-        blocker={selectedBlocker}
-        onSuccess={loadBlockers}
+        blocker={selectedGapEscalation}
+        onSuccess={loadGapsEscalations}
       />
     </div>
   );

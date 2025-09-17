@@ -48,16 +48,16 @@ import { formatDateUK } from "@/lib/dateUtils";
 import { blockersService, ImplementationBlocker, BlockerUpdate, BlockerAttachment } from "@/lib/blockersService";
 import { toast } from "sonner";
 
-const blockerSchema = z.object({
+const gapEscalationSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
   owner: z.string().min(1, "Owner is required"),
   estimated_complete_date: z.date().optional(),
 });
 
-type BlockerFormData = z.infer<typeof blockerSchema>;
+type GapEscalationFormData = z.infer<typeof gapEscalationSchema>;
 
-interface BlockerDrawerProps {
+interface GapEscalationDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projectId: string;
@@ -71,7 +71,7 @@ export function BlockerDrawer({
   projectId,
   blocker,
   onSuccess,
-}: BlockerDrawerProps) {
+}: GapEscalationDrawerProps) {
   const [loading, setLoading] = useState(false);
   const [updates, setUpdates] = useState<BlockerUpdate[]>([]);
   const [attachments, setAttachments] = useState<BlockerAttachment[]>([]);
@@ -79,8 +79,8 @@ export function BlockerDrawer({
   const [internalUsers, setInternalUsers] = useState<{ user_id: string; name: string }[]>([]);
   const [resolutionNotes, setResolutionNotes] = useState("");
 
-  const form = useForm<BlockerFormData>({
-    resolver: zodResolver(blockerSchema),
+  const form = useForm<GapEscalationFormData>({
+    resolver: zodResolver(gapEscalationSchema),
     defaultValues: {
       title: "",
       description: "",
@@ -101,7 +101,7 @@ export function BlockerDrawer({
             ? new Date(blocker.estimated_complete_date) 
             : undefined,
         });
-        loadBlockerDetails();
+        loadGapEscalationDetails();
       } else {
         form.reset({
           title: "",
@@ -124,7 +124,7 @@ export function BlockerDrawer({
     }
   };
 
-  const loadBlockerDetails = async () => {
+  const loadGapEscalationDetails = async () => {
     if (!blocker) return;
     try {
       const [updatesData, attachmentsData] = await Promise.all([
@@ -134,11 +134,11 @@ export function BlockerDrawer({
       setUpdates(updatesData);
       setAttachments(attachmentsData);
     } catch (error) {
-      console.error("Failed to load blocker details:", error);
+      console.error("Failed to load gap/escalation details:", error);
     }
   };
 
-  const onSubmit = async (data: BlockerFormData) => {
+  const onSubmit = async (data: GapEscalationFormData) => {
     setLoading(true);
     try {
       if (blocker) {
@@ -148,7 +148,7 @@ export function BlockerDrawer({
           owner: data.owner,
           estimated_complete_date: data.estimated_complete_date?.toISOString().split('T')[0],
         });
-        toast.success("Blocker updated successfully");
+        toast.success("Gap/Escalation updated successfully");
       } else {
         await blockersService.createBlocker({
           project_id: projectId,
@@ -157,29 +157,29 @@ export function BlockerDrawer({
           owner: data.owner,
           estimated_complete_date: data.estimated_complete_date?.toISOString().split('T')[0],
         });
-        toast.success("Blocker created successfully");
+        toast.success("Gap/Escalation created successfully");
       }
       onSuccess();
       onOpenChange(false);
     } catch (error) {
-      console.error("Failed to save blocker:", error);
-      toast.error("Failed to save blocker");
+      console.error("Failed to save gap/escalation:", error);
+      toast.error("Failed to save gap/escalation");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCloseBlocker = async () => {
+  const handleCloseGapEscalation = async () => {
     if (!blocker || !resolutionNotes.trim()) return;
     setLoading(true);
     try {
       await blockersService.closeBlocker(blocker.id, resolutionNotes);
-      toast.success("Blocker closed successfully");
+      toast.success("Gap/Escalation closed successfully");
       onSuccess();
       onOpenChange(false);
     } catch (error) {
-      console.error("Failed to close blocker:", error);
-      toast.error("Failed to close blocker");
+      console.error("Failed to close gap/escalation:", error);
+      toast.error("Failed to close gap/escalation");
     } finally {
       setLoading(false);
     }
@@ -190,7 +190,7 @@ export function BlockerDrawer({
     try {
       await blockersService.addBlockerUpdate(blocker.id, newNote);
       setNewNote("");
-      loadBlockerDetails();
+      loadGapEscalationDetails();
       toast.success("Note added successfully");
     } catch (error) {
       console.error("Failed to add note:", error);
@@ -209,7 +209,7 @@ export function BlockerDrawer({
 
     try {
       await blockersService.uploadAttachment(blocker.id, file);
-      loadBlockerDetails();
+      loadGapEscalationDetails();
       toast.success("File uploaded successfully");
     } catch (error) {
       console.error("Failed to upload file:", error);
@@ -235,7 +235,7 @@ export function BlockerDrawer({
   const handleDeleteAttachment = async (attachment: BlockerAttachment) => {
     try {
       await blockersService.deleteAttachment(attachment.id, attachment.file_path);
-      loadBlockerDetails();
+      loadGapEscalationDetails();
       toast.success("File deleted successfully");
     } catch (error) {
       console.error("Failed to delete file:", error);
@@ -248,10 +248,10 @@ export function BlockerDrawer({
       <SheetContent className="w-[600px] max-w-[90vw] overflow-y-auto">
         <SheetHeader>
           <SheetTitle>
-            {blocker ? "Edit Implementation Blocker" : "Add Implementation Blocker"}
+            {blocker ? "Edit Gap/Escalation" : "Add Gap/Escalation"}
           </SheetTitle>
           <SheetDescription>
-            {blocker ? `Raised ${formatDateUK(blocker.raised_at)}` : "Create a new implementation blocker"}
+            {blocker ? `Raised ${formatDateUK(blocker.raised_at)}` : "Create a new gap/escalation"}
           </SheetDescription>
           {blocker && (
             <Badge variant={blocker.status === 'Live' ? 'destructive' : 'secondary'}>
@@ -270,7 +270,7 @@ export function BlockerDrawer({
                   <FormItem>
                     <FormLabel>Title *</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Enter blocker title" />
+                      <Input {...field} placeholder="Enter gap/escalation title" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -284,7 +284,7 @@ export function BlockerDrawer({
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea {...field} placeholder="Enter blocker description" rows={3} />
+                      <Textarea {...field} placeholder="Enter gap/escalation description" rows={3} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -356,19 +356,19 @@ export function BlockerDrawer({
 
               <div className="flex gap-2">
                 <Button type="submit" disabled={loading}>
-                  {loading ? "Saving..." : blocker ? "Update Blocker" : "Create Blocker"}
+                  {loading ? "Saving..." : blocker ? "Update Gap/Escalation" : "Create Gap/Escalation"}
                 </Button>
 
                 {blocker && blocker.status === 'Live' && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="outline">Close Blocker</Button>
+                      <Button variant="outline">Close Gap/Escalation</Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Close Blocker</AlertDialogTitle>
+                        <AlertDialogTitle>Close Gap/Escalation</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Please provide resolution notes to close this blocker.
+                          Please provide resolution notes to close this gap/escalation.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <div className="my-4">
@@ -377,7 +377,7 @@ export function BlockerDrawer({
                           id="resolution"
                           value={resolutionNotes}
                           onChange={(e) => setResolutionNotes(e.target.value)}
-                          placeholder="Describe how this blocker was resolved"
+                          placeholder="Describe how this gap/escalation was resolved"
                           rows={3}
                           className="mt-2"
                         />
@@ -385,10 +385,10 @@ export function BlockerDrawer({
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
-                          onClick={handleCloseBlocker}
+                          onClick={handleCloseGapEscalation}
                           disabled={!resolutionNotes.trim() || loading}
                         >
-                          Close Blocker
+                          Close Gap/Escalation
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>

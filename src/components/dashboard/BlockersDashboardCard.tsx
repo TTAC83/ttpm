@@ -15,6 +15,7 @@ import {
 import { blockersService } from "@/lib/blockersService";
 import { productGapsService, DashboardProductGap } from "@/lib/productGapsService";
 import { formatDateUK } from "@/lib/dateUtils";
+import { BlockerDrawer } from "@/components/BlockerDrawer";
 
 interface DashboardBlocker {
   id: string;
@@ -28,6 +29,13 @@ interface DashboardBlocker {
   status: string;
   reason_code?: string;
   is_critical: boolean;
+  raised_at: string;
+  owner: string;
+  created_by?: string;
+  updated_at?: string;
+  description?: string;
+  closed_at?: string;
+  resolution_notes?: string;
 }
 
 type DashboardItem = (DashboardBlocker & { type: 'blocker' }) | (DashboardProductGap & { type: 'product_gap', customer_name: string, is_overdue: boolean });
@@ -36,6 +44,8 @@ export function BlockersDashboardCard() {
   const [blockers, setBlockers] = useState<DashboardBlocker[]>([]);
   const [productGaps, setProductGaps] = useState<DashboardProductGap[]>([]);
   const [loading, setLoading] = useState(true);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedBlocker, setSelectedBlocker] = useState<DashboardBlocker | undefined>();
 
   useEffect(() => {
     loadDashboardData();
@@ -69,6 +79,11 @@ export function BlockersDashboardCard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEditBlocker = (blocker: DashboardBlocker) => {
+    setSelectedBlocker(blocker);
+    setDrawerOpen(true);
   };
 
 
@@ -155,7 +170,8 @@ export function BlockersDashboardCard() {
                     {blockers.map((blocker) => (
                       <TableRow
                         key={`blocker-${blocker.id}`}
-                        className={getRowClassName(blocker.is_overdue)}
+                        className={`${getRowClassName(blocker.is_overdue)} cursor-pointer hover:bg-muted/50 transition-colors`}
+                        onClick={() => handleEditBlocker(blocker)}
                       >
                         <TableCell className="font-medium">
                           {blocker.customer_name}
@@ -290,6 +306,26 @@ export function BlockersDashboardCard() {
           )}
         </CardContent>
       </Card>
+      
+      {/* Blocker Edit Drawer */}
+      {selectedBlocker && (
+        <BlockerDrawer
+          open={drawerOpen}
+          onOpenChange={setDrawerOpen}
+          projectId={selectedBlocker.project_id}
+          blocker={{
+            ...selectedBlocker,
+            status: selectedBlocker.status as 'Live' | 'Closed',
+            created_by: selectedBlocker.created_by || '',
+            updated_at: selectedBlocker.updated_at || new Date().toISOString()
+          }}
+          onSuccess={() => {
+            setDrawerOpen(false);
+            setSelectedBlocker(undefined);
+            loadDashboardData();
+          }}
+        />
+      )}
     </div>
   );
 }

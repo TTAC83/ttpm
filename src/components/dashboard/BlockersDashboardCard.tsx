@@ -31,7 +31,8 @@ interface DashboardBlocker {
 type DashboardItem = (DashboardBlocker & { type: 'blocker' }) | (DashboardProductGap & { type: 'product_gap', customer_name: string, is_overdue: boolean });
 
 export function BlockersDashboardCard() {
-  const [items, setItems] = useState<DashboardItem[]>([]);
+  const [blockers, setBlockers] = useState<DashboardBlocker[]>([]);
+  const [productGaps, setProductGaps] = useState<DashboardProductGap[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,31 +46,22 @@ export function BlockersDashboardCard() {
         productGapsService.getDashboardProductGaps()
       ]);
       
-      // Combine and transform data
-      const combinedItems: DashboardItem[] = [
-        ...blockersData.map(blocker => ({ ...blocker, type: 'blocker' as const })),
-        ...productGapsData.map(gap => {
-          const isOverdue = gap.estimated_complete_date && new Date(gap.estimated_complete_date) < new Date();
-          return {
-            ...gap,
-            type: 'product_gap' as const,
-            customer_name: gap.company_name,
-            is_overdue: !!isOverdue
-          };
-        })
-      ].sort((a, b) => {
-        // Sort by critical first, then by overdue, then by age
-        const aCritical = a.type === 'product_gap' ? a.is_critical : false;
-        const bCritical = b.type === 'product_gap' ? b.is_critical : false;
-        
-        if (aCritical && !bCritical) return -1;
-        if (!aCritical && bCritical) return 1;
+      setBlockers(blockersData.sort((a, b) => {
         if (a.is_overdue && !b.is_overdue) return -1;
         if (!a.is_overdue && b.is_overdue) return 1;
         return b.age_days - a.age_days;
-      });
+      }));
       
-      setItems(combinedItems);
+      setProductGaps(productGapsData.sort((a, b) => {
+        const aOverdue = a.estimated_complete_date && new Date(a.estimated_complete_date) < new Date();
+        const bOverdue = b.estimated_complete_date && new Date(b.estimated_complete_date) < new Date();
+        
+        if (a.is_critical && !b.is_critical) return -1;
+        if (!a.is_critical && b.is_critical) return 1;
+        if (aOverdue && !bOverdue) return -1;
+        if (!aOverdue && bOverdue) return 1;
+        return b.age_days - a.age_days;
+      }));
     } catch (error) {
       console.error("Failed to load dashboard data:", error);
     } finally {
@@ -77,123 +69,219 @@ export function BlockersDashboardCard() {
     }
   };
 
-  const getStatusBadge = (item: DashboardItem) => {
-    if (item.is_overdue) {
+  const getBlockerStatusBadge = (blocker: DashboardBlocker) => {
+    if (blocker.is_overdue) {
       return <Badge variant="destructive">Overdue</Badge>;
     }
-    
-    if (item.type === 'product_gap') {
-      return (
-        <Badge variant={item.is_critical ? "destructive" : "default"}>
-          {item.is_critical ? "Critical Gap" : "Product Gap"}
-        </Badge>
-      );
-    }
-    
     return <Badge variant="default" className="bg-amber-500 hover:bg-amber-600">Live</Badge>;
   };
 
-  const getRowClassName = (item: DashboardItem) => {
-    return item.is_overdue ? "bg-red-50 dark:bg-red-950/20" : "";
+  const getProductGapStatusBadge = (gap: DashboardProductGap) => {
+    const isOverdue = gap.estimated_complete_date && new Date(gap.estimated_complete_date) < new Date();
+    
+    if (isOverdue) {
+      return <Badge variant="destructive">Overdue</Badge>;
+    }
+    
+    return (
+      <Badge variant={gap.is_critical ? "destructive" : "default"}>
+        {gap.is_critical ? "Critical" : "Live"}
+      </Badge>
+    );
+  };
+
+  const getRowClassName = (isOverdue: boolean) => {
+    return isOverdue ? "bg-red-50 dark:bg-red-950/20" : "";
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-        <CardTitle className="flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-red-500" />
-          Escalations & Product Gaps
-        </CardTitle>
-        <div className="flex gap-2">
+    <div className="space-y-6">
+      {/* Escalations Table */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-red-500" />
+            Escalations
+          </CardTitle>
           <Button asChild variant="outline" size="sm">
-            <Link to="/app/blockers">
-              Escalations <ExternalLink className="h-4 w-4 ml-1" />
+            <Link to="/app/implementation/blockers">
+              View All <ExternalLink className="h-4 w-4 ml-1" />
             </Link>
           </Button>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="text-center py-4">
+              <p className="text-muted-foreground">Loading escalations...</p>
+            </div>
+          ) : blockers.length === 0 ? (
+            <div className="text-center py-8">
+              <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-green-500" />
+              <h3 className="text-lg font-semibold mb-2 text-green-700">No Active Escalations</h3>
+              <p className="text-muted-foreground">
+                No escalations requiring attention!
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  Showing {blockers.length} escalation{blockers.length !== 1 ? 's' : ''}
+                </p>
+                {blockers.some(blocker => blocker.is_overdue) && (
+                  <Badge variant="destructive" className="text-xs">
+                    {blockers.filter(blocker => blocker.is_overdue).length} Overdue
+                  </Badge>
+                )}
+              </div>
+
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Project</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Est. Complete</TableHead>
+                      <TableHead>Age</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {blockers.map((blocker) => (
+                      <TableRow
+                        key={`blocker-${blocker.id}`}
+                        className={getRowClassName(blocker.is_overdue)}
+                      >
+                        <TableCell className="font-medium">
+                          {blocker.customer_name}
+                        </TableCell>
+                        <TableCell>
+                          <Link 
+                            to={`/app/projects/${blocker.project_id}?tab=blockers`}
+                            className="text-blue-600 hover:text-blue-800 hover:underline"
+                          >
+                            {blocker.project_name}
+                          </Link>
+                        </TableCell>
+                        <TableCell>
+                          <p className="font-medium line-clamp-1">{blocker.title}</p>
+                        </TableCell>
+                        <TableCell>
+                          {blocker.estimated_complete_date
+                            ? formatDateUK(blocker.estimated_complete_date)
+                            : "-"}
+                        </TableCell>
+                        <TableCell>
+                          <span className={blocker.is_overdue ? "text-red-600 font-medium" : ""}>
+                            {blocker.age_days}d
+                          </span>
+                        </TableCell>
+                        <TableCell>{getBlockerStatusBadge(blocker)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Product Gaps Table */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-amber-500" />
+            Product Gaps
+          </CardTitle>
           <Button asChild variant="outline" size="sm">
             <Link to="/app/product-gaps">
-              Product Gaps <ExternalLink className="h-4 w-4 ml-1" />
+              View All <ExternalLink className="h-4 w-4 ml-1" />
             </Link>
           </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="text-center py-4">
-            <p className="text-muted-foreground">Loading blockers...</p>
-          </div>
-        ) : items.length === 0 ? (
-          <div className="text-center py-8">
-            <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-green-500" />
-            <h3 className="text-lg font-semibold mb-2 text-green-700">No Active Items</h3>
-            <p className="text-muted-foreground">
-              No escalations or product gaps requiring attention!
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                Showing {items.length} most urgent item{items.length !== 1 ? 's' : ''}
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="text-center py-4">
+              <p className="text-muted-foreground">Loading product gaps...</p>
+            </div>
+          ) : productGaps.length === 0 ? (
+            <div className="text-center py-8">
+              <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-green-500" />
+              <h3 className="text-lg font-semibold mb-2 text-green-700">No Product Gaps</h3>
+              <p className="text-muted-foreground">
+                No product gaps requiring attention!
               </p>
-              {items.some(item => item.is_overdue) && (
-                <Badge variant="destructive" className="text-xs">
-                  {items.filter(item => item.is_overdue).length} Overdue
-                </Badge>
-              )}
             </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  Showing {productGaps.length} product gap{productGaps.length !== 1 ? 's' : ''}
+                </p>
+                {productGaps.some(gap => gap.estimated_complete_date && new Date(gap.estimated_complete_date) < new Date()) && (
+                  <Badge variant="destructive" className="text-xs">
+                    {productGaps.filter(gap => gap.estimated_complete_date && new Date(gap.estimated_complete_date) < new Date()).length} Overdue
+                  </Badge>
+                )}
+              </div>
 
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Project</TableHead>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Est. Complete</TableHead>
-                    <TableHead>Age</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {items.map((item) => (
-                    <TableRow
-                      key={`${item.type}-${item.id}`}
-                      className={getRowClassName(item)}
-                    >
-                      <TableCell className="font-medium">
-                        {item.customer_name}
-                      </TableCell>
-                      <TableCell>
-                        <Link 
-                          to={`/app/projects/${item.project_id}?tab=${item.type === 'product_gap' ? 'product-gaps' : 'blockers'}`}
-                          className="text-blue-600 hover:text-blue-800 hover:underline"
-                        >
-                          {item.project_name}
-                        </Link>
-                      </TableCell>
-                      <TableCell>
-                        <p className="font-medium line-clamp-1">{item.title}</p>
-                      </TableCell>
-                      <TableCell>
-                        {item.estimated_complete_date
-                          ? formatDateUK(item.estimated_complete_date)
-                          : "-"}
-                      </TableCell>
-                      <TableCell>
-                        <span className={item.is_overdue ? "text-red-600 font-medium" : ""}>
-                          {item.age_days}d
-                        </span>
-                      </TableCell>
-                      <TableCell>{getStatusBadge(item)}</TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Project</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Est. Complete</TableHead>
+                      <TableHead>Age</TableHead>
+                      <TableHead>Status</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {productGaps.map((gap) => {
+                      const isOverdue = gap.estimated_complete_date && new Date(gap.estimated_complete_date) < new Date();
+                      return (
+                        <TableRow
+                          key={`product-gap-${gap.id}`}
+                          className={getRowClassName(!!isOverdue)}
+                        >
+                          <TableCell className="font-medium">
+                            {gap.company_name}
+                          </TableCell>
+                          <TableCell>
+                            <Link 
+                              to={`/app/projects/${gap.project_id}?tab=product-gaps`}
+                              className="text-blue-600 hover:text-blue-800 hover:underline"
+                            >
+                              {gap.project_name}
+                            </Link>
+                          </TableCell>
+                          <TableCell>
+                            <p className="font-medium line-clamp-1">{gap.title}</p>
+                          </TableCell>
+                          <TableCell>
+                            {gap.estimated_complete_date
+                              ? formatDateUK(gap.estimated_complete_date)
+                              : "-"}
+                          </TableCell>
+                          <TableCell>
+                            <span className={isOverdue ? "text-red-600 font-medium" : ""}>
+                              {gap.age_days}d
+                            </span>
+                          </TableCell>
+                          <TableCell>{getProductGapStatusBadge(gap)}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDateUK } from '@/lib/dateUtils';
 import { useNavigate } from 'react-router-dom';
+import { BlockersDashboardCard } from '@/components/dashboard/BlockersDashboardCard';
 
 interface Company {
   id: string;
@@ -660,7 +661,12 @@ export const Dashboard = () => {
             })}
           </div>
         </CardContent>
-      </Card>
+       </Card>
+
+      {/* Implementation Blockers */}
+      {profile?.is_internal && (
+        <BlockersDashboardCard />
+      )}
 
       {/* Client Summary */}
       <Card>

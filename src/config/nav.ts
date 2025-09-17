@@ -87,6 +87,12 @@ export const NAV: NavItem[] = [
         matchPaths: ["/app/implementation/weekly-review"],
         roles: ["internal_admin", "internal_user"]
       },
+      {
+        label: "Implementation Blockers",
+        to: "/app/implementation/blockers",
+        matchPaths: ["/app/implementation/blockers"],
+        roles: ["internal_admin", "internal_user"]
+      },
     ]
   },
 

@@ -20,6 +20,7 @@ import { computeTaskStatus } from "@/lib/taskStatus";
 import { supabase } from "@/integrations/supabase/client";
 import CreateEventDialog from "@/components/CreateEventDialog";
 import { VisionModelDialog } from "@/components/VisionModelDialog";
+import { blockersService } from "@/lib/blockersService";
 
 type Company = { company_id: string; company_name: string };
 type CompanyWithHealth = { company_id: string; company_name: string; customer_health?: "green" | "red" | null; project_status?: "on_track" | "off_track" | null };
@@ -313,6 +314,41 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   const visionModelsQ = useQuery({
     queryKey: ["impl-vision-models", companyId],
     queryFn: () => loadOpenVisionModels(companyId),
+  });
+
+  const blockersQ = useQuery({
+    queryKey: ["impl-blockers", companyId],
+    queryFn: async () => {
+      // Get projects for this company
+      const { data: projects } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('company_id', companyId)
+        .in('domain', ['IoT', 'Vision', 'Hybrid']);
+      
+      if (!projects?.length) return [];
+      
+      // Get blockers for these projects
+      const { data: blockers } = await supabase
+        .from('implementation_blockers')
+        .select(`
+          *,
+          project:projects(name, company:companies(name)),
+          owner_profile:profiles!implementation_blockers_owner_fkey(name)
+        `)
+        .in('project_id', projects.map(p => p.id))
+        .eq('status', 'Live')
+        .order('raised_at', { ascending: false });
+      
+      return blockers?.map(blocker => ({
+        ...blocker,
+        project_name: blocker.project?.name,
+        customer_name: blocker.project?.company?.name,
+        owner_name: blocker.owner_profile?.name,
+        age_days: Math.floor((new Date().getTime() - new Date(blocker.raised_at).getTime()) / (1000 * 60 * 60 * 24)),
+        is_overdue: blocker.estimated_complete_date && new Date() > new Date(blocker.estimated_complete_date)
+      })) || [];
+    },
   });
 
   // Get project ID by querying the projects for this company
@@ -820,6 +856,55 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
                     </td>
                     <td className="py-2 pr-3">{vm.start_date ?? "-"}</td>
                     <td className="py-2 pr-3">{vm.end_date ?? "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+
+      {/* Implementation Blockers */}
+      <Card className="p-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold">Implementation Blockers</h2>
+          <span className="text-sm opacity-75">{blockersQ.data?.length ?? 0} open blockers</span>
+        </div>
+        <Separator className="my-3" />
+        {blockersQ.isLoading ? (
+          <div>Loading blockers...</div>
+        ) : (blockersQ.data?.length ?? 0) === 0 ? (
+          <div>No open blockers</div>
+        ) : (
+          <div className="overflow-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left">
+                  <th className="py-2 pr-3">Project</th>
+                  <th className="py-2 pr-3">Title</th>
+                  <th className="py-2 pr-3">Owner</th>
+                  <th className="py-2 pr-3">Est. Complete</th>
+                  <th className="py-2 pr-3">Age (days)</th>
+                  <th className="py-2 pr-3">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {blockersQ.data!.map(blocker => (
+                  <tr key={blocker.id} className={`border-t ${blocker.is_overdue ? 'bg-red-50' : ''}`}>
+                    <td className="py-2 pr-3">{blocker.project_name}</td>
+                    <td className="py-2 pr-3 font-medium">{blocker.title}</td>
+                    <td className="py-2 pr-3">{blocker.owner_name}</td>
+                    <td className="py-2 pr-3">
+                      {blocker.estimated_complete_date ? new Date(blocker.estimated_complete_date).toLocaleDateString('en-GB') : '-'}
+                    </td>
+                    <td className={`py-2 pr-3 ${blocker.is_overdue ? 'text-red-600 font-medium' : ''}`}>
+                      {blocker.age_days}
+                    </td>
+                    <td className="py-2 pr-3">
+                      <Badge variant={blocker.is_overdue ? "destructive" : "default"} className={blocker.is_overdue ? "" : "bg-amber-500 hover:bg-amber-600"}>
+                        {blocker.is_overdue ? "Overdue" : "Live"}
+                      </Badge>
+                    </td>
                   </tr>
                 ))}
               </tbody>

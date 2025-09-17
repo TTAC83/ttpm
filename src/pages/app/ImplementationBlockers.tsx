@@ -85,7 +85,7 @@ export default function ImplementationBlockers() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Implementation Blockers</h1>
           <p className="text-muted-foreground">
-            View and manage all implementation blockers across projects
+            View implementation blockers across all projects. To add new blockers, go to the specific project.
           </p>
         </div>
       </div>
@@ -253,13 +253,19 @@ export default function ImplementationBlockers() {
         </CardContent>
       </Card>
 
-      <BlockerDrawer
-        open={drawerOpen}
-        onOpenChange={setDrawerOpen}
-        projectId={selectedBlocker?.project_id || ""}
-        blocker={selectedBlocker}
-        onSuccess={loadBlockers}
-      />
+      {selectedBlocker && (
+        <BlockerDrawer
+          open={drawerOpen}
+          onOpenChange={setDrawerOpen}
+          projectId={selectedBlocker.project_id}
+          blocker={selectedBlocker}
+          onSuccess={() => {
+            setDrawerOpen(false);
+            setSelectedBlocker(undefined);
+            loadBlockers();
+          }}
+        />
+      )}
     </div>
   );
 }

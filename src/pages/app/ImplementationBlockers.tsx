@@ -26,8 +26,8 @@ import { blockersService, ImplementationBlocker } from "@/lib/blockersService";
 import { formatDateUK } from "@/lib/dateUtils";
 import { toast } from "sonner";
 
-export default function ImplementationGapsEscalations() {
-  const [gapsEscalations, setGapsEscalations] = useState<ImplementationBlocker[]>([]);
+export default function ImplementationEscalations() {
+  const [escalations, setEscalations] = useState<ImplementationBlocker[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     customer: "",
@@ -38,13 +38,13 @@ export default function ImplementationGapsEscalations() {
     dateTo: "",
   });
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedGapEscalation, setSelectedGapEscalation] = useState<ImplementationBlocker | undefined>();
+  const [selectedEscalation, setSelectedEscalation] = useState<ImplementationBlocker | undefined>();
 
   useEffect(() => {
-    loadGapsEscalations();
+    loadEscalations();
   }, [filters]);
 
-  const loadGapsEscalations = async () => {
+  const loadEscalations = async () => {
     setLoading(true);
     try {
       const data = await blockersService.getAllBlockers(filters);
@@ -64,17 +64,17 @@ export default function ImplementationGapsEscalations() {
         
         return 0;
       });
-      setGapsEscalations(sortedData);
+      setEscalations(sortedData);
     } catch (error) {
-      console.error("Failed to load gaps & escalations:", error);
-      toast.error("Failed to load gaps & escalations");
+      console.error("Failed to load escalations:", error);
+      toast.error("Failed to load escalations");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleEditGapEscalation = (gapEscalation: ImplementationBlocker) => {
-    setSelectedGapEscalation(gapEscalation);
+  const handleEditEscalation = (escalation: ImplementationBlocker) => {
+    setSelectedEscalation(escalation);
     setDrawerOpen(true);
   };
 
@@ -191,20 +191,20 @@ export default function ImplementationGapsEscalations() {
       <Card>
         <CardHeader>
           <CardTitle>
-            Gaps & Escalations ({gapsEscalations.length})
+            Escalations ({escalations.length})
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
             <div className="p-8 text-center">
-              <p className="text-muted-foreground">Loading gaps & escalations...</p>
+              <p className="text-muted-foreground">Loading escalations...</p>
             </div>
-          ) : gapsEscalations.length === 0 ? (
+          ) : escalations.length === 0 ? (
             <div className="p-8 text-center">
               <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">No gaps & escalations found</h3>
+              <h3 className="text-lg font-semibold mb-2">No escalations found</h3>
               <p className="text-muted-foreground">
-                No gaps & escalations match your current filter criteria.
+                No escalations match your current filter criteria.
               </p>
             </div>
           ) : (
@@ -223,52 +223,52 @@ export default function ImplementationGapsEscalations() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {gapsEscalations.map((gapEscalation) => (
+                {escalations.map((escalation) => (
                   <TableRow
-                    key={gapEscalation.id}
-                    className={getRowClassName(gapEscalation)}
+                    key={escalation.id}
+                    className={getRowClassName(escalation)}
                   >
                     <TableCell className="font-medium">
-                      {gapEscalation.customer_name}
+                      {escalation.customer_name}
                     </TableCell>
-                    <TableCell>{gapEscalation.project_name}</TableCell>
+                    <TableCell>{escalation.project_name}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <div>
                           <div className="flex items-center gap-2">
-                            <p className="font-medium">{gapEscalation.title}</p>
-                            {gapEscalation.is_critical && (
+                            <p className="font-medium">{escalation.title}</p>
+                            {escalation.is_critical && (
                               <Badge variant="destructive" className="text-xs">
                                 CRITICAL
                               </Badge>
                             )}
                           </div>
-                          {gapEscalation.description && (
+                          {escalation.description && (
                             <p className="text-sm text-muted-foreground line-clamp-1">
-                              {gapEscalation.description}
+                              {escalation.description}
                             </p>
                           )}
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>{gapEscalation.owner_name}</TableCell>
-                    <TableCell>{formatDateUK(gapEscalation.raised_at)}</TableCell>
+                    <TableCell>{escalation.owner_name}</TableCell>
+                    <TableCell>{formatDateUK(escalation.raised_at)}</TableCell>
                     <TableCell>
-                      {gapEscalation.estimated_complete_date
-                        ? formatDateUK(gapEscalation.estimated_complete_date)
+                      {escalation.estimated_complete_date
+                        ? formatDateUK(escalation.estimated_complete_date)
                         : "-"}
                     </TableCell>
                     <TableCell>
-                      <span className={gapEscalation.is_overdue ? "text-red-600 font-medium" : ""}>
-                        {gapEscalation.age_days}
+                      <span className={escalation.is_overdue ? "text-red-600 font-medium" : ""}>
+                        {escalation.age_days}
                       </span>
                     </TableCell>
-                    <TableCell>{gapEscalation.reason_code || '-'}</TableCell>
+                    <TableCell>{escalation.reason_code || '-'}</TableCell>
                     <TableCell>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleEditGapEscalation(gapEscalation)}
+                        onClick={() => handleEditEscalation(escalation)}
                       >
                         Edit
                       </Button>
@@ -281,16 +281,16 @@ export default function ImplementationGapsEscalations() {
         </CardContent>
       </Card>
 
-      {selectedGapEscalation && (
+      {selectedEscalation && (
         <BlockerDrawer
           open={drawerOpen}
           onOpenChange={setDrawerOpen}
-          projectId={selectedGapEscalation.project_id}
-          blocker={selectedGapEscalation}
+          projectId={selectedEscalation.project_id}
+          blocker={selectedEscalation}
           onSuccess={() => {
             setDrawerOpen(false);
-            setSelectedGapEscalation(undefined);
-            loadGapsEscalations();
+            setSelectedEscalation(undefined);
+            loadEscalations();
           }}
         />
       )}

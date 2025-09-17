@@ -30,42 +30,42 @@ interface ProjectBlockersProps {
 }
 
 export function ProjectBlockers({ projectId }: ProjectBlockersProps) {
-  const [gapsEscalations, setGapsEscalations] = useState<ImplementationBlocker[]>([]);
+  const [escalations, setEscalations] = useState<ImplementationBlocker[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<'Live' | 'Closed' | 'All'>('Live');
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedGapEscalation, setSelectedGapEscalation] = useState<ImplementationBlocker | undefined>();
+  const [selectedEscalation, setSelectedEscalation] = useState<ImplementationBlocker | undefined>();
 
   useEffect(() => {
-    loadGapsEscalations();
+    loadEscalations();
   }, [projectId, statusFilter]);
 
-  const loadGapsEscalations = async () => {
+  const loadEscalations = async () => {
     setLoading(true);
     try {
       const data = await blockersService.getProjectBlockers(projectId, statusFilter);
-      setGapsEscalations(data);
+      setEscalations(data);
     } catch (error) {
-      console.error("Failed to load gaps & escalations:", error);
-      toast.error("Failed to load gaps & escalations");
+      console.error("Failed to load escalations:", error);
+      toast.error("Failed to load escalations");
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredGapsEscalations = gapsEscalations.filter(gapEscalation =>
-    gapEscalation.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    gapEscalation.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredEscalations = escalations.filter(escalation =>
+    escalation.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    escalation.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleAddGapEscalation = () => {
-    setSelectedGapEscalation(undefined);
+  const handleAddEscalation = () => {
+    setSelectedEscalation(undefined);
     setDrawerOpen(true);
   };
 
-  const handleEditGapEscalation = (gapEscalation: ImplementationBlocker) => {
-    setSelectedGapEscalation(gapEscalation);
+  const handleEditEscalation = (escalation: ImplementationBlocker) => {
+    setSelectedEscalation(escalation);
     setDrawerOpen(true);
   };
 
@@ -97,14 +97,14 @@ export function ProjectBlockers({ projectId }: ProjectBlockersProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Gaps & Escalations</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Escalations</h2>
           <p className="text-muted-foreground">
-            Track and manage gaps & escalations for this implementation project
+            Track and manage escalations for this implementation project
           </p>
         </div>
-        <Button onClick={handleAddGapEscalation}>
+        <Button onClick={handleAddEscalation}>
           <Plus className="h-4 w-4 mr-2" />
-          Add Gap/Escalation
+          Add Escalation
         </Button>
       </div>
 
@@ -145,28 +145,28 @@ export function ProjectBlockers({ projectId }: ProjectBlockersProps) {
         </CardContent>
       </Card>
 
-      {/* Gaps & Escalations Table */}
+      {/* Escalations Table */}
       <Card>
         <CardContent className="p-0">
           {loading ? (
             <div className="p-8 text-center">
-              <p className="text-muted-foreground">Loading gaps & escalations...</p>
+              <p className="text-muted-foreground">Loading escalations...</p>
             </div>
-          ) : filteredGapsEscalations.length === 0 ? (
+          ) : filteredEscalations.length === 0 ? (
             <div className="p-8 text-center">
               <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">No gaps & escalations found</h3>
+              <h3 className="text-lg font-semibold mb-2">No escalations found</h3>
               <p className="text-muted-foreground mb-4">
                 {statusFilter === 'Live' 
-                  ? "No active gaps & escalations for this project. Great work!"
+                  ? "No active escalations for this project. Great work!"
                   : searchTerm
-                  ? "No gaps & escalations match your search criteria."
-                  : "No gaps & escalations yet. Add the first one."}
+                  ? "No escalations match your search criteria."
+                  : "No escalations yet. Add the first one."}
               </p>
               {statusFilter === 'Live' && !searchTerm && (
-                <Button onClick={handleAddGapEscalation}>
+                <Button onClick={handleAddEscalation}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add First Gap/Escalation
+                  Add First Escalation
                 </Button>
               )}
             </div>
@@ -184,39 +184,39 @@ export function ProjectBlockers({ projectId }: ProjectBlockersProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredGapsEscalations.map((gapEscalation) => (
+                {filteredEscalations.map((escalation) => (
                   <TableRow
-                    key={gapEscalation.id}
-                    className={getRowClassName(gapEscalation)}
+                    key={escalation.id}
+                    className={getRowClassName(escalation)}
                   >
                     <TableCell>
                       <div>
-                        <p className="font-medium">{gapEscalation.title}</p>
-                        {gapEscalation.description && (
+                        <p className="font-medium">{escalation.title}</p>
+                        {escalation.description && (
                           <p className="text-sm text-muted-foreground line-clamp-2">
-                            {gapEscalation.description}
+                            {escalation.description}
                           </p>
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>{gapEscalation.owner_name}</TableCell>
-                    <TableCell>{formatDateUK(gapEscalation.raised_at)}</TableCell>
+                    <TableCell>{escalation.owner_name}</TableCell>
+                    <TableCell>{formatDateUK(escalation.raised_at)}</TableCell>
                     <TableCell>
-                      {gapEscalation.estimated_complete_date
-                        ? formatDateUK(gapEscalation.estimated_complete_date)
+                      {escalation.estimated_complete_date
+                        ? formatDateUK(escalation.estimated_complete_date)
                         : "-"}
                     </TableCell>
                     <TableCell>
-                      <span className={gapEscalation.is_overdue ? "text-red-600 font-medium" : ""}>
-                        {gapEscalation.age_days}
+                      <span className={escalation.is_overdue ? "text-red-600 font-medium" : ""}>
+                        {escalation.age_days}
                       </span>
                     </TableCell>
-                    <TableCell>{getStatusBadge(gapEscalation)}</TableCell>
+                    <TableCell>{getStatusBadge(escalation)}</TableCell>
                     <TableCell>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleEditGapEscalation(gapEscalation)}
+                        onClick={() => handleEditEscalation(escalation)}
                       >
                         Open
                       </Button>
@@ -233,11 +233,11 @@ export function ProjectBlockers({ projectId }: ProjectBlockersProps) {
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
         projectId={projectId}
-        blocker={selectedGapEscalation}
+        blocker={selectedEscalation}
         onSuccess={() => {
           setDrawerOpen(false);
-          setSelectedGapEscalation(undefined);
-          loadGapsEscalations();
+          setSelectedEscalation(undefined);
+          loadEscalations();
         }}
       />
     </div>

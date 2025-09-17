@@ -38,7 +38,7 @@ export function ProductGapDrawer({ projectId, productGap, open, onOpenChange, tr
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [ticketLink, setTicketLink] = useState("");
-  const [assignedTo, setAssignedTo] = useState<string>("");
+  const [assignedTo, setAssignedTo] = useState<string>("unassigned");
   const [isCritical, setIsCritical] = useState(false);
   const [estimatedCompleteDate, setEstimatedCompleteDate] = useState<Date>();
   const [status, setStatus] = useState<'Live' | 'Closed'>('Live');
@@ -65,7 +65,7 @@ export function ProductGapDrawer({ projectId, productGap, open, onOpenChange, tr
       setTitle(productGap.title);
       setDescription(productGap.description || "");
       setTicketLink(productGap.ticket_link || "");
-      setAssignedTo(productGap.assigned_to || "");
+      setAssignedTo(productGap.assigned_to || "unassigned");
       setIsCritical(productGap.is_critical);
       setEstimatedCompleteDate(productGap.estimated_complete_date ? new Date(productGap.estimated_complete_date) : undefined);
       setStatus(productGap.status);
@@ -75,7 +75,7 @@ export function ProductGapDrawer({ projectId, productGap, open, onOpenChange, tr
       setTitle("");
       setDescription("");
       setTicketLink("");
-      setAssignedTo("");
+      setAssignedTo("unassigned");
       setIsCritical(false);
       setEstimatedCompleteDate(undefined);
       setStatus('Live');
@@ -105,7 +105,7 @@ export function ProductGapDrawer({ projectId, productGap, open, onOpenChange, tr
         title: title.trim(),
         description: description.trim() || undefined,
         ticket_link: ticketLink.trim() || undefined,
-        assigned_to: assignedTo || undefined,
+        assigned_to: assignedTo === "unassigned" ? undefined : assignedTo,
         is_critical: isCritical,
         estimated_complete_date: estimatedCompleteDate ? format(estimatedCompleteDate, 'yyyy-MM-dd') : undefined,
         status,
@@ -186,7 +186,7 @@ export function ProductGapDrawer({ projectId, productGap, open, onOpenChange, tr
             <SelectValue placeholder="Select assignee" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Unassigned</SelectItem>
+            <SelectItem value="unassigned">Unassigned</SelectItem>
             {profiles.map((profile) => (
               <SelectItem key={profile.user_id} value={profile.user_id}>
                 {profile.name}

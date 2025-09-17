@@ -102,20 +102,20 @@ export const AppLayout = () => {
         <Collapsible key={item.label} open={isOpen} onOpenChange={() => toggleGroup(item.label)}>
           <SidebarMenuItem>
             <CollapsibleTrigger asChild>
-              <SidebarMenuButton className="w-full justify-start relative z-30">
+              <SidebarMenuButton className="w-full justify-start">
                 {getIcon(item.iconName)}
                 <span className="uppercase text-xs tracking-wide font-medium">{item.label}</span>
                 <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:rotate-90" />
               </SidebarMenuButton>
             </CollapsibleTrigger>
-            <CollapsibleContent className="border-none">
-              <SidebarMenuSub className="ml-0 border-none">
+            <CollapsibleContent>
+              <SidebarMenuSub>
                 {item.children.map((child) => (
-                  <SidebarMenuSubItem key={child.to || child.label} className="border-none">
+                  <SidebarMenuSubItem key={child.to || child.label}>
                     <SidebarMenuSubButton
                       onClick={() => child.to && handleNavigation(child.to)}
                       isActive={isActiveRoute(child)}
-                      className="text-sm rounded-xl ml-6 my-1 relative z-30"
+                      className="text-sm rounded-xl"
                     >
                       {getIcon(child.iconName)}
                       <span>{child.label}</span>
@@ -133,7 +133,7 @@ export const AppLayout = () => {
           <SidebarMenuButton
             onClick={() => item.to && handleNavigation(item.to)}
             isActive={isActiveRoute(item)}
-            className="w-full justify-start relative z-30"
+            className="w-full justify-start"
           >
             {getIcon(item.iconName)}
             <span>{item.label}</span>
@@ -156,8 +156,8 @@ export const AppLayout = () => {
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-full relative">
-        <Sidebar className="relative z-40">{/* Ensure sidebar has high z-index */}
+      <div className="flex h-screen w-full">
+        <Sidebar>
           <SidebarHeader className="border-b border-sidebar-border p-4">
             <div className="flex items-center gap-3">
               <img src="/lovable-uploads/4fec4d14-a56e-4a44-8256-ac94aa43da5c.png" alt="Thingtrax" className="w-8 h-8" />
@@ -167,8 +167,8 @@ export const AppLayout = () => {
             </div>
           </SidebarHeader>
           
-          <SidebarContent className="overflow-y-auto">
-            <SidebarMenu className="p-2 space-y-1">
+          <SidebarContent>
+            <SidebarMenu className="p-2">
               {visibleItems.map(item => renderNavItem(item))}
             </SidebarMenu>
           </SidebarContent>
@@ -214,8 +214,8 @@ export const AppLayout = () => {
           </SidebarFooter>
         </Sidebar>
         
-        <main className="flex-1 overflow-auto relative z-10">{/* Lower z-index than sidebar */}
-          <div className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 relative z-20">{/* Header should be above main content but below sidebar */}
+        <main className="flex-1 overflow-auto">
+          <div className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex h-14 items-center justify-between px-4">
               <SidebarTrigger />
               <div className="flex items-center gap-2">

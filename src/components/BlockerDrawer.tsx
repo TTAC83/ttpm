@@ -50,6 +50,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Combobox } from "@/components/ui/combobox";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { formatDateUK } from "@/lib/dateUtils";
 import { blockersService, ImplementationBlocker, BlockerUpdate, BlockerAttachment } from "@/lib/blockersService";
@@ -71,6 +72,7 @@ const gapEscalationSchema = z.object({
   owner: z.string().min(1, "Owner is required"),
   estimated_complete_date: z.date().optional(),
   reason_code: z.string().optional(),
+  is_critical: z.boolean().default(false),
 });
 
 type GapEscalationFormData = z.infer<typeof gapEscalationSchema>;
@@ -106,6 +108,7 @@ export function BlockerDrawer({
       owner: "",
       estimated_complete_date: undefined,
       reason_code: "",
+      is_critical: false,
     },
   });
 
@@ -122,6 +125,7 @@ export function BlockerDrawer({
             ? new Date(blocker.estimated_complete_date) 
             : undefined,
           reason_code: blocker.reason_code || "",
+          is_critical: blocker.is_critical || false,
         });
         loadGapEscalationDetails();
       } else {
@@ -132,6 +136,7 @@ export function BlockerDrawer({
           owner: "",
           estimated_complete_date: undefined,
           reason_code: "",
+          is_critical: false,
         });
         setUpdates([]);
         setAttachments([]);
@@ -172,6 +177,7 @@ export function BlockerDrawer({
           owner: data.owner,
           estimated_complete_date: data.estimated_complete_date?.toISOString().split('T')[0],
           reason_code: data.reason_code,
+          is_critical: data.is_critical,
         });
         
         // Add update note if provided
@@ -188,6 +194,7 @@ export function BlockerDrawer({
           owner: data.owner,
           estimated_complete_date: data.estimated_complete_date?.toISOString().split('T')[0],
           reason_code: data.reason_code,
+          is_critical: data.is_critical,
         });
         
         // Add update note if provided
@@ -431,6 +438,27 @@ export function BlockerDrawer({
                       </PopoverContent>
                     </Popover>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="is_critical"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Critical</FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        Mark this gap/escalation as critical priority
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
                   </FormItem>
                 )}
               />

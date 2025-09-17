@@ -47,7 +47,7 @@ export function EditActionDialog({
   const [formData, setFormData] = useState({
     title: action.title,
     details: action.details || '',
-    assignee: action.assignee || '',
+    assignee: action.assignee || 'unassigned',
     planned_date: action.planned_date ? new Date(action.planned_date) : undefined as Date | undefined,
     notes: action.notes || '',
     status: action.status,
@@ -67,7 +67,7 @@ export function EditActionDialog({
       await onSave({
         title: formData.title,
         details: formData.details || null,
-        assignee: formData.assignee || null,
+        assignee: formData.assignee === 'unassigned' ? null : formData.assignee,
         planned_date: formData.planned_date ? toISODateString(formData.planned_date) : null,
         notes: formData.notes || null,
         status: formData.status,
@@ -117,7 +117,7 @@ export function EditActionDialog({
                   <SelectValue placeholder="Select assignee" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No assignee</SelectItem>
+                  <SelectItem value="unassigned">No assignee</SelectItem>
                   {profiles.map((profile) => (
                     <SelectItem key={profile.user_id} value={profile.user_id}>
                       {profile.name}

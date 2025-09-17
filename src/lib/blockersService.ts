@@ -13,6 +13,7 @@ export interface ImplementationBlocker {
   closed_at?: string;
   resolution_notes?: string;
   updated_at: string;
+  reason_code?: string;
   // For view with joins
   project_name?: string;
   customer_name?: string;
@@ -145,6 +146,7 @@ export const blockersService = {
     description?: string;
     owner: string;
     estimated_complete_date?: string;
+    reason_code?: string;
   }) {
     const { data, error } = await supabase
       .from('implementation_blockers')

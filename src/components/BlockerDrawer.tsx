@@ -27,6 +27,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -48,11 +55,21 @@ import { formatDateUK } from "@/lib/dateUtils";
 import { blockersService, ImplementationBlocker, BlockerUpdate, BlockerAttachment } from "@/lib/blockersService";
 import { toast } from "sonner";
 
+const reasonCodeOptions = [
+  "Data inaccuracy",
+  "Hardware Failure", 
+  "Product Gap",
+  "Project Management",
+  "Scoping",
+  "Software stability"
+];
+
 const gapEscalationSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
   owner: z.string().min(1, "Owner is required"),
   estimated_complete_date: z.date().optional(),
+  reason_code: z.string().optional(),
 });
 
 type GapEscalationFormData = z.infer<typeof gapEscalationSchema>;
@@ -86,6 +103,7 @@ export function BlockerDrawer({
       description: "",
       owner: "",
       estimated_complete_date: undefined,
+      reason_code: "",
     },
   });
 
@@ -100,6 +118,7 @@ export function BlockerDrawer({
           estimated_complete_date: blocker.estimated_complete_date 
             ? new Date(blocker.estimated_complete_date) 
             : undefined,
+          reason_code: blocker.reason_code || "",
         });
         loadGapEscalationDetails();
       } else {
@@ -108,6 +127,7 @@ export function BlockerDrawer({
           description: "",
           owner: "",
           estimated_complete_date: undefined,
+          reason_code: "",
         });
         setUpdates([]);
         setAttachments([]);
@@ -147,6 +167,7 @@ export function BlockerDrawer({
           description: data.description,
           owner: data.owner,
           estimated_complete_date: data.estimated_complete_date?.toISOString().split('T')[0],
+          reason_code: data.reason_code,
         });
         toast.success("Gap/Escalation updated successfully");
       } else {
@@ -156,6 +177,7 @@ export function BlockerDrawer({
           description: data.description,
           owner: data.owner,
           estimated_complete_date: data.estimated_complete_date?.toISOString().split('T')[0],
+          reason_code: data.reason_code,
         });
         toast.success("Gap/Escalation created successfully");
       }
@@ -308,6 +330,31 @@ export function BlockerDrawer({
                         placeholder="Select owner"
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="reason_code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Reason Code</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a reason code" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {reasonCodeOptions.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

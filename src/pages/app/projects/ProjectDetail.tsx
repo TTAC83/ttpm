@@ -199,24 +199,31 @@ export const ProjectDetail = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${profile?.is_internal && ['IoT', 'Vision', 'Hybrid'].includes(project.domain) ? '9' : profile?.is_internal ? '8' : '7'}, minmax(0, 1fr))` }}>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="lines">Lines</TabsTrigger>
-          <TabsTrigger value="tasks">Tasks</TabsTrigger>
-          <TabsTrigger value="gantt">Gantt</TabsTrigger>
-          <TabsTrigger value="actions">Actions</TabsTrigger>
-          <TabsTrigger value="calendar">Calendar</TabsTrigger>
-          <TabsTrigger value="vision-models">Vision Models</TabsTrigger>
-          {profile?.is_internal && (
-            <TabsTrigger value="audit">Audit</TabsTrigger>
-          )}
-          {profile?.is_internal && ['IoT', 'Vision', 'Hybrid'].includes(project.domain) && (
-            <TabsTrigger value="blockers">Escalations</TabsTrigger>
-          )}
-          {profile?.is_internal && (
-            <TabsTrigger value="product-gaps">Product Gaps</TabsTrigger>
-          )}
-        </TabsList>
+        <div className="space-y-2">
+          {/* First row of tabs */}
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="lines">Lines</TabsTrigger>
+            <TabsTrigger value="tasks">Tasks</TabsTrigger>
+            <TabsTrigger value="gantt">Gantt</TabsTrigger>
+            <TabsTrigger value="actions">Actions</TabsTrigger>
+          </TabsList>
+          
+          {/* Second row of tabs */}
+          <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${profile?.is_internal && ['IoT', 'Vision', 'Hybrid'].includes(project.domain) ? '4' : profile?.is_internal ? '3' : '2'}, minmax(0, 1fr))` }}>
+            <TabsTrigger value="calendar">Calendar</TabsTrigger>
+            <TabsTrigger value="vision-models">Vision Models</TabsTrigger>
+            {profile?.is_internal && (
+              <TabsTrigger value="audit">Audit</TabsTrigger>
+            )}
+            {profile?.is_internal && ['IoT', 'Vision', 'Hybrid'].includes(project.domain) && (
+              <TabsTrigger value="blockers">Escalations</TabsTrigger>
+            )}
+            {profile?.is_internal && (
+              <TabsTrigger value="product-gaps">Product Gaps</TabsTrigger>
+            )}
+          </TabsList>
+        </div>
 
         <TabsContent value="overview" className="space-y-4">
           <ProjectOverview project={project} onUpdate={fetchProject} />

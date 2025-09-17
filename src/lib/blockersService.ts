@@ -47,11 +47,7 @@ export const blockersService = {
   async getProjectBlockers(projectId: string, status?: 'Live' | 'Closed' | 'All') {
     let query = supabase
       .from('implementation_blockers')
-      .select(`
-        *,
-        owner_profile:profiles!implementation_blockers_owner_fkey(name),
-        created_by_profile:profiles!implementation_blockers_created_by_fkey(name)
-      `)
+      .select('*')
       .eq('project_id', projectId)
       .order('raised_at', { ascending: false });
 
@@ -62,12 +58,25 @@ export const blockersService = {
     const { data, error } = await query;
     if (error) throw error;
 
-    return data?.map(blocker => ({
-      ...blocker,
-      owner_name: blocker.owner_profile?.name,
-      age_days: Math.floor((new Date().getTime() - new Date(blocker.raised_at).getTime()) / (1000 * 60 * 60 * 24)),
-      is_overdue: blocker.estimated_complete_date && new Date() > new Date(blocker.estimated_complete_date)
-    })) || [];
+    // Get profile names separately to avoid foreign key issues
+    if (data && data.length > 0) {
+      const userIds = [...new Set([...data.map(b => b.owner), ...data.map(b => b.created_by)])];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, name')
+        .in('user_id', userIds);
+      
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p.name]) || []);
+      
+      return data?.map(blocker => ({
+        ...blocker,
+        owner_name: profileMap.get(blocker.owner) || 'Unknown',
+        age_days: Math.floor((new Date().getTime() - new Date(blocker.raised_at).getTime()) / (1000 * 60 * 60 * 24)),
+        is_overdue: blocker.estimated_complete_date && new Date() > new Date(blocker.estimated_complete_date)
+      })) || [];
+    }
+    
+    return [];
   },
 
   // Get open blockers for dashboard
@@ -94,11 +103,7 @@ export const blockersService = {
   }) {
     let query = supabase
       .from('implementation_blockers')
-      .select(`
-        *,
-        project:projects(name, company:companies(name)),
-        owner_profile:profiles!implementation_blockers_owner_fkey(name)
-      `)
+      .select('*')
       .order('raised_at', { ascending: false });
 
     if (filters?.status && filters.status !== 'All') {
@@ -116,27 +121,46 @@ export const blockersService = {
     const { data, error } = await query;
     if (error) throw error;
 
-    let result = data?.map(blocker => ({
-      ...blocker,
-      project_name: blocker.project?.name,
-      customer_name: blocker.project?.company?.name,
-      owner_name: blocker.owner_profile?.name,
-      age_days: Math.floor((new Date().getTime() - new Date(blocker.raised_at).getTime()) / (1000 * 60 * 60 * 24)),
-      is_overdue: blocker.estimated_complete_date && new Date() > new Date(blocker.estimated_complete_date)
-    })) || [];
+    // Get related data separately to avoid foreign key issues
+    if (data && data.length > 0) {
+      const userIds = [...new Set(data.map(b => b.owner))];
+      const projectIds = [...new Set(data.map(b => b.project_id))];
+      
+      const [profiles, projects] = await Promise.all([
+        supabase.from('profiles').select('user_id, name').in('user_id', userIds),
+        supabase.from('projects').select('id, name, company:companies(name)').in('id', projectIds)
+      ]);
+      
+      const profileMap = new Map(profiles.data?.map(p => [p.user_id, p.name]) || []);
+      const projectMap = new Map(projects.data?.map(p => [p.id, { name: p.name, company: p.company }]) || []);
+      
+      let result = data?.map(blocker => {
+        const project = projectMap.get(blocker.project_id);
+        return {
+          ...blocker,
+          project_name: project?.name,
+          customer_name: project?.company?.name,
+          owner_name: profileMap.get(blocker.owner) || 'Unknown',
+          age_days: Math.floor((new Date().getTime() - new Date(blocker.raised_at).getTime()) / (1000 * 60 * 60 * 24)),
+          is_overdue: blocker.estimated_complete_date && new Date() > new Date(blocker.estimated_complete_date)
+        };
+      }) || [];
 
-    // Apply client-side filters
-    if (filters?.customer) {
-      result = result.filter(b => b.customer_name?.toLowerCase().includes(filters.customer!.toLowerCase()));
-    }
-    if (filters?.project) {
-      result = result.filter(b => b.project_name?.toLowerCase().includes(filters.project!.toLowerCase()));
-    }
-    if (filters?.overdue) {
-      result = result.filter(b => b.is_overdue);
-    }
+      // Apply client-side filters
+      if (filters?.customer) {
+        result = result.filter(b => b.customer_name?.toLowerCase().includes(filters.customer!.toLowerCase()));
+      }
+      if (filters?.project) {
+        result = result.filter(b => b.project_name?.toLowerCase().includes(filters.project!.toLowerCase()));
+      }
+      if (filters?.overdue) {
+        result = result.filter(b => b.is_overdue);
+      }
 
-    return result;
+      return result;
+    }
+    
+    return [];
   },
 
   // Create blocker

@@ -70,6 +70,7 @@ const gapEscalationSchema = z.object({
   owner: z.string().min(1, "Owner is required"),
   estimated_complete_date: z.date().optional(),
   reason_code: z.string().optional(),
+  initial_update: z.string().optional(),
 });
 
 type GapEscalationFormData = z.infer<typeof gapEscalationSchema>;
@@ -104,6 +105,7 @@ export function BlockerDrawer({
       owner: "",
       estimated_complete_date: undefined,
       reason_code: "",
+      initial_update: "",
     },
   });
 
@@ -119,6 +121,7 @@ export function BlockerDrawer({
             ? new Date(blocker.estimated_complete_date) 
             : undefined,
           reason_code: blocker.reason_code || "",
+          initial_update: "",
         });
         loadGapEscalationDetails();
       } else {
@@ -128,6 +131,7 @@ export function BlockerDrawer({
           owner: "",
           estimated_complete_date: undefined,
           reason_code: "",
+          initial_update: "",
         });
         setUpdates([]);
         setAttachments([]);
@@ -169,9 +173,15 @@ export function BlockerDrawer({
           estimated_complete_date: data.estimated_complete_date?.toISOString().split('T')[0],
           reason_code: data.reason_code,
         });
+        
+        // Add update note if provided
+        if (data.initial_update?.trim()) {
+          await blockersService.addBlockerUpdate(blocker.id, data.initial_update);
+        }
+        
         toast.success("Gap/Escalation updated successfully");
       } else {
-        await blockersService.createBlocker({
+        const newBlocker = await blockersService.createBlocker({
           project_id: projectId,
           title: data.title,
           description: data.description,
@@ -179,6 +189,12 @@ export function BlockerDrawer({
           estimated_complete_date: data.estimated_complete_date?.toISOString().split('T')[0],
           reason_code: data.reason_code,
         });
+        
+        // Add initial update note if provided
+        if (data.initial_update?.trim()) {
+          await blockersService.addBlockerUpdate(newBlocker.id, data.initial_update);
+        }
+        
         toast.success("Gap/Escalation created successfully");
       }
       onSuccess();
@@ -396,6 +412,24 @@ export function BlockerDrawer({
                         />
                       </PopoverContent>
                     </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="initial_update"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Initial Update Note</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        {...field} 
+                        placeholder="Add an initial update note (optional)..." 
+                        rows={3}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

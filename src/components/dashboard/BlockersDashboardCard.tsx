@@ -21,7 +21,7 @@ import { formatDateUK } from "@/lib/dateUtils";
 import { BlockerDrawer } from "@/components/BlockerDrawer";
 import { ProductGapDrawer } from "@/components/ProductGapDrawer";
 import { EditActionDialog } from "@/components/EditActionDialog";
-import SubtasksDialog from "@/components/SubtasksDialog";
+import { TaskEditDialog } from "@/components/TaskEditDialog";
 
 interface DashboardBlocker {
   id: string;
@@ -58,7 +58,7 @@ export function BlockersDashboardCard() {
   const [selectedProductGap, setSelectedProductGap] = useState<DashboardProductGap | undefined>();
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
   const [selectedAction, setSelectedAction] = useState<DashboardAction | undefined>();
-  const [subtasksDialogOpen, setSubtasksDialogOpen] = useState(false);
+  const [taskEditDialogOpen, setTaskEditDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<DashboardTask | undefined>();
   const [profiles, setProfiles] = useState<any[]>([]);
 
@@ -546,12 +546,12 @@ export function BlockersDashboardCard() {
                     {tasks.map((task) => (
                       <TableRow
                         key={`task-${task.id}`}
-                        className={`${getRowClassName(task.is_overdue)} cursor-pointer hover:bg-muted/50 transition-colors`}
-                        onClick={() => {
-                          setSelectedTask(task);
-                          setSubtasksDialogOpen(true);
-                        }}
-                      >
+                          className={`${getRowClassName(task.is_overdue)} cursor-pointer hover:bg-muted/50 transition-colors`}
+                          onClick={() => {
+                            setSelectedTask(task);
+                            setTaskEditDialogOpen(true);
+                          }}
+                        >
                         <TableCell className="font-medium">
                           {task.company_name}
                         </TableCell>
@@ -654,14 +654,44 @@ export function BlockersDashboardCard() {
         />
       )}
 
-      {/* Task Subtasks Dialog */}
+      {/* Task Edit Dialog */}
       {selectedTask && (
-        <SubtasksDialog
-          open={subtasksDialogOpen}
-          onOpenChange={setSubtasksDialogOpen}
-          taskId={selectedTask.id}
-          taskTitle={selectedTask.task_title}
-          projectId={selectedTask.project_id}
+        <TaskEditDialog
+          open={taskEditDialogOpen}
+          onOpenChange={setTaskEditDialogOpen}
+          task={{
+            ...selectedTask,
+            task_title: selectedTask.task_title,
+            task_details: '',
+            planned_start: selectedTask.planned_start || undefined,
+            planned_end: selectedTask.planned_end || undefined,
+            actual_start: undefined,
+            actual_end: undefined,
+            status: selectedTask.status,
+            assignee: undefined,
+            step_name: '',
+          }}
+          profiles={profiles}
+          onSave={async (taskData) => {
+            // Update task via API
+            const { error } = await supabase
+              .from('project_tasks')
+              .update({
+                task_title: taskData.task_title,
+                task_details: taskData.task_details,
+                planned_start: taskData.planned_start,
+                planned_end: taskData.planned_end,
+                actual_start: taskData.actual_start,
+                actual_end: taskData.actual_end,
+                status: taskData.status as any,
+                assignee: taskData.assignee,
+              })
+              .eq('id', selectedTask.id);
+              
+            if (!error) {
+              loadDashboardData(); // Refresh data
+            }
+          }}
         />
       )}
     </div>

@@ -247,7 +247,7 @@ export default function FeatureRequests() {
                     <TableCell>
                       <div>
                         <p className="font-medium">{request.creator?.name || 'Unknown'}</p>
-                        <p className="text-sm text-muted-foreground">{request.creator?.email}</p>
+                        <p className="text-sm text-muted-foreground">User ID: {request.created_by.slice(0, 8)}...</p>
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">

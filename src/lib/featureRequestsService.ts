@@ -70,7 +70,7 @@ export const featureRequestsService = {
       .from('feature_requests')
       .select(`
         *,
-        profiles!feature_requests_created_by_profiles_fkey(name, email)
+        profiles!feature_requests_created_by_profiles_fkey(name)
       `)
       .order('updated_at', { ascending: false });
 
@@ -104,7 +104,7 @@ export const featureRequestsService = {
       ...item,
       creator: {
         name: (item.profiles as any)?.name,
-        email: (item.profiles as any)?.email
+        email: undefined // Email not available in profiles table
       }
     })) as FeatureRequestWithProfile[];
   },
@@ -114,7 +114,7 @@ export const featureRequestsService = {
       .from('feature_requests')
       .select(`
         *,
-        profiles!feature_requests_created_by_profiles_fkey(name, email)
+        profiles!feature_requests_created_by_profiles_fkey(name)
       `)
       .eq('id', id)
       .maybeSingle();
@@ -127,7 +127,7 @@ export const featureRequestsService = {
       ...data,
       creator: {
         name: (data.profiles as any)?.name,
-        email: (data.profiles as any)?.email
+        email: undefined // Email not available in profiles table
       }
     } as FeatureRequestWithProfile;
   },

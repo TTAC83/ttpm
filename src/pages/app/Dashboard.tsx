@@ -7,11 +7,14 @@ import { formatDateUK } from '@/lib/dateUtils';
 import { useNavigate } from 'react-router-dom';
 import { BlockersDashboardCard } from '@/components/dashboard/BlockersDashboardCard';
 
-interface Company {
+interface ImplementationProject {
   id: string;
   name: string;
-  is_internal: boolean;
-  project_count: number;
+  company_id: string;
+  company_name: string;
+  domain: string;
+  customer_health: 'green' | 'red' | null;
+  project_status: 'on_track' | 'off_track' | null;
 }
 
 interface UpcomingEvent {
@@ -34,7 +37,7 @@ interface UpcomingEvent {
 export const Dashboard = () => {
   const { profile } = useAuth();
   const navigate = useNavigate();
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const [projects, setProjects] = useState<ImplementationProject[]>([]);
   const [events, setEvents] = useState<UpcomingEvent[]>([]);
   const [allCalendarEvents, setAllCalendarEvents] = useState<UpcomingEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,26 +61,48 @@ export const Dashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // Fetch companies with project counts
-        const { data: companiesData, error: companiesError } = await supabase
-          .from('companies')
+        // Get current week start for weekly reviews
+        const today = new Date();
+        const currentWeekStart = new Date(today);
+        currentWeekStart.setDate(today.getDate() - today.getDay() + 1); // Monday of current week
+        const weekStartStr = currentWeekStart.toISOString().split('T')[0];
+
+        // Fetch implementation projects with weekly review data
+        const { data: projectsData, error: projectsError } = await supabase
+          .from('projects')
           .select(`
             id,
             name,
-            is_internal,
-            projects(count)
-          `);
+            company_id,
+            domain,
+            companies!inner(
+              name
+            )
+          `)
+          .in('domain', ['IoT', 'Vision', 'Hybrid'])
+          .neq('companies.is_internal', true);
 
-        if (companiesError) throw companiesError;
+        if (projectsError) throw projectsError;
 
-        const companiesWithCounts = companiesData?.map(company => ({
-          id: company.id,
-          name: company.name,
-          is_internal: company.is_internal,
-          project_count: company.projects?.[0]?.count || 0
-        })) || [];
+        // Get weekly reviews for current week
+        const { data: reviewsData } = await supabase
+          .from('impl_weekly_reviews')
+          .select('company_id, customer_health, project_status')
+          .eq('week_start', weekStartStr);
 
-        setCompanies(companiesWithCounts);
+        const reviewsMap = new Map((reviewsData || []).map(r => [r.company_id, r]));
+
+        const implementationProjects = (projectsData || []).map(project => ({
+          id: project.id,
+          name: project.name,
+          company_id: project.company_id,
+          company_name: (project.companies as any).name,
+          domain: project.domain,
+          customer_health: reviewsMap.get(project.company_id)?.customer_health || null,
+          project_status: reviewsMap.get(project.company_id)?.project_status || null,
+        }));
+
+        setProjects(implementationProjects);
 
         // Fetch upcoming events for the 7-day range
         const startDate = dateRange[0].toISOString().split('T')[0];
@@ -589,28 +614,68 @@ export const Dashboard = () => {
         </CardContent>
        </Card>
 
-      {/* Client Summary */}
+      {/* Implementation Projects Summary */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Client Summary</CardTitle>
-          <CardDescription>Overview of all clients and their projects</CardDescription>
+          <CardTitle className="text-lg">Implementation Projects</CardTitle>
+          <CardDescription>Current implementation projects with health and status indicators</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {companies.map((company) => (
-              <div key={company.id} className="p-4 border rounded-lg">
+            {projects.map((project) => (
+              <div key={project.id} className="p-4 border rounded-lg">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-medium">{company.name}</h3>
-                  <Badge variant={company.is_internal ? 'default' : 'outline'}>
-                    {company.is_internal ? 'Internal' : 'External'}
+                  <h3 className="font-medium truncate">{project.name}</h3>
+                  <div className="flex items-center gap-2">
+                    {/* Health Icon */}
+                    {project.customer_health === 'green' && (
+                      <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center" title="Customer Health: Green">
+                        <span className="text-white text-xs">✓</span>
+                      </div>
+                    )}
+                    {project.customer_health === 'red' && (
+                      <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center" title="Customer Health: Red">
+                        <span className="text-white text-xs">!</span>
+                      </div>
+                    )}
+                    {!project.customer_health && (
+                      <div className="w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center" title="Customer Health: Not Set">
+                        <span className="text-gray-600 text-xs">?</span>
+                      </div>
+                    )}
+                    
+                    {/* Project Status Icon */}
+                    {project.project_status === 'on_track' && (
+                      <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center" title="Project Status: On Track">
+                        <span className="text-white text-xs">→</span>
+                      </div>
+                    )}
+                    {project.project_status === 'off_track' && (
+                      <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center" title="Project Status: Off Track">
+                        <span className="text-white text-xs">⚠</span>
+                      </div>
+                    )}
+                    {!project.project_status && (
+                      <div className="w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center" title="Project Status: Not Set">
+                        <span className="text-gray-600 text-xs">?</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">{project.company_name}</p>
+                  <Badge variant="outline" className="text-xs">
+                    {project.domain}
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {company.project_count} project{company.project_count !== 1 ? 's' : ''}
-                </p>
               </div>
             ))}
           </div>
+          {projects.length === 0 && (
+            <div className="text-center text-muted-foreground py-4">
+              No implementation projects found
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

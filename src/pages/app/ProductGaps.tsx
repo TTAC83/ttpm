@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Search, ExternalLink, Link as LinkIcon } from "lucide-react";
+import { Plus, Search, ExternalLink, Link2 as FeatureLinkIcon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { ProductGapDrawer } from "@/components/ProductGapDrawer";
 import { productGapsService, ProductGap } from "@/lib/productGapsService";
@@ -23,6 +23,12 @@ export default function ProductGaps() {
     queryKey: ['product-gaps'],
     queryFn: () => productGapsService.getAllProductGaps(),
   });
+
+  // Debug: how many gaps have a linked feature
+  if (import.meta.env.DEV) {
+    const linkedCount = productGaps.filter(g => !!g.feature_request_id).length;
+    console.log(`[ProductGaps] Loaded ${productGaps.length} gaps, ${linkedCount} linked to features`);
+  }
 
   const filteredProductGaps = productGaps.filter(gap => {
     const matchesSearch = gap.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -141,7 +147,7 @@ export default function ProductGaps() {
                     className={`border-b hover:bg-muted/50 transition-colors cursor-pointer ${getRowClassName(productGap)}`}
                     onClick={() => handleEditProductGap(productGap)}
                   >
-                     <td className="p-4">
+                    <td className="p-4">
                       <div className="flex items-center gap-2">
                         {productGap.company_name}
                         {productGap.feature_request_id && (
@@ -152,8 +158,9 @@ export default function ProductGaps() {
                             }}
                             className="text-primary hover:text-primary/80 transition-colors"
                             title="View linked feature request"
+                            aria-label="View linked feature request"
                           >
-                            <LinkIcon className="h-4 w-4" />
+                            <FeatureLinkIcon className="h-4 w-4" />
                           </button>
                         )}
                       </div>

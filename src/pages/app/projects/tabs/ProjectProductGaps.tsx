@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, ExternalLink, Link as LinkIcon } from "lucide-react";
+import { Plus, ExternalLink, Link2 as FeatureLinkIcon } from "lucide-react";
 import { ProductGapDrawer } from "@/components/ProductGapDrawer";
 import { productGapsService, ProductGap } from "@/lib/productGapsService";
 import { format } from "date-fns";
@@ -74,12 +74,13 @@ export function ProjectProductGaps({ projectId }: ProjectProductGapsProps) {
                         variant="ghost"
                         size="sm"
                         title="View linked feature request"
+                        aria-label="View linked feature request"
                         onClick={(e) => {
                           e.stopPropagation();
                           navigate(`/app/feature-requests/${gap.feature_request_id}`);
                         }}
                       >
-                        <LinkIcon className="h-4 w-4" />
+                        <FeatureLinkIcon className="h-4 w-4" />
                       </Button>
                     )}
                   </div>

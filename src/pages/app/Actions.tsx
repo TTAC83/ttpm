@@ -131,7 +131,10 @@ export const Actions = () => {
             companies(name)
           )
         `)
-        .order('created_at', { ascending: false });
+        .or('is_critical.eq.true,and(planned_date.lt.now(),planned_date.not.is.null)')
+        .neq('status', 'Done')
+        .order('is_critical', { ascending: false })
+        .order('planned_date', { ascending: true });
 
       if (error) {
         console.error('Error fetching actions:', error);

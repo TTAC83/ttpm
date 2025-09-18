@@ -75,45 +75,67 @@ export function BlockersDashboardCard() {
       
       setProfiles(profilesData || []);
 
-      const [blockersData, productGapsData, actionsData, tasksData] = await Promise.all([
+      const results = await Promise.allSettled([
         blockersService.getDashboardBlockers(),
         productGapsService.getDashboardProductGaps(),
         actionsService.getDashboardActions(),
         tasksService.getDashboardTasks()
       ]);
-      
-      setBlockers(blockersData.sort((a, b) => {
-        if (a.is_overdue && !b.is_overdue) return -1;
-        if (!a.is_overdue && b.is_overdue) return 1;
-        return b.age_days - a.age_days;
-      }) as DashboardBlocker[]);
-      
-      setProductGaps(productGapsData.sort((a, b) => {
-        const aOverdue = a.estimated_complete_date && new Date(a.estimated_complete_date) < new Date();
-        const bOverdue = b.estimated_complete_date && new Date(b.estimated_complete_date) < new Date();
-        
-        if (a.is_critical && !b.is_critical) return -1;
-        if (!a.is_critical && b.is_critical) return 1;
-        if (aOverdue && !bOverdue) return -1;
-        if (!aOverdue && bOverdue) return 1;
-        return b.age_days - a.age_days;
-      }));
 
-      setActions(actionsData.sort((a, b) => {
-        if (a.is_critical && !b.is_critical) return -1;
-        if (!a.is_critical && b.is_critical) return 1;
-        if (a.is_overdue && !b.is_overdue) return -1;
-        if (!a.is_overdue && b.is_overdue) return 1;
-        return 0;
-      }));
+      const [blockersRes, productGapsRes, actionsRes, tasksRes] = results as [
+        PromiseSettledResult<DashboardBlocker[]>,
+        PromiseSettledResult<DashboardProductGap[]>,
+        PromiseSettledResult<DashboardAction[]>,
+        PromiseSettledResult<DashboardTask[]>
+      ];
 
-      setTasks(tasksData.sort((a, b) => {
-        if (a.is_critical && !b.is_critical) return -1;
-        if (!a.is_critical && b.is_critical) return 1;
-        if (a.is_overdue && !b.is_overdue) return -1;
-        if (!a.is_overdue && b.is_overdue) return 1;
-        return 0;
-      }));
+      if (blockersRes.status === 'fulfilled') {
+        setBlockers(blockersRes.value.sort((a, b) => {
+          if (a.is_overdue && !b.is_overdue) return -1;
+          if (!a.is_overdue && b.is_overdue) return 1;
+          return (b.age_days || 0) - (a.age_days || 0);
+        }) as DashboardBlocker[]);
+      } else {
+        console.error('Failed to load blockers:', blockersRes.reason);
+      }
+
+      if (productGapsRes.status === 'fulfilled') {
+        setProductGaps(productGapsRes.value.sort((a, b) => {
+          const aOverdue = a.estimated_complete_date && new Date(a.estimated_complete_date) < new Date();
+          const bOverdue = b.estimated_complete_date && new Date(b.estimated_complete_date) < new Date();
+          if (a.is_critical && !b.is_critical) return -1;
+          if (!a.is_critical && b.is_critical) return 1;
+          if (aOverdue && !bOverdue) return -1;
+          if (!aOverdue && bOverdue) return 1;
+          return (b.age_days || 0) - (a.age_days || 0);
+        }));
+      } else {
+        console.error('Failed to load product gaps:', productGapsRes.reason);
+      }
+
+      if (actionsRes.status === 'fulfilled') {
+        setActions(actionsRes.value.sort((a, b) => {
+          if (a.is_critical && !b.is_critical) return -1;
+          if (!a.is_critical && b.is_critical) return 1;
+          if (a.is_overdue && !b.is_overdue) return -1;
+          if (!a.is_overdue && b.is_overdue) return 1;
+          return 0;
+        }));
+      } else {
+        console.error('Failed to load actions:', actionsRes.reason);
+      }
+
+      if (tasksRes.status === 'fulfilled') {
+        setTasks(tasksRes.value.sort((a, b) => {
+          if (a.is_critical && !b.is_critical) return -1;
+          if (!a.is_critical && b.is_critical) return 1;
+          if (a.is_overdue && !b.is_overdue) return -1;
+          if (!a.is_overdue && b.is_overdue) return 1;
+          return 0;
+        }));
+      } else {
+        console.error('Failed to load tasks:', tasksRes.reason);
+      }
     } catch (error) {
       console.error("Failed to load dashboard data:", error);
     } finally {

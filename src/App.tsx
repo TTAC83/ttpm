@@ -40,6 +40,7 @@ import ReceiversManagement from "./pages/app/admin/ReceiversManagement";
 import TvDisplaysManagement from "./pages/app/admin/TvDisplaysManagement";
 import FeatureRequests from "./pages/app/FeatureRequests";
 import FeatureRequestDetail from "./pages/app/FeatureRequestDetail";
+import FeatureDashboard from "./pages/app/FeatureDashboard";
 import CompleteSignup from "./pages/CompleteSignup";
 import ResetPassword from "./pages/ResetPassword";
 import Actions from "./pages/app/Actions";
@@ -257,6 +258,9 @@ const App = () => (
               </InternalRoute>} />
               <Route path="product-gaps" element={<InternalRoute>
                 <ProductGaps />
+              </InternalRoute>} />
+              <Route path="feature-dashboard" element={<InternalRoute>
+                <FeatureDashboard />
               </InternalRoute>} />
               <Route path="feature-requests" element={<InternalRoute>
                 <FeatureRequests />

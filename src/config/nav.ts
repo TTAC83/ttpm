@@ -13,7 +13,8 @@ import {
   Radio,
   Monitor,
   Package,
-  AlertTriangle
+  AlertTriangle,
+  BarChart3
 } from "lucide-react";
 
 export type Role = "internal_admin" | "internal_user" | "external_admin" | "external_user";
@@ -208,9 +209,20 @@ export const NAV: NavItem[] = [
   {
     label: "Feature Requests",
     iconName: "Lightbulb",
-    to: "/app/feature-requests",
     roles: ["internal_user", "internal_admin"],
-    matchPaths: ["/app/feature-requests"]
+    children: [
+      {
+        label: "Feature Dashboard",
+        to: "/app/feature-dashboard",
+        iconName: "BarChart3",
+        matchPaths: ["/app/feature-dashboard"]
+      },
+      {
+        label: "All Requests",
+        to: "/app/feature-requests",
+        matchPaths: ["/app/feature-requests"]
+      }
+    ]
   },
 ];
 
@@ -229,7 +241,8 @@ export const ICON_MAP = {
   Radio,
   Monitor,
   Package,
-  AlertTriangle
+  AlertTriangle,
+  BarChart3
 } as const;
 
 export function visibleItemsForRole(role: Role | null | undefined): NavItem[] {

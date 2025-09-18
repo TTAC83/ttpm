@@ -100,14 +100,23 @@ export function FeatureRequestDialog({
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
     try {
+      // Convert empty strings to null for date fields
+      const cleanData = {
+        ...data,
+        required_date: data.required_date || null,
+        design_start_date: data.design_start_date || null,
+        dev_start_date: data.dev_start_date || null,
+        complete_date: data.complete_date || null,
+      };
+
       if (isEditing && featureRequest) {
         await featureRequestsService.updateFeatureRequest({
           id: featureRequest.id,
-          ...data,
+          ...cleanData,
         } as UpdateFeatureRequestInput);
         toast.success("Feature request updated successfully");
       } else {
-        await featureRequestsService.createFeatureRequest(data as CreateFeatureRequestInput);
+        await featureRequestsService.createFeatureRequest(cleanData as CreateFeatureRequestInput);
         toast.success("Feature request created successfully");
       }
       onSuccess();

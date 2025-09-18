@@ -14,6 +14,7 @@ export interface ProductGap {
   estimated_complete_date?: string;
   closed_at?: string;
   resolution_notes?: string;
+  feature_request_id?: string;
   updated_at: string;
   // Joined fields
   project_name?: string;

@@ -20,7 +20,8 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Search, Filter } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Plus, Search, Filter, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { 
@@ -30,12 +31,15 @@ import {
   featureRequestsService 
 } from "@/lib/featureRequestsService";
 import { FeatureRequestDialog } from "@/components/FeatureRequestDialog";
+import { ProductGapDrawer } from "@/components/ProductGapDrawer";
 
 export default function FeatureRequests() {
   const [featureRequests, setFeatureRequests] = useState<FeatureRequestWithProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<FeatureRequestWithProfile | null>(null);
+  const [productGapDrawerOpen, setProductGapDrawerOpen] = useState(false);
+  const [selectedRequestForProductGap, setSelectedRequestForProductGap] = useState<FeatureRequestWithProfile | undefined>();
   const [filters, setFilters] = useState<FeatureRequestFilters>({
     search: '',
     statuses: [],
@@ -71,6 +75,12 @@ export default function FeatureRequests() {
   const handleEditRequest = (request: FeatureRequestWithProfile) => {
     setSelectedRequest(request);
     setDialogOpen(true);
+  };
+
+  const handleAssignToProductGap = (request: FeatureRequestWithProfile, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedRequestForProductGap(request);
+    setProductGapDrawerOpen(true);
   };
 
   const handleDialogSuccess = () => {
@@ -211,6 +221,7 @@ export default function FeatureRequests() {
                   <TableHead>Created By</TableHead>
                   <TableHead>Date Raised</TableHead>
                   <TableHead>Updated</TableHead>
+                  <TableHead className="w-[50px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -256,6 +267,25 @@ export default function FeatureRequests() {
                     <TableCell className="text-muted-foreground">
                       {formatDistanceToNow(new Date(request.updated_at), { addSuffix: true })}
                     </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            className="h-8 w-8 p-0"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={(e) => handleAssignToProductGap(request, e)}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Assign to Product Gap
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -269,6 +299,16 @@ export default function FeatureRequests() {
         onOpenChange={setDialogOpen}
         featureRequest={selectedRequest}
         onSuccess={handleDialogSuccess}
+      />
+
+      <ProductGapDrawer
+        open={productGapDrawerOpen}
+        onOpenChange={setProductGapDrawerOpen}
+        featureRequest={selectedRequestForProductGap}
+        onSuccess={() => {
+          setProductGapDrawerOpen(false);
+          setSelectedRequestForProductGap(undefined);
+        }}
       />
     </div>
   );

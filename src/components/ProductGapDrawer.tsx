@@ -24,12 +24,14 @@ interface Profile {
 interface ProductGapDrawerProps {
   projectId?: string;
   productGap?: ProductGap;
+  featureRequest?: any; // Feature request to link to
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
   trigger?: React.ReactNode;
 }
 
-export function ProductGapDrawer({ projectId, productGap, open, onOpenChange, trigger }: ProductGapDrawerProps) {
+export function ProductGapDrawer({ projectId, productGap, featureRequest, open, onOpenChange, onSuccess, trigger }: ProductGapDrawerProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,6 +45,7 @@ export function ProductGapDrawer({ projectId, productGap, open, onOpenChange, tr
   const [estimatedCompleteDate, setEstimatedCompleteDate] = useState<Date>();
   const [status, setStatus] = useState<'Live' | 'Closed'>('Live');
   const [resolutionNotes, setResolutionNotes] = useState("");
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(projectId || "");
 
   // Load internal users for assignment
   const { data: profiles = [] } = useQuery({
@@ -59,7 +62,22 @@ export function ProductGapDrawer({ projectId, productGap, open, onOpenChange, tr
     }
   });
 
-  // Initialize form when productGap changes
+  // Load projects when we need to select one for feature request assignment
+  const { data: projects = [] } = useQuery({
+    queryKey: ['user-projects'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('id, name, company_id')
+        .order('name');
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !projectId && featureRequest // Only load when we need to select a project
+  });
+
+  // Initialize form when productGap or featureRequest changes
   useEffect(() => {
     if (productGap) {
       setTitle(productGap.title);
@@ -72,20 +90,31 @@ export function ProductGapDrawer({ projectId, productGap, open, onOpenChange, tr
       setResolutionNotes(productGap.resolution_notes || "");
     } else {
       // Reset form for new product gap
-      setTitle("");
-      setDescription("");
+      setTitle(featureRequest ? `Feature Request: ${featureRequest.title}` : "");
+      setDescription(featureRequest ? `Created from feature request: ${featureRequest.problem_statement || 'No problem statement provided'}` : "");
       setTicketLink("");
       setAssignedTo("unassigned");
       setIsCritical(false);
       setEstimatedCompleteDate(undefined);
       setStatus('Live');
       setResolutionNotes("");
+      setSelectedProjectId(projectId || "");
     }
-  }, [productGap]);
+  }, [productGap, featureRequest, projectId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
+
+    // Validation for project selection when assigning from feature request
+    if (!projectId && !selectedProjectId) {
+      toast({
+        title: "Error",
+        description: "Please select a project for this product gap.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     // Validation for closing
     if (status === 'Closed' && !resolutionNotes.trim()) {
@@ -101,7 +130,7 @@ export function ProductGapDrawer({ projectId, productGap, open, onOpenChange, tr
 
     try {
       const productGapData = {
-        project_id: projectId!,
+        project_id: projectId || selectedProjectId,
         title: title.trim(),
         description: description.trim() || undefined,
         ticket_link: ticketLink.trim() || undefined,
@@ -110,6 +139,7 @@ export function ProductGapDrawer({ projectId, productGap, open, onOpenChange, tr
         estimated_complete_date: estimatedCompleteDate ? format(estimatedCompleteDate, 'yyyy-MM-dd') : undefined,
         status,
         resolution_notes: resolutionNotes.trim() || undefined,
+        feature_request_id: featureRequest?.id || undefined,
       };
 
       if (productGap) {
@@ -132,6 +162,7 @@ export function ProductGapDrawer({ projectId, productGap, open, onOpenChange, tr
       queryClient.invalidateQueries({ queryKey: ['project-product-gaps'] });
 
       onOpenChange(false);
+      onSuccess?.();
     } catch (error) {
       console.error('Error saving product gap:', error);
       toast({
@@ -177,6 +208,24 @@ export function ProductGapDrawer({ projectId, productGap, open, onOpenChange, tr
           placeholder="Link to related ticket"
         />
       </div>
+
+      {!projectId && featureRequest && (
+        <div className="space-y-2">
+          <Label htmlFor="project">Project *</Label>
+          <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select project" />
+            </SelectTrigger>
+            <SelectContent>
+              {projects.map((project) => (
+                <SelectItem key={project.id} value={project.id}>
+                  {project.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="assigned-to">Assigned To</Label>

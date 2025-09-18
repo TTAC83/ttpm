@@ -1927,6 +1927,7 @@ export type Database = {
           created_by: string
           description: string | null
           estimated_complete_date: string | null
+          feature_request_id: string | null
           id: string
           is_critical: boolean
           project_id: string
@@ -1943,6 +1944,7 @@ export type Database = {
           created_by: string
           description?: string | null
           estimated_complete_date?: string | null
+          feature_request_id?: string | null
           id?: string
           is_critical?: boolean
           project_id: string
@@ -1959,6 +1961,7 @@ export type Database = {
           created_by?: string
           description?: string | null
           estimated_complete_date?: string | null
+          feature_request_id?: string | null
           id?: string
           is_critical?: boolean
           project_id?: string
@@ -1982,6 +1985,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "product_gaps_feature_request_id_fkey"
+            columns: ["feature_request_id"]
+            isOneToOne: false
+            referencedRelation: "feature_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_gaps_feature_request_id_fkey"
+            columns: ["feature_request_id"]
+            isOneToOne: false
+            referencedRelation: "v_my_feature_requests"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "product_gaps_project_id_fkey"

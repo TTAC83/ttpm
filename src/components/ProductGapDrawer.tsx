@@ -46,7 +46,7 @@ export function ProductGapDrawer({ projectId, productGap, featureRequest, open, 
   const [status, setStatus] = useState<'Live' | 'Closed'>('Live');
   const [resolutionNotes, setResolutionNotes] = useState("");
   const [selectedProjectId, setSelectedProjectId] = useState<string>(projectId || "");
-  const [selectedFeatureRequestId, setSelectedFeatureRequestId] = useState<string>("");
+  const [selectedFeatureRequestId, setSelectedFeatureRequestId] = useState<string>("none");
 
   // Load internal users for assignment
   const { data: profiles = [] } = useQuery({
@@ -173,13 +173,19 @@ export function ProductGapDrawer({ projectId, productGap, featureRequest, open, 
         });
       }
 
-      // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ['product-gaps'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-product-gaps'] });
-      queryClient.invalidateQueries({ queryKey: ['project-product-gaps'] });
+      // Invalidate relevant queries with more specific targeting
+      await queryClient.invalidateQueries({ queryKey: ['product-gaps'] });
+      await queryClient.invalidateQueries({ queryKey: ['dashboard-product-gaps'] });
+      await queryClient.invalidateQueries({ queryKey: ['project-product-gaps'] });
+      await queryClient.invalidateQueries({ queryKey: ['project-product-gaps', projectId || selectedProjectId] });
+      
+      // Force refetch
+      await queryClient.refetchQueries({ queryKey: ['project-product-gaps', projectId || selectedProjectId] });
 
       onOpenChange(false);
-      onSuccess?.();
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error) {
       console.error('Error saving product gap:', error);
       toast({

@@ -1233,7 +1233,15 @@ export type Database = {
           user_story_outcome?: string | null
           user_story_role?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "feature_requests_created_by_profiles_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       gateways_master: {
         Row: {
@@ -3407,7 +3415,15 @@ export type Database = {
           user_story_outcome?: string | null
           user_story_role?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "feature_requests_created_by_profiles_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
     }
     Functions: {

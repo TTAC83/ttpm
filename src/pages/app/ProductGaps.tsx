@@ -20,7 +20,7 @@ export default function ProductGaps() {
   const navigate = useNavigate();
 
   const { data: productGaps = [], isLoading } = useQuery({
-    queryKey: ['product-gaps', statusFilter],
+    queryKey: ['product-gaps'],
     queryFn: () => productGapsService.getAllProductGaps(),
   });
 

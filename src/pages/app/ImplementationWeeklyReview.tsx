@@ -78,20 +78,14 @@ export default function ImplementationWeeklyReviewPage() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Set default week to current week
+  // Set default week to the second highest date available (current week)
   useEffect(() => {
     if (weeksQ.data && !selectedWeek) {
-      const today = new Date();
-      const currentWeek = weeksQ.data.find(week => {
-        const weekStart = new Date(week.week_start + "T00:00:00");
-        const weekEnd = new Date(week.week_end + "T23:59:59");
-        return today >= weekStart && today <= weekEnd;
-      });
-      
-      if (currentWeek) {
-        setSelectedWeek(currentWeek.week_start);
+      // Since weeks are ordered descending, the second item is the current week
+      if (weeksQ.data.length >= 2) {
+        setSelectedWeek(weeksQ.data[1].week_start);
       } else if (weeksQ.data.length > 0) {
-        // If no current week found, default to the first available week
+        // Fallback to first available week if less than 2 weeks
         setSelectedWeek(weeksQ.data[0].week_start);
       }
     }

@@ -169,21 +169,23 @@ export const Actions = () => {
     if (!editingAction) return;
 
     try {
-      const { error } = await supabase.functions.invoke('update-action', {
+      const { data, error } = await supabase.functions.invoke('create-action', {
         body: {
-          action_id: editingAction.id,
-          ...actionData
-        }
+          id: editingAction.id,
+          ...actionData,
+          isUpdate: true,
+        },
       });
 
       if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
 
       toast.success('Action updated successfully');
       setEditingAction(null);
       fetchActions(); // Refresh the actions list
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating action:', error);
-      toast.error('Failed to update action');
+      toast.error(error?.message || 'Failed to update action');
     }
   };
 

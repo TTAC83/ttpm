@@ -17,6 +17,10 @@ export interface DashboardTask {
 export const tasksService = {
   // Get overdue or critical (blocked) tasks for dashboard
   async getDashboardTasks() {
+    // Build today in UK timezone (YYYY-MM-DD) so overdue is strictly before today
+    const ukToday = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' }); // en-CA gives YYYY-MM-DD format
+    console.log('[Tasks] ukToday =', ukToday);
+
     const { data, error } = await supabase
       .from('project_tasks')
       .select(`
@@ -33,20 +37,35 @@ export const tasksService = {
           )
         )
       `)
-      .or('status.eq.Blocked,and(planned_end.lt.now(),planned_end.not.is.null)')
+      .or(`status.eq.Blocked,and(planned_end.lt.${ukToday})`)
       .neq('status', 'Done')
       .order('status', { ascending: false }) // Blocked tasks first
       .order('planned_end', { ascending: true })
       .limit(10);
 
-    if (error) throw error;
+    console.log('[Tasks] Query filter:', `status.eq.Blocked,and(planned_end.lt.${ukToday})`);
+    if (error) {
+      console.error('[Tasks] Query error:', error);
+      throw error;
+    }
+    
+    console.log('[Tasks] Raw data returned:', data?.length, 'tasks');
 
     return (data || []).map(task => {
-      const plannedEnd = task.planned_end ? new Date(task.planned_end) : null;
-      const today = new Date();
-      const isOverdue = plannedEnd && plannedEnd < today;
+      const plannedEndStr = task.planned_end || undefined;
+      // Compare using date-only strings to avoid timezone issues
+      const isOverdue = plannedEndStr ? plannedEndStr < ukToday : false;
       const isCritical = task.status === 'Blocked';
-      const ageDays = isOverdue && plannedEnd ? Math.floor((today.getTime() - plannedEnd.getTime()) / (1000 * 60 * 60 * 24)) : undefined;
+      
+      // Age in days using UK timezone
+      let ageDays: number | undefined = undefined;
+      if (plannedEndStr) {
+        const plannedDate = new Date(`${plannedEndStr}T00:00:00`);
+        const ukTodayDate = new Date(`${ukToday}T00:00:00`);
+        const diffMs = ukTodayDate.getTime() - plannedDate.getTime();
+        const d = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        ageDays = d > 0 ? d : undefined;
+      }
 
       return {
         ...task,
@@ -54,7 +73,7 @@ export const tasksService = {
         company_name: (task.projects as any)?.companies?.name || 'Unknown Company',
         is_overdue: !!isOverdue,
         is_critical: isCritical,
-        age_days: ageDays > 0 ? ageDays : undefined
+        age_days: ageDays
       };
     }) as DashboardTask[];
   }

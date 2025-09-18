@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, ExternalLink, Link2 as FeatureLinkIcon } from "lucide-react";
+import { Plus, ExternalLink, Link as FeatureLinkIcon } from "lucide-react";
 import { ProductGapDrawer } from "@/components/ProductGapDrawer";
 import { productGapsService, ProductGap } from "@/lib/productGapsService";
 import { format } from "date-fns";

@@ -6,8 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Search, ExternalLink, Link2 as FeatureLinkIcon } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Plus, Search, ExternalLink, Link as FeatureLinkIcon } from "lucide-react";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { ProductGapDrawer } from "@/components/ProductGapDrawer";
 import { productGapsService, ProductGap } from "@/lib/productGapsService";
 import { format } from "date-fns";
@@ -166,13 +166,13 @@ export default function ProductGaps() {
                       </div>
                     </td>
                     <td className="p-4">
-                      <Link
+                      <RouterLink
                         to={`/app/projects/${productGap.project_id}`}
                         className="text-primary hover:underline"
                         onClick={(e) => e.stopPropagation()}
                       >
                         {productGap.project_name}
-                      </Link>
+                      </RouterLink>
                     </td>
                      <td className="p-4">
                       <div>

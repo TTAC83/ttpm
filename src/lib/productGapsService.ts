@@ -53,10 +53,13 @@ export const productGapsService = {
 
     return (data || []).map(gap => ({
       ...gap,
+      // Ensure types and derived fields
       status: gap.status as 'Live' | 'Closed',
       project_name: (gap.projects as any)?.name,
       assigned_to_name: (gap.assigned_to_profile as any)?.name,
-      created_by_name: (gap.created_by_profile as any)?.name
+      created_by_name: (gap.created_by_profile as any)?.name,
+      // Explicitly carry feature_request_id
+      feature_request_id: (gap as any).feature_request_id ?? undefined,
     }));
   },
 
@@ -79,7 +82,8 @@ export const productGapsService = {
       project_name: (gap.projects as any)?.name,
       company_name: (gap.projects as any)?.companies?.name,
       assigned_to_name: (gap.assigned_to_profile as any)?.name,
-      created_by_name: (gap.created_by_profile as any)?.name
+      created_by_name: (gap.created_by_profile as any)?.name,
+      feature_request_id: (gap as any).feature_request_id ?? undefined,
     }));
   },
 

@@ -138,7 +138,7 @@ export const Actions = () => {
             companies(name)
           )
         `)
-        .or(`is_critical.eq.true,and(planned_date.lt.${todayStr},planned_date.not.is.null)`)
+        .or(`is_critical.eq.true,and(planned_date.lt.${todayStr})`)
         .neq('status', 'Done')
         .order('is_critical', { ascending: false })
         .order('planned_date', { ascending: true });
@@ -249,9 +249,18 @@ export const Actions = () => {
   };
 
   const sortedAndFilteredActions = () => {
-    let filtered = showMyActions 
+    const base = showMyActions 
       ? actions.filter(action => action.assignee === user?.id)
       : actions;
+
+    // Enforce only critical OR overdue (planned_date < today)
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+
+    let filtered = base.filter(a => a.is_critical || (!!a.planned_date && a.planned_date < todayStr));
 
     // Apply filters
     filtered = filtered.filter(action => {

@@ -18,6 +18,13 @@ export interface DashboardAction {
 export const actionsService = {
   // Get critical or overdue actions for dashboard
   async getDashboardActions() {
+    // Build local today (YYYY-MM-DD) so overdue is strictly before today
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+
     const { data, error } = await supabase
       .from('actions')
       .select(`
@@ -36,7 +43,7 @@ export const actionsService = {
           )
         )
       `)
-      .or('is_critical.eq.true,and(planned_date.lt.now(),planned_date.not.is.null)')
+      .or(`is_critical.eq.true,and(planned_date.lt.${todayStr})`)
       .neq('status', 'Done')
       .order('is_critical', { ascending: false })
       .order('planned_date', { ascending: true })

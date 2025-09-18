@@ -6,8 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Search, ExternalLink } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Plus, Search, ExternalLink, LinkIcon } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { ProductGapDrawer } from "@/components/ProductGapDrawer";
 import { productGapsService, ProductGap } from "@/lib/productGapsService";
 import { format } from "date-fns";
@@ -17,6 +17,7 @@ export default function ProductGaps() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedProductGap, setSelectedProductGap] = useState<ProductGap | undefined>();
+  const navigate = useNavigate();
 
   const { data: productGaps = [], isLoading } = useQuery({
     queryKey: ['product-gaps', statusFilter],
@@ -152,7 +153,21 @@ export default function ProductGaps() {
                     </td>
                     <td className="p-4">
                       <div>
-                        <div className="font-medium">{productGap.title}</div>
+                        <div className="font-medium flex items-center gap-2">
+                          {productGap.title}
+                          {productGap.feature_request_id && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/app/feature-requests/${productGap.feature_request_id}`);
+                              }}
+                              className="text-primary hover:text-primary/80 transition-colors"
+                              title="View linked feature request"
+                            >
+                              <LinkIcon className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
                         {productGap.description && (
                           <div className="text-sm text-muted-foreground line-clamp-2">
                             {productGap.description}

@@ -46,6 +46,7 @@ export function ProductGapDrawer({ projectId, productGap, featureRequest, open, 
   const [status, setStatus] = useState<'Live' | 'Closed'>('Live');
   const [resolutionNotes, setResolutionNotes] = useState("");
   const [selectedProjectId, setSelectedProjectId] = useState<string>(projectId || "");
+  const [selectedFeatureRequestId, setSelectedFeatureRequestId] = useState<string>("");
 
   // Load internal users for assignment
   const { data: profiles = [] } = useQuery({
@@ -77,6 +78,20 @@ export function ProductGapDrawer({ projectId, productGap, featureRequest, open, 
     enabled: !projectId && featureRequest // Only load when we need to select a project
   });
 
+  // Load feature requests for selection
+  const { data: featureRequests = [] } = useQuery({
+    queryKey: ['feature-requests-list'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('feature_requests')
+        .select('id, title, problem_statement')
+        .order('title');
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
   // Initialize form when productGap or featureRequest changes
   useEffect(() => {
     if (productGap) {
@@ -88,6 +103,7 @@ export function ProductGapDrawer({ projectId, productGap, featureRequest, open, 
       setEstimatedCompleteDate(productGap.estimated_complete_date ? new Date(productGap.estimated_complete_date) : undefined);
       setStatus(productGap.status);
       setResolutionNotes(productGap.resolution_notes || "");
+      setSelectedFeatureRequestId(productGap.feature_request_id || "");
     } else {
       // Reset form for new product gap
       setTitle(featureRequest ? `Feature Request: ${featureRequest.title}` : "");
@@ -99,6 +115,7 @@ export function ProductGapDrawer({ projectId, productGap, featureRequest, open, 
       setStatus('Live');
       setResolutionNotes("");
       setSelectedProjectId(projectId || "");
+      setSelectedFeatureRequestId(featureRequest?.id || "");
     }
   }, [productGap, featureRequest, projectId]);
 
@@ -139,7 +156,7 @@ export function ProductGapDrawer({ projectId, productGap, featureRequest, open, 
         estimated_complete_date: estimatedCompleteDate ? format(estimatedCompleteDate, 'yyyy-MM-dd') : undefined,
         status,
         resolution_notes: resolutionNotes.trim() || undefined,
-        feature_request_id: featureRequest?.id || undefined,
+        feature_request_id: selectedFeatureRequestId || undefined,
       };
 
       if (productGap) {
@@ -226,6 +243,23 @@ export function ProductGapDrawer({ projectId, productGap, featureRequest, open, 
           </Select>
         </div>
       )}
+
+      <div className="space-y-2">
+        <Label htmlFor="feature-request">Feature Request</Label>
+        <Select value={selectedFeatureRequestId} onValueChange={setSelectedFeatureRequestId}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select feature request (optional)" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">None</SelectItem>
+            {featureRequests.map((request) => (
+              <SelectItem key={request.id} value={request.id}>
+                {request.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       <div className="space-y-2">
         <Label htmlFor="assigned-to">Assigned To</Label>

@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { formatDateUK } from '@/lib/dateUtils';
 import { useNavigate } from 'react-router-dom';
 import { BlockersDashboardCard } from '@/components/dashboard/BlockersDashboardCard';
+import { Smile, Frown, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface ImplementationProject {
   id: string;
@@ -629,35 +630,25 @@ export const Dashboard = () => {
                   <div className="flex items-center gap-2">
                     {/* Health Icon */}
                     {project.customer_health === 'green' && (
-                      <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center" title="Customer Health: Green">
-                        <span className="text-white text-xs">✓</span>
+                      <div title="Customer Health: Green">
+                        <Smile className="h-4 w-4 text-green-600" />
                       </div>
                     )}
                     {project.customer_health === 'red' && (
-                      <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center" title="Customer Health: Red">
-                        <span className="text-white text-xs">!</span>
-                      </div>
-                    )}
-                    {!project.customer_health && (
-                      <div className="w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center" title="Customer Health: Not Set">
-                        <span className="text-gray-600 text-xs">?</span>
+                      <div title="Customer Health: Red">
+                        <Frown className="h-4 w-4 text-red-600" />
                       </div>
                     )}
                     
                     {/* Project Status Icon */}
                     {project.project_status === 'on_track' && (
-                      <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center" title="Project Status: On Track">
-                        <span className="text-white text-xs">→</span>
+                      <div title="Project Status: On Track">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
                       </div>
                     )}
                     {project.project_status === 'off_track' && (
-                      <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center" title="Project Status: Off Track">
-                        <span className="text-white text-xs">⚠</span>
-                      </div>
-                    )}
-                    {!project.project_status && (
-                      <div className="w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center" title="Project Status: Not Set">
-                        <span className="text-gray-600 text-xs">?</span>
+                      <div title="Project Status: Off Track">
+                        <AlertCircle className="h-4 w-4 text-red-600" />
                       </div>
                     )}
                   </div>

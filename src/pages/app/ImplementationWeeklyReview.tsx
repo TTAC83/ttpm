@@ -119,9 +119,10 @@ export default function ImplementationWeeklyReviewPage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Fallback: if only one week exists, default to that single week
   useEffect(() => {
-    if (!selectedWeek && weeksQ.data && weeksQ.data.length > 0) {
-      setSelectedWeek(weeksQ.data[0].week_start); // latest first
+    if (!selectedWeek && weeksQ.data && weeksQ.data.length === 1) {
+      setSelectedWeek(weeksQ.data[0].week_start);
     }
   }, [weeksQ.data, selectedWeek]);
 

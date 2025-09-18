@@ -20,6 +20,7 @@ export const actionsService = {
   async getDashboardActions() {
     // Build today in UK timezone (YYYY-MM-DD) so overdue is strictly before today
     const ukToday = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' }); // en-CA gives YYYY-MM-DD format
+    console.log('[Actions] ukToday =', ukToday);
 
     const { data, error } = await supabase
       .from('actions')
@@ -45,7 +46,13 @@ export const actionsService = {
       .order('planned_date', { ascending: true })
       .limit(10);
 
-    if (error) throw error;
+    console.log('[Actions] Query filter:', `is_critical.eq.true,and(planned_date.lt.${ukToday})`);
+    if (error) {
+      console.error('[Actions] Query error:', error);
+      throw error;
+    }
+    
+    console.log('[Actions] Raw data returned:', data?.length, 'actions');
 
     return (data || []).map(action => {
       const plannedDateStr = action.planned_date || undefined;

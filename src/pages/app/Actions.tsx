@@ -113,6 +113,13 @@ export const Actions = () => {
     try {
       setLoading(true);
       
+      // Build a local-date string (YYYY-MM-DD) so "overdue" means strictly before today in the user's timezone
+      const todayLocal = new Date();
+      const yyyy = todayLocal.getFullYear();
+      const mm = String(todayLocal.getMonth() + 1).padStart(2, '0');
+      const dd = String(todayLocal.getDate()).padStart(2, '0');
+      const todayStr = `${yyyy}-${mm}-${dd}`;
+      
       const { data, error } = await supabase
         .from('actions')
         .select(`
@@ -131,7 +138,7 @@ export const Actions = () => {
             companies(name)
           )
         `)
-        .or('is_critical.eq.true,and(planned_date.lt.now(),planned_date.not.is.null)')
+        .or(`is_critical.eq.true,and(planned_date.lt.${todayStr},planned_date.not.is.null)`)
         .neq('status', 'Done')
         .order('is_critical', { ascending: false })
         .order('planned_date', { ascending: true });

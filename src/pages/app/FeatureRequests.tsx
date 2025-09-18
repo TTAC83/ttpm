@@ -144,14 +144,14 @@ export default function FeatureRequests() {
             <div className="w-full md:w-48">
               <Label htmlFor="status">Status</Label>
               <Select
-                value={filters.statuses?.join(',') || ''}
-                onValueChange={(value) => handleStatusFilter(value ? value.split(',') : [])}
+                value={filters.statuses?.length ? filters.statuses.join(',') : 'all'}
+                onValueChange={(value) => handleStatusFilter(value === 'all' ? [] : value.split(','))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All statuses</SelectItem>
+                  <SelectItem value="all">All statuses</SelectItem>
                   {statusOptions.map((status) => (
                     <SelectItem key={status} value={status}>
                       {status}

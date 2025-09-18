@@ -169,6 +169,7 @@ export const Actions = () => {
     if (!editingAction) return;
 
     try {
+      console.log('Updating action with data:', actionData);
       const { data, error } = await supabase.functions.invoke('create-action', {
         body: {
           id: editingAction.id,
@@ -180,9 +181,13 @@ export const Actions = () => {
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
 
+      console.log('Action updated successfully, refreshing list...');
       toast.success('Action updated successfully');
       setEditingAction(null);
-      fetchActions(); // Refresh the actions list
+      
+      // Force refresh the actions list
+      await fetchActions();
+      console.log('Actions list refreshed after update');
     } catch (error: any) {
       console.error('Error updating action:', error);
       toast.error(error?.message || 'Failed to update action');

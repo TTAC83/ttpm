@@ -59,8 +59,7 @@ export const Dashboard = () => {
 
   const dateRange = generateDateRange();
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
+  const fetchDashboardData = async () => {
       try {
         // Get current week start for weekly reviews
         const today = new Date();
@@ -175,7 +174,8 @@ export const Dashboard = () => {
           .gte('planned_date', startDate)
           .lte('planned_date', endDate)
           .not('planned_date', 'is', null)
-          .eq('is_critical', true);
+          .eq('is_critical', true)
+          .not('status', 'in', '("Done","Complete")');
 
         if (actionsError) {
           console.warn('Actions query failed, continuing without actions:', actionsError);
@@ -411,7 +411,8 @@ export const Dashboard = () => {
               .select('id, title, planned_date, status')
               .eq('is_critical', true)
               .gte('planned_date', startDate)
-              .lte('planned_date', endDate);
+              .lte('planned_date', endDate)
+              .not('status', 'in', '("Done","Complete")');
             (simpleActions || []).forEach(a => {
               allEvents.push({
                 id: `action-${a.id}`,
@@ -461,8 +462,18 @@ export const Dashboard = () => {
         setLoading(false);
       }
     };
-
+  
+  useEffect(() => {
     fetchDashboardData();
+  }, []);
+
+  // Refresh data every 30 seconds to catch updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchDashboardData();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const getEventsForDate = (date: Date) => {

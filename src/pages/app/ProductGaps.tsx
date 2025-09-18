@@ -141,7 +141,23 @@ export default function ProductGaps() {
                     className={`border-b hover:bg-muted/50 transition-colors cursor-pointer ${getRowClassName(productGap)}`}
                     onClick={() => handleEditProductGap(productGap)}
                   >
-                    <td className="p-4">{productGap.company_name}</td>
+                     <td className="p-4">
+                      <div className="flex items-center gap-2">
+                        {productGap.company_name}
+                        {productGap.feature_request_id && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/app/feature-requests/${productGap.feature_request_id}`);
+                            }}
+                            className="text-primary hover:text-primary/80 transition-colors"
+                            title="View linked feature request"
+                          >
+                            <LinkIcon className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
                     <td className="p-4">
                       <Link
                         to={`/app/projects/${productGap.project_id}`}
@@ -151,23 +167,9 @@ export default function ProductGaps() {
                         {productGap.project_name}
                       </Link>
                     </td>
-                    <td className="p-4">
+                     <td className="p-4">
                       <div>
-                        <div className="font-medium flex items-center gap-2">
-                          {productGap.title}
-                          {productGap.feature_request_id && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/app/feature-requests/${productGap.feature_request_id}`);
-                              }}
-                              className="text-primary hover:text-primary/80 transition-colors"
-                              title="View linked feature request"
-                            >
-                              <LinkIcon className="h-4 w-4" />
-                            </button>
-                          )}
-                        </div>
+                        <div className="font-medium">{productGap.title}</div>
                         {productGap.description && (
                           <div className="text-sm text-muted-foreground line-clamp-2">
                             {productGap.description}

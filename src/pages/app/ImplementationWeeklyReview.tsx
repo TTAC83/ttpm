@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ensureWeeks, listWeeks, listImplCompanies, loadOverdueTasks, loadOpenActions, loadEventsAroundWeek, loadReview, saveReview, loadWeeklyStats, loadOpenVisionModels, VisionModelRow } from "@/lib/implementationWeekly";
+import { productGapsService } from "@/lib/productGapsService";
+import { ProductGapDrawer } from "@/components/ProductGapDrawer";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -324,6 +326,8 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   const [editingBlocker, setEditingBlocker] = useState<any>(null);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [createVisionModelDialogOpen, setCreateVisionModelDialogOpen] = useState(false);
+  const [productGapDrawerOpen, setProductGapDrawerOpen] = useState(false);
+  const [editingProductGap, setEditingProductGap] = useState<any>(null);
 
   const overdueQ = useQuery({
     queryKey: ["impl-overdue", companyId],
@@ -338,6 +342,15 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   const visionModelsQ = useQuery({
     queryKey: ["impl-vision-models", companyId],
     queryFn: () => loadOpenVisionModels(companyId),
+  });
+
+  const productGapsQ = useQuery({
+    queryKey: ["impl-product-gaps", companyId],
+    queryFn: async () => {
+      if (!projectId) return [];
+      return await productGapsService.getProjectProductGaps(projectId);
+    },
+    enabled: !!projectId,
   });
 
   const blockersQ = useQuery({
@@ -1014,6 +1027,79 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
         )}
       </Card>
 
+      {/* Product Gaps */}
+      <Card className="p-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold">Product Gaps (Live)</h2>
+          <div className="flex items-center gap-2">
+            <span className="text-sm opacity-75">{productGapsQ.data?.filter(gap => gap.status === 'Live').length ?? 0} items</span>
+            {projectId && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  setEditingProductGap(null);
+                  setProductGapDrawerOpen(true);
+                }}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Product Gap
+              </Button>
+            )}
+          </div>
+        </div>
+        <Separator className="my-3" />
+        {productGapsQ.isLoading ? (
+          <div>Loading…</div>
+        ) : (productGapsQ.data?.filter(gap => gap.status === 'Live').length ?? 0) === 0 ? (
+          <div>No live product gaps</div>
+        ) : (
+          <div className="overflow-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left">
+                  <th className="py-2 pr-3">Title</th>
+                  <th className="py-2 pr-3">Description</th>
+                  <th className="py-2 pr-3">Assigned To</th>
+                  <th className="py-2 pr-3">Critical</th>
+                  <th className="py-2 pr-3">Est. Complete</th>
+                  <th className="py-2 pr-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {productGapsQ.data!.filter(gap => gap.status === 'Live').map(gap => (
+                  <tr key={gap.id} className="border-t">
+                    <td className="py-2 pr-3 font-medium">{gap.title}</td>
+                    <td className="py-2 pr-3">{gap.description ?? "-"}</td>
+                    <td className="py-2 pr-3">{gap.assigned_to_name ?? "-"}</td>
+                    <td className="py-2 pr-3">
+                      {gap.is_critical && (
+                        <Badge variant="destructive" className="text-xs">
+                          <AlertTriangle className="h-3 w-3 mr-1" />
+                          Critical
+                        </Badge>
+                      )}
+                    </td>
+                    <td className="py-2 pr-3">{gap.estimated_complete_date ?? "-"}</td>
+                    <td className="py-2 pr-3">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setEditingProductGap(gap);
+                          setProductGapDrawerOpen(true);
+                        }}
+                      >
+                        Edit
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
 
       {/* Weekly Review Controls */}
       <Card className="p-4 space-y-4">
@@ -1189,6 +1275,22 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
           />
         </DialogContent>
       </Dialog>
+    )}
+
+    {/* Product Gap Drawer */}
+    {projectId && (
+      <ProductGapDrawer
+        open={productGapDrawerOpen}
+        onOpenChange={(open) => {
+          setProductGapDrawerOpen(open);
+          if (!open) {
+            setEditingProductGap(null);
+            qc.invalidateQueries({ queryKey: ["impl-product-gaps", companyId] });
+          }
+        }}
+        projectId={projectId}
+        productGap={editingProductGap}
+      />
     )}
   </div>
 );

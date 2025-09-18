@@ -175,7 +175,6 @@ export function ProductGapDrawer({ projectId, productGap, open, onOpenChange, tr
           value={ticketLink}
           onChange={(e) => setTicketLink(e.target.value)}
           placeholder="Link to related ticket"
-          type="url"
         />
       </div>
 

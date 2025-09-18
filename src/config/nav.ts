@@ -203,6 +203,15 @@ export const NAV: NavItem[] = [
     roles: ["internal_admin"],
     matchPaths: ["/app/admin/users"]
   },
+
+  // 7) Feature Requests
+  {
+    label: "Feature Requests",
+    iconName: "Lightbulb",
+    to: "/app/feature-requests",
+    roles: ["internal_user", "internal_admin"],
+    matchPaths: ["/app/feature-requests"]
+  },
 ];
 
 // Icon mapping for dynamic rendering

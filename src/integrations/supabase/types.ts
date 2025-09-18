@@ -1190,6 +1190,51 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_requests: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          problem_statement: string | null
+          requirements: string | null
+          solution_overview: string | null
+          status: Database["public"]["Enums"]["feature_request_status_enum"]
+          title: string
+          updated_at: string
+          user_story_goal: string | null
+          user_story_outcome: string | null
+          user_story_role: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          problem_statement?: string | null
+          requirements?: string | null
+          solution_overview?: string | null
+          status?: Database["public"]["Enums"]["feature_request_status_enum"]
+          title: string
+          updated_at?: string
+          user_story_goal?: string | null
+          user_story_outcome?: string | null
+          user_story_role?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          problem_statement?: string | null
+          requirements?: string | null
+          solution_overview?: string | null
+          status?: Database["public"]["Enums"]["feature_request_status_enum"]
+          title?: string
+          updated_at?: string
+          user_story_goal?: string | null
+          user_story_outcome?: string | null
+          user_story_role?: string | null
+        }
+        Relationships: []
+      }
       gateways_master: {
         Row: {
           communication_protocols: string | null
@@ -3313,6 +3358,57 @@ export type Database = {
           },
         ]
       }
+      v_my_feature_requests: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string | null
+          problem_statement: string | null
+          requirements: string | null
+          solution_overview: string | null
+          status:
+            | Database["public"]["Enums"]["feature_request_status_enum"]
+            | null
+          title: string | null
+          updated_at: string | null
+          user_story_goal: string | null
+          user_story_outcome: string | null
+          user_story_role: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string | null
+          problem_statement?: string | null
+          requirements?: string | null
+          solution_overview?: string | null
+          status?:
+            | Database["public"]["Enums"]["feature_request_status_enum"]
+            | null
+          title?: string | null
+          updated_at?: string | null
+          user_story_goal?: string | null
+          user_story_outcome?: string | null
+          user_story_role?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string | null
+          problem_statement?: string | null
+          requirements?: string | null
+          solution_overview?: string | null
+          status?:
+            | Database["public"]["Enums"]["feature_request_status_enum"]
+            | null
+          title?: string | null
+          updated_at?: string | null
+          user_story_goal?: string | null
+          user_story_outcome?: string | null
+          user_story_role?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_working_days: {
@@ -3594,6 +3690,12 @@ export type Database = {
         | "ReadyForSignoff"
         | "Approved"
         | "Rejected"
+      feature_request_status_enum:
+        | "Requested"
+        | "Rejected"
+        | "In Design"
+        | "In Dev"
+        | "Complete"
       impl_health_simple: "green" | "red"
       impl_week_status: "on_track" | "off_track"
       implementation_blocker_status_enum: "Live" | "Closed"
@@ -3761,6 +3863,13 @@ export const Constants = {
         "ReadyForSignoff",
         "Approved",
         "Rejected",
+      ],
+      feature_request_status_enum: [
+        "Requested",
+        "Rejected",
+        "In Design",
+        "In Dev",
+        "Complete",
       ],
       impl_health_simple: ["green", "red"],
       impl_week_status: ["on_track", "off_track"],

@@ -38,6 +38,8 @@ import ServersManagement from "./pages/app/admin/ServersManagement";
 import GatewaysManagement from "./pages/app/admin/GatewaysManagement";
 import ReceiversManagement from "./pages/app/admin/ReceiversManagement";
 import TvDisplaysManagement from "./pages/app/admin/TvDisplaysManagement";
+import FeatureRequests from "./pages/app/FeatureRequests";
+import FeatureRequestDetail from "./pages/app/FeatureRequestDetail";
 import CompleteSignup from "./pages/CompleteSignup";
 import ResetPassword from "./pages/ResetPassword";
 import Actions from "./pages/app/Actions";
@@ -255,6 +257,12 @@ const App = () => (
               </InternalRoute>} />
               <Route path="product-gaps" element={<InternalRoute>
                 <ProductGaps />
+              </InternalRoute>} />
+              <Route path="feature-requests" element={<InternalRoute>
+                <FeatureRequests />
+              </InternalRoute>} />
+              <Route path="feature-requests/:id" element={<InternalRoute>
+                <FeatureRequestDetail />
               </InternalRoute>} />
               <Route 
                 path="admin/users" 

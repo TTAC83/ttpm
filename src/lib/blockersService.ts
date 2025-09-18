@@ -86,8 +86,7 @@ export const blockersService = {
       .from('v_impl_open_blockers')
       .select('*')
       .order('is_overdue', { ascending: false })
-      .order('raised_at', { ascending: false })
-      .limit(5);
+      .order('raised_at', { ascending: false });
 
     if (error) throw error;
     return data || [];

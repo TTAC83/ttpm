@@ -95,6 +95,7 @@ export function ProductGapDrawer({ projectId, productGap, featureRequest, open, 
   // Initialize form when productGap or featureRequest changes
   useEffect(() => {
     if (productGap) {
+      console.log('ProductGap feature_request_id:', productGap.feature_request_id);
       setTitle(productGap.title);
       setDescription(productGap.description || "");
       setTicketLink(productGap.ticket_link || "");
@@ -103,7 +104,9 @@ export function ProductGapDrawer({ projectId, productGap, featureRequest, open, 
       setEstimatedCompleteDate(productGap.estimated_complete_date ? new Date(productGap.estimated_complete_date) : undefined);
       setStatus(productGap.status);
       setResolutionNotes(productGap.resolution_notes || "");
-      setSelectedFeatureRequestId(productGap.feature_request_id || "none");
+      const featureRequestValue = productGap.feature_request_id ? productGap.feature_request_id : "none";
+      console.log('Setting feature request ID to:', featureRequestValue);
+      setSelectedFeatureRequestId(featureRequestValue);
     } else {
       // Reset form for new product gap
       setTitle(featureRequest ? `Feature Request: ${featureRequest.title}` : "");
@@ -252,7 +255,10 @@ export function ProductGapDrawer({ projectId, productGap, featureRequest, open, 
 
       <div className="space-y-2">
         <Label htmlFor="feature-request">Feature Request</Label>
-        <Select value={selectedFeatureRequestId} onValueChange={setSelectedFeatureRequestId}>
+        <Select value={selectedFeatureRequestId} onValueChange={(value) => {
+          console.log('Feature request selection changed to:', value);
+          setSelectedFeatureRequestId(value);
+        }}>
           <SelectTrigger>
             <SelectValue placeholder="Select feature request (optional)" />
           </SelectTrigger>
@@ -265,6 +271,7 @@ export function ProductGapDrawer({ projectId, productGap, featureRequest, open, 
             ))}
           </SelectContent>
         </Select>
+        <p className="text-xs text-muted-foreground">Current value: {selectedFeatureRequestId}</p>
       </div>
 
       <div className="space-y-2">

@@ -342,6 +342,7 @@ export function BlockersDashboardCard() {
                       <TableHead>Customer</TableHead>
                       <TableHead>Project</TableHead>
                       <TableHead>Title</TableHead>
+                      <TableHead>Feature Request</TableHead>
                       <TableHead>Est. Complete</TableHead>
                       <TableHead>Age</TableHead>
                       <TableHead>Status</TableHead>
@@ -372,6 +373,19 @@ export function BlockersDashboardCard() {
                           </TableCell>
                           <TableCell>
                             <p className="font-medium line-clamp-1">{gap.title}</p>
+                          </TableCell>
+                          <TableCell>
+                            {gap.feature_request_id ? (
+                              <Link
+                                to={`/app/feature-requests/${gap.feature_request_id}`}
+                                className="text-blue-600 hover:text-blue-800 hover:underline"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                View Feature
+                              </Link>
+                            ) : (
+                              <span className="text-muted-foreground">None</span>
+                            )}
                           </TableCell>
                           <TableCell>
                             {gap.estimated_complete_date

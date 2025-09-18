@@ -207,8 +207,9 @@ export default function FeatureRequests() {
                 <TableRow>
                   <TableHead>Title</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Required Date</TableHead>
                   <TableHead>Created By</TableHead>
-                  <TableHead>Created</TableHead>
+                  <TableHead>Date Raised</TableHead>
                   <TableHead>Updated</TableHead>
                 </TableRow>
               </TableHeader>
@@ -235,13 +236,22 @@ export default function FeatureRequests() {
                       </Badge>
                     </TableCell>
                     <TableCell>
+                      {request.required_date ? (
+                        <span className="text-sm">
+                          {new Date(request.required_date).toLocaleDateString()}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
                       <div>
                         <p className="font-medium">{request.creator?.name || 'Unknown'}</p>
                         <p className="text-sm text-muted-foreground">{request.creator?.email}</p>
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {formatDistanceToNow(new Date(request.created_at), { addSuffix: true })}
+                      {new Date(request.date_raised).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {formatDistanceToNow(new Date(request.updated_at), { addSuffix: true })}

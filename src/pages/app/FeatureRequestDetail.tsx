@@ -154,7 +154,7 @@ export default function FeatureRequestDetail() {
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <span>Created by {featureRequest.creator?.name || 'Unknown'}</span>
                   <span>•</span>
-                  <span>{formatDistanceToNow(new Date(featureRequest.created_at), { addSuffix: true })}</span>
+                  <span>Raised on {new Date(featureRequest.date_raised).toLocaleDateString()}</span>
                   {featureRequest.updated_at !== featureRequest.created_at && (
                     <>
                       <span>•</span>
@@ -167,8 +167,42 @@ export default function FeatureRequestDetail() {
                 {featureRequest.status}
               </Badge>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Date Fields Section */}
+          <div>
+            <h3 className="font-semibold mb-3">Timeline</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Date Raised</p>
+                <p className="text-sm">{new Date(featureRequest.date_raised).toLocaleDateString()}</p>
+              </div>
+              {featureRequest.required_date && (
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Required Date</p>
+                  <p className="text-sm">{new Date(featureRequest.required_date).toLocaleDateString()}</p>
+                </div>
+              )}
+              {featureRequest.design_start_date && (
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Design Start Date</p>
+                  <p className="text-sm">{new Date(featureRequest.design_start_date).toLocaleDateString()}</p>
+                </div>
+              )}
+              {featureRequest.dev_start_date && (
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Dev Start Date</p>
+                  <p className="text-sm">{new Date(featureRequest.dev_start_date).toLocaleDateString()}</p>
+                </div>
+              )}
+              {featureRequest.complete_date && (
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Complete Date</p>
+                  <p className="text-sm">{new Date(featureRequest.complete_date).toLocaleDateString()}</p>
+                </div>
+              )}
+            </div>
+          </div>
             {featureRequest.problem_statement && (
               <div>
                 <h3 className="font-semibold mb-2">Problem Statement</h3>

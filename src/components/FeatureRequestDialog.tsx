@@ -28,6 +28,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 import { toast } from "sonner";
 import { 
   CreateFeatureRequestInput, 
@@ -45,6 +54,10 @@ const formSchema = z.object({
   user_story_outcome: z.string().optional(),
   solution_overview: z.string().optional(),
   requirements: z.string().optional(),
+  required_date: z.string().optional(),
+  design_start_date: z.string().optional(),
+  dev_start_date: z.string().optional(),
+  complete_date: z.string().optional(),
   status: z.enum(['Requested', 'Rejected', 'In Design', 'In Dev', 'Complete'] as const).default('Requested'),
 });
 
@@ -76,6 +89,10 @@ export function FeatureRequestDialog({
       user_story_outcome: featureRequest?.user_story_outcome || "",
       solution_overview: featureRequest?.solution_overview || "",
       requirements: featureRequest?.requirements || "",
+      required_date: featureRequest?.required_date || "",
+      design_start_date: featureRequest?.design_start_date || "",
+      dev_start_date: featureRequest?.dev_start_date || "",
+      complete_date: featureRequest?.complete_date || "",
       status: (featureRequest?.status as FeatureRequestStatus) || 'Requested',
     },
   });
@@ -104,6 +121,38 @@ export function FeatureRequestDialog({
   };
 
   const statusOptions: FeatureRequestStatus[] = ['Requested', 'Rejected', 'In Design', 'In Dev', 'Complete'];
+
+  const DatePicker = ({ field, label }: { field: any; label: string }) => (
+    <Popover>
+      <PopoverTrigger asChild>
+        <FormControl>
+          <Button
+            variant="outline"
+            className={cn(
+              "w-full pl-3 text-left font-normal",
+              !field.value && "text-muted-foreground"
+            )}
+          >
+            {field.value ? (
+              format(new Date(field.value), "PPP")
+            ) : (
+              <span>Pick a date</span>
+            )}
+            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+          </Button>
+        </FormControl>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="single"
+          selected={field.value ? new Date(field.value) : undefined}
+          onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
+          initialFocus
+          className="p-3 pointer-events-auto"
+        />
+      </PopoverContent>
+    </Popover>
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -236,6 +285,56 @@ export function FeatureRequestDialog({
                 </FormItem>
               )}
             />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="required_date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Required Date</FormLabel>
+                    <DatePicker field={field} label="Required Date" />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="design_start_date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Design Start Date</FormLabel>
+                    <DatePicker field={field} label="Design Start Date" />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="dev_start_date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Dev Start Date</FormLabel>
+                    <DatePicker field={field} label="Dev Start Date" />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="complete_date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Complete Date</FormLabel>
+                    <DatePicker field={field} label="Complete Date" />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}

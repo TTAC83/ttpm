@@ -1192,10 +1192,15 @@ export type Database = {
       }
       feature_requests: {
         Row: {
+          complete_date: string | null
           created_at: string
           created_by: string
+          date_raised: string
+          design_start_date: string | null
+          dev_start_date: string | null
           id: string
           problem_statement: string | null
+          required_date: string | null
           requirements: string | null
           solution_overview: string | null
           status: Database["public"]["Enums"]["feature_request_status_enum"]
@@ -1206,10 +1211,15 @@ export type Database = {
           user_story_role: string | null
         }
         Insert: {
+          complete_date?: string | null
           created_at?: string
           created_by: string
+          date_raised?: string
+          design_start_date?: string | null
+          dev_start_date?: string | null
           id?: string
           problem_statement?: string | null
+          required_date?: string | null
           requirements?: string | null
           solution_overview?: string | null
           status?: Database["public"]["Enums"]["feature_request_status_enum"]
@@ -1220,10 +1230,15 @@ export type Database = {
           user_story_role?: string | null
         }
         Update: {
+          complete_date?: string | null
           created_at?: string
           created_by?: string
+          date_raised?: string
+          design_start_date?: string | null
+          dev_start_date?: string | null
           id?: string
           problem_statement?: string | null
+          required_date?: string | null
           requirements?: string | null
           solution_overview?: string | null
           status?: Database["public"]["Enums"]["feature_request_status_enum"]

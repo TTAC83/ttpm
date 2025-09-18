@@ -12,6 +12,11 @@ export interface FeatureRequest {
   solution_overview?: string;
   requirements?: string;
   status: FeatureRequestStatus;
+  date_raised: string;
+  required_date?: string;
+  design_start_date?: string;
+  dev_start_date?: string;
+  complete_date?: string;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -32,6 +37,10 @@ export interface CreateFeatureRequestInput {
   user_story_outcome?: string;
   solution_overview?: string;
   requirements?: string;
+  required_date?: string;
+  design_start_date?: string;
+  dev_start_date?: string;
+  complete_date?: string;
   status?: FeatureRequestStatus;
 }
 

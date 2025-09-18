@@ -135,6 +135,7 @@ export default function ProductGaps() {
                   <th className="p-4 font-medium">Project</th>
                   <th className="p-4 font-medium">Product Gap</th>
                   <th className="p-4 font-medium">Assigned To</th>
+                  <th className="p-4 font-medium">Feature Request</th>
                   <th className="p-4 font-medium">Est. Complete</th>
                   <th className="p-4 font-medium">Status</th>
                   <th className="p-4 font-medium">Actions</th>
@@ -148,22 +149,7 @@ export default function ProductGaps() {
                     onClick={() => handleEditProductGap(productGap)}
                   >
                     <td className="p-4">
-                      <div className="flex items-center gap-2">
-                        {productGap.company_name}
-                        {productGap.feature_request_id && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/app/feature-requests/${productGap.feature_request_id}`);
-                            }}
-                            className="text-primary hover:text-primary/80 transition-colors"
-                            title="View linked feature request"
-                            aria-label="View linked feature request"
-                          >
-                            <FeatureLinkIcon className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
+                      {productGap.company_name}
                     </td>
                     <td className="p-4">
                       <RouterLink
@@ -187,6 +173,20 @@ export default function ProductGaps() {
                     <td className="p-4">
                       {productGap.assigned_to_name || (
                         <span className="text-muted-foreground">Unassigned</span>
+                      )}
+                    </td>
+                    <td className="p-4">
+                      {productGap.feature_request_id ? (
+                        <RouterLink
+                          to={`/app/feature-requests/${productGap.feature_request_id}`}
+                          className="text-primary hover:underline flex items-center gap-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <FeatureLinkIcon className="h-3 w-3" />
+                          View Feature
+                        </RouterLink>
+                      ) : (
+                        <span className="text-muted-foreground">None</span>
                       )}
                     </td>
                     <td className="p-4">

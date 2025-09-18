@@ -175,7 +175,7 @@ export const Dashboard = () => {
           .lte('planned_date', endDate)
           .not('planned_date', 'is', null)
           .eq('is_critical', true)
-          .not('status', 'in', '("Done","Complete")');
+          .not('status', 'in', '("Completed","Cancelled","Done","Complete")');
 
         if (actionsError) {
           console.warn('Actions query failed, continuing without actions:', actionsError);
@@ -412,7 +412,7 @@ export const Dashboard = () => {
               .eq('is_critical', true)
               .gte('planned_date', startDate)
               .lte('planned_date', endDate)
-              .not('status', 'in', '("Done","Complete")');
+              .not('status', 'in', '("Completed","Cancelled","Done","Complete")');
             (simpleActions || []).forEach(a => {
               allEvents.push({
                 id: `action-${a.id}`,

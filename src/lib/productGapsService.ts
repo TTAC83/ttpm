@@ -33,6 +33,7 @@ export interface DashboardProductGap {
   is_critical: boolean;
   status: 'Live' | 'Closed';
   age_days: number;
+  feature_request_id?: string;
 }
 
 export const productGapsService = {
@@ -93,6 +94,7 @@ export const productGapsService = {
         is_critical,
         status,
         created_at,
+        feature_request_id,
         projects!inner(name, companies!inner(name))
       `)
       .eq('status', 'Live')
@@ -109,7 +111,8 @@ export const productGapsService = {
       estimated_complete_date: gap.estimated_complete_date,
       is_critical: gap.is_critical,
       status: gap.status as 'Live' | 'Closed',
-      age_days: Math.floor((new Date().getTime() - new Date(gap.created_at).getTime()) / (1000 * 60 * 60 * 24))
+      age_days: Math.floor((new Date().getTime() - new Date(gap.created_at).getTime()) / (1000 * 60 * 60 * 24)),
+      feature_request_id: (gap as any).feature_request_id
     }));
   },
 

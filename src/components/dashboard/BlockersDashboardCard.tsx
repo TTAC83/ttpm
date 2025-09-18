@@ -635,7 +635,6 @@ export function BlockersDashboardCard() {
       {selectedProductGap && (
         <ProductGapDrawer
           open={productGapDrawerOpen}
-          onOpenChange={setProductGapDrawerOpen}
           productGap={{
             ...selectedProductGap,
             description: '',
@@ -645,6 +644,15 @@ export function BlockersDashboardCard() {
             status: 'Live' as const
           }}
           projectId={selectedProductGap.project_id}
+          onOpenChange={(open) => {
+            setProductGapDrawerOpen(open);
+            if (!open) loadDashboardData();
+          }}
+          onSuccess={() => {
+            setProductGapDrawerOpen(false);
+            setSelectedProductGap(undefined);
+            loadDashboardData();
+          }}
         />
       )}
 

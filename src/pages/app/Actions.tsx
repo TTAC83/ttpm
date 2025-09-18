@@ -19,6 +19,12 @@ import { format } from "date-fns";
 import { Filter, FilterX, User, ArrowUpDown, ArrowUp, ArrowDown, CalendarIcon, AlertTriangle, Save, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDateUK } from '@/lib/dateUtils';
+
+// Parse a YYYY-MM-DD string into a local Date without timezone shifts
+const parseISODateToLocal = (iso: string): Date => {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, (m || 1) - 1, d || 1);
+};
 interface Action {
   id: string;
   title: string;
@@ -655,19 +661,20 @@ const EditActionDialog = ({
     title: action.title,
     details: action.details || '',
     assignee: action.assignee || '',
-    planned_date: action.planned_date ? new Date(action.planned_date) : undefined as Date | undefined,
+    planned_date: action.planned_date ? parseISODateToLocal(action.planned_date) : undefined as Date | undefined,
     notes: action.notes || '',
     status: action.status,
     is_critical: action.is_critical,
   });
   const [loading, setLoading] = useState(false);
-
+ 
   const toISODateString = (date: Date): string => {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`; // Local date, no timezone shift
   };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

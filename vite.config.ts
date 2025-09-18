@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => ({
         navigateFallback: "/",
         navigateFallbackDenylist: [/^\/api\//, /^\/rest\//, /^\/storage\//],
         globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB limit
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB limit
         runtimeCaching: [
           {
             urlPattern: ({ request, sameOrigin }) =>

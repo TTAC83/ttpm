@@ -44,21 +44,29 @@ export function EditActionDialog({
   onOpenChange,
   onSave
 }: EditActionDialogProps) {
+  const normalizeStatus = (s: string) => {
+    if (s === 'Completed' || s === 'Complete') return 'Done';
+    if (s === 'Not Started') return 'Open';
+    if (s === 'Cancelled') return 'Done';
+    return s;
+  };
   const [formData, setFormData] = useState({
     title: action.title,
     details: action.details || '',
     assignee: action.assignee || 'unassigned',
     planned_date: action.planned_date ? new Date(action.planned_date) : undefined as Date | undefined,
     notes: action.notes || '',
-    status: action.status,
+    status: normalizeStatus(action.status),
     is_critical: action.is_critical,
   });
   const [loading, setLoading] = useState(false);
 
-  const toISODateString = (date: Date): string => {
-    return date.toISOString().split('T')[0];
+  const toISODateStringLocal = (date: Date): string => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -68,7 +76,7 @@ export function EditActionDialog({
         title: formData.title,
         details: formData.details || null,
         assignee: formData.assignee === 'unassigned' ? null : formData.assignee,
-        planned_date: formData.planned_date ? toISODateString(formData.planned_date) : null,
+        planned_date: formData.planned_date ? toISODateStringLocal(formData.planned_date) : null,
         notes: formData.notes || null,
         status: formData.status,
         is_critical: formData.is_critical,
@@ -162,11 +170,9 @@ export function EditActionDialog({
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Not Started">Not Started</SelectItem>
+                  <SelectItem value="Open">Open</SelectItem>
                   <SelectItem value="In Progress">In Progress</SelectItem>
-                  <SelectItem value="Completed">Completed</SelectItem>
-                  <SelectItem value="On Hold">On Hold</SelectItem>
-                  <SelectItem value="Cancelled">Cancelled</SelectItem>
+                  <SelectItem value="Done">Done</SelectItem>
                 </SelectContent>
               </Select>
             </div>

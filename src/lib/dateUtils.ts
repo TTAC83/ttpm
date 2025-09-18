@@ -45,7 +45,10 @@ export const parseUKDate = (dateStr: string): Date | null => {
 
 export const toISODateString = (date: Date | null): string => {
   if (!date) return '';
-  return date.toISOString().split('T')[0];
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 };
 
 export const addWorkingDays = async (startDate: Date, days: number, supabase: any): Promise<Date> => {

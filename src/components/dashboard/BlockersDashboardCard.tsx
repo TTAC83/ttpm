@@ -641,15 +641,21 @@ export function BlockersDashboardCard() {
           }}
           profiles={profiles}
           onSave={async (actionData) => {
-            // Update action via API
             const { error } = await supabase
               .from('actions')
               .update(actionData)
               .eq('id', selectedAction.id);
-              
-            if (!error) {
-              loadDashboardData(); // Refresh data
+
+            if (error) {
+              console.error('Failed to update action:', error);
+              import('sonner').then(({ toast }) => toast.error('Failed to update action'));
+              return;
             }
+
+            import('sonner').then(({ toast }) => toast.success('Action updated'));
+            setActionDialogOpen(false);
+            setSelectedAction(undefined);
+            loadDashboardData();
           }}
         />
       )}

@@ -52,18 +52,28 @@ export const actionsService = {
     if (error) throw error;
 
     return (data || []).map(action => {
-      const plannedDate = action.planned_date ? new Date(action.planned_date) : null;
-      const today = new Date();
-      const isOverdue = plannedDate && plannedDate < today;
-      const ageDays = plannedDate ? Math.floor((today.getTime() - plannedDate.getTime()) / (1000 * 60 * 60 * 24)) : undefined;
+      const plannedDateStr = action.planned_date || undefined;
+      // Compare using date-only strings to avoid timezone issues
+      const isOverdue = plannedDateStr ? plannedDateStr < todayStr : false;
+
+      // Age in days based on local midnight
+      let ageDays: number | undefined = undefined;
+      if (plannedDateStr) {
+        const planned = new Date(`${plannedDateStr}T00:00:00`);
+        const todayMidnight = new Date();
+        todayMidnight.setHours(0, 0, 0, 0);
+        const diffMs = todayMidnight.getTime() - planned.getTime();
+        const d = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        ageDays = d > 0 ? d : undefined;
+      }
 
       return {
         ...action,
         project_name: (action.projects as any)?.name || 'Unknown Project',
         company_name: (action.projects as any)?.companies?.name || 'Unknown Company',
         is_overdue: !!isOverdue,
-        age_days: ageDays > 0 ? ageDays : undefined
-      };
-    }) as DashboardAction[];
+        age_days: ageDays
+      } as DashboardAction;
+    });
   }
 };

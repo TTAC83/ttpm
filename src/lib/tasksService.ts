@@ -34,6 +34,7 @@ export const tasksService = {
         )
       `)
       .or('status.eq.Blocked,and(planned_end.lt.now(),planned_end.not.is.null)')
+      .neq('status', 'Done')
       .order('status', { ascending: false }) // Blocked tasks first
       .order('planned_end', { ascending: true })
       .limit(10);

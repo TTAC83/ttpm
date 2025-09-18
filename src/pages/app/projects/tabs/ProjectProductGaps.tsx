@@ -2,10 +2,11 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, ExternalLink } from "lucide-react";
+import { Plus, ExternalLink, Link as LinkIcon } from "lucide-react";
 import { ProductGapDrawer } from "@/components/ProductGapDrawer";
 import { productGapsService, ProductGap } from "@/lib/productGapsService";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 interface ProjectProductGapsProps {
   projectId: string;
@@ -19,6 +20,8 @@ export function ProjectProductGaps({ projectId }: ProjectProductGapsProps) {
     queryKey: ['project-product-gaps', projectId],
     queryFn: () => productGapsService.getProjectProductGaps(projectId),
   });
+
+  const navigate = useNavigate();
 
   const handleCreateNew = () => {
     setSelectedProductGap(undefined);
@@ -66,6 +69,19 @@ export function ProjectProductGaps({ projectId }: ProjectProductGapsProps) {
                     <Badge variant={gap.status === 'Live' ? "default" : "secondary"}>
                       {gap.status}
                     </Badge>
+                    {gap.feature_request_id && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        title="View linked feature request"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/app/feature-requests/${gap.feature_request_id}`);
+                        }}
+                      >
+                        <LinkIcon className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                   
                   {gap.description && (

@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Search, ExternalLink, LinkIcon } from "lucide-react";
+import { Plus, Search, ExternalLink, Link as LinkIcon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { ProductGapDrawer } from "@/components/ProductGapDrawer";
 import { productGapsService, ProductGap } from "@/lib/productGapsService";

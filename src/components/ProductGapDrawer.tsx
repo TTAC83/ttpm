@@ -103,7 +103,7 @@ export function ProductGapDrawer({ projectId, productGap, featureRequest, open, 
       setEstimatedCompleteDate(productGap.estimated_complete_date ? new Date(productGap.estimated_complete_date) : undefined);
       setStatus(productGap.status);
       setResolutionNotes(productGap.resolution_notes || "");
-      setSelectedFeatureRequestId(productGap.feature_request_id || "");
+      setSelectedFeatureRequestId(productGap.feature_request_id || "none");
     } else {
       // Reset form for new product gap
       setTitle(featureRequest ? `Feature Request: ${featureRequest.title}` : "");
@@ -115,7 +115,7 @@ export function ProductGapDrawer({ projectId, productGap, featureRequest, open, 
       setStatus('Live');
       setResolutionNotes("");
       setSelectedProjectId(projectId || "");
-      setSelectedFeatureRequestId(featureRequest?.id || "");
+      setSelectedFeatureRequestId(featureRequest?.id || "none");
     }
   }, [productGap, featureRequest, projectId]);
 
@@ -156,7 +156,7 @@ export function ProductGapDrawer({ projectId, productGap, featureRequest, open, 
         estimated_complete_date: estimatedCompleteDate ? format(estimatedCompleteDate, 'yyyy-MM-dd') : undefined,
         status,
         resolution_notes: resolutionNotes.trim() || undefined,
-        feature_request_id: selectedFeatureRequestId || undefined,
+        feature_request_id: selectedFeatureRequestId === "none" ? undefined : selectedFeatureRequestId || undefined,
       };
 
       if (productGap) {
@@ -251,7 +251,7 @@ export function ProductGapDrawer({ projectId, productGap, featureRequest, open, 
             <SelectValue placeholder="Select feature request (optional)" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">None</SelectItem>
+            <SelectItem value="none">None</SelectItem>
             {featureRequests.map((request) => (
               <SelectItem key={request.id} value={request.id}>
                 {request.title}

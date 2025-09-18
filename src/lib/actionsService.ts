@@ -18,12 +18,8 @@ export interface DashboardAction {
 export const actionsService = {
   // Get critical or overdue actions for dashboard
   async getDashboardActions() {
-    // Build local today (YYYY-MM-DD) so overdue is strictly before today
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    const todayStr = `${yyyy}-${mm}-${dd}`;
+    // Build today in UK timezone (YYYY-MM-DD) so overdue is strictly before today
+    const ukToday = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' }); // en-CA gives YYYY-MM-DD format
 
     const { data, error } = await supabase
       .from('actions')
@@ -43,7 +39,7 @@ export const actionsService = {
           )
         )
       `)
-      .or(`is_critical.eq.true,and(planned_date.lt.${todayStr})`)
+      .or(`is_critical.eq.true,and(planned_date.lt.${ukToday})`)
       .not('status', 'in', '("Completed","Cancelled","Done","Complete")')
       .order('is_critical', { ascending: false })
       .order('planned_date', { ascending: true })
@@ -54,15 +50,14 @@ export const actionsService = {
     return (data || []).map(action => {
       const plannedDateStr = action.planned_date || undefined;
       // Compare using date-only strings to avoid timezone issues
-      const isOverdue = plannedDateStr ? plannedDateStr < todayStr : false;
+      const isOverdue = plannedDateStr ? plannedDateStr < ukToday : false;
 
-      // Age in days based on local midnight
+      // Age in days using UK timezone
       let ageDays: number | undefined = undefined;
       if (plannedDateStr) {
-        const planned = new Date(`${plannedDateStr}T00:00:00`);
-        const todayMidnight = new Date();
-        todayMidnight.setHours(0, 0, 0, 0);
-        const diffMs = todayMidnight.getTime() - planned.getTime();
+        const plannedDate = new Date(`${plannedDateStr}T00:00:00`);
+        const ukTodayDate = new Date(`${ukToday}T00:00:00`);
+        const diffMs = ukTodayDate.getTime() - plannedDate.getTime();
         const d = Math.floor(diffMs / (1000 * 60 * 60 * 24));
         ageDays = d > 0 ? d : undefined;
       }

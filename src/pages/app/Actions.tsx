@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { Filter, FilterX, User, ArrowUpDown, ArrowUp, ArrowDown, CalendarIcon, AlertTriangle, Save, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-
+import { formatDateUK } from '@/lib/dateUtils';
 interface Action {
   id: string;
   title: string;
@@ -603,7 +603,7 @@ export const Actions = () => {
                       </TableCell>
                       <TableCell>
                         {action.planned_date 
-                          ? format(new Date(action.planned_date), 'MMM dd, yyyy')
+                          ? formatDateUK(action.planned_date)
                           : 'Not set'
                         }
                       </TableCell>
@@ -663,7 +663,10 @@ const EditActionDialog = ({
   const [loading, setLoading] = useState(false);
 
   const toISODateString = (date: Date): string => {
-    return date.toISOString().split('T')[0];
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`; // Local date, no timezone shift
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

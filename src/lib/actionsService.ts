@@ -41,7 +41,7 @@ export const actionsService = {
         )
       `)
       .or(`is_critical.eq.true,and(planned_date.lt.${ukToday})`)
-      .not('status', 'in', '("Completed","Cancelled","Done","Complete")')
+      .neq('status', 'Done')
       .order('is_critical', { ascending: false })
       .order('planned_date', { ascending: true })
       .limit(10);

@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { LogOut, ChevronRight } from 'lucide-react';
+import React from 'react';
 import { NAV, visibleItemsForRole, ICON_MAP, type Role, type NavItem } from '@/config/nav';
 import { useExpenseAccess } from '@/hooks/useExpenseAccess';
 import { useState, useEffect } from 'react';
@@ -94,7 +95,7 @@ export const AppLayout = () => {
     return IconComponent ? <IconComponent className="h-4 w-4" /> : null;
   };
 
-  const renderNavItem = (item: NavItem) => {
+  const renderNavItem = (item: NavItem, level = 0) => {
     if (item.children) {
       const isOpen = openGroups.includes(item.label);
       
@@ -104,42 +105,46 @@ export const AppLayout = () => {
             <CollapsibleTrigger asChild>
               <SidebarMenuButton className="w-full justify-start">
                 {getIcon(item.iconName)}
-                <span className="uppercase text-xs tracking-wide font-medium">{item.label}</span>
+                <span className={level === 0 ? "uppercase text-xs tracking-wide font-medium" : "text-sm"}>{item.label}</span>
                 <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:rotate-90" />
               </SidebarMenuButton>
             </CollapsibleTrigger>
             <CollapsibleContent>
               <SidebarMenuSub>
-                {item.children.map((child) => (
-                  <SidebarMenuSubItem key={child.to || child.label}>
-                    <SidebarMenuSubButton
-                      onClick={() => child.to && handleNavigation(child.to)}
-                      isActive={isActiveRoute(child)}
-                      className="text-sm rounded-xl"
-                    >
-                      {getIcon(child.iconName)}
-                      <span>{child.label}</span>
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                ))}
+                {item.children.map((child) => renderNavItem(child, level + 1))}
               </SidebarMenuSub>
             </CollapsibleContent>
           </SidebarMenuItem>
         </Collapsible>
       );
     } else {
-      return (
-        <SidebarMenuItem key={item.to || item.label}>
-          <SidebarMenuButton
-            onClick={() => item.to && handleNavigation(item.to)}
-            isActive={isActiveRoute(item)}
-            className="w-full justify-start"
-          >
-            {getIcon(item.iconName)}
-            <span>{item.label}</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      );
+      if (level === 0) {
+        return (
+          <SidebarMenuItem key={item.to || item.label}>
+            <SidebarMenuButton
+              onClick={() => item.to && handleNavigation(item.to)}
+              isActive={isActiveRoute(item)}
+              className="w-full justify-start"
+            >
+              {getIcon(item.iconName)}
+              <span>{item.label}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        );
+      } else {
+        return (
+          <SidebarMenuSubItem key={item.to || item.label}>
+            <SidebarMenuSubButton
+              onClick={() => item.to && handleNavigation(item.to)}
+              isActive={isActiveRoute(item)}
+              className="text-sm rounded-xl"
+            >
+              {getIcon(item.iconName)}
+              <span>{item.label}</span>
+            </SidebarMenuSubButton>
+          </SidebarMenuSubItem>
+        );
+      }
     }
   };
 

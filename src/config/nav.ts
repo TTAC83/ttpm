@@ -53,53 +53,58 @@ export const NAV: NavItem[] = [
     iconName: "Settings",
     roles: ["internal_admin", "internal_user", "external_admin", "external_user"],
     children: [
-      {
-        label: "Projects",
-        to: "/app/projects",
-        matchPaths: ["/app/projects"],
-      },
       { 
         label: "Dashboard", 
         to: "/app/dashboard", 
         matchPaths: ["/app/dashboard"] 
       },
-      { 
-        label: "Actions", 
-        to: "/app/actions", 
-        matchPaths: ["/app/actions"] 
+      {
+        label: "Projects",
+        to: "/app/projects",
+        matchPaths: ["/app/projects"],
       },
-      { 
-        label: "Tasks", 
-        to: "/app/tasks", 
-        matchPaths: ["/app/tasks"] 
-      },
-      { 
-        label: "Calendar", 
-        to: "/app/calendar", 
-        matchPaths: ["/app/calendar"] 
-      },
-      { 
-        label: "Models", 
-        to: "/app/models", 
-        matchPaths: ["/app/models"] 
+      {
+        label: "Reports",
+        children: [
+          { 
+            label: "Actions", 
+            to: "/app/actions", 
+            matchPaths: ["/app/actions"] 
+          },
+          { 
+            label: "Tasks", 
+            to: "/app/tasks", 
+            matchPaths: ["/app/tasks"] 
+          },
+          { 
+            label: "Calendar", 
+            to: "/app/calendar", 
+            matchPaths: ["/app/calendar"] 
+          },
+          { 
+            label: "Models", 
+            to: "/app/models", 
+            matchPaths: ["/app/models"] 
+          },
+          {
+            label: "View All Escalations",
+            to: "/app/implementation/blockers",
+            matchPaths: ["/app/implementation/blockers"],
+            roles: ["internal_admin", "internal_user"]
+          },
+          {
+            label: "View All Product Gaps",
+            to: "/app/product-gaps",
+            iconName: "Package",
+            matchPaths: ["/app/product-gaps"],
+            roles: ["internal_admin", "internal_user"]
+          },
+        ]
       },
       {
         label: "Weekly Review",
         to: "/app/implementation/weekly-review",
         matchPaths: ["/app/implementation/weekly-review"],
-        roles: ["internal_admin", "internal_user"]
-      },
-      {
-        label: "View All Escalations",
-        to: "/app/implementation/blockers",
-        matchPaths: ["/app/implementation/blockers"],
-        roles: ["internal_admin", "internal_user"]
-      },
-      {
-        label: "View All Product Gaps",
-        to: "/app/product-gaps",
-        iconName: "Package",
-        matchPaths: ["/app/product-gaps"],
         roles: ["internal_admin", "internal_user"]
       },
     ]

@@ -641,20 +641,38 @@ export function BlockersDashboardCard() {
           }}
           profiles={profiles}
           onSave={async (actionData) => {
-            const { error } = await supabase
+            const id = selectedAction.id;
+            const payload = {
+              title: actionData.title,
+              details: actionData.details,
+              assignee: actionData.assignee,
+              planned_date: actionData.planned_date,
+              notes: actionData.notes,
+              status: actionData.status,
+              is_critical: actionData.is_critical,
+            };
+
+            console.log('[Actions] Updating', id, payload);
+            const { data, error } = await supabase
               .from('actions')
-              .update(actionData)
-              .eq('id', selectedAction.id);
+              .update(payload)
+              .eq('id', id)
+              .select('id, planned_date, status')
+              .single();
 
             if (error) {
-              console.error('Failed to update action:', error);
+              console.error('[Actions] Update failed:', error);
               import('sonner').then(({ toast }) => toast.error('Failed to update action'));
               return;
             }
 
+            console.log('[Actions] Update success ->', data);
+            // Optimistically update local state for immediate reflect
+            setActions(prev => prev.map(a => a.id === id ? { ...a, planned_date: payload.planned_date || undefined, status: payload.status } : a));
             import('sonner').then(({ toast }) => toast.success('Action updated'));
             setActionDialogOpen(false);
             setSelectedAction(undefined);
+            // Also reload to refresh any computed flags
             loadDashboardData();
           }}
         />

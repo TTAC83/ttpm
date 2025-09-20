@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Responsive, WidthProvider, Layout } from "react-grid-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -70,7 +71,15 @@ const gridStyles = `
 const ResponsiveGridLayout = WidthProvider(Responsive);
 const ZOOM_LEVELS = [50, 75, 100, 125];
 
-export default function WBS() {
+interface WBSProps {
+  projectId?: string;
+}
+
+export default function WBS({ projectId }: WBSProps = {}) {
+  // Check URL params for project ID if not provided as prop
+  const [searchParams] = useSearchParams();
+  const currentProjectId = projectId || searchParams.get('projectId') || undefined;
+  
   // Inject CSS for grid layout
   useEffect(() => {
     const style = document.createElement('style');
@@ -92,25 +101,35 @@ export default function WBS() {
   const [stepRows, setStepRows] = useState<Record<string, number>>({});
   const [selectedStep, setSelectedStep] = useState<MasterStep | null>(null);
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
+  const [isProjectSpecific, setIsProjectSpecific] = useState(!!currentProjectId);
 
-  // Load master data on mount
+  // Load data on mount - use project-specific data if projectId is provided
   useEffect(() => {
-    const loadMasterData = async () => {
+    const loadData = async () => {
       setLoading(true);
       try {
-        const [masterSteps, savedLayouts, updatePermission] = await Promise.all([
-          wbsService.getMasterSteps(),
-          wbsService.getWBSLayouts(),
-          wbsService.canUpdateLayout()
+        const [stepData, savedLayouts, updatePermission] = await Promise.all([
+          currentProjectId ? wbsService.getProjectSteps(currentProjectId) : wbsService.getMasterSteps(),
+          wbsService.getWBSLayouts(currentProjectId),
+          wbsService.canUpdateLayout(currentProjectId)
         ]);
 
-        setSteps(masterSteps);
+        setSteps(stepData);
         setCanUpdate(updatePermission);
 
         // Load tasks for each step
         const tasksData: Record<number, MasterTask[]> = {};
-        for (const step of masterSteps) {
-          tasksData[step.id] = await wbsService.getStepTasks(step.id);
+        if (currentProjectId) {
+          // For project-specific view, we'll load project tasks in a different way
+          // For now, fallback to master tasks
+          for (const step of stepData) {
+            tasksData[step.id] = await wbsService.getStepTasks(step.id);
+          }
+        } else {
+          // For global template view
+          for (const step of stepData) {
+            tasksData[step.id] = await wbsService.getStepTasks(step.id);
+          }
         }
         setStepTasks(tasksData);
 
@@ -121,7 +140,7 @@ export default function WBS() {
           savedLayouts.map(layout => [layout.step_name, layout])
         );
 
-        masterSteps.forEach((step, index) => {
+        stepData.forEach((step, index) => {
           const saved = savedLayoutMap[step.step_name];
           if (saved) {
             layoutMap.lg.push({
@@ -152,19 +171,19 @@ export default function WBS() {
 
         setLayouts(layoutMap);
       } catch (error) {
-        console.error("Failed to load master data:", error);
+        console.error("Failed to load data:", error);
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Failed to load master data"
+          description: `Failed to load ${currentProjectId ? 'project' : 'master'} data`
         });
       } finally {
         setLoading(false);
       }
     };
 
-    loadMasterData();
-  }, [toast]);
+    loadData();
+  }, [toast, currentProjectId]);
 
   const handleLayoutChange = useCallback((layout: Layout[]) => {
     if (!canUpdate) return;
@@ -188,7 +207,7 @@ export default function WBS() {
             pos_y: item.y,
             width: item.w,
             height: item.h
-          });
+          }, currentProjectId);
         }
         toast({
           title: "Layout saved",
@@ -209,7 +228,7 @@ export default function WBS() {
 
   const handleResetLayout = async () => {
     try {
-      await wbsService.resetWBSLayout();
+      await wbsService.resetWBSLayout(currentProjectId);
       
       // Apply layout based on current mode
       applyLayoutMode(layoutMode);
@@ -334,12 +353,16 @@ export default function WBS() {
       <div className="container mx-auto py-8">
         <div className="mb-6">
           <h1 className="text-3xl font-bold">Work Breakdown Structure</h1>
-          <p className="text-muted-foreground mt-2">Master Steps and Tasks</p>
+          <p className="text-muted-foreground mt-2">
+            {currentProjectId ? 'Project-Specific Layout' : 'Master Steps and Tasks'}
+          </p>
         </div>
 
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <p className="text-muted-foreground">No master steps found</p>
+            <p className="text-muted-foreground">
+              {currentProjectId ? 'No project steps found' : 'No master steps found'}
+            </p>
           </div>
         </div>
       </div>
@@ -352,8 +375,9 @@ export default function WBS() {
         <div>
           <h1 className="text-3xl font-bold">Work Breakdown Structure</h1>
           <p className="text-muted-foreground mt-2">
-            Master Steps and Tasks Template
+            {currentProjectId ? 'Project-Specific Layout' : 'Master Steps and Tasks Template'}
             {!canUpdate && <Badge variant="secondary" className="ml-2">Read-only</Badge>}
+            {currentProjectId && <Badge variant="outline" className="ml-2">Project View</Badge>}
           </p>
         </div>
         

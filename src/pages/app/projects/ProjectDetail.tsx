@@ -21,6 +21,7 @@ import ProjectCalendar from './tabs/ProjectCalendar';
 import ProjectVisionModels from './tabs/ProjectVisionModels';
 import { ProjectBlockers } from './tabs/ProjectBlockers';
 import { ProjectProductGaps } from './tabs/ProjectProductGaps';
+import WBS from '../implementation/WBS';
 
 interface Project {
   id: string;
@@ -201,11 +202,12 @@ export const ProjectDetail = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="space-y-2">
           {/* First row of tabs */}
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="lines">Lines</TabsTrigger>
             <TabsTrigger value="tasks">Tasks</TabsTrigger>
             <TabsTrigger value="gantt">Gantt</TabsTrigger>
+            <TabsTrigger value="wbs">WBS</TabsTrigger>
           </TabsList>
           
           {/* Second row of tabs */}
@@ -244,6 +246,10 @@ export const ProjectDetail = () => {
 
         <TabsContent value="gantt" className="space-y-4">
           <ProjectGantt projectId={project.id} />
+        </TabsContent>
+
+        <TabsContent value="wbs" className="space-y-4">
+          <WBS projectId={project.id} />
         </TabsContent>
 
         <TabsContent value="actions" className="space-y-4">

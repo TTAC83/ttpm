@@ -2905,6 +2905,7 @@ export type Database = {
           id: string
           pos_x: number
           pos_y: number
+          project_id: string | null
           step_name: string
           updated_at: string
           updated_by: string
@@ -2915,6 +2916,7 @@ export type Database = {
           id?: string
           pos_x?: number
           pos_y?: number
+          project_id?: string | null
           step_name: string
           updated_at?: string
           updated_by: string
@@ -2925,12 +2927,21 @@ export type Database = {
           id?: string
           pos_x?: number
           pos_y?: number
+          project_id?: string | null
           step_name?: string
           updated_at?: string
           updated_by?: string
           width?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "wbs_layouts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -3572,6 +3583,10 @@ export type Database = {
           requesting_user_id?: string
         }
         Returns: boolean
+      }
+      copy_wbs_layout_for_project: {
+        Args: { p_project_id: string }
+        Returns: undefined
       }
       expense_admin_signoff: {
         Args: { p_approved: boolean; p_assignment_id: string }

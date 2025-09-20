@@ -10,8 +10,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2, Database, List, AlertTriangle } from 'lucide-react';
+import { Plus, Edit, Trash2, Database, List, AlertTriangle, ChevronRight, ChevronDown } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { wbsService, type MasterTask as WBSMasterTask } from '@/lib/wbsService';
 
 interface MasterStep {
   id: number;
@@ -29,6 +30,8 @@ interface MasterTask {
   position: number;
   technology_scope: string;
   assigned_role: string | null;
+  parent_task_id: number | null;
+  subtasks?: MasterTask[];
   master_steps?: {
     name: string;
   };
@@ -45,6 +48,8 @@ export const MasterDataManagement = () => {
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [editingStep, setEditingStep] = useState<MasterStep | null>(null);
   const [editingTask, setEditingTask] = useState<MasterTask | null>(null);
+  const [expandedTasks, setExpandedTasks] = useState<Set<number>>(new Set());
+  const [parentTaskForSubtask, setParentTaskForSubtask] = useState<MasterTask | null>(null);
 
   useEffect(() => {
     if (isInternalAdmin()) {
@@ -70,7 +75,10 @@ export const MasterDataManagement = () => {
       if (tasksResponse.error) throw tasksResponse.error;
 
       setSteps(stepsResponse.data || []);
-      setTasks(tasksResponse.data || []);
+      
+      // Organize tasks hierarchically
+      const organizedTasks = organizeTaskHierarchy(tasksResponse.data || []);
+      setTasks(organizedTasks);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -114,6 +122,47 @@ export const MasterDataManagement = () => {
     }
   };
 
+  const organizeTaskHierarchy = (tasks: any[]): MasterTask[] => {
+    const taskMap = new Map();
+    const rootTasks: MasterTask[] = [];
+
+    // First pass: create all tasks
+    tasks.forEach(task => {
+      taskMap.set(task.id, { ...task, subtasks: [] });
+    });
+
+    // Second pass: organize hierarchy
+    tasks.forEach(task => {
+      const taskWithSubtasks = taskMap.get(task.id);
+      if (task.parent_task_id) {
+        const parent = taskMap.get(task.parent_task_id);
+        if (parent) {
+          parent.subtasks.push(taskWithSubtasks);
+        }
+      } else {
+        rootTasks.push(taskWithSubtasks);
+      }
+    });
+
+    return rootTasks;
+  };
+
+  const toggleTaskExpansion = (taskId: number) => {
+    const newExpanded = new Set(expandedTasks);
+    if (newExpanded.has(taskId)) {
+      newExpanded.delete(taskId);
+    } else {
+      newExpanded.add(taskId);
+    }
+    setExpandedTasks(newExpanded);
+  };
+
+  const handleAddSubtask = (parentTask: MasterTask) => {
+    setParentTaskForSubtask(parentTask);
+    setEditingTask(null);
+    setTaskDialogOpen(true);
+  };
+
   const handleSaveTask = async (taskData: { 
     step_id: number; 
     title: string; 
@@ -132,9 +181,14 @@ export const MasterDataManagement = () => {
           .eq('id', editingTask.id);
         if (error) throw error;
       } else {
+        // Add parent_task_id if creating a subtask
+        const insertData = parentTaskForSubtask 
+          ? { ...taskData, parent_task_id: parentTaskForSubtask.id }
+          : taskData;
+          
         const { error } = await supabase
           .from('master_tasks')
-          .insert(taskData);
+          .insert(insertData);
         if (error) throw error;
       }
 
@@ -145,6 +199,7 @@ export const MasterDataManagement = () => {
 
       setTaskDialogOpen(false);
       setEditingTask(null);
+      setParentTaskForSubtask(null);
       fetchMasterData();
     } catch (error: any) {
       toast({
@@ -182,7 +237,7 @@ export const MasterDataManagement = () => {
   };
 
   const handleDeleteTask = async (taskId: number) => {
-    if (!confirm('Are you sure you want to delete this task?')) return;
+    if (!confirm('Are you sure you want to delete this task? This will also delete all sub-tasks.')) return;
 
     try {
       const { error } = await supabase
@@ -205,6 +260,98 @@ export const MasterDataManagement = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const renderTaskRow = (task: MasterTask, level = 0): React.ReactNode[] => {
+    const rows: React.ReactNode[] = [];
+    const hasSubtasks = task.subtasks && task.subtasks.length > 0;
+    const isExpanded = expandedTasks.has(task.id);
+
+    rows.push(
+      <TableRow key={task.id}>
+        <TableCell>{task.master_steps?.name}</TableCell>
+        <TableCell>{task.position}</TableCell>
+        <TableCell>
+          <div className="flex items-center gap-2" style={{ paddingLeft: `${level * 24}px` }}>
+            {hasSubtasks && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0"
+                onClick={() => toggleTaskExpansion(task.id)}
+              >
+                {isExpanded ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+              </Button>
+            )}
+            {!hasSubtasks && level > 0 && <div className="w-6" />}
+            <span className="font-medium">{task.title}</span>
+          </div>
+        </TableCell>
+        <TableCell>
+          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+            task.technology_scope === 'iot' ? 'bg-blue-100 text-blue-800' :
+            task.technology_scope === 'vision' ? 'bg-green-100 text-green-800' :
+            'bg-purple-100 text-purple-800'
+          }`}>
+            {task.technology_scope === 'iot' ? 'IoT' : 
+             task.technology_scope === 'vision' ? 'Vision' : 
+             'Both'}
+          </span>
+        </TableCell>
+        <TableCell>
+          {task.assigned_role ? (
+            <span className="text-sm text-muted-foreground">
+              {task.assigned_role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+            </span>
+          ) : (
+            <span className="text-sm text-muted-foreground">-</span>
+          )}
+        </TableCell>
+        <TableCell>{task.planned_start_offset_days} days</TableCell>
+        <TableCell>{task.planned_end_offset_days} days</TableCell>
+        <TableCell>
+          <div className="flex gap-2">
+            {!task.parent_task_id && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleAddSubtask(task)}
+                title="Add subtask"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setEditingTask(task); setParentTaskForSubtask(null); setTaskDialogOpen(true); }}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleDeleteTask(task.id)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </TableCell>
+      </TableRow>
+    );
+
+    // Add subtask rows if expanded
+    if (hasSubtasks && isExpanded) {
+      task.subtasks!.forEach(subtask => {
+        rows.push(...renderTaskRow(subtask, level + 1));
+      });
+    }
+
+    return rows;
   };
 
   if (!isInternalAdmin()) {
@@ -346,7 +493,7 @@ export const MasterDataManagement = () => {
                 </div>
                 <Dialog open={taskDialogOpen} onOpenChange={setTaskDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button onClick={() => { setEditingTask(null); setTaskDialogOpen(true); }}>
+                    <Button onClick={() => { setEditingTask(null); setParentTaskForSubtask(null); setTaskDialogOpen(true); }}>
                       <Plus className="h-4 w-4 mr-2" />
                       Add Task
                     </Button>
@@ -355,8 +502,13 @@ export const MasterDataManagement = () => {
                     <TaskDialog
                       task={editingTask}
                       steps={steps}
+                      parentTask={parentTaskForSubtask}
                       onSave={handleSaveTask}
-                      onClose={() => { setTaskDialogOpen(false); setEditingTask(null); }}
+                      onClose={() => { 
+                        setTaskDialogOpen(false); 
+                        setEditingTask(null); 
+                        setParentTaskForSubtask(null); 
+                      }}
                     />
                   </DialogContent>
                 </Dialog>
@@ -389,55 +541,9 @@ export const MasterDataManagement = () => {
                           <p className="text-muted-foreground">No master tasks found</p>
                         </TableCell>
                       </TableRow>
-                    ) : (
-                      tasks.map((task) => (
-                        <TableRow key={task.id}>
-                          <TableCell>{task.master_steps?.name}</TableCell>
-                          <TableCell>{task.position}</TableCell>
-                          <TableCell className="font-medium">{task.title}</TableCell>
-                          <TableCell>
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                              task.technology_scope === 'iot' ? 'bg-blue-100 text-blue-800' :
-                              task.technology_scope === 'vision' ? 'bg-green-100 text-green-800' :
-                              'bg-purple-100 text-purple-800'
-                            }`}>
-                              {task.technology_scope === 'iot' ? 'IoT' : 
-                               task.technology_scope === 'vision' ? 'Vision' : 
-                               'Both'}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            {task.assigned_role ? (
-                              <span className="text-sm text-muted-foreground">
-                                {task.assigned_role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                              </span>
-                            ) : (
-                              <span className="text-sm text-muted-foreground">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell>{task.planned_start_offset_days} days</TableCell>
-                          <TableCell>{task.planned_end_offset_days} days</TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => { setEditingTask(task); setTaskDialogOpen(true); }}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteTask(task.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
+                     ) : (
+                       tasks.map((task) => renderTaskRow(task)).flat()
+                     )}
                   </TableBody>
                 </Table>
               )}
@@ -521,17 +627,19 @@ const StepDialog = ({
 // Task Dialog Component
 const TaskDialog = ({ 
   task, 
-  steps, 
+  steps,
+  parentTask,
   onSave, 
   onClose 
 }: {
   task: MasterTask | null;
   steps: MasterStep[];
-  onSave: (data: Partial<MasterTask>) => void;
+  parentTask?: MasterTask | null;
+  onSave: (data: any) => void;
   onClose: () => void;
 }) => {
   const [formData, setFormData] = useState({
-    step_id: task?.step_id || 0,
+    step_id: task?.step_id || parentTask?.step_id || 0,
     title: task?.title || '',
     details: task?.details || '',
     planned_start_offset_days: task?.planned_start_offset_days || 0,
@@ -569,12 +677,22 @@ const TaskDialog = ({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>{task ? 'Edit Task' : 'Create New Task'}</DialogTitle>
+        <DialogTitle>
+          {task ? 'Edit Task' : parentTask ? `Add Subtask to "${parentTask.title}"` : 'Create New Task'}
+        </DialogTitle>
         <DialogDescription>
-          {task ? 'Update the task template' : 'Add a new master task template'}
+          {task ? 'Update the task template' : parentTask ? 'Add a new subtask' : 'Add a new master task template'}
         </DialogDescription>
       </DialogHeader>
       <form onSubmit={handleSubmit} className="space-y-4">
+        {parentTask && (
+          <div className="p-3 bg-muted rounded-md">
+            <p className="text-sm text-muted-foreground">
+              <strong>Parent Task:</strong> {parentTask.title} ({parentTask.master_steps?.name})
+            </p>
+          </div>
+        )}
+        
         <div className="space-y-2">
           <Label htmlFor="step_id">Step *</Label>
           <select
@@ -583,6 +701,7 @@ const TaskDialog = ({
             onChange={(e) => setFormData(prev => ({ ...prev, step_id: parseInt(e.target.value) }))}
             className="w-full p-2 border rounded-md"
             required
+            disabled={!!parentTask}
           >
             <option value={0}>Select a step</option>
             {steps.map((step) => (
@@ -591,6 +710,11 @@ const TaskDialog = ({
               </option>
             ))}
           </select>
+          {parentTask && (
+            <p className="text-xs text-muted-foreground">
+              Subtasks inherit the parent's step
+            </p>
+          )}
         </div>
         
         <div className="space-y-2">

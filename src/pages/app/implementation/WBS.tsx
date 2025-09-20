@@ -166,7 +166,7 @@ export default function WBS() {
   const handleLayoutChange = useCallback((layout: Layout[]) => {
     if (!canUpdate) return;
 
-    // Prevent dragging above y=0 and ensure minimum bounds
+    // Prevent dragging above y=0 and ensure no overlapping
     const boundedLayout = layout.map(item => ({
       ...item,
       y: Math.max(0, item.y), // Prevent negative Y positions
@@ -432,6 +432,8 @@ export default function WBS() {
           containerPadding={[16, 16]}
           rowHeight={60}
           compactType={null} // Disable auto-compacting to preserve intentional layouts
+          preventCollision={true} // Prevent cards from overlapping
+          allowOverlap={false} // Strictly prevent overlap
         >
           {steps.map((step) => (
             <div key={step.step_name} className="h-full">

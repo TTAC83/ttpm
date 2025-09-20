@@ -136,7 +136,7 @@ export default function WBS() {
             const col = index % 5;
             layoutMap.lg.push({
               i: step.step_name,
-              x: col * 2, // 2 units wide with spacing
+              x: col * 2, // 2 units wide, 5 cards per row (10 total columns)
               y: row * 4, // 4 units per row
               w: 2,
               h: 3
@@ -230,13 +230,13 @@ export default function WBS() {
     const newRowAssignments: Record<string, number> = {};
     
     if (mode === "sequential") {
-      // Vertical arrangement - all in row 1, sequentially
+      // Horizontal arrangement - all in row 1, sequentially
       newLayout = steps.map((step, index) => {
-        newRowAssignments[step.step_name] = 1;
+        newRowAssignments[step.step_name] = Math.floor(index / 5) + 1;
         return {
           i: step.step_name,
-          x: index * 2, // Horizontal spacing
-          y: 0, // All in same row
+          x: (index % 5) * 2, // 5 cards per row, width 2 each
+          y: Math.floor(index / 5) * 4, // Start new row after 5 cards
           w: 2,
           h: 3
         };
@@ -279,7 +279,7 @@ export default function WBS() {
         
         return {
           ...item,
-          x: itemsInRow * 2, // Position horizontally in row
+          x: (itemsInRow % 5) * 2, // Position horizontally in row, max 5 per row
           y: (newRow - 1) * 4 // Position in correct row
         };
       }
@@ -425,10 +425,10 @@ export default function WBS() {
           layouts={layouts}
           onLayoutChange={handleLayoutChange}
           breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-          cols={{ lg: 12, md: 10, sm: 8, xs: 6, xxs: 4 }}
+          cols={{ lg: 10, md: 10, sm: 6, xs: 4, xxs: 2 }} // 10 columns for 5 cards of width 2
           isDraggable={canUpdate}
           isResizable={canUpdate}
-          margin={[12, 12]}
+          margin={[8, 8]} // Reduced margin for better fit
           containerPadding={[16, 16]}
           rowHeight={60}
           compactType={null} // Disable auto-compacting to preserve intentional layouts

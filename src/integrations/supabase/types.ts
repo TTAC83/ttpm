@@ -1764,6 +1764,7 @@ export type Database = {
           assigned_role: string | null
           details: string | null
           id: number
+          parent_task_id: number | null
           planned_end_offset_days: number
           planned_start_offset_days: number
           position: number
@@ -1775,6 +1776,7 @@ export type Database = {
           assigned_role?: string | null
           details?: string | null
           id?: number
+          parent_task_id?: number | null
           planned_end_offset_days?: number
           planned_start_offset_days?: number
           position?: number
@@ -1786,6 +1788,7 @@ export type Database = {
           assigned_role?: string | null
           details?: string | null
           id?: number
+          parent_task_id?: number | null
           planned_end_offset_days?: number
           planned_start_offset_days?: number
           position?: number
@@ -1794,6 +1797,13 @@ export type Database = {
           title?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "master_tasks_parent_task_id_fkey"
+            columns: ["parent_task_id"]
+            isOneToOne: false
+            referencedRelation: "master_tasks"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "master_tasks_step_id_fkey"
             columns: ["step_id"]
@@ -2160,6 +2170,7 @@ export type Database = {
           created_at: string
           id: string
           master_task_id: number | null
+          parent_task_id: string | null
           planned_end: string | null
           planned_start: string | null
           project_id: string
@@ -2175,6 +2186,7 @@ export type Database = {
           created_at?: string
           id?: string
           master_task_id?: number | null
+          parent_task_id?: string | null
           planned_end?: string | null
           planned_start?: string | null
           project_id: string
@@ -2190,6 +2202,7 @@ export type Database = {
           created_at?: string
           id?: string
           master_task_id?: number | null
+          parent_task_id?: string | null
           planned_end?: string | null
           planned_start?: string | null
           project_id?: string
@@ -2211,6 +2224,13 @@ export type Database = {
             columns: ["master_task_id"]
             isOneToOne: false
             referencedRelation: "master_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tasks_parent_task_id_fkey"
+            columns: ["parent_task_id"]
+            isOneToOne: false
+            referencedRelation: "project_tasks"
             referencedColumns: ["id"]
           },
           {

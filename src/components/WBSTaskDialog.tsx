@@ -11,15 +11,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Plus, Edit, Trash2, Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { type MasterStep, type MasterTask } from "@/lib/wbsService";
+import { type MasterStep, type MasterTask, wbsService } from "@/lib/wbsService";
+import { SubTaskManager } from "@/components/SubTaskManager";
 
-interface SubTask {
-  id: string;
-  title: string;
-  description?: string;
-  completed: boolean;
-  assignee?: string;
-}
 
 interface WBSTaskDialogProps {
   isOpen: boolean;
@@ -35,9 +29,7 @@ export function WBSTaskDialog({ isOpen, onClose, step, tasks, onSave }: WBSTaskD
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [taskToDelete, setTaskToDelete] = useState<MasterTask | null>(null);
-  const [subtasks, setSubtasks] = useState<Record<number, SubTask[]>>({});
-  const [editingSubtask, setEditingSubtask] = useState<{ taskId: number; subtask: SubTask | null }>({ taskId: -1, subtask: null });
-
+  
   const [newTask, setNewTask] = useState<Partial<MasterTask>>({
     title: "",
     details: "",
@@ -45,7 +37,8 @@ export function WBSTaskDialog({ isOpen, onClose, step, tasks, onSave }: WBSTaskD
     assigned_role: "implementation_lead",
     planned_start_offset_days: 0,
     planned_end_offset_days: 1,
-    position: tasks.length + 1
+    position: tasks.length + 1,
+    parent_task_id: null
   });
 
   const getTechnologyScopeColor = (scope: string) => {
@@ -87,7 +80,9 @@ export function WBSTaskDialog({ isOpen, onClose, step, tasks, onSave }: WBSTaskD
       planned_end_offset_days: newTask.planned_end_offset_days || 1,
       position: newTask.position || tasks.length + 1,
       technology_scope: newTask.technology_scope as string,
-      assigned_role: newTask.assigned_role as string
+      assigned_role: newTask.assigned_role as string,
+      parent_task_id: null,
+      subtasks: []
     };
 
     onSave([...tasks, task]);
@@ -123,45 +118,44 @@ export function WBSTaskDialog({ isOpen, onClose, step, tasks, onSave }: WBSTaskD
     }
   };
 
-  const addSubtask = (taskId: number) => {
-    const newSubtask: SubTask = {
-      id: `${taskId}-${Date.now()}`,
-      title: "",
-      completed: false
-    };
-    setEditingSubtask({ taskId, subtask: newSubtask });
-  };
-
-  const saveSubtask = () => {
-    if (!editingSubtask.subtask?.title?.trim()) return;
-    
-    const { taskId, subtask } = editingSubtask;
-    const currentSubtasks = subtasks[taskId] || [];
-    
-    if (subtask.id.includes('new')) {
-      // Adding new subtask
-      setSubtasks(prev => ({
-        ...prev,
-        [taskId]: [...currentSubtasks, { ...subtask, id: `${taskId}-${Date.now()}` }]
-      }));
-    } else {
-      // Editing existing subtask
-      setSubtasks(prev => ({
-        ...prev,
-        [taskId]: currentSubtasks.map(st => st.id === subtask.id ? subtask : st)
-      }));
+  // Sub-task management handlers
+  const handleSubTaskCreate = async (parentTaskId: number, subTask: Omit<MasterTask, "id" | "parent_task_id" | "subtasks">) => {
+    try {
+      await wbsService.createSubTask(parentTaskId, subTask);
+      // Reload tasks to get updated hierarchy
+      const updatedTasks = await wbsService.getStepTasks(step.id);
+      onSave(updatedTasks);
+      toast({ title: "Sub-task created successfully" });
+    } catch (error) {
+      console.error("Error creating sub-task:", error);
+      toast({ title: "Failed to create sub-task", variant: "destructive" });
     }
-    
-    setEditingSubtask({ taskId: -1, subtask: null });
-    toast({ title: "Subtask saved successfully" });
   };
 
-  const deleteSubtask = (taskId: number, subtaskId: string) => {
-    setSubtasks(prev => ({
-      ...prev,
-      [taskId]: (prev[taskId] || []).filter(st => st.id !== subtaskId)
-    }));
-    toast({ title: "Subtask deleted successfully" });
+  const handleSubTaskUpdate = async (taskId: number, updates: Partial<MasterTask>) => {
+    try {
+      await wbsService.updateMasterTask(taskId, updates);
+      // Reload tasks to get updated hierarchy
+      const updatedTasks = await wbsService.getStepTasks(step.id);
+      onSave(updatedTasks);
+      toast({ title: "Sub-task updated successfully" });
+    } catch (error) {
+      console.error("Error updating sub-task:", error);
+      toast({ title: "Failed to update sub-task", variant: "destructive" });
+    }
+  };
+
+  const handleSubTaskDelete = async (taskId: number) => {
+    try {
+      await wbsService.deleteMasterTask(taskId);
+      // Reload tasks to get updated hierarchy
+      const updatedTasks = await wbsService.getStepTasks(step.id);
+      onSave(updatedTasks);
+      toast({ title: "Sub-task deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting sub-task:", error);
+      toast({ title: "Failed to delete sub-task", variant: "destructive" });
+    }
   };
 
   return (
@@ -315,74 +309,16 @@ export function WBSTaskDialog({ isOpen, onClose, step, tasks, onSave }: WBSTaskD
                     <div className="text-xs text-muted-foreground mb-3">
                       <strong>Assigned:</strong> {task.assigned_role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                     </div>
-                    
+                     
                     <Separator className="my-3" />
                     
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-sm font-medium">Subtasks</h4>
-                        <Button size="sm" variant="ghost" onClick={() => addSubtask(task.id)}>
-                          <Plus className="h-3 w-3 mr-1" />
-                          Add Subtask
-                        </Button>
-                      </div>
-                      
-                      {subtasks[task.id]?.map((subtask) => (
-                        <div key={subtask.id} className="flex items-center justify-between p-2 border rounded">
-                          {editingSubtask.subtask?.id === subtask.id ? (
-                            <div className="flex-1 flex gap-2">
-                              <Input
-                                value={editingSubtask.subtask.title}
-                                onChange={(e) => setEditingSubtask({
-                                  ...editingSubtask,
-                                  subtask: { ...editingSubtask.subtask!, title: e.target.value }
-                                })}
-                                placeholder="Subtask title"
-                                className="text-xs"
-                              />
-                              <Button size="sm" onClick={saveSubtask}>
-                                <Save className="h-3 w-3" />
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={() => setEditingSubtask({ taskId: -1, subtask: null })}>
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <>
-                              <span className="text-xs flex-1">{subtask.title}</span>
-                              <div className="flex gap-1">
-                                <Button size="sm" variant="ghost" onClick={() => setEditingSubtask({ taskId: task.id, subtask })}>
-                                  <Edit className="h-3 w-3" />
-                                </Button>
-                                <Button size="sm" variant="ghost" onClick={() => deleteSubtask(task.id, subtask.id)}>
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      ))}
-                      
-                      {editingSubtask.taskId === task.id && editingSubtask.subtask?.id.includes('new') && (
-                        <div className="flex gap-2 p-2 border rounded bg-muted">
-                          <Input
-                            value={editingSubtask.subtask.title}
-                            onChange={(e) => setEditingSubtask({
-                              ...editingSubtask,
-                              subtask: { ...editingSubtask.subtask!, title: e.target.value }
-                            })}
-                            placeholder="New subtask title"
-                            className="text-xs"
-                          />
-                          <Button size="sm" onClick={saveSubtask}>
-                            <Save className="h-3 w-3" />
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => setEditingSubtask({ taskId: -1, subtask: null })}>
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
+                    {/* Sub-task Management */}
+                    <SubTaskManager
+                      parentTask={task}
+                      onSubTaskCreate={(subTask) => handleSubTaskCreate(task.id, subTask)}
+                      onSubTaskUpdate={handleSubTaskUpdate}
+                      onSubTaskDelete={handleSubTaskDelete}
+                    />
                   </CardContent>
                 )}
               </Card>

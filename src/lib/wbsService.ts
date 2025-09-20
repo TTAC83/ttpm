@@ -29,6 +29,22 @@ export interface MasterTask {
   position: number;
   technology_scope: string;
   assigned_role: string;
+  parent_task_id: number | null;
+  subtasks?: MasterTask[];
+}
+
+export interface ProjectTask {
+  id: string;
+  project_id: string;
+  master_task_id: number | null;
+  step_name: string;
+  task_title: string;
+  task_details: string | null;
+  planned_start: string | null;
+  planned_end: string | null;
+  assignee: string | null;
+  parent_task_id: string | null;
+  subtasks?: ProjectTask[];
 }
 
 class WBSService {
@@ -50,7 +66,67 @@ class WBSService {
       .order("position");
 
     if (error) throw error;
-    return data || [];
+    return this.organizeTaskHierarchy(data || []);
+  }
+
+  // Organize flat task list into hierarchical structure
+  private organizeTaskHierarchy(tasks: any[]): MasterTask[] {
+    const taskMap = new Map();
+    const rootTasks: MasterTask[] = [];
+
+    // First pass: create all tasks
+    tasks.forEach(task => {
+      taskMap.set(task.id, { ...task, subtasks: [] });
+    });
+
+    // Second pass: organize hierarchy
+    tasks.forEach(task => {
+      const taskWithSubtasks = taskMap.get(task.id);
+      if (task.parent_task_id) {
+        const parent = taskMap.get(task.parent_task_id);
+        if (parent) {
+          parent.subtasks.push(taskWithSubtasks);
+        }
+      } else {
+        rootTasks.push(taskWithSubtasks);
+      }
+    });
+
+    return rootTasks;
+  }
+
+  // Create a new sub-task
+  async createSubTask(parentTaskId: number, subTask: Omit<MasterTask, "id" | "parent_task_id" | "subtasks">): Promise<void> {
+    const { error } = await supabase
+      .from("master_tasks")
+      .insert({
+        ...subTask,
+        parent_task_id: parentTaskId
+      });
+
+    if (error) throw error;
+  }
+
+  // Update a master task
+  async updateMasterTask(taskId: number, updates: Partial<MasterTask>): Promise<void> {
+    const { parent_task_id, subtasks, ...validUpdates } = updates;
+    
+    const { error } = await supabase
+      .from("master_tasks")
+      .update(validUpdates)
+      .eq("id", taskId);
+
+    if (error) throw error;
+  }
+
+  // Delete a master task (and its subtasks due to CASCADE)
+  async deleteMasterTask(taskId: number): Promise<void> {
+    const { error } = await supabase
+      .from("master_tasks")
+      .delete()
+      .eq("id", taskId);
+
+    if (error) throw error;
   }
 
   async getWBSLayouts(projectId?: string): Promise<WBSLayout[]> {

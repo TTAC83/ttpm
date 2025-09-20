@@ -73,17 +73,54 @@ class WBSService {
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) throw new Error("User not authenticated");
 
-    const { error } = await supabase
-      .from("wbs_layouts")
-      .upsert({
-        ...layout,
-        project_id: projectId || null,
-        updated_by: user.user.id
-      }, {
-        onConflict: projectId ? "step_name,project_id" : "step_name"
-      });
+    // For project-specific layouts, we need to handle the unique constraint properly
+    if (projectId) {
+      // First, check if a layout already exists for this step and project
+      const { data: existing } = await supabase
+        .from("wbs_layouts")
+        .select("id")
+        .eq("step_name", layout.step_name)
+        .eq("project_id", projectId)
+        .single();
 
-    if (error) throw error;
+      if (existing) {
+        // Update existing layout
+        const { error } = await supabase
+          .from("wbs_layouts")
+          .update({
+            pos_x: layout.pos_x,
+            pos_y: layout.pos_y,
+            width: layout.width,
+            height: layout.height,
+            updated_by: user.user.id
+          })
+          .eq("id", existing.id);
+        
+        if (error) throw error;
+      } else {
+        // Insert new layout
+        const { error } = await supabase
+          .from("wbs_layouts")
+          .insert({
+            ...layout,
+            project_id: projectId,
+            updated_by: user.user.id
+          });
+        
+        if (error) throw error;
+      }
+    } else {
+      // For global templates, use upsert with the unique index
+      const { error } = await supabase
+        .from("wbs_layouts")
+        .upsert({
+          ...layout,
+          project_id: null,
+          updated_by: user.user.id
+        });
+      
+      if (error) throw error;
+    }
   }
 
   async resetWBSLayout(projectId?: string): Promise<void> {

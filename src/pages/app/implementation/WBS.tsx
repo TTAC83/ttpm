@@ -98,13 +98,15 @@ export default function WBS() {
               h: saved.height
             });
           } else {
-            // Default auto layout based on step position
+            // Default horizontal layout - 5 columns max, then wrap to next row
+            const col = index % 5; // 0-4 columns per row
+            const row = Math.floor(index / 5);
             layoutMap.lg.push({
               i: step.step_name,
-              x: (index % 3) * 4,
-              y: Math.floor(index / 3) * 4,
-              w: 4,
-              h: 4
+              x: col * 2, // 2 units wide per column (10 total width for 5 columns)
+              y: row * 6, // 6 units tall per row for better spacing
+              w: 2, // 2 grid units wide
+              h: 6  // 6 grid units tall for better readability
             });
           }
         });
@@ -163,14 +165,18 @@ export default function WBS() {
     try {
       await wbsService.resetWBSLayout();
       
-      // Reset to default layout
-      const defaultLayout = steps.map((step, index) => ({
-        i: step.step_name,
-        x: (index % 3) * 4,
-        y: Math.floor(index / 3) * 4,
-        w: 4,
-        h: 4
-      }));
+      // Reset to default horizontal layout
+      const defaultLayout = steps.map((step, index) => {
+        const col = index % 5; // 5 columns per row
+        const row = Math.floor(index / 5);
+        return {
+          i: step.step_name,
+          x: col * 2, // 2 units wide per column
+          y: row * 6, // 6 units tall per row
+          w: 2, // 2 grid units wide
+          h: 6  // 6 grid units tall
+        };
+      });
       
       setLayouts({ lg: defaultLayout });
       toast({
@@ -287,77 +293,70 @@ export default function WBS() {
           layouts={layouts}
           onLayoutChange={handleLayoutChange}
           breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-          cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
+          cols={{ lg: 10, md: 8, sm: 6, xs: 4, xxs: 2 }} // 10 columns for 5 cards at 2 units each
           isDraggable={canUpdate}
           isResizable={canUpdate}
           margin={[16, 16]}
-          containerPadding={[0, 0]}
-          rowHeight={60}
+          containerPadding={[16, 16]}
+          rowHeight={80} // Increased row height for better readability
         >
           {steps.map((step) => (
-            <div key={step.step_name}>
-              <Card className="h-full overflow-hidden">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">
+            <div key={step.step_name} className="h-full">
+              <Card className="h-full overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <CardTitle className="text-base leading-tight">
                       {step.step_name}
                     </CardTitle>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">
-                        {step.task_count} task{step.task_count !== 1 ? 's' : ''}
+                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                      <Badge variant="secondary" className="text-xs">
+                        {step.task_count}
                       </Badge>
                       <Badge variant="outline" className="text-xs">
-                        Position {step.position}
+                        #{step.position}
                       </Badge>
                     </div>
                   </div>
                 </CardHeader>
                 
-                <CardContent className="pt-0 h-full overflow-auto">
+                <CardContent className="pt-0 pb-2 h-full overflow-auto">
                   {stepTasks[step.id]?.length > 0 ? (
-                    <div className="space-y-2">
-                      {stepTasks[step.id].slice(0, 10).map((task) => (
+                    <div className="space-y-1">
+                      {stepTasks[step.id].slice(0, 8).map((task) => (
                         <div
                           key={task.id}
-                          className="p-2 border rounded hover:bg-accent transition-colors"
+                          className="p-2 border rounded hover:bg-accent transition-colors text-xs"
                         >
-                          <div className="flex items-center justify-between mb-1">
-                            <p className="font-medium text-sm line-clamp-1">
+                          <div className="flex items-start justify-between mb-1 gap-1">
+                            <p className="font-medium leading-tight line-clamp-2 flex-1">
                               {task.title}
                             </p>
-                            <Badge variant={getTechnologyScopeColor(task.technology_scope)} className="text-xs">
-                              {task.technology_scope}
+                            <Badge variant={getTechnologyScopeColor(task.technology_scope)} className="text-xs flex-shrink-0">
+                              {task.technology_scope === "both" ? "B" : task.technology_scope === "iot" ? "I" : "V"}
                             </Badge>
                           </div>
                           
                           <div className="flex items-center justify-between text-xs text-muted-foreground">
-                            <div className="flex items-center gap-2">
-                              <span className="truncate">
-                                {task.assigned_role}
+                            <div className="truncate flex-1 mr-2">
+                              <span className="font-medium">
+                                {task.assigned_role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                               </span>
                             </div>
-                            <div className="text-right">
-                              <div>Days: {task.planned_start_offset_days} - {task.planned_end_offset_days}</div>
-                              <div className="text-xs">Pos: {task.position}</div>
+                            <div className="text-right flex-shrink-0">
+                              <div className="font-mono">{task.planned_start_offset_days}-{task.planned_end_offset_days}d</div>
                             </div>
                           </div>
-                          
-                          {task.details && (
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                              {task.details}
-                            </p>
-                          )}
                         </div>
                       ))}
                       
-                      {stepTasks[step.id].length > 10 && (
-                        <div className="text-center text-xs text-muted-foreground pt-2">
-                          +{stepTasks[step.id].length - 10} more tasks
+                      {stepTasks[step.id].length > 8 && (
+                        <div className="text-center text-xs text-muted-foreground pt-1">
+                          +{stepTasks[step.id].length - 8} more
                         </div>
                       )}
                     </div>
                   ) : (
-                    <div className="text-center text-sm text-muted-foreground py-4">
+                    <div className="text-center text-xs text-muted-foreground py-8">
                       No tasks in this step
                     </div>
                   )}

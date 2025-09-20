@@ -463,11 +463,11 @@ export default function WBS() {
                 onDoubleClick={() => handleStepDoubleClick(step)}
               >
                 <CardHeader className="pb-2 bg-gradient-to-r from-background to-muted/30">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <CardTitle className="text-sm font-semibold leading-tight text-foreground">
+                  <div className="mb-2">
+                    <CardTitle className="text-sm font-semibold leading-tight text-foreground mb-2">
                       {step.step_name}
                     </CardTitle>
-                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                    <div className="flex items-center gap-2">
                       <Badge variant="secondary" className="text-xs font-medium">
                         {step.task_count} tasks
                       </Badge>

@@ -1801,6 +1801,13 @@ export type Database = {
             referencedRelation: "master_steps"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "master_tasks_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "v_master_steps"
+            referencedColumns: ["id"]
+          },
         ]
       }
       plc_master: {
@@ -2898,7 +2905,6 @@ export type Database = {
           id: string
           pos_x: number
           pos_y: number
-          project_id: string
           step_name: string
           updated_at: string
           updated_by: string
@@ -2909,7 +2915,6 @@ export type Database = {
           id?: string
           pos_x?: number
           pos_y?: number
-          project_id: string
           step_name: string
           updated_at?: string
           updated_by: string
@@ -2920,21 +2925,12 @@ export type Database = {
           id?: string
           pos_x?: number
           pos_y?: number
-          project_id?: string
           step_name?: string
           updated_at?: string
           updated_by?: string
           width?: number
         }
-        Relationships: [
-          {
-            foreignKeyName: "wbs_layouts_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
@@ -3392,6 +3388,15 @@ export type Database = {
           },
         ]
       }
+      v_master_steps: {
+        Row: {
+          id: number | null
+          position: number | null
+          step_name: string | null
+          task_count: number | null
+        }
+        Relationships: []
+      }
       v_my_assigned_expenses: {
         Row: {
           account: string | null
@@ -3498,22 +3503,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
-          },
-        ]
-      }
-      v_project_steps: {
-        Row: {
-          project_id: string | null
-          step_name: string | null
-          task_count: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "project_tasks_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
           },
         ]
       }

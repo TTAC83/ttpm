@@ -3,15 +3,10 @@ import { Responsive, WidthProvider, Layout } from "react-grid-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Combobox } from "@/components/ui/combobox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { RotateCcw, Eye, ZoomIn, ZoomOut } from "lucide-react";
-import { wbsService, type ImplementationProject, type ProjectStep, type WBSTask } from "@/lib/wbsService";
-import { TaskEditDialog } from "@/components/TaskEditDialog";
+import { RotateCcw, ZoomIn, ZoomOut } from "lucide-react";
+import { wbsService, type MasterStep, type MasterTask } from "@/lib/wbsService";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
@@ -44,7 +39,6 @@ const gridStyles = `
 `;
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
-
 const ZOOM_LEVELS = [50, 75, 100, 125];
 
 export default function WBS() {
@@ -57,56 +51,33 @@ export default function WBS() {
       document.head.removeChild(style);
     };
   }, []);
+
   const { toast } = useToast();
-  const [projects, setProjects] = useState<ImplementationProject[]>([]);
-  const [selectedProject, setSelectedProject] = useState<string>("");
-  const [steps, setSteps] = useState<ProjectStep[]>([]);
-  const [stepTasks, setStepTasks] = useState<Record<string, WBSTask[]>>({});
+  const [steps, setSteps] = useState<MasterStep[]>([]);
+  const [stepTasks, setStepTasks] = useState<Record<number, MasterTask[]>>({});
   const [layouts, setLayouts] = useState<Record<string, Layout[]>>({ lg: [] });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [zoom, setZoom] = useState(100);
   const [canUpdate, setCanUpdate] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<WBSTask | null>(null);
-  const [profiles, setProfiles] = useState<any[]>([]);
 
-  // Load projects on mount
+  // Load master data on mount
   useEffect(() => {
-    const loadProjects = async () => {
-      try {
-        const data = await wbsService.getImplementationProjects();
-        setProjects(data);
-      } catch (error) {
-        console.error("Failed to load projects:", error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to load projects"
-        });
-      }
-    };
-    loadProjects();
-  }, [toast]);
-
-  // Load project data when selected
-  useEffect(() => {
-    if (!selectedProject) return;
-
-    const loadProjectData = async () => {
+    const loadMasterData = async () => {
       setLoading(true);
       try {
-        const [projectSteps, savedLayouts, updatePermission] = await Promise.all([
-          wbsService.getProjectSteps(selectedProject),
-          wbsService.getWBSLayouts(selectedProject),
-          wbsService.canUpdateLayout(selectedProject)
+        const [masterSteps, savedLayouts, updatePermission] = await Promise.all([
+          wbsService.getMasterSteps(),
+          wbsService.getWBSLayouts(),
+          wbsService.canUpdateLayout()
         ]);
 
-        setSteps(projectSteps);
+        setSteps(masterSteps);
         setCanUpdate(updatePermission);
 
         // Load tasks for each step
-        const tasksData: Record<string, WBSTask[]> = {};
-        for (const step of projectSteps) {
-          tasksData[step.step_name] = await wbsService.getStepTasks(selectedProject, step.step_name);
+        const tasksData: Record<number, MasterTask[]> = {};
+        for (const step of masterSteps) {
+          tasksData[step.id] = await wbsService.getStepTasks(step.id);
         }
         setStepTasks(tasksData);
 
@@ -116,7 +87,7 @@ export default function WBS() {
           savedLayouts.map(layout => [layout.step_name, layout])
         );
 
-        projectSteps.forEach((step, index) => {
+        masterSteps.forEach((step, index) => {
           const saved = savedLayoutMap[step.step_name];
           if (saved) {
             layoutMap.lg.push({
@@ -127,7 +98,7 @@ export default function WBS() {
               h: saved.height
             });
           } else {
-            // Default auto layout
+            // Default auto layout based on step position
             layoutMap.lg.push({
               i: step.step_name,
               x: (index % 3) * 4,
@@ -140,29 +111,22 @@ export default function WBS() {
 
         setLayouts(layoutMap);
       } catch (error) {
-        console.error("Failed to load project data:", error);
+        console.error("Failed to load master data:", error);
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Failed to load project data"
+          description: "Failed to load master data"
         });
       } finally {
         setLoading(false);
       }
     };
 
-    loadProjectData();
-  }, [selectedProject, toast]);
-
-  const projectOptions = useMemo(() => 
-    projects.map(project => ({
-      value: project.id,
-      label: `${project.company_name} • ${project.name}${project.site_name ? ` • ${project.site_name}` : ""}`
-    }))
-  , [projects]);
+    loadMasterData();
+  }, [toast]);
 
   const handleLayoutChange = useCallback((layout: Layout[]) => {
-    if (!canUpdate || !selectedProject) return;
+    if (!canUpdate) return;
 
     setLayouts({ lg: layout });
 
@@ -171,7 +135,6 @@ export default function WBS() {
       try {
         for (const item of layout) {
           await wbsService.saveWBSLayout({
-            project_id: selectedProject,
             step_name: item.i,
             pos_x: item.x,
             pos_y: item.y,
@@ -194,13 +157,11 @@ export default function WBS() {
     }, 200);
 
     return () => clearTimeout(saveTimeout);
-  }, [canUpdate, selectedProject, toast]);
+  }, [canUpdate, toast]);
 
   const handleResetLayout = async () => {
-    if (!selectedProject) return;
-
     try {
-      await wbsService.resetWBSLayout(selectedProject);
+      await wbsService.resetWBSLayout();
       
       // Reset to default layout
       const defaultLayout = steps.map((step, index) => ({
@@ -226,62 +187,20 @@ export default function WBS() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    if (status?.toLowerCase().includes("overdue")) return "destructive";
-    if (status === "Done") return "default";
-    if (status === "In Progress") return "secondary";
-    return "outline";
-  };
-
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return "-";
-    try {
-      return format(new Date(dateStr), "dd/MM/yy");
-    } catch {
-      return "-";
+  const getTechnologyScopeColor = (scope: string) => {
+    switch (scope) {
+      case "both": return "default";
+      case "iot": return "secondary";
+      case "vision": return "outline";
+      default: return "outline";
     }
   };
-
-  const hasOverdueTasks = (stepName: string) => {
-    return stepTasks[stepName]?.some(task => 
-      task.status?.toLowerCase().includes("overdue")
-    ) || false;
-  };
-
-  if (!selectedProject) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold">Work Breakdown Structure</h1>
-          <p className="text-muted-foreground mt-2">
-            Interactive project task management with draggable step boxes
-          </p>
-        </div>
-
-        <div className="max-w-md">
-          <Combobox
-            options={projectOptions}
-            value={selectedProject}
-            onValueChange={setSelectedProject}
-            placeholder="Select an implementation project..."
-            className="w-full"
-          />
-        </div>
-
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <p className="text-muted-foreground">Select a project to view its WBS</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   if (loading) {
     return (
       <div className="container mx-auto py-8">
         <div className="flex items-center justify-center h-64">
-          <p className="text-muted-foreground">Loading project data...</p>
+          <p className="text-muted-foreground">Loading master data...</p>
         </div>
       </div>
     );
@@ -290,25 +209,14 @@ export default function WBS() {
   if (steps.length === 0) {
     return (
       <div className="container mx-auto py-8">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Work Breakdown Structure</h1>
-            <p className="text-muted-foreground mt-2">
-              {projects.find(p => p.id === selectedProject)?.name || "Project"}
-            </p>
-          </div>
-          <Combobox
-            options={projectOptions}
-            value={selectedProject}
-            onValueChange={setSelectedProject}
-            placeholder="Select project..."
-            className="w-80"
-          />
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold">Work Breakdown Structure</h1>
+          <p className="text-muted-foreground mt-2">Master Steps and Tasks</p>
         </div>
 
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <p className="text-muted-foreground">No tasks yet for this project</p>
+            <p className="text-muted-foreground">No master steps found</p>
           </div>
         </div>
       </div>
@@ -321,7 +229,7 @@ export default function WBS() {
         <div>
           <h1 className="text-3xl font-bold">Work Breakdown Structure</h1>
           <p className="text-muted-foreground mt-2">
-            {projects.find(p => p.id === selectedProject)?.name || "Project"}
+            Master Steps and Tasks Template
             {!canUpdate && <Badge variant="secondary" className="ml-2">Read-only</Badge>}
           </p>
         </div>
@@ -367,14 +275,6 @@ export default function WBS() {
             <RotateCcw className="h-4 w-4 mr-2" />
             Reset Layout
           </Button>
-
-          <Combobox
-            options={projectOptions}
-            value={selectedProject}
-            onValueChange={setSelectedProject}
-            placeholder="Select project..."
-            className="w-80"
-          />
         </div>
       </div>
 
@@ -399,67 +299,60 @@ export default function WBS() {
               <Card className="h-full overflow-hidden">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg flex items-center gap-2">
+                    <CardTitle className="text-lg">
                       {step.step_name}
-                      {hasOverdueTasks(step.step_name) && (
-                        <div className="w-2 h-2 bg-destructive rounded-full" title="Has overdue tasks" />
-                      )}
                     </CardTitle>
-                    <Badge variant="secondary">
-                      {step.task_count} task{step.task_count !== 1 ? 's' : ''}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">
+                        {step.task_count} task{step.task_count !== 1 ? 's' : ''}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        Position {step.position}
+                      </Badge>
+                    </div>
                   </div>
                 </CardHeader>
                 
                 <CardContent className="pt-0 h-full overflow-auto">
-                  {stepTasks[step.step_name]?.length > 0 ? (
+                  {stepTasks[step.id]?.length > 0 ? (
                     <div className="space-y-2">
-                      {stepTasks[step.step_name].slice(0, 10).map((task) => (
+                      {stepTasks[step.id].slice(0, 10).map((task) => (
                         <div
                           key={task.id}
-                          className="p-2 border rounded cursor-pointer hover:bg-accent transition-colors"
-                          onClick={() => setSelectedTask(task)}
+                          className="p-2 border rounded hover:bg-accent transition-colors"
                         >
                           <div className="flex items-center justify-between mb-1">
                             <p className="font-medium text-sm line-clamp-1">
-                              {task.task_title}
+                              {task.title}
                             </p>
-                            <Badge variant={getStatusColor(task.status)} className="text-xs">
-                              {task.status}
+                            <Badge variant={getTechnologyScopeColor(task.technology_scope)} className="text-xs">
+                              {task.technology_scope}
                             </Badge>
                           </div>
                           
                           <div className="flex items-center justify-between text-xs text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              {task.assignee_profile && (
-                                <div className="flex items-center gap-1">
-                                  <Avatar className="h-4 w-4">
-                                    <AvatarImage src={task.assignee_profile.avatar_url} />
-                                    <AvatarFallback className="text-xs">
-                                      {task.assignee_profile.name?.charAt(0)}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <span className="truncate max-w-16">
-                                    {task.assignee_profile.name}
-                                  </span>
-                                </div>
-                              )}
+                            <div className="flex items-center gap-2">
+                              <span className="truncate">
+                                {task.assigned_role}
+                              </span>
                             </div>
                             <div className="text-right">
-                              <div>{formatDate(task.planned_start)} - {formatDate(task.planned_end)}</div>
-                              {task.actual_start && (
-                                <div className="text-green-600">
-                                  {formatDate(task.actual_start)} - {formatDate(task.actual_end)}
-                                </div>
-                              )}
+                              <div>Days: {task.planned_start_offset_days} - {task.planned_end_offset_days}</div>
+                              <div className="text-xs">Pos: {task.position}</div>
                             </div>
                           </div>
+                          
+                          {task.details && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                              {task.details}
+                            </p>
+                          )}
                         </div>
                       ))}
                       
-                      {stepTasks[step.step_name].length > 10 && (
+                      {stepTasks[step.id].length > 10 && (
                         <div className="text-center text-xs text-muted-foreground pt-2">
-                          +{stepTasks[step.step_name].length - 10} more tasks
+                          +{stepTasks[step.id].length - 10} more tasks
                         </div>
                       )}
                     </div>
@@ -474,20 +367,6 @@ export default function WBS() {
           ))}
         </ResponsiveGridLayout>
       </div>
-
-      {selectedTask && (
-        <TaskEditDialog
-          task={selectedTask}
-          profiles={profiles}
-          open={!!selectedTask}
-          onOpenChange={(open) => !open && setSelectedTask(null)}
-          onSave={async (taskData) => {
-            // Implement task save logic here
-            console.log("Saving task:", taskData);
-            setSelectedTask(null);
-          }}
-        />
-      )}
     </div>
   );
 }

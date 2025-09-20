@@ -110,16 +110,40 @@ class WBSService {
         if (error) throw error;
       }
     } else {
-      // For global templates, use upsert with the unique index
-      const { error } = await supabase
+      // For global templates, check if a layout already exists for this step
+      const { data: existing } = await supabase
         .from("wbs_layouts")
-        .upsert({
-          ...layout,
-          project_id: null,
-          updated_by: user.user.id
-        });
-      
-      if (error) throw error;
+        .select("id")
+        .eq("step_name", layout.step_name)
+        .is("project_id", null)
+        .single();
+
+      if (existing) {
+        // Update existing layout
+        const { error } = await supabase
+          .from("wbs_layouts")
+          .update({
+            pos_x: layout.pos_x,
+            pos_y: layout.pos_y,
+            width: layout.width,
+            height: layout.height,
+            updated_by: user.user.id
+          })
+          .eq("id", existing.id);
+        
+        if (error) throw error;
+      } else {
+        // Insert new layout
+        const { error } = await supabase
+          .from("wbs_layouts")
+          .insert({
+            ...layout,
+            project_id: null,
+            updated_by: user.user.id
+          });
+        
+        if (error) throw error;
+      }
     }
   }
 

@@ -16,6 +16,7 @@ import "react-resizable/css/styles.css";
 const gridStyles = `
   .react-grid-layout {
     position: relative;
+    min-width: 1800px; /* Ensure enough width so 5 cards (w=2 of 10 cols) are spacious */
     background-image: 
       linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px),
       linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px);

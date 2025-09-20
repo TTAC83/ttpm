@@ -446,15 +446,15 @@ export default function WBS() {
           layouts={layouts}
           onLayoutChange={handleLayoutChange}
           breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-          cols={{ lg: 10, md: 10, sm: 10, xs: 6, xxs: 2 }} // Ensure 5 cards per row (2 cols each) at md+
+          cols={{ lg: 10, md: 8, sm: 6, xs: 4, xxs: 2 }}
           isDraggable={canUpdate}
           isResizable={canUpdate}
-          margin={[4, 8]} // Minimal horizontal margin for tight fit
-          containerPadding={[8, 16]} // Reduced horizontal padding
+          margin={[8, 8]}
+          containerPadding={[16, 16]}
           rowHeight={60}
-          compactType={null} // Disable auto-compacting to preserve intentional layouts
-          preventCollision={true} // Prevent cards from overlapping
-          allowOverlap={false} // Strictly prevent overlap
+          compactType={null}
+          preventCollision={true}
+          allowOverlap={false}
         >
           {steps.map((step) => (
             <div key={step.step_name} className="h-full">

@@ -326,7 +326,7 @@ export default function WBS() {
   }
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="w-full py-8 px-4">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Work Breakdown Structure</h1>
@@ -425,15 +425,16 @@ export default function WBS() {
           layouts={layouts}
           onLayoutChange={handleLayoutChange}
           breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-          cols={{ lg: 10, md: 10, sm: 6, xs: 4, xxs: 2 }} // 10 columns for 5 cards of width 2
+          cols={{ lg: 10, md: 8, sm: 6, xs: 4, xxs: 2 }} // 10 columns for 5 cards of width 2
           isDraggable={canUpdate}
           isResizable={canUpdate}
-          margin={[8, 8]} // Reduced margin for better fit
-          containerPadding={[16, 16]}
+          margin={[4, 8]} // Minimal horizontal margin for tight fit
+          containerPadding={[8, 16]} // Reduced horizontal padding
           rowHeight={60}
           compactType={null} // Disable auto-compacting to preserve intentional layouts
           preventCollision={true} // Prevent cards from overlapping
           allowOverlap={false} // Strictly prevent overlap
+          width={1200} // Fixed width to ensure consistent 5-card layout
         >
           {steps.map((step) => (
             <div key={step.step_name} className="h-full">

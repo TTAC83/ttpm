@@ -446,7 +446,7 @@ export default function WBS() {
           layouts={layouts}
           onLayoutChange={handleLayoutChange}
           breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-          cols={{ lg: 10, md: 8, sm: 6, xs: 4, xxs: 2 }}
+          cols={{ lg: 10, md: 10, sm: 10, xs: 10, xxs: 10 }}
           isDraggable={canUpdate}
           isResizable={canUpdate}
           margin={[8, 8]}

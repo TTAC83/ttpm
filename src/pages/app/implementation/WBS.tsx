@@ -88,6 +88,7 @@ export default function WBS() {
   const [zoom, setZoom] = useState(100);
   const [canUpdate, setCanUpdate] = useState(false);
   const [layoutMode, setLayoutMode] = useState<"sequential" | "parallel" | "custom">("custom");
+  const [stepRows, setStepRows] = useState<Record<string, number>>({});
 
   // Load master data on mount
   useEffect(() => {
@@ -110,8 +111,9 @@ export default function WBS() {
         }
         setStepTasks(tasksData);
 
-        // Convert saved layouts to react-grid-layout format
+        // Convert saved layouts to react-grid-layout format and extract row assignments
         const layoutMap: Record<string, Layout[]> = { lg: [] };
+        const rowAssignments: Record<string, number> = {};
         const savedLayoutMap = Object.fromEntries(
           savedLayouts.map(layout => [layout.step_name, layout])
         );
@@ -126,17 +128,24 @@ export default function WBS() {
               w: saved.width,
               h: saved.height
             });
+            // Extract row from y position (assuming 4 units per row)
+            rowAssignments[step.step_name] = Math.floor(saved.pos_y / 4) + 1;
           } else {
-            // Default layout based on step position (sequential by default)
+            // Default layout - arrange in rows of 5
+            const row = Math.floor(index / 5);
+            const col = index % 5;
             layoutMap.lg.push({
               i: step.step_name,
-              x: 1, // All in first column for sequential flow
-              y: index * 3, // Vertical spacing
-              w: 3, // Wider cards for better readability
-              h: 3  // Compact height
+              x: col * 2, // 2 units wide with spacing
+              y: row * 4, // 4 units per row
+              w: 2,
+              h: 3
             });
+            rowAssignments[step.step_name] = row + 1;
           }
         });
+
+        setStepRows(rowAssignments);
 
         setLayouts(layoutMap);
       } catch (error) {
@@ -211,27 +220,30 @@ export default function WBS() {
 
   const applyLayoutMode = (mode: "sequential" | "parallel" | "custom") => {
     let newLayout: Layout[];
+    const newRowAssignments: Record<string, number> = {};
     
     if (mode === "sequential") {
-      // Vertical arrangement for sequential workflow
-      newLayout = steps.map((step, index) => ({
-        i: step.step_name,
-        x: 1, // All in column 1
-        y: index * 4, // Spaced vertically
-        w: 4, // Wider for readability
-        h: 3  // Compact height
-      }));
-    } else if (mode === "parallel") {
-      // Horizontal arrangement for parallel workflow
+      // Vertical arrangement - all in row 1, sequentially
       newLayout = steps.map((step, index) => {
-        const col = index % 5; // 5 columns max
-        const row = Math.floor(index / 5);
+        newRowAssignments[step.step_name] = 1;
         return {
           i: step.step_name,
-          x: col * 2, // Spaced horizontally
-          y: row * 4, // Multiple rows if needed
-          w: 2, // Narrower for parallel view
-          h: 4  // Taller for content
+          x: index * 2, // Horizontal spacing
+          y: 0, // All in same row
+          w: 2,
+          h: 3
+        };
+      });
+    } else if (mode === "parallel") {
+      // Each step gets its own row for parallel workflow
+      newLayout = steps.map((step, index) => {
+        newRowAssignments[step.step_name] = index + 1;
+        return {
+          i: step.step_name,
+          x: 0, // All in first column
+          y: index * 4, // Each in different row
+          w: 2,
+          h: 3
         };
       });
     } else {
@@ -240,7 +252,34 @@ export default function WBS() {
     }
     
     setLayouts({ lg: newLayout });
+    setStepRows(newRowAssignments);
     setLayoutMode(mode);
+  };
+
+  const handleRowChange = async (stepName: string, newRow: number) => {
+    if (!canUpdate) return;
+    
+    const newRowAssignments = { ...stepRows, [stepName]: newRow };
+    setStepRows(newRowAssignments);
+    
+    // Update layout based on row assignments
+    const newLayout = layouts.lg.map(item => {
+      if (item.i === stepName) {
+        // Find how many items are in the target row already
+        const itemsInRow = Object.entries(newRowAssignments)
+          .filter(([key, row]) => row === newRow && key !== stepName)
+          .length;
+        
+        return {
+          ...item,
+          x: itemsInRow * 2, // Position horizontally in row
+          y: (newRow - 1) * 4 // Position in correct row
+        };
+      }
+      return item;
+    });
+    
+    setLayouts({ lg: newLayout });
   };
 
   const getTechnologyScopeColor = (scope: string) => {
@@ -295,16 +334,16 @@ export default function WBS() {
           <Tabs value={layoutMode} onValueChange={(value) => applyLayoutMode(value as any)} className="flex-shrink-0">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="sequential" className="flex items-center gap-1">
-                <ArrowDown className="h-3 w-3" />
+                <ArrowRight className="h-3 w-3" />
                 Sequential
               </TabsTrigger>
               <TabsTrigger value="parallel" className="flex items-center gap-1">
-                <ArrowRight className="h-3 w-3" />
+                <ArrowDown className="h-3 w-3" />
                 Parallel
               </TabsTrigger>
               <TabsTrigger value="custom" className="flex items-center gap-1">
                 <Grid3x3 className="h-3 w-3" />
-                Custom
+                Row-based
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -356,12 +395,16 @@ export default function WBS() {
       <div className="mb-4 text-sm text-muted-foreground">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-0.5 bg-blue-400"></div>
-            <span>Sequential: Arrange vertically for steps that must happen in order</span>
+            <ArrowRight className="h-3 w-3 text-blue-400" />
+            <span>Sequential: Steps arranged horizontally in order</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-0.5 h-4 bg-green-400"></div>
-            <span>Parallel: Arrange horizontally for steps that can happen simultaneously</span>
+            <ArrowDown className="h-3 w-3 text-green-400" />
+            <span>Parallel: Each step in its own row for parallel execution</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Grid3x3 className="h-3 w-3 text-purple-400" />
+            <span>Row-based: Assign cards to specific rows manually</span>
           </div>
         </div>
       </div>
@@ -387,7 +430,7 @@ export default function WBS() {
             <div key={step.step_name} className="h-full">
               <Card className="h-full overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 border-2 hover:border-primary/20">
                 <CardHeader className="pb-2 bg-gradient-to-r from-background to-muted/30">
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start justify-between gap-2 mb-2">
                     <CardTitle className="text-sm font-semibold leading-tight text-foreground">
                       {step.step_name}
                     </CardTitle>
@@ -400,6 +443,27 @@ export default function WBS() {
                       </Badge>
                     </div>
                   </div>
+                  
+                  {layoutMode === "custom" && canUpdate && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Row:</span>
+                      <Select 
+                        value={stepRows[step.step_name]?.toString() || "1"} 
+                        onValueChange={(value) => handleRowChange(step.step_name, parseInt(value))}
+                      >
+                        <SelectTrigger className="w-16 h-6 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(row => (
+                            <SelectItem key={row} value={row.toString()}>
+                              {row}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </CardHeader>
                 
                 <CardContent className="pt-0 pb-2 h-full overflow-auto">

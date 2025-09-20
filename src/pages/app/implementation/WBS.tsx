@@ -166,12 +166,19 @@ export default function WBS() {
   const handleLayoutChange = useCallback((layout: Layout[]) => {
     if (!canUpdate) return;
 
-    setLayouts({ lg: layout });
+    // Prevent dragging above y=0 and ensure minimum bounds
+    const boundedLayout = layout.map(item => ({
+      ...item,
+      y: Math.max(0, item.y), // Prevent negative Y positions
+      x: Math.max(0, item.x)  // Prevent negative X positions
+    }));
+
+    setLayouts({ lg: boundedLayout });
 
     // Debounced save
     const saveTimeout = setTimeout(async () => {
       try {
-        for (const item of layout) {
+        for (const item of boundedLayout) {
           await wbsService.saveWBSLayout({
             step_name: item.i,
             pos_x: item.x,

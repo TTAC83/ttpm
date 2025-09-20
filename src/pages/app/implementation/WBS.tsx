@@ -4,23 +4,37 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RotateCcw, ZoomIn, ZoomOut } from "lucide-react";
+import { RotateCcw, ZoomIn, ZoomOut, ArrowDown, ArrowRight, Grid3x3 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { wbsService, type MasterStep, type MasterTask } from "@/lib/wbsService";
 import { useToast } from "@/hooks/use-toast";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
-// Add CSS for grid layout
+// Add CSS for grid layout with workflow guides
 const gridStyles = `
   .react-grid-layout {
     position: relative;
+    background-image: 
+      linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
   }
   .react-grid-item {
     transition: all 200ms ease;
-    transition-property: left, top;
+    transition-property: left, top, box-shadow;
+    border-radius: 8px;
   }
   .react-grid-item.cssTransforms {
-    transition-property: transform;
+    transition-property: transform, box-shadow;
+  }
+  .react-grid-item:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+  }
+  .react-grid-item.react-draggable-dragging {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    z-index: 1001;
   }
   .react-grid-item > .react-resizable-handle {
     position: absolute;
@@ -35,6 +49,20 @@ const gridStyles = `
     background-origin: content-box;
     box-sizing: border-box;
     cursor: se-resize;
+    opacity: 0.7;
+  }
+  .workflow-guide {
+    position: absolute;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .workflow-guide.vertical {
+    width: 2px;
+    background: linear-gradient(to bottom, transparent, rgba(59, 130, 246, 0.3), transparent);
+  }
+  .workflow-guide.horizontal {
+    height: 2px;
+    background: linear-gradient(to right, transparent, rgba(34, 197, 94, 0.3), transparent);
   }
 `;
 
@@ -59,6 +87,7 @@ export default function WBS() {
   const [loading, setLoading] = useState(true);
   const [zoom, setZoom] = useState(100);
   const [canUpdate, setCanUpdate] = useState(false);
+  const [layoutMode, setLayoutMode] = useState<"sequential" | "parallel" | "custom">("custom");
 
   // Load master data on mount
   useEffect(() => {
@@ -98,15 +127,13 @@ export default function WBS() {
               h: saved.height
             });
           } else {
-            // Default horizontal layout - 5 columns max, then wrap to next row
-            const col = index % 5; // 0-4 columns per row
-            const row = Math.floor(index / 5);
+            // Default layout based on step position (sequential by default)
             layoutMap.lg.push({
               i: step.step_name,
-              x: col * 2, // 2 units wide per column (10 total width for 5 columns)
-              y: row * 6, // 6 units tall per row for better spacing
-              w: 2, // 2 grid units wide
-              h: 6  // 6 grid units tall for better readability
+              x: 1, // All in first column for sequential flow
+              y: index * 3, // Vertical spacing
+              w: 3, // Wider cards for better readability
+              h: 3  // Compact height
             });
           }
         });
@@ -165,23 +192,12 @@ export default function WBS() {
     try {
       await wbsService.resetWBSLayout();
       
-      // Reset to default horizontal layout
-      const defaultLayout = steps.map((step, index) => {
-        const col = index % 5; // 5 columns per row
-        const row = Math.floor(index / 5);
-        return {
-          i: step.step_name,
-          x: col * 2, // 2 units wide per column
-          y: row * 6, // 6 units tall per row
-          w: 2, // 2 grid units wide
-          h: 6  // 6 grid units tall
-        };
-      });
+      // Apply layout based on current mode
+      applyLayoutMode(layoutMode);
       
-      setLayouts({ lg: defaultLayout });
       toast({
         title: "Layout reset",
-        description: "WBS layout has been reset to default"
+        description: `WBS layout reset to ${layoutMode} mode`
       });
     } catch (error) {
       console.error("Failed to reset layout:", error);
@@ -191,6 +207,40 @@ export default function WBS() {
         description: "Failed to reset layout"
       });
     }
+  };
+
+  const applyLayoutMode = (mode: "sequential" | "parallel" | "custom") => {
+    let newLayout: Layout[];
+    
+    if (mode === "sequential") {
+      // Vertical arrangement for sequential workflow
+      newLayout = steps.map((step, index) => ({
+        i: step.step_name,
+        x: 1, // All in column 1
+        y: index * 4, // Spaced vertically
+        w: 4, // Wider for readability
+        h: 3  // Compact height
+      }));
+    } else if (mode === "parallel") {
+      // Horizontal arrangement for parallel workflow
+      newLayout = steps.map((step, index) => {
+        const col = index % 5; // 5 columns max
+        const row = Math.floor(index / 5);
+        return {
+          i: step.step_name,
+          x: col * 2, // Spaced horizontally
+          y: row * 4, // Multiple rows if needed
+          w: 2, // Narrower for parallel view
+          h: 4  // Taller for content
+        };
+      });
+    } else {
+      // Keep current layout for custom mode
+      return;
+    }
+    
+    setLayouts({ lg: newLayout });
+    setLayoutMode(mode);
   };
 
   const getTechnologyScopeColor = (scope: string) => {
@@ -241,6 +291,25 @@ export default function WBS() {
         </div>
         
         <div className="flex items-center gap-4">
+          {/* Layout Mode Selector */}
+          <Tabs value={layoutMode} onValueChange={(value) => applyLayoutMode(value as any)} className="flex-shrink-0">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="sequential" className="flex items-center gap-1">
+                <ArrowDown className="h-3 w-3" />
+                Sequential
+              </TabsTrigger>
+              <TabsTrigger value="parallel" className="flex items-center gap-1">
+                <ArrowRight className="h-3 w-3" />
+                Parallel
+              </TabsTrigger>
+              <TabsTrigger value="custom" className="flex items-center gap-1">
+                <Grid3x3 className="h-3 w-3" />
+                Custom
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          {/* Zoom Controls */}
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -284,36 +353,50 @@ export default function WBS() {
         </div>
       </div>
 
+      <div className="mb-4 text-sm text-muted-foreground">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-0.5 bg-blue-400"></div>
+            <span>Sequential: Arrange vertically for steps that must happen in order</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-0.5 h-4 bg-green-400"></div>
+            <span>Parallel: Arrange horizontally for steps that can happen simultaneously</span>
+          </div>
+        </div>
+      </div>
+
       <div 
         className="relative border rounded-lg bg-muted/50 p-4 overflow-auto"
-        style={{ transform: `scale(${zoom / 100})`, transformOrigin: "top left" }}
+        style={{ transform: `scale(${zoom / 100})`, transformOrigin: "top left", minHeight: "600px" }}
       >
         <ResponsiveGridLayout
           className="layout"
           layouts={layouts}
           onLayoutChange={handleLayoutChange}
           breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-          cols={{ lg: 10, md: 8, sm: 6, xs: 4, xxs: 2 }} // 10 columns for 5 cards at 2 units each
+          cols={{ lg: 12, md: 10, sm: 8, xs: 6, xxs: 4 }}
           isDraggable={canUpdate}
           isResizable={canUpdate}
-          margin={[16, 16]}
+          margin={[12, 12]}
           containerPadding={[16, 16]}
-          rowHeight={80} // Increased row height for better readability
+          rowHeight={60}
+          compactType={null} // Disable auto-compacting to preserve intentional layouts
         >
           {steps.map((step) => (
             <div key={step.step_name} className="h-full">
-              <Card className="h-full overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                <CardHeader className="pb-2">
+              <Card className="h-full overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 border-2 hover:border-primary/20">
+                <CardHeader className="pb-2 bg-gradient-to-r from-background to-muted/30">
                   <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-base leading-tight">
+                    <CardTitle className="text-sm font-semibold leading-tight text-foreground">
                       {step.step_name}
                     </CardTitle>
                     <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                      <Badge variant="secondary" className="text-xs">
-                        {step.task_count}
+                      <Badge variant="secondary" className="text-xs font-medium">
+                        {step.task_count} tasks
                       </Badge>
                       <Badge variant="outline" className="text-xs">
-                        #{step.position}
+                        Step {step.position}
                       </Badge>
                     </div>
                   </div>

@@ -500,46 +500,9 @@ export default function WBS() {
                 </CardHeader>
                 
                 <CardContent className="pt-0 pb-2 h-full overflow-auto">
-                  {stepTasks[step.id]?.length > 0 ? (
-                    <div className="space-y-1">
-                      {stepTasks[step.id].slice(0, 8).map((task) => (
-                        <div
-                          key={task.id}
-                          className="p-2 border rounded hover:bg-accent transition-colors text-xs"
-                        >
-                          <div className="flex items-start justify-between mb-1 gap-1">
-                            <p className="font-medium leading-tight line-clamp-2 flex-1">
-                              {task.title}
-                            </p>
-                            <Badge variant={getTechnologyScopeColor(task.technology_scope)} className="text-xs flex-shrink-0">
-                              {task.technology_scope === "both" ? "B" : task.technology_scope === "iot" ? "I" : "V"}
-                            </Badge>
-                          </div>
-                          
-                          <div className="flex items-center justify-between text-xs text-muted-foreground">
-                            <div className="truncate flex-1 mr-2">
-                              <span className="font-medium">
-                                {task.assigned_role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                              </span>
-                            </div>
-                            <div className="text-right flex-shrink-0">
-                              <div className="font-mono">{task.planned_start_offset_days}-{task.planned_end_offset_days}d</div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      
-                      {stepTasks[step.id].length > 8 && (
-                        <div className="text-center text-xs text-muted-foreground pt-1">
-                          +{stepTasks[step.id].length - 8} more
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-center text-xs text-muted-foreground py-8">
-                      No tasks in this step
-                    </div>
-                  )}
+                  <div className="text-center text-xs text-muted-foreground py-4">
+                    Double-click to view and edit tasks
+                  </div>
                 </CardContent>
               </Card>
             </div>

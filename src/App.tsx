@@ -57,6 +57,7 @@ import { BAUDetail } from "./pages/app/BAUDetail";
 import { WeeklyReview } from "./pages/app/bau/WeeklyReview";
 import WeeklyReviewPage from "./pages/app/bau/WeeklyReviewPage";
 import ImplementationWeeklyReview from "./pages/app/ImplementationWeeklyReview";
+import WBS from "./pages/app/implementation/WBS";
 import ImplementationEscalations from "./pages/app/ImplementationBlockers";
 import ProductGaps from "./pages/app/ProductGaps";
 import { InternalRoute } from "@/components/auth/InternalRoute";
@@ -250,6 +251,7 @@ const App = () => (
               <Route path="bau/weekly-review-page" element={<WeeklyReviewPage />} />
               <Route path="bau/:id" element={<BAUDetail />} />
               <Route path="implementation/weekly-review" element={<ImplementationWeeklyReview />} />
+              <Route path="implementation/wbs" element={<WBS />} />
               <Route path="implementation/blockers" element={<InternalRoute>
                 <ImplementationEscalations />
               </InternalRoute>} />

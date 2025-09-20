@@ -65,6 +65,11 @@ export const NAV: NavItem[] = [
         matchPaths: ["/app/projects"],
       },
       {
+        label: "Work Breakdown Structure",
+        to: "/app/implementation/wbs",
+        matchPaths: ["/app/implementation/wbs"],
+      },
+      {
         label: "Reports",
         children: [
           { 

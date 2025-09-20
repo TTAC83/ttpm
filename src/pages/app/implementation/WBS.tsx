@@ -8,6 +8,7 @@ import { RotateCcw, ZoomIn, ZoomOut, ArrowDown, ArrowRight, Grid3x3 } from "luci
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { wbsService, type MasterStep, type MasterTask } from "@/lib/wbsService";
 import { useToast } from "@/hooks/use-toast";
+import { WBSTaskDialog } from "@/components/WBSTaskDialog";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
@@ -89,6 +90,8 @@ export default function WBS() {
   const [canUpdate, setCanUpdate] = useState(false);
   const [layoutMode, setLayoutMode] = useState<"sequential" | "parallel" | "custom">("custom");
   const [stepRows, setStepRows] = useState<Record<string, number>>({});
+  const [selectedStep, setSelectedStep] = useState<MasterStep | null>(null);
+  const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
 
   // Load master data on mount
   useEffect(() => {
@@ -289,6 +292,24 @@ export default function WBS() {
     setLayouts({ lg: newLayout });
   };
 
+  const handleStepDoubleClick = (step: MasterStep) => {
+    setSelectedStep(step);
+    setIsTaskDialogOpen(true);
+  };
+
+  const handleTaskSave = (updatedTasks: MasterTask[]) => {
+    if (selectedStep) {
+      setStepTasks(prev => ({
+        ...prev,
+        [selectedStep.id]: updatedTasks
+      }));
+      toast({
+        title: "Tasks updated",
+        description: "Step tasks have been updated successfully"
+      });
+    }
+  };
+
   const getTechnologyScopeColor = (scope: string) => {
     switch (scope) {
       case "both": return "default";
@@ -437,7 +458,10 @@ export default function WBS() {
         >
           {steps.map((step) => (
             <div key={step.step_name} className="h-full">
-              <Card className="h-full overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 border-2 hover:border-primary/20">
+              <Card 
+                className="h-full overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 border-2 hover:border-primary/20 cursor-pointer"
+                onDoubleClick={() => handleStepDoubleClick(step)}
+              >
                 <CardHeader className="pb-2 bg-gradient-to-r from-background to-muted/30">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <CardTitle className="text-sm font-semibold leading-tight text-foreground">
@@ -522,6 +546,19 @@ export default function WBS() {
           ))}
         </ResponsiveGridLayout>
       </div>
+
+      {selectedStep && (
+        <WBSTaskDialog
+          isOpen={isTaskDialogOpen}
+          onClose={() => {
+            setIsTaskDialogOpen(false);
+            setSelectedStep(null);
+          }}
+          step={selectedStep}
+          tasks={stepTasks[selectedStep.id] || []}
+          onSave={handleTaskSave}
+        />
+      )}
     </div>
   );
 }

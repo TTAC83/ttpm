@@ -225,7 +225,6 @@ export const AppLayout = () => {
               <SidebarTrigger />
               <div className="flex items-center gap-2">
                 <InstallButton />
-                <InstallHelpModal />
               </div>
             </div>
           </div>

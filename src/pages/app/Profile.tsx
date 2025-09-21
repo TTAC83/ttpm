@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import PushNotificationSetup from '@/components/pwa/PushNotificationSetup';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -428,6 +429,8 @@ export const Profile = () => {
           )}
         </CardContent>
       </Card>
+
+      <PushNotificationSetup />
     </div>
   );
 };

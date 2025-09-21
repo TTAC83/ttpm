@@ -16,7 +16,10 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["/offline.html", "/icons/icon-192.png", "/icons/icon-256.png", "/icons/icon-384.png", "/icons/icon-512.png", "/icons/maskable-192.png", "/icons/maskable-512.png"],
-      manifest: false,
+      manifest: false, // We use our own manifest
+      devOptions: {
+        enabled: true
+      },
       workbox: {
         navigateFallback: "/",
         navigateFallbackDenylist: [/^\/api\//, /^\/rest\//, /^\/storage\//],

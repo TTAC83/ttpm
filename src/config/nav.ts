@@ -14,7 +14,8 @@ import {
   Monitor,
   Package,
   AlertTriangle,
-  BarChart3
+  BarChart3,
+  User
 } from "lucide-react";
 
 export type Role = "internal_admin" | "internal_user" | "external_admin" | "external_user";
@@ -29,7 +30,16 @@ export type NavItem = {
 };
 
 export const NAV: NavItem[] = [
-  // 1) BAU
+  // 1) My Work
+  {
+    label: "My Work",
+    iconName: "User",
+    to: "/app/my-work",
+    roles: ["internal_admin", "internal_user", "external_admin", "external_user"],
+    matchPaths: ["/app/my-work"]
+  },
+
+  // 2) BAU
   {
     label: "BAU",
     iconName: "Headphones",
@@ -48,7 +58,7 @@ export const NAV: NavItem[] = [
     ]
   },
 
-  // 2) Project Implementation
+  // 3) Project Implementation
   {
     label: "Project Implementation",
     iconName: "Settings",
@@ -116,7 +126,7 @@ export const NAV: NavItem[] = [
     ]
   },
 
-  // 3) Solutions Consulting
+  // 4) Solutions Consulting
   {
     label: "Solutions Consulting",
     iconName: "Briefcase",
@@ -130,7 +140,7 @@ export const NAV: NavItem[] = [
     ]
   },
 
-  // 4) Expenses
+  // 5) Expenses
   {
     label: "Expenses",
     iconName: "Receipt",
@@ -139,7 +149,7 @@ export const NAV: NavItem[] = [
     matchPaths: ["/app/expenses"]
   },
 
-  // 5) Master Data (consolidate prior Master Data + Hardware MasterData children)
+  // 6) Master Data (consolidate prior Master Data + Hardware MasterData children)
   {
     label: "Master Data",
     iconName: "Database",
@@ -201,7 +211,7 @@ export const NAV: NavItem[] = [
     ]
   },
 
-  // 6) User Management
+  // 7) User Management
   {
     label: "User Management",
     iconName: "UserCog",
@@ -210,7 +220,7 @@ export const NAV: NavItem[] = [
     matchPaths: ["/app/admin/users"]
   },
 
-  // 7) Feature Requests
+  // 8) Feature Requests
   {
     label: "Feature Requests",
     iconName: "Lightbulb",
@@ -247,7 +257,8 @@ export const ICON_MAP = {
   Monitor,
   Package,
   AlertTriangle,
-  BarChart3
+  BarChart3,
+  User
 } as const;
 
 export function visibleItemsForRole(role: Role | null | undefined): NavItem[] {

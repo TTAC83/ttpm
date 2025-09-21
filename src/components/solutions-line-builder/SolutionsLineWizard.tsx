@@ -91,8 +91,8 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
         name: lineData.line_name,
         min_speed: lineData.min_speed || 0,
         max_speed: lineData.max_speed || 0,
-        line_description: lineData.line_description || "",
-        product_description: lineData.product_description || "",
+        line_description: (lineData as any).line_description || "",
+        product_description: (lineData as any).product_description || "",
       });
 
       // For solutions lines, we don't have positions/equipment in the database yet
@@ -150,6 +150,8 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
             max_speed: lineData.max_speed,
             camera_count: totalCameras,
             iot_device_count: totalIotDevices,
+            line_description: lineData.line_description || null,
+            product_description: lineData.product_description || null,
           })
           .eq('id', editLineId);
 
@@ -165,6 +167,8 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
             max_speed: lineData.max_speed,
             camera_count: totalCameras,
             iot_device_count: totalIotDevices,
+            line_description: lineData.line_description || null,
+            product_description: lineData.product_description || null,
           });
 
         if (lineError) throw lineError;

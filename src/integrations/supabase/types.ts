@@ -2478,9 +2478,11 @@ export type Database = {
           created_at: string
           id: string
           iot_device_count: number
+          line_description: string | null
           line_name: string
           max_speed: number | null
           min_speed: number | null
+          product_description: string | null
           solutions_project_id: string
         }
         Insert: {
@@ -2488,9 +2490,11 @@ export type Database = {
           created_at?: string
           id?: string
           iot_device_count?: number
+          line_description?: string | null
           line_name: string
           max_speed?: number | null
           min_speed?: number | null
+          product_description?: string | null
           solutions_project_id: string
         }
         Update: {
@@ -2498,9 +2502,11 @@ export type Database = {
           created_at?: string
           id?: string
           iot_device_count?: number
+          line_description?: string | null
           line_name?: string
           max_speed?: number | null
           min_speed?: number | null
+          product_description?: string | null
           solutions_project_id?: string
         }
         Relationships: []

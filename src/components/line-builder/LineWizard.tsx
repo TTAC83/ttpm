@@ -203,6 +203,8 @@ export const LineWizard: React.FC<LineWizardProps> = ({
             max_speed: lineData.max_speed,
             camera_count: totalCameras,
             iot_device_count: totalIotDevices,
+            line_description: lineData.line_description || null,
+            product_description: lineData.product_description || null,
           })
           .eq('id', editLineId);
 
@@ -243,6 +245,8 @@ export const LineWizard: React.FC<LineWizardProps> = ({
             max_speed: lineData.max_speed,
             camera_count: totalCameras,
             iot_device_count: totalIotDevices,
+            line_description: lineData.line_description || null,
+            product_description: lineData.product_description || null,
           })
           .select()
           .single();

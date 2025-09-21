@@ -58,6 +58,8 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
     name: "",
     min_speed: 0,
     max_speed: 0,
+    line_description: "",
+    product_description: "",
   });
   const [positions, setPositions] = useState<Position[]>([]);
   const { toast } = useToast();
@@ -65,7 +67,7 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
   useEffect(() => {
     if (!open) {
       setCurrentStep(1);
-      setLineData({ name: "", min_speed: 0, max_speed: 0 });
+      setLineData({ name: "", min_speed: 0, max_speed: 0, line_description: "", product_description: "" });
       setPositions([]);
     } else if (editLineId) {
       loadLineData();
@@ -89,6 +91,8 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
         name: lineData.line_name,
         min_speed: lineData.min_speed || 0,
         max_speed: lineData.max_speed || 0,
+        line_description: lineData.line_description || "",
+        product_description: lineData.product_description || "",
       });
 
       // For solutions lines, we don't have positions/equipment in the database yet
@@ -176,7 +180,7 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
       
       // Reset state
       setCurrentStep(1);
-      setLineData({ name: "", min_speed: 0, max_speed: 0 });
+      setLineData({ name: "", min_speed: 0, max_speed: 0, line_description: "", product_description: "" });
       setPositions([]);
 
     } catch (error) {

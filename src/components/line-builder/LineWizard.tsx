@@ -58,6 +58,8 @@ export const LineWizard: React.FC<LineWizardProps> = ({
     name: "",
     min_speed: 0,
     max_speed: 0,
+    line_description: "",
+    product_description: "",
   });
   const [positions, setPositions] = useState<Position[]>([]);
   const { toast } = useToast();
@@ -65,7 +67,7 @@ export const LineWizard: React.FC<LineWizardProps> = ({
   useEffect(() => {
     if (!open) {
       setCurrentStep(1);
-      setLineData({ name: "", min_speed: 0, max_speed: 0 });
+      setLineData({ name: "", min_speed: 0, max_speed: 0, line_description: "", product_description: "" });
       setPositions([]);
     } else if (editLineId) {
       loadLineData();
@@ -89,6 +91,8 @@ export const LineWizard: React.FC<LineWizardProps> = ({
         name: lineData.line_name,
         min_speed: lineData.min_speed || 0,
         max_speed: lineData.max_speed || 0,
+        line_description: lineData.line_description || "",
+        product_description: lineData.product_description || "",
       });
 
       // Load positions with titles
@@ -323,7 +327,7 @@ export const LineWizard: React.FC<LineWizardProps> = ({
       
       // Reset state
       setCurrentStep(1);
-      setLineData({ name: "", min_speed: 0, max_speed: 0 });
+      setLineData({ name: "", min_speed: 0, max_speed: 0, line_description: "", product_description: "" });
       setPositions([]);
 
     } catch (error) {

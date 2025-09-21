@@ -64,44 +64,22 @@ function AndroidInstallInstructions() {
               </Badge>
             )}
             <Badge variant="secondary" className="w-full justify-center">
-              {hasNativePrompt ? "Installation Available" : "Ready to Install"}
+              {hasNativePrompt ? "Installation Available" : "Preparing installation…"}
             </Badge>
-            <Button 
-              onClick={async () => {
-                console.log('MobileInstall: Install button clicked');
-                if (inIframe) {
-                  const url = `${window.location.origin}${window.location.pathname}#install`;
-                  console.log('MobileInstall: Opening new tab for install flow:', url);
-                  window.open(url, "_blank", "noopener");
-                  return;
-                }
-                if (!hasNativePrompt) {
-                  console.log('MobileInstall: Native prompt not ready yet');
-                  toast({ title: 'Preparing install…', description: 'Please try again in a moment.' });
-                  return;
-                }
-                const result = await promptInstall();
-                console.log('MobileInstall: Install result:', result);
-                const outcome = (result as any)?.outcome;
-                if (!outcome || outcome === "manual") {
-                  setShowManual(true);
-                  toast({ title: "Install manually", description: "Use the browser menu > Add to Home screen." });
-                  return;
-                }
-                if (outcome === "accepted") {
-                  toast({ title: "Installing…", description: "Follow the system prompt to add the app." });
-                } else if (outcome === "dismissed") {
-                  toast({ title: "Install dismissed", description: "You can try again from the browser menu." });
-                  setShowManual(true);
-                }
-              }} 
-              className="w-full" 
-              size="lg"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              {hasNativePrompt ? "Install App Now" : "Install App"}
-            </Button>
-
+            {hasNativePrompt && (
+              <Button 
+                onClick={async () => {
+                  console.log('MobileInstall: Install button clicked');
+                  const result = await promptInstall();
+                  console.log('MobileInstall: Install result:', result);
+                }} 
+                className="w-full" 
+                size="lg"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Install App Now
+              </Button>
+            )}
             {inIframe && (
               <Button
                 onClick={openInNewTab}
@@ -112,32 +90,22 @@ function AndroidInstallInstructions() {
                 Open in new tab
               </Button>
             )}
-            {showManual && (
-              <div className="text-sm space-y-2 mt-3">
-                <p className="font-medium text-center">Manual Installation (Edge & Samsung Internet):</p>
-                <ol className="list-decimal pl-4 space-y-1 text-muted-foreground">
-                  <li>Tap the menu button (⋮) in your browser</li>
-                  <li>Edge: "Install app" or "Add to phone"</li>
-                  <li>Samsung Internet: "Install app" or "Add page to" → "Home screen"</li>
-                  <li>Confirm, then look for the TTPM icon on your home screen</li>
-                </ol>
-              </div>
-            )}
           </div>
         ) : (
           <div className="space-y-3">
             <Badge variant="outline" className="w-full justify-center">
-              Manual Installation
+              Install not available yet
             </Badge>
-            <div className="text-sm space-y-2">
-              <p className="font-medium">To install TTPM:</p>
-              <ol className="list-decimal pl-4 space-y-1 text-muted-foreground">
-                <li>Tap the menu button (⋮) in your browser</li>
-                <li>Select "Add to Home screen" or "Install app"</li>
-                <li>Confirm the installation</li>
-                <li>Find the TTPM app icon on your home screen</li>
-              </ol>
-            </div>
+            {inIframe && (
+              <Button
+                onClick={openInNewTab}
+                variant="outline"
+                className="w-full"
+                size="sm"
+              >
+                Open in new tab
+              </Button>
+            )}
           </div>
         )}
       </CardContent>

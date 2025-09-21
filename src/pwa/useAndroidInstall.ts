@@ -26,11 +26,7 @@ export function useAndroidInstallPrompt() {
     
     console.log('useAndroidInstall: isAndroid:', isAndroid, 'isStandalone:', isStandalone, 'inIframe:', inIframe);
     
-    // Show install option on Android browsers if not already installed
-    if (isAndroid && !isStandalone) {
-      console.log('useAndroidInstall: Setting supported to true for Android');
-      setSupported(true);
-    }
+    // Show install option only when native prompt is available via event
     
     const handler = (e: Event) => { 
       console.log('useAndroidInstall: beforeinstallprompt event fired', e);
@@ -43,17 +39,11 @@ export function useAndroidInstallPrompt() {
     
     window.addEventListener("beforeinstallprompt", handler as any);
     
-    // Fallback check for browsers that might not fire the event immediately
-    const checkDelay = setTimeout(() => {
-      if (isAndroid && !isStandalone && !deferred) {
-        console.log('useAndroidInstall: Fallback - setting supported without native prompt');
-        setSupported(true);
-      }
-    }, 2000);
+    // No fallback timer that fakes support; rely on real beforeinstallprompt
     
     return () => {
       window.removeEventListener("beforeinstallprompt", handler as any);
-      clearTimeout(checkDelay);
+      // no timer to clear
     };
   }, [deferred]);
   

@@ -69,6 +69,12 @@ function AndroidInstallInstructions() {
             <Button 
               onClick={async () => {
                 console.log('MobileInstall: Install button clicked');
+                if (inIframe || !hasNativePrompt) {
+                  const url = `${window.location.origin}${window.location.pathname}#install`;
+                  console.log('MobileInstall: Opening new tab for install flow:', url);
+                  window.open(url, "_blank", "noopener");
+                  return;
+                }
                 const result = await promptInstall();
                 console.log('MobileInstall: Install result:', result);
                 const outcome = (result as any)?.outcome;
@@ -86,7 +92,6 @@ function AndroidInstallInstructions() {
               }} 
               className="w-full" 
               size="lg"
-              disabled={inIframe && !hasNativePrompt}
             >
               <Download className="w-4 h-4 mr-2" />
               {hasNativePrompt ? "Install App Now" : "Install App"}

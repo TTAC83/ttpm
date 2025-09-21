@@ -11,6 +11,12 @@ export function useAndroidInstallPrompt() {
   
   useEffect(() => {
     console.log('useAndroidInstall: Setting up install prompt detection');
+    const cached = (window as any).__ttpm_deferredBIP as BIPEvent | undefined;
+    if (cached) {
+      console.log('useAndroidInstall: Found cached beforeinstallprompt');
+      setDeferred(cached);
+      setSupported(true);
+    }
     
     // Check if we're on Android and PWA criteria are met
     const isAndroid = /android/i.test(navigator.userAgent);
@@ -29,7 +35,9 @@ export function useAndroidInstallPrompt() {
     const handler = (e: Event) => { 
       console.log('useAndroidInstall: beforeinstallprompt event fired', e);
       e.preventDefault(); 
-      setDeferred(e as BIPEvent); 
+      const bip = e as BIPEvent;
+      (window as any).__ttpm_deferredBIP = bip;
+      setDeferred(bip); 
       setSupported(true); 
     };
     
@@ -80,6 +88,25 @@ export function useAndroidInstallPrompt() {
       return { outcome: "manual" };
     }
   };
+  // Auto-install if opened with #install (e.g., opened from iframe)
+  useEffect(() => {
+    const wantsInstall = typeof window !== 'undefined' && window.location.hash.includes('install');
+    if (!wantsInstall) return;
+    console.log('useAndroidInstall: #install detected, waiting for native prompt...');
+    let tries = 0;
+    const maxTries = 30; // ~15s
+    const id = setInterval(async () => {
+      tries++;
+      if (deferred) {
+        clearInterval(id);
+        await promptInstall();
+      } else if (tries >= maxTries) {
+        clearInterval(id);
+        console.warn('useAndroidInstall: Native prompt not available after waiting.');
+      }
+    }, 500);
+    return () => clearInterval(id);
+  }, [deferred]);
   
   return { supported, promptInstall, hasNativePrompt: !!deferred };
 }

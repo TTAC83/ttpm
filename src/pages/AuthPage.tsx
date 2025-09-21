@@ -20,7 +20,8 @@ export const AuthPage = () => {
   const [updateLoading, setUpdateLoading] = useState(false);
   const [resetMessage, setResetMessage] = useState('');
   
-  const { signIn, signInWithMagicLink } = useAuth();
+  const authContext = useAuth();
+  const { signIn, signInWithMagicLink } = authContext || {};
 
   const handleEmailPasswordSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,9 +31,19 @@ export const AuthPage = () => {
     
     setLoading(true);
     try {
+      console.log('Auth context:', authContext);
+      console.log('signIn function:', signIn);
       console.log('Attempting sign in with:', { email: email.trim() });
+      
+      if (!signIn || typeof signIn !== 'function') {
+        console.error('signIn is not available or not a function:', signIn);
+        return;
+      }
+      
       const result = await signIn(email.trim(), password);
       console.log('Sign in result:', result);
+    } catch (error) {
+      console.error('Sign in error:', error);
     } finally {
       setLoading(false);
     }

@@ -10,17 +10,23 @@ export function useAndroidInstallPrompt() {
   const [supported, setSupported] = useState(false);
   
   useEffect(() => {
+    console.log('useAndroidInstall: Setting up install prompt detection');
+    
     // Check if we're on Android and PWA criteria are met
     const isAndroid = /android/i.test(navigator.userAgent);
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
                         (window.navigator as any).standalone === true;
     
+    console.log('useAndroidInstall: isAndroid:', isAndroid, 'isStandalone:', isStandalone);
+    
     // Show install option on Android browsers if not already installed
     if (isAndroid && !isStandalone) {
+      console.log('useAndroidInstall: Setting supported to true for Android');
       setSupported(true);
     }
     
     const handler = (e: Event) => { 
+      console.log('useAndroidInstall: beforeinstallprompt event fired', e);
       e.preventDefault(); 
       setDeferred(e as BIPEvent); 
       setSupported(true); 
@@ -31,6 +37,7 @@ export function useAndroidInstallPrompt() {
     // Fallback check for browsers that might not fire the event immediately
     const checkDelay = setTimeout(() => {
       if (isAndroid && !isStandalone && !deferred) {
+        console.log('useAndroidInstall: Fallback - setting supported without native prompt');
         setSupported(true);
       }
     }, 2000);
@@ -42,16 +49,21 @@ export function useAndroidInstallPrompt() {
   }, [deferred]);
   
   const promptInstall = async () => { 
+    console.log('useAndroidInstall: promptInstall called, deferred:', !!deferred);
+    
     if (deferred) {
       try {
+        console.log('useAndroidInstall: Calling native prompt');
         await deferred.prompt();
         const result = await deferred.userChoice;
+        console.log('useAndroidInstall: Install result:', result);
         setDeferred(null);
         return result;
       } catch (error) {
-        console.error('Install prompt failed:', error);
+        console.error('useAndroidInstall: Install prompt failed:', error);
       }
     } else {
+      console.log('useAndroidInstall: No native prompt available, returning manual');
       // Fallback for browsers without native prompt
       // Show manual installation instructions
       return { outcome: "manual" };

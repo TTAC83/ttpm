@@ -50,8 +50,11 @@ function AndroidInstallInstructions() {
             </Badge>
             <Button 
               onClick={async () => {
+                console.log('MobileInstall: Install button clicked');
                 const result = await promptInstall();
+                console.log('MobileInstall: Install result:', result);
                 if (result?.outcome === "manual") {
+                  console.log('MobileInstall: Showing manual instructions');
                   // Fallback to manual instructions
                 }
               }} 

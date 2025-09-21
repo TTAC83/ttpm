@@ -69,10 +69,15 @@ function AndroidInstallInstructions() {
             <Button 
               onClick={async () => {
                 console.log('MobileInstall: Install button clicked');
-                if (inIframe || !hasNativePrompt) {
+                if (inIframe) {
                   const url = `${window.location.origin}${window.location.pathname}#install`;
                   console.log('MobileInstall: Opening new tab for install flow:', url);
                   window.open(url, "_blank", "noopener");
+                  return;
+                }
+                if (!hasNativePrompt) {
+                  console.log('MobileInstall: Native prompt not ready yet');
+                  toast({ title: 'Preparing install…', description: 'Please try again in a moment.' });
                   return;
                 }
                 const result = await promptInstall();
@@ -97,26 +102,26 @@ function AndroidInstallInstructions() {
               {hasNativePrompt ? "Install App Now" : "Install App"}
             </Button>
 
-            {(!hasNativePrompt || showManual) && (
-              <>
-                <Button
-                  onClick={openInNewTab}
-                  variant="outline"
-                  className="w-full"
-                  size="sm"
-                >
-                  Open in new tab
-                </Button>
-                <div className="text-sm space-y-2 mt-3">
-                  <p className="font-medium text-center">Manual Installation (Edge & Samsung Internet):</p>
-                  <ol className="list-decimal pl-4 space-y-1 text-muted-foreground">
-                    <li>Tap the menu button (⋮) in your browser</li>
-                    <li>Edge: "Install app" or "Add to phone"</li>
-                    <li>Samsung Internet: "Install app" or "Add page to" → "Home screen"</li>
-                    <li>Confirm, then look for the TTPM icon on your home screen</li>
-                  </ol>
-                </div>
-              </>
+            {inIframe && (
+              <Button
+                onClick={openInNewTab}
+                variant="outline"
+                className="w-full"
+                size="sm"
+              >
+                Open in new tab
+              </Button>
+            )}
+            {showManual && (
+              <div className="text-sm space-y-2 mt-3">
+                <p className="font-medium text-center">Manual Installation (Edge & Samsung Internet):</p>
+                <ol className="list-decimal pl-4 space-y-1 text-muted-foreground">
+                  <li>Tap the menu button (⋮) in your browser</li>
+                  <li>Edge: "Install app" or "Add to phone"</li>
+                  <li>Samsung Internet: "Install app" or "Add page to" → "Home screen"</li>
+                  <li>Confirm, then look for the TTPM icon on your home screen</li>
+                </ol>
+              </div>
             )}
           </div>
         ) : (
@@ -204,18 +209,21 @@ export default function MobileInstall() {
   // Auto-show on mobile devices after a short delay
   useEffect(() => {
     console.log('MobileInstall: isMobile:', isMobile, 'device:', device);
+    const wantsInstall = typeof window !== 'undefined' && window.location.hash.includes('install');
     
-    if (isMobile && !localStorage.getItem('ttpm-install-prompt-shown')) {
-      console.log('MobileInstall: Will show install dialog after 3 seconds');
+    if (isMobile && (wantsInstall || !localStorage.getItem('ttpm-install-prompt-shown'))) {
+      console.log('MobileInstall: Will show install dialog soon', { wantsInstall });
       const timer = setTimeout(() => {
         console.log('MobileInstall: Showing install dialog');
         setShowDialog(true);
-        localStorage.setItem('ttpm-install-prompt-shown', 'true');
-      }, 3000); // Show after 3 seconds
+        if (!wantsInstall) {
+          localStorage.setItem('ttpm-install-prompt-shown', 'true');
+        }
+      }, wantsInstall ? 300 : 3000);
 
       return () => clearTimeout(timer);
     }
-  }, [isMobile]);
+  }, [isMobile, device]);
 
   console.log('MobileInstall: Rendering - isMobile:', isMobile, 'device:', device);
   

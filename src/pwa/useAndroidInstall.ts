@@ -88,25 +88,14 @@ export function useAndroidInstallPrompt() {
       return { outcome: "manual" };
     }
   };
-  // Auto-install if opened with #install (e.g., opened from iframe)
+  // If opened with #install in top-level context, ensure UI is shown
   useEffect(() => {
     const wantsInstall = typeof window !== 'undefined' && window.location.hash.includes('install');
-    if (!wantsInstall) return;
-    console.log('useAndroidInstall: #install detected, waiting for native prompt...');
-    let tries = 0;
-    const maxTries = 30; // ~15s
-    const id = setInterval(async () => {
-      tries++;
-      if (deferred) {
-        clearInterval(id);
-        await promptInstall();
-      } else if (tries >= maxTries) {
-        clearInterval(id);
-        console.warn('useAndroidInstall: Native prompt not available after waiting.');
-      }
-    }, 500);
-    return () => clearInterval(id);
-  }, [deferred]);
+    if (wantsInstall) {
+      console.log('useAndroidInstall: #install detected (top-level). Waiting for native prompt.');
+      setSupported(true);
+    }
+  }, []);
   
   return { supported, promptInstall, hasNativePrompt: !!deferred };
 }

@@ -37,7 +37,8 @@ function useDeviceDetection() {
 function AndroidInstallInstructions() {
   const { supported, promptInstall, hasNativePrompt } = useAndroidInstallPrompt();
   const { toast } = useToast();
-  const [showManual, setShowManual] = useState(false);
+  const inIframe = (() => { try { return window.self !== window.top; } catch { return true; } })();
+  const [showManual, setShowManual] = useState(inIframe);
 
   const openInNewTab = () => {
     window.open(window.location.href, "_blank", "noopener");
@@ -57,6 +58,11 @@ function AndroidInstallInstructions() {
       <CardContent className="space-y-4">
         {supported ? (
           <div className="space-y-3">
+            {inIframe && (
+              <Badge variant="outline" className="w-full justify-center">
+                Open in new tab to install (browser limitation)
+              </Badge>
+            )}
             <Badge variant="secondary" className="w-full justify-center">
               {hasNativePrompt ? "Installation Available" : "Ready to Install"}
             </Badge>
@@ -80,6 +86,7 @@ function AndroidInstallInstructions() {
               }} 
               className="w-full" 
               size="lg"
+              disabled={inIframe && !hasNativePrompt}
             >
               <Download className="w-4 h-4 mr-2" />
               {hasNativePrompt ? "Install App Now" : "Install App"}
@@ -96,12 +103,12 @@ function AndroidInstallInstructions() {
                   Open in new tab
                 </Button>
                 <div className="text-sm space-y-2 mt-3">
-                  <p className="font-medium text-center">Manual Installation:</p>
+                  <p className="font-medium text-center">Manual Installation (Edge & Samsung Internet):</p>
                   <ol className="list-decimal pl-4 space-y-1 text-muted-foreground">
                     <li>Tap the menu button (⋮) in your browser</li>
-                    <li>Look for "Add to Home screen" or "Install app"</li>
-                    <li>Confirm the installation</li>
-                    <li>Find the TTPM app icon on your home screen</li>
+                    <li>Edge: "Install app" or "Add to phone"</li>
+                    <li>Samsung Internet: "Install app" or "Add page to" → "Home screen"</li>
+                    <li>Confirm, then look for the TTPM icon on your home screen</li>
                   </ol>
                 </div>
               </>

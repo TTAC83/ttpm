@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -109,6 +110,7 @@ interface DashboardStats {
 }
 
 export default function MyWork() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [searchQuery, setSearchQuery] = useState("");
@@ -478,8 +480,8 @@ export default function MyWork() {
                         {task.planned_end && <span>Due: {format(parseISO(task.planned_end), 'MMM dd')}</span>}
                       </div>
                     </div>
-                    <Button variant="outline" size="sm">
-                      Update Status
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/app/projects`)}>
+                      View Project
                     </Button>
                   </div>
                 </CardContent>
@@ -513,8 +515,8 @@ export default function MyWork() {
                         {action.planned_date && <span>Due: {format(parseISO(action.planned_date), 'MMM dd')}</span>}
                       </div>
                     </div>
-                    <Button variant="outline" size="sm">
-                      Update
+                    <Button variant="outline" size="sm" onClick={() => navigate('/app/actions')}>
+                      View All Actions
                     </Button>
                   </div>
                 </CardContent>
@@ -540,8 +542,8 @@ export default function MyWork() {
                         {event.end_date && <span>End: {format(parseISO(event.end_date), 'MMM dd, yyyy')}</span>}
                       </div>
                     </div>
-                    <Button variant="outline" size="sm">
-                      View Details
+                    <Button variant="outline" size="sm" onClick={() => navigate('/app/calendar')}>
+                      View Calendar
                     </Button>
                   </div>
                 </CardContent>
@@ -568,8 +570,8 @@ export default function MyWork() {
                         <span>Project: {gap.project?.name}</span>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm">
-                      View
+                    <Button variant="outline" size="sm" onClick={() => navigate('/app/product-gaps')}>
+                      View All Gaps
                     </Button>
                   </div>
                 </CardContent>
@@ -595,8 +597,8 @@ export default function MyWork() {
                         <span>Project: {model.project?.name}</span>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm">
-                      View Model
+                    <Button variant="outline" size="sm" onClick={() => navigate('/app/models')}>
+                      View All Models
                     </Button>
                   </div>
                 </CardContent>
@@ -623,7 +625,7 @@ export default function MyWork() {
                         {feature.required_date && <span>Required: {format(parseISO(feature.required_date), 'MMM dd, yyyy')}</span>}
                       </div>
                     </div>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/app/feature-requests/${feature.id}`)}>
                       View Request
                     </Button>
                   </div>

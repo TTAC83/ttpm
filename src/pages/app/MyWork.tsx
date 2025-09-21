@@ -715,36 +715,40 @@ export default function MyWork() {
       </Tabs>
 
       {/* Task Edit Dialog */}
-      <TaskEditDialog
-        task={selectedTask}
-        profiles={profiles}
-        open={isTaskDialogOpen}
-        onOpenChange={setIsTaskDialogOpen}
-        onSave={(updatedTask) => {
-          setTasks(prevTasks => 
-            prevTasks.map(task => 
-              task.id === updatedTask.id ? { ...task, ...updatedTask } : task
-            )
-          );
-          setIsTaskDialogOpen(false);
-        }}
-      />
+      {selectedTask && (
+        <TaskEditDialog
+          task={selectedTask}
+          profiles={profiles}
+          open={isTaskDialogOpen}
+          onOpenChange={setIsTaskDialogOpen}
+          onSave={(updatedTask) => {
+            setTasks(prevTasks => 
+              prevTasks.map(task => 
+                task.id === updatedTask.id ? { ...task, ...updatedTask } : task
+              )
+            );
+            setIsTaskDialogOpen(false);
+          }}
+        />
+      )}
 
       {/* Action Edit Dialog */}
-      <EditActionDialog
-        action={selectedAction}
-        profiles={profiles}
-        open={isActionDialogOpen}
-        onOpenChange={setIsActionDialogOpen}
-        onSave={(updatedAction) => {
-          setActions(prevActions => 
-            prevActions.map(action => 
-              action.id === updatedAction.id ? { ...action, ...updatedAction } : action
-            )
-          );
-          setIsActionDialogOpen(false);
-        }}
-      />
+      {selectedAction && (
+        <EditActionDialog
+          action={selectedAction}
+          profiles={profiles}
+          open={isActionDialogOpen}
+          onOpenChange={setIsActionDialogOpen}
+          onSave={(updatedAction) => {
+            setActions(prevActions => 
+              prevActions.map(action => 
+                action.id === updatedAction.id ? { ...action, ...updatedAction } : action
+              )
+            );
+            setIsActionDialogOpen(false);
+          }}
+        />
+      )}
 
       {/* Event Edit Dialog - Using CreateEventDialog in edit mode */}
       {selectedEvent && (
@@ -760,40 +764,46 @@ export default function MyWork() {
       )}
 
       {/* Product Gap Drawer */}
-      <ProductGapDrawer
-        projectId={selectedProductGap?.project_id}
-        productGap={selectedProductGap}
-        open={isProductGapDrawerOpen}
-        onOpenChange={setIsProductGapDrawerOpen}
-        onSuccess={() => {
-          setIsProductGapDrawerOpen(false);
-          fetchData();
-        }}
-      />
+      {selectedProductGap && (
+        <ProductGapDrawer
+          projectId={selectedProductGap?.project_id}
+          productGap={selectedProductGap}
+          open={isProductGapDrawerOpen}
+          onOpenChange={setIsProductGapDrawerOpen}
+          onSuccess={() => {
+            setIsProductGapDrawerOpen(false);
+            fetchData();
+          }}
+        />
+      )}
 
       {/* Vision Model Dialog */}
-      <VisionModelDialog
-        open={isVisionModelDialogOpen}
-        onOpenChange={setIsVisionModelDialogOpen}
-        onClose={() => {
-          setIsVisionModelDialogOpen(false);
-          fetchData();
-        }}
-        projectId={selectedVisionModel?.project_id}
-        model={selectedVisionModel}
-        mode="edit"
-      />
+      {selectedVisionModel && (
+        <VisionModelDialog
+          open={isVisionModelDialogOpen}
+          onOpenChange={setIsVisionModelDialogOpen}
+          onClose={() => {
+            setIsVisionModelDialogOpen(false);
+            fetchData();
+          }}
+          projectId={selectedVisionModel?.project_id}
+          model={selectedVisionModel}
+          mode="edit"
+        />
+      )}
 
       {/* Feature Request Dialog */}
-      <FeatureRequestDialog
-        open={isFeatureRequestDialogOpen}
-        onOpenChange={setIsFeatureRequestDialogOpen}
-        featureRequest={selectedFeatureRequest}
-        onSuccess={() => {
-          setIsFeatureRequestDialogOpen(false);
-          fetchData();
-        }}
-      />
+      {selectedFeatureRequest && (
+        <FeatureRequestDialog
+          open={isFeatureRequestDialogOpen}
+          onOpenChange={setIsFeatureRequestDialogOpen}
+          featureRequest={selectedFeatureRequest}
+          onSuccess={() => {
+            setIsFeatureRequestDialogOpen(false);
+            fetchData();
+          }}
+        />
+      )}
     </div>
   );
 }

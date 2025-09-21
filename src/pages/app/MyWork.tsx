@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { TaskEditDialog } from "@/components/TaskEditDialog";
+import { EditActionDialog } from "@/components/EditActionDialog";
+import CreateEventDialog from "@/components/CreateEventDialog";
+import { ProductGapDrawer } from "@/components/ProductGapDrawer";
+import { VisionModelDialog } from "@/components/VisionModelDialog";
+import { FeatureRequestDialog } from "@/components/FeatureRequestDialog";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -124,6 +129,26 @@ export default function MyWork() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [profiles, setProfiles] = useState<any[]>([]);
   
+  // Action edit dialog states
+  const [isActionDialogOpen, setIsActionDialogOpen] = useState(false);
+  const [selectedAction, setSelectedAction] = useState<any>(null);
+  
+  // Event edit dialog states
+  const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  
+  // Product Gap drawer states
+  const [isProductGapDrawerOpen, setIsProductGapDrawerOpen] = useState(false);
+  const [selectedProductGap, setSelectedProductGap] = useState<any>(null);
+  
+  // Vision Model dialog states
+  const [isVisionModelDialogOpen, setIsVisionModelDialogOpen] = useState(false);
+  const [selectedVisionModel, setSelectedVisionModel] = useState<any>(null);
+  
+  // Feature Request dialog states
+  const [isFeatureRequestDialogOpen, setIsFeatureRequestDialogOpen] = useState(false);
+  const [selectedFeatureRequest, setSelectedFeatureRequest] = useState<any>(null);
+  
   const [tasks, setTasks] = useState<Task[]>([]);
   const [actions, setActions] = useState<Action[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
@@ -155,6 +180,19 @@ export default function MyWork() {
 
     fetchProfiles();
   }, []);
+  
+  useEffect(() => {
+    if (user) {
+      fetchMyWork();
+    }
+  }, [user]);
+
+  // Unified fetch function to refresh all data
+  const fetchData = () => {
+    if (user) {
+      fetchMyWork();
+    }
+  };
   useEffect(() => {
     if (user) {
       fetchMyWork();
@@ -541,8 +579,11 @@ export default function MyWork() {
                         {action.planned_date && <span>Due: {format(parseISO(action.planned_date), 'MMM dd')}</span>}
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => navigate('/app/actions')}>
-                      View All Actions
+                    <Button variant="outline" size="sm" onClick={() => {
+                      setSelectedAction(action);
+                      setIsActionDialogOpen(true);
+                    }}>
+                      Edit Action
                     </Button>
                   </div>
                 </CardContent>
@@ -568,8 +609,11 @@ export default function MyWork() {
                         {event.end_date && <span>End: {format(parseISO(event.end_date), 'MMM dd, yyyy')}</span>}
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => navigate('/app/calendar')}>
-                      View Calendar
+                    <Button variant="outline" size="sm" onClick={() => {
+                      setSelectedEvent(event);
+                      setIsEventDialogOpen(true);
+                    }}>
+                      Edit Event
                     </Button>
                   </div>
                 </CardContent>
@@ -596,8 +640,11 @@ export default function MyWork() {
                         <span>Project: {gap.project?.name}</span>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => navigate('/app/product-gaps')}>
-                      View All Gaps
+                    <Button variant="outline" size="sm" onClick={() => {
+                      setSelectedProductGap(gap);
+                      setIsProductGapDrawerOpen(true);
+                    }}>
+                      Edit Gap
                     </Button>
                   </div>
                 </CardContent>
@@ -623,8 +670,11 @@ export default function MyWork() {
                         <span>Project: {model.project?.name}</span>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => navigate('/app/models')}>
-                      View All Models
+                    <Button variant="outline" size="sm" onClick={() => {
+                      setSelectedVisionModel(model);
+                      setIsVisionModelDialogOpen(true);
+                    }}>
+                      Edit Model
                     </Button>
                   </div>
                 </CardContent>
@@ -651,8 +701,11 @@ export default function MyWork() {
                         {feature.required_date && <span>Required: {format(parseISO(feature.required_date), 'MMM dd, yyyy')}</span>}
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => navigate(`/app/feature-requests/${feature.id}`)}>
-                      View Request
+                    <Button variant="outline" size="sm" onClick={() => {
+                      setSelectedFeatureRequest(feature);
+                      setIsFeatureRequestDialogOpen(true);
+                    }}>
+                      Edit Request
                     </Button>
                   </div>
                 </CardContent>
@@ -668,13 +721,77 @@ export default function MyWork() {
         open={isTaskDialogOpen}
         onOpenChange={setIsTaskDialogOpen}
         onSave={(updatedTask) => {
-          // Update the task in the local state
           setTasks(prevTasks => 
             prevTasks.map(task => 
               task.id === updatedTask.id ? { ...task, ...updatedTask } : task
             )
           );
           setIsTaskDialogOpen(false);
+        }}
+      />
+
+      {/* Action Edit Dialog */}
+      <EditActionDialog
+        action={selectedAction}
+        profiles={profiles}
+        open={isActionDialogOpen}
+        onOpenChange={setIsActionDialogOpen}
+        onSave={(updatedAction) => {
+          setActions(prevActions => 
+            prevActions.map(action => 
+              action.id === updatedAction.id ? { ...action, ...updatedAction } : action
+            )
+          );
+          setIsActionDialogOpen(false);
+        }}
+      />
+
+      {/* Event Edit Dialog - Using CreateEventDialog in edit mode */}
+      {selectedEvent && (
+        <CreateEventDialog
+          open={isEventDialogOpen}
+          onOpenChange={setIsEventDialogOpen}
+          projectId={selectedEvent.project_id}
+          onEventCreated={() => {
+            setIsEventDialogOpen(false);
+            fetchData();
+          }}
+        />
+      )}
+
+      {/* Product Gap Drawer */}
+      <ProductGapDrawer
+        projectId={selectedProductGap?.project_id}
+        productGap={selectedProductGap}
+        open={isProductGapDrawerOpen}
+        onOpenChange={setIsProductGapDrawerOpen}
+        onSuccess={() => {
+          setIsProductGapDrawerOpen(false);
+          fetchData();
+        }}
+      />
+
+      {/* Vision Model Dialog */}
+      <VisionModelDialog
+        open={isVisionModelDialogOpen}
+        onOpenChange={setIsVisionModelDialogOpen}
+        onClose={() => {
+          setIsVisionModelDialogOpen(false);
+          fetchData();
+        }}
+        projectId={selectedVisionModel?.project_id}
+        model={selectedVisionModel}
+        mode="edit"
+      />
+
+      {/* Feature Request Dialog */}
+      <FeatureRequestDialog
+        open={isFeatureRequestDialogOpen}
+        onOpenChange={setIsFeatureRequestDialogOpen}
+        featureRequest={selectedFeatureRequest}
+        onSuccess={() => {
+          setIsFeatureRequestDialogOpen(false);
+          fetchData();
         }}
       />
     </div>

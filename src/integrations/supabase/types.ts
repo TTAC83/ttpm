@@ -2252,7 +2252,9 @@ export type Database = {
           domain: Database["public"]["Enums"]["work_domain"]
           id: string
           implementation_lead: string | null
+          line_description: string | null
           name: string
+          product_description: string | null
           project_coordinator: string | null
           site_address: string | null
           site_name: string | null
@@ -2267,7 +2269,9 @@ export type Database = {
           domain: Database["public"]["Enums"]["work_domain"]
           id?: string
           implementation_lead?: string | null
+          line_description?: string | null
           name: string
+          product_description?: string | null
           project_coordinator?: string | null
           site_address?: string | null
           site_name?: string | null
@@ -2282,7 +2286,9 @@ export type Database = {
           domain?: Database["public"]["Enums"]["work_domain"]
           id?: string
           implementation_lead?: string | null
+          line_description?: string | null
           name?: string
+          product_description?: string | null
           project_coordinator?: string | null
           site_address?: string | null
           site_name?: string | null

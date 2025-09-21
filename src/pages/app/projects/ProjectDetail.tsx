@@ -36,6 +36,8 @@ interface Project {
   ai_iot_engineer: string | null;
   technical_project_lead: string | null;
   project_coordinator: string | null;
+  line_description: string | null;
+  product_description: string | null;
   companies: {
     name: string;
   } | null;

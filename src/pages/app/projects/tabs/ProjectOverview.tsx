@@ -40,6 +40,8 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
     ai_iot_engineer: project.ai_iot_engineer || 'unassigned',
     technical_project_lead: project.technical_project_lead || 'unassigned',
     project_coordinator: project.project_coordinator || 'unassigned',
+    line_description: project.line_description || '',
+    product_description: project.product_description || '',
   });
 
   useEffect(() => {
@@ -81,6 +83,8 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
           ai_iot_engineer: formData.ai_iot_engineer === 'unassigned' ? null : formData.ai_iot_engineer,
           technical_project_lead: formData.technical_project_lead === 'unassigned' ? null : formData.technical_project_lead,
           project_coordinator: formData.project_coordinator === 'unassigned' ? null : formData.project_coordinator,
+          line_description: formData.line_description || null,
+          product_description: formData.product_description || null,
         })
         .eq('id', project.id);
 
@@ -116,6 +120,8 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
       ai_iot_engineer: project.ai_iot_engineer || 'unassigned',
       technical_project_lead: project.technical_project_lead || 'unassigned',
       project_coordinator: project.project_coordinator || 'unassigned',
+      line_description: project.line_description || '',
+      product_description: project.product_description || '',
     });
     setEditing(false);
   };
@@ -205,6 +211,29 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                   onChange={(e) => setFormData(prev => ({ ...prev, site_address: e.target.value }))}
                   rows={3}
                 />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="line_description">Line Description</Label>
+                  <Textarea
+                    id="line_description"
+                    value={formData.line_description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, line_description: e.target.value }))}
+                    rows={4}
+                    placeholder="Describe the production line setup..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="product_description">Product Description</Label>
+                  <Textarea
+                    id="product_description"
+                    value={formData.product_description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, product_description: e.target.value }))}
+                    rows={4}
+                    placeholder="Describe the products being manufactured..."
+                  />
+                </div>
               </div>
 
               <div className="space-y-4">
@@ -348,6 +377,23 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                 <div>
                   <p className="text-sm font-medium">Site Address</p>
                   <p className="text-sm text-muted-foreground whitespace-pre-line">{project.site_address}</p>
+                </div>
+              )}
+
+              {(project.line_description || project.product_description) && (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {project.line_description && (
+                    <div>
+                      <p className="text-sm font-medium">Line Description</p>
+                      <p className="text-sm text-muted-foreground whitespace-pre-line">{project.line_description}</p>
+                    </div>
+                  )}
+                  {project.product_description && (
+                    <div>
+                      <p className="text-sm font-medium">Product Description</p>
+                      <p className="text-sm text-muted-foreground whitespace-pre-line">{project.product_description}</p>
+                    </div>
+                  )}
                 </div>
               )}
 

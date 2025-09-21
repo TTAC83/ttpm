@@ -42,6 +42,7 @@ import FeatureRequests from "./pages/app/FeatureRequests";
 import FeatureRequestDetail from "./pages/app/FeatureRequestDetail";
 import FeatureDashboard from "./pages/app/FeatureDashboard";
 import CompleteSignup from "./pages/CompleteSignup";
+import MyWork from "./pages/app/MyWork";
 import ResetPassword from "./pages/ResetPassword";
 import Actions from "./pages/app/Actions";
 import GlobalTasks from "./pages/app/GlobalTasks";
@@ -108,6 +109,7 @@ const App = () => (
             >
               <Route index element={<Dashboard />} />
               <Route path="dashboard" element={<Dashboard />} />
+              <Route path="my-work" element={<MyWork />} />
               <Route path="profile" element={<Profile />} />
               <Route path="projects" element={<ProjectsList />} />
               <Route 

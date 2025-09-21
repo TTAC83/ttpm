@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { TaskEditDialog } from "@/components/TaskEditDialog";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -118,6 +119,11 @@ export default function MyWork() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
   
+  // Task edit dialog states
+  const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [profiles, setProfiles] = useState<any[]>([]);
+  
   const [tasks, setTasks] = useState<Task[]>([]);
   const [actions, setActions] = useState<Action[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
@@ -131,7 +137,24 @@ export default function MyWork() {
     upcomingEvents: 0
   });
   const [loading, setLoading] = useState(true);
+  
+  // Fetch profiles for the task dialog
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('user_id, name');
+        
+        if (error) throw error;
+        setProfiles(data || []);
+      } catch (error) {
+        console.error('Error fetching profiles:', error);
+      }
+    };
 
+    fetchProfiles();
+  }, []);
   useEffect(() => {
     if (user) {
       fetchMyWork();
@@ -480,8 +503,11 @@ export default function MyWork() {
                         {task.planned_end && <span>Due: {format(parseISO(task.planned_end), 'MMM dd')}</span>}
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => navigate(`/app/projects`)}>
-                      View Project
+                    <Button variant="outline" size="sm" onClick={() => {
+                      setSelectedTask(task);
+                      setIsTaskDialogOpen(true);
+                    }}>
+                      View Task
                     </Button>
                   </div>
                 </CardContent>
@@ -634,6 +660,23 @@ export default function MyWork() {
             ))}
         </TabsContent>
       </Tabs>
+
+      {/* Task Edit Dialog */}
+      <TaskEditDialog
+        task={selectedTask}
+        profiles={profiles}
+        open={isTaskDialogOpen}
+        onOpenChange={setIsTaskDialogOpen}
+        onSave={(updatedTask) => {
+          // Update the task in the local state
+          setTasks(prevTasks => 
+            prevTasks.map(task => 
+              task.id === updatedTask.id ? { ...task, ...updatedTask } : task
+            )
+          );
+          setIsTaskDialogOpen(false);
+        }}
+      />
     </div>
   );
 }

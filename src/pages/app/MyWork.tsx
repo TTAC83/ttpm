@@ -32,6 +32,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import type { DateRange } from "react-day-picker";
+import { MyExpensesSection } from "@/components/MyExpensesSection";
 
 interface Task {
   id: string;
@@ -824,6 +825,12 @@ export default function MyWork() {
           }}
         />
       )}
+
+      {/* My Expenses Section */}
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold tracking-tight">My Expenses</h2>
+        <MyExpensesSection />
+      </div>
     </div>
   );
 }

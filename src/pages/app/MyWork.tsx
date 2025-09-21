@@ -48,6 +48,9 @@ interface Task {
   project?: {
     name: string;
     domain: string;
+    company?: {
+      name: string;
+    };
   };
 }
 
@@ -62,6 +65,9 @@ interface Action {
   project_id?: string;
   project?: {
     name: string;
+    company?: {
+      name: string;
+    };
   };
 }
 
@@ -74,6 +80,9 @@ interface Event {
   project_id: string;
   project?: {
     name: string;
+    company?: {
+      name: string;
+    };
   };
 }
 
@@ -86,6 +95,9 @@ interface ProductGap {
   project_id: string;
   project?: {
     name: string;
+    company?: {
+      name: string;
+    };
   };
 }
 
@@ -97,6 +109,9 @@ interface VisionModel {
   project_id: string;
   project?: {
     name: string;
+    company?: {
+      name: string;
+    };
   };
 }
 
@@ -209,7 +224,7 @@ export default function MyWork() {
         .from('project_tasks')
         .select(`
           *,
-          project:projects(name, domain)
+          project:projects(name, domain, company:companies(name))
         `)
         .eq('assignee', user.id);
 
@@ -218,7 +233,7 @@ export default function MyWork() {
         .from('actions')
         .select(`
           *,
-          project:projects(name)
+          project:projects(name, company:companies(name))
         `)
         .eq('assignee', user.id);
 
@@ -227,7 +242,7 @@ export default function MyWork() {
         .from('project_events')
         .select(`
           *,
-          project:projects(name)
+          project:projects(name, company:companies(name))
         `)
         .gte('start_date', new Date().toISOString().split('T')[0]);
 
@@ -236,7 +251,7 @@ export default function MyWork() {
         .from('product_gaps')
         .select(`
           *,
-          project:projects(name)
+          project:projects(name, company:companies(name))
         `)
         .neq('status', 'Closed');
 
@@ -245,7 +260,7 @@ export default function MyWork() {
         .from('vision_models')
         .select(`
           *,
-          project:projects(name)
+          project:projects(name, company:companies(name))
         `);
 
       // Fetch feature requests (internal users only)
@@ -535,6 +550,7 @@ export default function MyWork() {
                       </div>
                       <p className="text-sm text-muted-foreground mb-2">{task.task_details}</p>
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span>Customer: {task.project?.company?.name || 'N/A'}</span>
                         <span>Project: {task.project?.name}</span>
                         <span>Step: {task.step_name}</span>
                         {task.planned_start && <span>Start: {format(parseISO(task.planned_start), 'MMM dd')}</span>}
@@ -575,6 +591,7 @@ export default function MyWork() {
                       </div>
                       <p className="text-sm text-muted-foreground mb-2">{action.details}</p>
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span>Customer: {action.project?.company?.name || 'N/A'}</span>
                         {action.project?.name && <span>Project: {action.project.name}</span>}
                         {action.planned_date && <span>Due: {format(parseISO(action.planned_date), 'MMM dd')}</span>}
                       </div>
@@ -604,6 +621,7 @@ export default function MyWork() {
                       <h3 className="font-semibold mb-2">{event.title}</h3>
                       <p className="text-sm text-muted-foreground mb-2">{event.description}</p>
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span>Customer: {event.project?.company?.name || 'N/A'}</span>
                         <span>Project: {event.project?.name}</span>
                         <span>Start: {format(parseISO(event.start_date), 'MMM dd, yyyy')}</span>
                         {event.end_date && <span>End: {format(parseISO(event.end_date), 'MMM dd, yyyy')}</span>}
@@ -637,6 +655,7 @@ export default function MyWork() {
                       </div>
                       <p className="text-sm text-muted-foreground mb-2">{gap.description}</p>
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span>Customer: {gap.project?.company?.name || 'N/A'}</span>
                         <span>Project: {gap.project?.name}</span>
                       </div>
                     </div>
@@ -667,6 +686,7 @@ export default function MyWork() {
                       </div>
                       <p className="text-sm text-muted-foreground mb-2">{model.description}</p>
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span>Customer: {model.project?.company?.name || 'N/A'}</span>
                         <span>Project: {model.project?.name}</span>
                       </div>
                     </div>

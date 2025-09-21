@@ -25,7 +25,8 @@ import {
   TrendingUp,
   Filter,
   Plus,
-  Search
+  Search,
+  DollarSign
 } from "lucide-react";
 import { format, isAfter, isBefore, parseISO, addDays, subDays } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -386,10 +387,19 @@ export default function MyWork() {
           <h1 className="text-3xl font-bold">My Work</h1>
           <p className="text-muted-foreground">Your personal dashboard for tasks, actions, and assignments</p>
         </div>
-        <Button>
-          <Plus className="w-4 h-4 mr-2" />
-          Quick Add
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/app/expenses')}
+          >
+            <DollarSign className="w-4 h-4 mr-2" />
+            View All Expenses
+          </Button>
+          <Button>
+            <Plus className="w-4 h-4 mr-2" />
+            Quick Add
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}

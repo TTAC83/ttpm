@@ -470,101 +470,212 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
 
       toast({
         title: "Exporting...",
-        description: "Generating PDF, please wait...",
+        description: "Generating high-quality PDF, please wait...",
       });
 
-      // Create canvas from the chart
+      // Store original styles
+      const originalOverflow = element.style.overflow;
+      const originalMaxHeight = element.style.maxHeight;
+      const originalHeight = element.style.height;
+      
+      // Temporarily modify styles for better capture
+      element.style.overflow = 'visible';
+      element.style.maxHeight = 'none';
+      element.style.height = 'auto';
+
+      // Wait for any layout changes to settle
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Create high-quality canvas from the chart
       const canvas = await html2canvas(element, {
         useCORS: true,
         allowTaint: true,
-        scale: 2,
+        scale: 3, // Higher scale for better quality
         scrollX: 0,
         scrollY: 0,
         width: element.scrollWidth,
         height: element.scrollHeight,
         windowWidth: element.scrollWidth,
         windowHeight: element.scrollHeight,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        removeContainer: false,
+        foreignObjectRendering: true,
+        logging: false
       });
 
-      // Create PDF with A3 landscape
+      // Restore original styles
+      element.style.overflow = originalOverflow;
+      element.style.maxHeight = originalMaxHeight;
+      element.style.height = originalHeight;
+
+      // Use A2 landscape for better space utilization
       const pdf = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',
-        format: 'a3'
+        format: 'a2'
       });
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
+      const margin = 15;
+      const headerHeight = 40;
+
+      // Calculate optimal dimensions
+      const availableWidth = pdfWidth - (2 * margin);
+      const availableHeight = pdfHeight - headerHeight - (2 * margin);
+      
+      // Calculate aspect ratio preserving dimensions
+      const canvasAspectRatio = canvas.width / canvas.height;
+      let finalWidth = availableWidth;
+      let finalHeight = availableWidth / canvasAspectRatio;
+      
+      // If height exceeds available space, scale by height instead
+      if (finalHeight > availableHeight) {
+        finalHeight = availableHeight;
+        finalWidth = availableHeight * canvasAspectRatio;
+      }
 
       if (exportType === 'single') {
-        // Fit to single page
-        const imgWidth = pdfWidth - 20; // 10mm margin on each side
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        // Single page with optimized sizing
         
-        // Scale down if too tall
-        const finalHeight = Math.min(imgHeight, pdfHeight - 40); // 20mm margin top/bottom
-        const finalWidth = (canvas.width * finalHeight) / canvas.height;
-
-        // Add header
-        pdf.setFontSize(14);
-        pdf.text(`Project: ${project.project_name}`, 10, 15);
-        pdf.text(`Customer: ${project.customer_name}`, 10, 25);
-        pdf.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, pdfWidth - 60, 15);
+        // Add professional header
+        pdf.setFontSize(18);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(`Project Gantt Chart`, margin, 20);
+        
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`Project: ${project.project_name}`, margin, 30);
+        pdf.text(`Customer: ${project.customer_name}`, margin, 37);
+        
+        const dateStr = new Date().toLocaleDateString('en-GB', { 
+          day: '2-digit', 
+          month: '2-digit', 
+          year: 'numeric' 
+        });
+        pdf.text(`Generated: ${dateStr}`, pdfWidth - 80, 30);
         
         // Add logo if available
         const logoImg = document.querySelector('img[src*="thingtrax"]') as HTMLImageElement;
         if (logoImg) {
           try {
-            pdf.addImage(logoImg, 'PNG', pdfWidth - 60, 20, 40, 15);
+            pdf.addImage(logoImg, 'PNG', pdfWidth - 80, 10, 60, 20);
           } catch (e) {
             console.warn('Could not add logo to PDF');
           }
         }
 
-        // Add chart
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 35, finalWidth, finalHeight);
-      } else {
-        // Multi-page export
-        const pageHeight = pdfHeight - 60; // Space for header/footer
-        const pageWidth = pdfWidth - 20;
-        const totalPages = Math.ceil((canvas.height * pageWidth / canvas.width) / pageHeight);
+        // Center the chart horizontally if it's smaller than available width
+        const xOffset = margin + (availableWidth - finalWidth) / 2;
 
+        // Add chart with high quality
+        pdf.addImage(
+          canvas.toDataURL('image/png', 1.0), 
+          'PNG', 
+          xOffset, 
+          headerHeight + margin, 
+          finalWidth, 
+          finalHeight,
+          undefined,
+          'MEDIUM'
+        );
+        
+        // Add legend at bottom
+        const legendY = headerHeight + margin + finalHeight + 10;
+        pdf.setFontSize(8);
+        pdf.text('Legend:', margin, legendY);
+        pdf.text('■ Completed on time', margin + 20, legendY);
+        pdf.setTextColor(16, 185, 129);
+        pdf.text('■', margin + 15, legendY);
+        pdf.setTextColor(0, 0, 0);
+        pdf.text('■ Completed late', margin + 80, legendY);
+        pdf.setTextColor(239, 68, 68);
+        pdf.text('■', margin + 75, legendY);
+        pdf.setTextColor(0, 0, 0);
+        pdf.text('■ In progress/Overdue', margin + 140, legendY);
+        pdf.setTextColor(252, 165, 165);
+        pdf.text('■', margin + 135, legendY);
+        pdf.setTextColor(0, 0, 0);
+        pdf.text('■ Not started', margin + 200, legendY);
+        pdf.setTextColor(209, 213, 219);
+        pdf.text('■', margin + 195, legendY);
+        
+      } else {
+        // Multi-page export with proper sectioning
+        const contentHeight = pdfHeight - headerHeight - (2 * margin);
+        const sectionsPerPage = Math.max(1, Math.floor(contentHeight / 100)); // Minimum 100mm per section
+        const chartSections = Math.ceil(canvas.height / (canvas.height / sectionsPerPage));
+        const totalPages = Math.ceil(chartSections / sectionsPerPage);
+        
         for (let page = 0; page < totalPages; page++) {
           if (page > 0) pdf.addPage();
 
           // Header on each page
-          pdf.setFontSize(14);
-          pdf.text(`Project: ${project.project_name}`, 10, 15);
-          pdf.text(`Customer: ${project.customer_name}`, 10, 25);
-          pdf.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, pdfWidth - 60, 15);
+          pdf.setFontSize(16);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(`Project Gantt Chart - Page ${page + 1}`, margin, 20);
+          
+          pdf.setFontSize(10);
+          pdf.setFont('helvetica', 'normal');
+          pdf.text(`Project: ${project.project_name}`, margin, 30);
+          pdf.text(`Customer: ${project.customer_name}`, margin, 37);
+          pdf.text(`Generated: ${new Date().toLocaleDateString('en-GB')}`, pdfWidth - 80, 30);
           
           // Footer with page numbers
-          pdf.setFontSize(10);
+          pdf.setFontSize(8);
           pdf.text(`Page ${page + 1} of ${totalPages}`, pdfWidth / 2 - 10, pdfHeight - 10);
 
-          // Chart slice
-          const yOffset = -page * pageHeight;
-          const imgHeight = (canvas.height * pageWidth) / canvas.width;
+          // Calculate section to display
+          const sectionHeight = canvas.height / totalPages;
+          const sourceY = page * sectionHeight;
+          const sourceHeight = Math.min(sectionHeight, canvas.height - sourceY);
           
-          pdf.addImage(
-            canvas.toDataURL('image/png'),
-            'PNG',
-            10,
-            35 + yOffset,
-            pageWidth,
-            imgHeight
-          );
+          // Create a section of the canvas
+          const sectionCanvas = document.createElement('canvas');
+          sectionCanvas.width = canvas.width;
+          sectionCanvas.height = sourceHeight;
+          const sectionCtx = sectionCanvas.getContext('2d');
+          
+          if (sectionCtx) {
+            sectionCtx.drawImage(
+              canvas,
+              0, sourceY, canvas.width, sourceHeight,
+              0, 0, canvas.width, sourceHeight
+            );
+            
+            // Calculate dimensions for this section
+            const sectionAspectRatio = sectionCanvas.width / sectionCanvas.height;
+            let sectionWidth = availableWidth;
+            let sectionHeight = availableWidth / sectionAspectRatio;
+            
+            if (sectionHeight > contentHeight) {
+              sectionHeight = contentHeight;
+              sectionWidth = contentHeight * sectionAspectRatio;
+            }
+            
+            const xOffset = margin + (availableWidth - sectionWidth) / 2;
+            
+            pdf.addImage(
+              sectionCanvas.toDataURL('image/png', 1.0),
+              'PNG',
+              xOffset,
+              headerHeight + margin,
+              sectionWidth,
+              sectionHeight,
+              undefined,
+              'MEDIUM'
+            );
+          }
         }
       }
 
-      // Save PDF
-      const fileName = `gantt-${project.project_name?.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
+      // Save PDF with descriptive filename
+      const fileName = `gantt-chart-${project.project_name?.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
       pdf.save(fileName);
 
       toast({
         title: "Success",
-        description: "PDF exported successfully",
+        description: `High-quality PDF exported successfully (${exportType === 'single' ? '1 page' : 'multi-page'})`,
       });
     } catch (error) {
       console.error('Export error:', error);

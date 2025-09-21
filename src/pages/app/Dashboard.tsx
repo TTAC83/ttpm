@@ -6,6 +6,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { formatDateUK } from '@/lib/dateUtils';
 import { useNavigate } from 'react-router-dom';
 import { BlockersDashboardCard } from '@/components/dashboard/BlockersDashboardCard';
+import { calculateMultipleProjectCompletions, ProjectCompletion } from '@/lib/projectCompletionService';
+import { Progress } from '@/components/ui/progress';
 import { Smile, Frown, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface ImplementationProject {
@@ -41,6 +43,7 @@ export const Dashboard = () => {
   const [projects, setProjects] = useState<ImplementationProject[]>([]);
   const [events, setEvents] = useState<UpcomingEvent[]>([]);
   const [allCalendarEvents, setAllCalendarEvents] = useState<UpcomingEvent[]>([]);
+  const [projectCompletions, setProjectCompletions] = useState<Map<string, ProjectCompletion>>(new Map());
   const [loading, setLoading] = useState(true);
 
   // Generate 7-day date range (previous 2 days, today, next 4 days)
@@ -103,6 +106,13 @@ export const Dashboard = () => {
         }));
 
         setProjects(implementationProjects);
+
+        // Calculate completion percentages for all projects
+        const projectIds = implementationProjects.map(p => p.id);
+        if (projectIds.length > 0) {
+          const completions = await calculateMultipleProjectCompletions(projectIds);
+          setProjectCompletions(completions);
+        }
 
         // Fetch upcoming events for the 7-day range
         const startDate = dateRange[0].toISOString().split('T')[0];
@@ -635,44 +645,68 @@ export const Dashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {projects.map((project) => (
-              <div key={project.id} className="p-4 border rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-medium truncate">{project.name}</h3>
-                  <div className="flex items-center gap-2">
-                    {/* Health Icon */}
-                    {project.customer_health === 'green' && (
-                      <div title="Customer Health: Green">
-                        <Smile className="h-4 w-4 text-green-600" />
-                      </div>
-                    )}
-                    {project.customer_health === 'red' && (
-                      <div title="Customer Health: Red">
-                        <Frown className="h-4 w-4 text-red-600" />
-                      </div>
-                    )}
+            {projects.map((project) => {
+              const completion = projectCompletions.get(project.id);
+              return (
+                <div key={project.id} className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-medium truncate">{project.name}</h3>
+                    <div className="flex items-center gap-2">
+                      {/* Health Icon */}
+                      {project.customer_health === 'green' && (
+                        <div title="Customer Health: Green">
+                          <Smile className="h-4 w-4 text-green-600" />
+                        </div>
+                      )}
+                      {project.customer_health === 'red' && (
+                        <div title="Customer Health: Red">
+                          <Frown className="h-4 w-4 text-red-600" />
+                        </div>
+                      )}
+                      
+                      {/* Project Status Icon */}
+                      {project.project_status === 'on_track' && (
+                        <div title="Project Status: On Track">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        </div>
+                      )}
+                      {project.project_status === 'off_track' && (
+                        <div title="Project Status: Off Track">
+                          <AlertCircle className="h-4 w-4 text-red-600" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">{project.company_name}</p>
+                    <Badge variant="outline" className="text-xs">
+                      {project.domain}
+                    </Badge>
                     
-                    {/* Project Status Icon */}
-                    {project.project_status === 'on_track' && (
-                      <div title="Project Status: On Track">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                      </div>
-                    )}
-                    {project.project_status === 'off_track' && (
-                      <div title="Project Status: Off Track">
-                        <AlertCircle className="h-4 w-4 text-red-600" />
+                    {/* Completion Progress */}
+                    {completion && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-muted-foreground">
+                            % Complete
+                          </span>
+                          <span className="text-sm font-bold">
+                            {completion.completionPercentage}%
+                          </span>
+                        </div>
+                        <Progress 
+                          value={completion.completionPercentage} 
+                          className="h-2"
+                        />
+                        <div className="text-xs text-muted-foreground">
+                          {completion.completedTasks} of {completion.totalTasks} tasks completed
+                        </div>
                       </div>
                     )}
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">{project.company_name}</p>
-                  <Badge variant="outline" className="text-xs">
-                    {project.domain}
-                  </Badge>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           {projects.length === 0 && (
             <div className="text-center text-muted-foreground py-4">

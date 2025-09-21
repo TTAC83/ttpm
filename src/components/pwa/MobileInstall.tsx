@@ -14,14 +14,20 @@ function useDeviceDetection() {
     const userAgent = navigator.userAgent.toLowerCase();
     const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
     
+    console.log('MobileInstall: userAgent:', userAgent);
+    console.log('MobileInstall: isMobileDevice:', isMobileDevice);
+    
     setIsMobile(isMobileDevice);
     
     if (/android/i.test(userAgent)) {
       setDevice('android');
+      console.log('MobileInstall: Detected Android device');
     } else if (/iphone|ipad|ipod/i.test(userAgent)) {
       setDevice('ios');
+      console.log('MobileInstall: Detected iOS device');
     } else {
       setDevice('desktop');
+      console.log('MobileInstall: Detected desktop device');
     }
   }, []);
 
@@ -160,8 +166,12 @@ export default function MobileInstall() {
 
   // Auto-show on mobile devices after a short delay
   useEffect(() => {
+    console.log('MobileInstall: isMobile:', isMobile, 'device:', device);
+    
     if (isMobile && !localStorage.getItem('ttpm-install-prompt-shown')) {
+      console.log('MobileInstall: Will show install dialog after 3 seconds');
       const timer = setTimeout(() => {
+        console.log('MobileInstall: Showing install dialog');
         setShowDialog(true);
         localStorage.setItem('ttpm-install-prompt-shown', 'true');
       }, 3000); // Show after 3 seconds
@@ -170,6 +180,8 @@ export default function MobileInstall() {
     }
   }, [isMobile]);
 
+  console.log('MobileInstall: Rendering - isMobile:', isMobile, 'device:', device);
+  
   if (!isMobile) return null;
 
   return (

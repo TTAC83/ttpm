@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,15 +10,15 @@ import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 
 export const AuthPage = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [magicLinkLoading, setMagicLinkLoading] = useState(false);
-  const [resetLoading, setResetLoading] = useState(false);
-  const [updateLoading, setUpdateLoading] = useState(false);
-  const [resetMessage, setResetMessage] = useState('');
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [newPassword, setNewPassword] = React.useState('');
+  const [confirmPassword, setConfirmPassword] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const [magicLinkLoading, setMagicLinkLoading] = React.useState(false);
+  const [resetLoading, setResetLoading] = React.useState(false);
+  const [updateLoading, setUpdateLoading] = React.useState(false);
+  const [resetMessage, setResetMessage] = React.useState('');
   
   const authContext = useAuth();
   const { signIn, signInWithMagicLink } = authContext || {};

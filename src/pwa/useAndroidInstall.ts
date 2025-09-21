@@ -16,8 +16,9 @@ export function useAndroidInstallPrompt() {
     const isAndroid = /android/i.test(navigator.userAgent);
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
                         (window.navigator as any).standalone === true;
+    const inIframe = (() => { try { return window.self !== window.top; } catch { return true; } })();
     
-    console.log('useAndroidInstall: isAndroid:', isAndroid, 'isStandalone:', isStandalone);
+    console.log('useAndroidInstall: isAndroid:', isAndroid, 'isStandalone:', isStandalone, 'inIframe:', inIframe);
     
     // Show install option on Android browsers if not already installed
     if (isAndroid && !isStandalone) {
@@ -47,6 +48,16 @@ export function useAndroidInstallPrompt() {
       clearTimeout(checkDelay);
     };
   }, [deferred]);
+  
+  useEffect(() => {
+    const onInstalled = () => {
+      console.log('useAndroidInstall: appinstalled event');
+      setDeferred(null);
+      setSupported(false);
+    };
+    window.addEventListener('appinstalled', onInstalled);
+    return () => window.removeEventListener('appinstalled', onInstalled);
+  }, []);
   
   const promptInstall = async () => { 
     console.log('useAndroidInstall: promptInstall called, deferred:', !!deferred);

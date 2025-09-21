@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Download, Smartphone, Share, Plus } from "lucide-react";
 import { useAndroidInstallPrompt } from "@/pwa/useAndroidInstall";
-
+import { useToast } from "@/hooks/use-toast";
 function useDeviceDetection() {
   const [device, setDevice] = useState<'android' | 'ios' | 'desktop'>('desktop');
   const [isMobile, setIsMobile] = useState(false);
@@ -36,6 +36,12 @@ function useDeviceDetection() {
 
 function AndroidInstallInstructions() {
   const { supported, promptInstall, hasNativePrompt } = useAndroidInstallPrompt();
+  const { toast } = useToast();
+  const [showManual, setShowManual] = useState(false);
+
+  const openInNewTab = () => {
+    window.open(window.location.href, "_blank", "noopener");
+  };
 
   return (
     <Card>
@@ -59,9 +65,17 @@ function AndroidInstallInstructions() {
                 console.log('MobileInstall: Install button clicked');
                 const result = await promptInstall();
                 console.log('MobileInstall: Install result:', result);
-                if (result?.outcome === "manual") {
-                  console.log('MobileInstall: Showing manual instructions');
-                  // Fallback to manual instructions
+                const outcome = (result as any)?.outcome;
+                if (!outcome || outcome === "manual") {
+                  setShowManual(true);
+                  toast({ title: "Install manually", description: "Use the browser menu > Add to Home screen." });
+                  return;
+                }
+                if (outcome === "accepted") {
+                  toast({ title: "Installing…", description: "Follow the system prompt to add the app." });
+                } else if (outcome === "dismissed") {
+                  toast({ title: "Install dismissed", description: "You can try again from the browser menu." });
+                  setShowManual(true);
                 }
               }} 
               className="w-full" 
@@ -70,16 +84,27 @@ function AndroidInstallInstructions() {
               <Download className="w-4 h-4 mr-2" />
               {hasNativePrompt ? "Install App Now" : "Install App"}
             </Button>
-            {!hasNativePrompt && (
-              <div className="text-sm space-y-2 mt-3">
-                <p className="font-medium text-center">Manual Installation:</p>
-                <ol className="list-decimal pl-4 space-y-1 text-muted-foreground">
-                  <li>Tap the menu button (⋮) in your browser</li>
-                  <li>Look for "Add to Home screen" or "Install app"</li>
-                  <li>Confirm the installation</li>
-                  <li>Find the TTPM app icon on your home screen</li>
-                </ol>
-              </div>
+
+            {(!hasNativePrompt || showManual) && (
+              <>
+                <Button
+                  onClick={openInNewTab}
+                  variant="outline"
+                  className="w-full"
+                  size="sm"
+                >
+                  Open in new tab
+                </Button>
+                <div className="text-sm space-y-2 mt-3">
+                  <p className="font-medium text-center">Manual Installation:</p>
+                  <ol className="list-decimal pl-4 space-y-1 text-muted-foreground">
+                    <li>Tap the menu button (⋮) in your browser</li>
+                    <li>Look for "Add to Home screen" or "Install app"</li>
+                    <li>Confirm the installation</li>
+                    <li>Find the TTPM app icon on your home screen</li>
+                  </ol>
+                </div>
+              </>
             )}
           </div>
         ) : (

@@ -12,17 +12,20 @@ const config: CapacitorConfig = {
     SplashScreen: {
       launchShowDuration: 3000,
       launchAutoHide: true,
-      backgroundColor: "#ffffffff",
+      backgroundColor: "#0b1220", // Thingtrax dark background
       androidSplashResourceName: "splash",
       androidScaleType: "CENTER_CROP",
       showSpinner: true,
       androidSpinnerStyle: "large",
       iosSpinnerStyle: "small",
-      spinnerColor: "#999999",
+      spinnerColor: "#01C25F", // Thingtrax green
       splashFullScreen: true,
       splashImmersive: true,
       layoutName: "launch_screen",
       useDialog: true,
+    },
+    PushNotifications: {
+      presentationOptions: ["badge", "sound", "alert"]
     },
   },
 };

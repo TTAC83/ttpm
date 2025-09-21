@@ -3,19 +3,22 @@ const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
 
-const SRC_DIR = path.join(process.cwd(), "public", "pwa-src");
+const SRC_DIR = path.join(process.cwd(), "public", "lovable-uploads");
 const OUT_ICON_DIR = path.join(process.cwd(), "public", "icons");
 const OUT_SPLASH_DIR = path.join(process.cwd(), "public", "splash");
 const OUT_ANDROID_DIR = path.join(process.cwd(), "public", "android");
 
-const SRC_SVG = path.join(SRC_DIR, "logo.svg");
-const SRC_PNG = path.join(SRC_DIR, "logo.png");
-const SRC = fs.existsSync(SRC_SVG) ? SRC_SVG : SRC_PNG;
+// Use the actual Thingtrax logo from uploads
+const SRC_PNG = path.join(SRC_DIR, "4fec4d14-a56e-4a44-8256-ac94aa43da5c.png");
+const SRC = SRC_PNG;
 
 if (!fs.existsSync(SRC)) {
-  console.error("❌ Missing source logo. Add public/pwa-src/logo.png (>=1024x1024) or logo.svg");
+  console.error("❌ Missing Thingtrax logo at:", SRC);
+  console.error("Expected path: public/lovable-uploads/4fec4d14-a56e-4a44-8256-ac94aa43da5c.png");
   process.exit(1);
 }
+
+console.log("🚀 Generating PWA assets with official Thingtrax logo...");
 
 fs.mkdirSync(OUT_ICON_DIR, { recursive: true });
 fs.mkdirSync(OUT_SPLASH_DIR, { recursive: true });
@@ -31,10 +34,10 @@ async function genStandardIcons() {
       .png().toFile(path.join(OUT_ICON_DIR, `icon-${size}.png`));
   }
   for (const size of maskable) {
-    await sharp(SRC).resize(size, size, { fit: "contain", background: { r:14,g:165,b:233,alpha:1 } }) // theme bg
+    await sharp(SRC).resize(size, size, { fit: "contain", background: { r:11,g:18,b:32,alpha:1 } }) // Thingtrax dark
       .png().toFile(path.join(OUT_ICON_DIR, `maskable-${size}.png`));
   }
-  await sharp(SRC).resize(180,180,{ fit:"contain", background:{ r:14,g:165,b:233,alpha:1 } })
+  await sharp(SRC).resize(180,180,{ fit:"contain", background:{ r:11,g:18,b:32,alpha:1 } }) // Thingtrax dark
     .png().toFile(path.join(OUT_ICON_DIR, "apple-touch-icon-180.png"));
 }
 
@@ -44,7 +47,7 @@ async function genAdaptiveIcons() {
   const fg = await sharp(SRC).resize(inset, inset, { fit:"contain", background:{ r:0,g:0,b:0,alpha:0 } }).png().toBuffer();
   await sharp({ create:{ width:SIZE, height:SIZE, channels:4, background:{ r:0,g:0,b:0,alpha:0 } } })
     .composite([{ input: fg, gravity:"center" }]).png().toFile(path.join(OUT_ANDROID_DIR, "ic_foreground.png"));
-  await sharp({ create:{ width:SIZE, height:SIZE, channels:4, background:{ r:14,g:165,b:233,alpha:1 } } })
+  await sharp({ create:{ width:SIZE, height:SIZE, channels:4, background:{ r:11,g:18,b:32,alpha:1 } } }) // Thingtrax dark
     .png().toFile(path.join(OUT_ANDROID_DIR, "ic_background.png"));
   const mono = await sharp(SRC).resize(inset, inset, { fit:"contain", background:{ r:0,g:0,b:0,alpha:0 } })
     .png().toColourspace("b-w").modulate({ brightness: 2.0 }).toBuffer();
@@ -64,7 +67,7 @@ const devices = [
   { key:"ipad-pro-11",      w:1668, h:2388, media:"(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)", scalePortrait:0.44, scaleLandscape:0.40 },
   { key:"ipad-pro-12-9",    w:2048, h:2732, media:"(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)", scalePortrait:0.46, scaleLandscape:0.42 },
 ];
-const theme = { dark:{ bg:{ r:11,g:18,b:32,alpha:1 } }, light:{ bg:{ r:248,g:250,b:252,alpha:1 } } };
+const theme = { dark:{ bg:{ r:11,g:18,b:32,alpha:1 } }, light:{ bg:{ r:248,g:250,b:252,alpha:1 } } }; // Thingtrax colors
 
 function splashName({ key, w, h, orient, scheme }) {
   return `${key}-${orient}-${scheme}-${w}x${h}.png`;
@@ -91,5 +94,5 @@ async function genSplash() {
   await genStandardIcons();
   await genAdaptiveIcons();
   await genSplash();
-  console.log("✅ Generated icons, adaptive icons, and splash screens in /public/icons, /public/android, /public/splash");
+  console.log("✅ Generated PWA assets with official Thingtrax logo in /public/icons, /public/android, /public/splash");
 })();

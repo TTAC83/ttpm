@@ -463,7 +463,8 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
     setExportModalOpen(false);
 
     try {
-      const element = document.querySelector('.gantt-chart-content') as HTMLElement;
+      // Target the entire card element instead of just the content
+      const element = document.querySelector('.gantt-print') as HTMLElement;
       if (!element) {
         throw new Error('Gantt chart element not found');
       }
@@ -473,24 +474,11 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
         description: "Generating high-quality PDF, please wait...",
       });
 
-      // Store original styles
-      const originalOverflow = element.style.overflow;
-      const originalMaxHeight = element.style.maxHeight;
-      const originalHeight = element.style.height;
-      
-      // Temporarily modify styles for better capture
-      element.style.overflow = 'visible';
-      element.style.maxHeight = 'none';
-      element.style.height = 'auto';
-
-      // Wait for any layout changes to settle
-      await new Promise(resolve => setTimeout(resolve, 100));
-
       // Create high-quality canvas from the chart
       const canvas = await html2canvas(element, {
         useCORS: true,
         allowTaint: true,
-        scale: 3, // Higher scale for better quality
+        scale: 2,
         scrollX: 0,
         scrollY: 0,
         width: element.scrollWidth,
@@ -499,20 +487,15 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
         windowHeight: element.scrollHeight,
         backgroundColor: '#ffffff',
         removeContainer: false,
-        foreignObjectRendering: true,
+        foreignObjectRendering: false,
         logging: false
       });
 
-      // Restore original styles
-      element.style.overflow = originalOverflow;
-      element.style.maxHeight = originalMaxHeight;
-      element.style.height = originalHeight;
-
-      // Use A2 landscape for better space utilization
+      // Use A3 landscape for better space utilization
       const pdf = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',
-        format: 'a2'
+        format: 'a3'
       });
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -541,7 +524,7 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
         // Add professional header
         pdf.setFontSize(18);
         pdf.setFont('helvetica', 'bold');
-        pdf.text(`Project Gantt Chart`, margin, 20);
+        pdf.text('Project Gantt Chart', margin, 20);
         
         pdf.setFontSize(12);
         pdf.setFont('helvetica', 'normal');
@@ -582,30 +565,31 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
         
         // Add legend at bottom
         const legendY = headerHeight + margin + finalHeight + 10;
-        pdf.setFontSize(8);
-        pdf.text('Legend:', margin, legendY);
-        pdf.text('■ Completed on time', margin + 20, legendY);
-        pdf.setTextColor(16, 185, 129);
-        pdf.text('■', margin + 15, legendY);
-        pdf.setTextColor(0, 0, 0);
-        pdf.text('■ Completed late', margin + 80, legendY);
-        pdf.setTextColor(239, 68, 68);
-        pdf.text('■', margin + 75, legendY);
-        pdf.setTextColor(0, 0, 0);
-        pdf.text('■ In progress/Overdue', margin + 140, legendY);
-        pdf.setTextColor(252, 165, 165);
-        pdf.text('■', margin + 135, legendY);
-        pdf.setTextColor(0, 0, 0);
-        pdf.text('■ Not started', margin + 200, legendY);
-        pdf.setTextColor(209, 213, 219);
-        pdf.text('■', margin + 195, legendY);
+        if (legendY < pdfHeight - 20) {
+          pdf.setFontSize(8);
+          pdf.text('Legend:', margin, legendY);
+          pdf.text('■ Completed on time', margin + 20, legendY);
+          pdf.setTextColor(16, 185, 129);
+          pdf.text('■', margin + 15, legendY);
+          pdf.setTextColor(0, 0, 0);
+          pdf.text('■ Completed late', margin + 80, legendY);
+          pdf.setTextColor(239, 68, 68);
+          pdf.text('■', margin + 75, legendY);
+          pdf.setTextColor(0, 0, 0);
+          pdf.text('■ In progress/Overdue', margin + 140, legendY);
+          pdf.setTextColor(252, 165, 165);
+          pdf.text('■', margin + 135, legendY);
+          pdf.setTextColor(0, 0, 0);
+          pdf.text('■ Not started', margin + 200, legendY);
+          pdf.setTextColor(209, 213, 219);
+          pdf.text('■', margin + 195, legendY);
+          pdf.setTextColor(0, 0, 0);
+        }
         
       } else {
         // Multi-page export with proper sectioning
         const contentHeight = pdfHeight - headerHeight - (2 * margin);
-        const sectionsPerPage = Math.max(1, Math.floor(contentHeight / 100)); // Minimum 100mm per section
-        const chartSections = Math.ceil(canvas.height / (canvas.height / sectionsPerPage));
-        const totalPages = Math.ceil(chartSections / sectionsPerPage);
+        const totalPages = Math.ceil(finalHeight / contentHeight);
         
         for (let page = 0; page < totalPages; page++) {
           if (page > 0) pdf.addPage();
@@ -625,12 +609,12 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
           pdf.setFontSize(8);
           pdf.text(`Page ${page + 1} of ${totalPages}`, pdfWidth / 2 - 10, pdfHeight - 10);
 
-          // Calculate section to display
-          const sectionHeight = canvas.height / totalPages;
-          const sourceY = page * sectionHeight;
-          const sourceHeight = Math.min(sectionHeight, canvas.height - sourceY);
+          // Calculate the source area for this page
+          const pageContentHeight = contentHeight;
+          const sourceY = (page * pageContentHeight * canvas.height) / finalHeight;
+          const sourceHeight = Math.min((pageContentHeight * canvas.height) / finalHeight, canvas.height - sourceY);
           
-          // Create a section of the canvas
+          // Create a section of the canvas for this page
           const sectionCanvas = document.createElement('canvas');
           sectionCanvas.width = canvas.width;
           sectionCanvas.height = sourceHeight;
@@ -648,9 +632,9 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
             let sectionWidth = availableWidth;
             let sectionHeight = availableWidth / sectionAspectRatio;
             
-            if (sectionHeight > contentHeight) {
-              sectionHeight = contentHeight;
-              sectionWidth = contentHeight * sectionAspectRatio;
+            if (sectionHeight > pageContentHeight) {
+              sectionHeight = pageContentHeight;
+              sectionWidth = pageContentHeight * sectionAspectRatio;
             }
             
             const xOffset = margin + (availableWidth - sectionWidth) / 2;

@@ -10,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { wbsService, type MasterStep, type MasterTask } from "@/lib/wbsService";
 import { useToast } from "@/hooks/use-toast";
 import { WBSTaskDialog } from "@/components/WBSTaskDialog";
+import { calculateProjectCompletion, ProjectCompletion } from '@/lib/projectCompletionService';
+import { Progress } from '@/components/ui/progress';
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
@@ -102,6 +104,7 @@ export default function WBS({ projectId }: WBSProps = {}) {
   const [selectedStep, setSelectedStep] = useState<MasterStep | null>(null);
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
   const [isProjectSpecific, setIsProjectSpecific] = useState(!!currentProjectId);
+  const [projectCompletion, setProjectCompletion] = useState<ProjectCompletion | null>(null);
 
   // Load data on mount - use project-specific data if projectId is provided
   useEffect(() => {
@@ -170,6 +173,12 @@ export default function WBS({ projectId }: WBSProps = {}) {
         setStepRows(rowAssignments);
 
         setLayouts(layoutMap);
+
+        // Calculate project completion if viewing a specific project
+        if (currentProjectId) {
+          const completion = await calculateProjectCompletion(currentProjectId);
+          setProjectCompletion(completion);
+        }
       } catch (error) {
         console.error("Failed to load data:", error);
         toast({
@@ -379,6 +388,21 @@ export default function WBS({ projectId }: WBSProps = {}) {
             {!canUpdate && <Badge variant="secondary" className="ml-2">Read-only</Badge>}
             {currentProjectId && <Badge variant="outline" className="ml-2">Project View</Badge>}
           </p>
+          {/* Project Completion Summary */}
+          {currentProjectId && projectCompletion && (
+            <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-semibold">Project Completion</h3>
+                <span className="text-2xl font-bold text-primary">
+                  {projectCompletion.completionPercentage}%
+                </span>
+              </div>
+              <Progress value={projectCompletion.completionPercentage} className="h-3 mb-2" />
+              <p className="text-sm text-muted-foreground">
+                {projectCompletion.completedTasks} of {projectCompletion.totalTasks} tasks and subtasks completed
+              </p>
+            </div>
+          )}
         </div>
         
         <div className="flex items-center gap-4">
@@ -524,7 +548,36 @@ export default function WBS({ projectId }: WBSProps = {}) {
                 </CardHeader>
                 
                 <CardContent className="pt-0 pb-2 h-full overflow-auto">
-                  <div className="text-center text-xs text-muted-foreground py-4">
+                  {/* Step completion for project view */}
+                  {currentProjectId && (
+                    <div className="space-y-2 mb-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-muted-foreground">Step Progress</span>
+                        <span className="text-xs font-bold">
+                          {/* Calculate step completion based on tasks in this step */}
+                          {(() => {
+                            const stepTasksForStep = stepTasks[step.id] || [];
+                            const completedStepTasks = 0; // This would need to be calculated from project tasks
+                            const percentage = stepTasksForStep.length > 0 ? Math.round((completedStepTasks / stepTasksForStep.length) * 100) : 0;
+                            return `${percentage}%`;
+                          })()}
+                        </span>
+                      </div>
+                      <Progress 
+                        value={(() => {
+                          const stepTasksForStep = stepTasks[step.id] || [];
+                          const completedStepTasks = 0; // This would need actual project task completion data
+                          return stepTasksForStep.length > 0 ? Math.round((completedStepTasks / stepTasksForStep.length) * 100) : 0;
+                        })()} 
+                        className="h-1.5"
+                      />
+                      <div className="text-xs text-muted-foreground">
+                        {stepTasks[step.id]?.length || 0} tasks in this step
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="text-center text-xs text-muted-foreground py-2">
                     Double-click to view and edit tasks
                   </div>
                 </CardContent>

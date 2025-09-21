@@ -29,7 +29,7 @@ function useDeviceDetection() {
 }
 
 function AndroidInstallInstructions() {
-  const { supported, promptInstall } = useAndroidInstallPrompt();
+  const { supported, promptInstall, hasNativePrompt } = useAndroidInstallPrompt();
 
   return (
     <Card>
@@ -46,16 +46,32 @@ function AndroidInstallInstructions() {
         {supported ? (
           <div className="space-y-3">
             <Badge variant="secondary" className="w-full justify-center">
-              Installation Available
+              {hasNativePrompt ? "Installation Available" : "Ready to Install"}
             </Badge>
             <Button 
-              onClick={promptInstall} 
+              onClick={async () => {
+                const result = await promptInstall();
+                if (result?.outcome === "manual") {
+                  // Fallback to manual instructions
+                }
+              }} 
               className="w-full" 
               size="lg"
             >
               <Download className="w-4 h-4 mr-2" />
-              Install App Now
+              {hasNativePrompt ? "Install App Now" : "Install App"}
             </Button>
+            {!hasNativePrompt && (
+              <div className="text-sm space-y-2 mt-3">
+                <p className="font-medium text-center">Manual Installation:</p>
+                <ol className="list-decimal pl-4 space-y-1 text-muted-foreground">
+                  <li>Tap the menu button (⋮) in your browser</li>
+                  <li>Look for "Add to Home screen" or "Install app"</li>
+                  <li>Confirm the installation</li>
+                  <li>Find the TTPM app icon on your home screen</li>
+                </ol>
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-3">

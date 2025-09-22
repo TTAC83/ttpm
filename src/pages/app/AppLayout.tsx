@@ -184,6 +184,16 @@ export const AppLayout = () => {
                 <h2 className="font-helvetica-display font-semibold text-sidebar-foreground text-lg">thingtrax</h2>
               </div>
             </div>
+            <div className="mt-3">
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent"
+                onClick={() => handleNavigation('/app/my-work')}
+              >
+                {getIcon('User')}
+                <span className="ml-2">My Work</span>
+              </Button>
+            </div>
           </SidebarHeader>
           
           <SidebarContent>

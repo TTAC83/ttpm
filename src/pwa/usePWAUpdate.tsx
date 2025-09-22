@@ -6,11 +6,19 @@ export function usePWAUpdatePrompt() {
   const [offlineReady, setOfflineReady] = useState(false);
   
   useEffect(() => {
-    registerSW({
-      onNeedRefresh() { setNeedRefresh(true); },
+    const updateSW = registerSW({
+      onNeedRefresh() { 
+        setNeedRefresh(true);
+        // Force activate the new Service Worker and reload to avoid stale chunks
+        updateSW(true);
+      },
       onOfflineReady() { setOfflineReady(true); setTimeout(()=>setOfflineReady(false), 3000); }
     });
   }, []);
   
-  return { needRefresh, offlineReady, reload: () => location.reload() };
+  return { needRefresh, offlineReady, reload: () => {
+    // Ensure the new SW is applied before reloading
+    const updateSW = registerSW({});
+    updateSW(true);
+  }};
 }

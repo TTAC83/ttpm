@@ -76,5 +76,36 @@ export const tasksService = {
         age_days: ageDays
       };
     }) as DashboardTask[];
+  },
+
+  // Update a project task
+  async updateTask(taskId: string, updates: Partial<{
+    task_title: string;
+    task_details: string;
+    planned_start: string;
+    planned_end: string;
+    actual_start: string;
+    actual_end: string;
+    status: "In Progress" | "Done" | "Planned" | "Blocked";
+    assignee: string;
+  }>) {
+    const { assignee, ...otherUpdates } = updates;
+    
+    const { data, error } = await supabase
+      .from('project_tasks')
+      .update({
+        ...otherUpdates,
+        assignee: assignee === 'unassigned' ? null : assignee,
+      })
+      .eq('id', taskId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[Tasks] Update error:', error);
+      throw error;
+    }
+
+    return data;
   }
 };

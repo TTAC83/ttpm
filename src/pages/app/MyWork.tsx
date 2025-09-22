@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { tasksService } from "@/lib/tasksService";
+import { toast } from "sonner";
 import { TaskEditDialog } from "@/components/TaskEditDialog";
 import { EditActionDialog } from "@/components/EditActionDialog";
 import CreateEventDialog from "@/components/CreateEventDialog";
@@ -741,13 +743,32 @@ export default function MyWork() {
           profiles={profiles}
           open={isTaskDialogOpen}
           onOpenChange={setIsTaskDialogOpen}
-          onSave={(updatedTask) => {
-            setTasks(prevTasks => 
-              prevTasks.map(task => 
-                task.id === updatedTask.id ? { ...task, ...updatedTask } : task
-              )
-            );
-            setIsTaskDialogOpen(false);
+          onSave={async (updatedTask) => {
+            try {
+              // Save to database first
+              await tasksService.updateTask(updatedTask.id, {
+                task_title: updatedTask.task_title,
+                task_details: updatedTask.task_details,
+                planned_start: updatedTask.planned_start,
+                planned_end: updatedTask.planned_end,
+                actual_start: updatedTask.actual_start,
+                actual_end: updatedTask.actual_end,
+                status: updatedTask.status as "In Progress" | "Done" | "Planned" | "Blocked",
+                assignee: updatedTask.assignee,
+              });
+              
+              // Update local state only after successful save
+              setTasks(prevTasks => 
+                prevTasks.map(task => 
+                  task.id === updatedTask.id ? { ...task, ...updatedTask } : task
+                )
+              );
+              toast.success('Task updated successfully');
+              setIsTaskDialogOpen(false);
+            } catch (error) {
+              console.error('Failed to save task:', error);
+              toast.error('Failed to save task changes. Please try again.');
+            }
           }}
         />
       )}

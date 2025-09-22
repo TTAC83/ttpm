@@ -139,10 +139,9 @@ export function TaskEditDialog({ task, profiles, open, onOpenChange, onSave }: T
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Not Started">Not Started</SelectItem>
+                  <SelectItem value="Planned">Planned</SelectItem>
                   <SelectItem value="In Progress">In Progress</SelectItem>
-                  <SelectItem value="Completed">Completed</SelectItem>
-                  <SelectItem value="On Hold">On Hold</SelectItem>
+                  <SelectItem value="Done">Done</SelectItem>
                   <SelectItem value="Blocked">Blocked</SelectItem>
                 </SelectContent>
               </Select>

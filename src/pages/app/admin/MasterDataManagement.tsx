@@ -628,7 +628,7 @@ const DetailSidebar = ({ node, onClose, onUpdate }: DetailSidebarProps) => {
         planned_end_offset_days: task.planned_end_offset_days,
         position: task.position,
         technology_scope: task.technology_scope,
-        assigned_role: task.assigned_role || ''
+        assigned_role: task.assigned_role || 'none'
       });
     }
   }, [node]);
@@ -770,14 +770,17 @@ const DetailSidebar = ({ node, onClose, onUpdate }: DetailSidebarProps) => {
             <div>
               <Label htmlFor="assigned-role">Assigned Role</Label>
               <Select 
-                value={formData.assigned_role || ''} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, assigned_role: value }))}
+                value={formData.assigned_role || 'none'} 
+                onValueChange={(value) => setFormData(prev => ({ 
+                  ...prev, 
+                  assigned_role: value === 'none' ? null : value 
+                }))}
               >
                 <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent className="bg-background border shadow-lg z-50">
-                  <SelectItem value="">No Assignment</SelectItem>
+                  <SelectItem value="none">No Assignment</SelectItem>
                   <SelectItem value="customer_project_lead">Customer Project Lead</SelectItem>
                   <SelectItem value="implementation_lead">Implementation Lead</SelectItem>
                   <SelectItem value="ai_iot_engineer">AI IoT Engineer</SelectItem>

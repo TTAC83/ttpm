@@ -148,7 +148,7 @@ export const AppLayout = () => {
     }
   };
 
-  const currentRole = profile?.role as Role;
+  const currentRole = (profile?.role as Role) ?? 'external_user';
   console.log('🔍 DEBUG - Current role:', currentRole);
   console.log('🔍 DEBUG - Profile object:', profile);
   let visibleItems = visibleItemsForRole(currentRole);

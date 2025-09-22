@@ -418,19 +418,21 @@ export default function WBS({ projectId }: WBSProps = {}) {
         </div>
         
         <div className="flex items-center gap-4">
-          {/* View Mode Selector */}
-          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'grid' | 'gantt')} className="flex-shrink-0">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="grid" className="flex items-center gap-1">
-                <Grid3x3 className="h-3 w-3" />
-                Grid View
-              </TabsTrigger>
-              <TabsTrigger value="gantt" className="flex items-center gap-1">
-                <BarChart className="h-3 w-3" />
-                Gantt View
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          {/* View Mode Selector - Make it more prominent */}
+          <div className="bg-background border rounded-lg p-1">
+            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'grid' | 'gantt')} className="flex-shrink-0">
+              <TabsList className="grid w-full grid-cols-2 bg-muted">
+                <TabsTrigger value="grid" className="flex items-center gap-2 px-4 py-2">
+                  <Grid3x3 className="h-4 w-4" />
+                  Grid View
+                </TabsTrigger>
+                <TabsTrigger value="gantt" className="flex items-center gap-2 px-4 py-2">
+                  <BarChart className="h-4 w-4" />
+                  Gantt Chart
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
 
           {/* Layout Mode Selector - only show in grid view */}
           {viewMode === 'grid' && (

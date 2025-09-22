@@ -757,14 +757,10 @@ export default function MyWork() {
                 assignee: updatedTask.assignee,
               });
               
-              // Update local state only after successful save
-              setTasks(prevTasks => 
-                prevTasks.map(task => 
-                  task.id === updatedTask.id ? { ...task, ...updatedTask } : task
-                )
-              );
-              toast.success('Task updated successfully');
-              setIsTaskDialogOpen(false);
+               // Refresh all data to update stats including overdue calculations
+               fetchMyWork();
+               toast.success('Task updated successfully');
+               setIsTaskDialogOpen(false);
             } catch (error) {
               console.error('Failed to save task:', error);
               toast.error('Failed to save task changes. Please try again.');

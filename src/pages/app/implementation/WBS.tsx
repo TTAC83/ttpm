@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+// removed react-router-dom hook to avoid runtime context issue
 import { Responsive, WidthProvider, Layout } from "react-grid-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -79,9 +79,15 @@ interface WBSProps {
 }
 
 export default function WBS({ projectId }: WBSProps = {}) {
-  // Check URL params for project ID if not provided as prop
-  const [searchParams] = useSearchParams();
-  const currentProjectId = projectId || searchParams.get('projectId') || undefined;
+  // Determine project ID from prop or query string without router hooks
+  const currentProjectId = useMemo(() => {
+    if (projectId) return projectId;
+    if (typeof window !== 'undefined') {
+      const sp = new URLSearchParams(window.location.search);
+      return (sp.get('projectId') as string | null) || undefined;
+    }
+    return undefined;
+  }, [projectId]);
   
   // Inject CSS for grid layout
   useEffect(() => {

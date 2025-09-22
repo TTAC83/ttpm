@@ -612,6 +612,7 @@ export const MasterDataManagement = () => {
               steps={steps}
               tasks={tasks}
               onEditTask={(task) => {
+                console.log('Edit task clicked:', task);
                 const taskNode: TreeNode = {
                   id: `task-${task.id}`,
                   type: task.parent_task_id ? 'subtask' : 'task',
@@ -619,8 +620,10 @@ export const MasterDataManagement = () => {
                   children: [],
                   level: task.parent_task_id ? 2 : 1
                 };
+                console.log('Setting selectedNode:', taskNode);
                 setSelectedNode(taskNode);
                 setSidebarOpen(true);
+                console.log('Sidebar should be open now');
               }}
               onAddTask={addNewTask}
               onDeleteTask={(taskId) => deleteItem(`task-${taskId}`)}
@@ -630,13 +633,19 @@ export const MasterDataManagement = () => {
       </div>
 
       {/* Detailed Sidebar */}
-      {sidebarOpen && selectedNode && (
-        <DetailSidebar
-          node={selectedNode}
-          onClose={() => setSidebarOpen(false)}
-          onUpdate={fetchMasterData}
-        />
-      )}
+      {(() => {
+        console.log('Sidebar state:', { sidebarOpen, selectedNode: selectedNode?.id });
+        return sidebarOpen && selectedNode && (
+          <DetailSidebar
+            node={selectedNode}
+            onClose={() => {
+              console.log('Closing sidebar');
+              setSidebarOpen(false);
+            }}
+            onUpdate={fetchMasterData}
+          />
+        );
+      })()}
     </div>
   );
 };

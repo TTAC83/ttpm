@@ -142,6 +142,7 @@ export default function MyWork() {
   const [projectFilter, setProjectFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  const [activeTab, setActiveTab] = useState("tasks");
   
   // Task edit dialog states
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
@@ -504,7 +505,7 @@ export default function MyWork() {
       </Card>
 
       {/* Main Content Tabs */}
-      <Tabs defaultValue="tasks" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="tasks" className="flex items-center gap-2">
             <CheckSquare className="w-4 h-4" />

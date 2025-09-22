@@ -82,6 +82,8 @@ export default function WBS({ projectId }: WBSProps = {}) {
   // Debug react instance/version to diagnose hook dispatcher null
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   console.log('WBS: React version', (React as any)?.version);
+  console.log('WBS: Component rendering, projectId:', projectId);
+  
 
   // Determine project ID from prop or query string without router hooks
   const currentProjectId = useMemo(() => {
@@ -117,6 +119,10 @@ export default function WBS({ projectId }: WBSProps = {}) {
   const [isProjectSpecific, setIsProjectSpecific] = useState(!!currentProjectId);
   const [projectCompletion, setProjectCompletion] = useState<ProjectCompletion | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'gantt'>('grid');
+  
+  console.log('WBS: Current viewMode:', viewMode);
+  
+  console.log('WBS: Current viewMode:', viewMode);
 
   // Load data on mount - use project-specific data if projectId is provided
   useEffect(() => {
@@ -392,6 +398,10 @@ export default function WBS({ projectId }: WBSProps = {}) {
 
   return (
     <div className="w-full py-8 px-4">
+      {/* Debug: Add a simple test div to see if component renders */}
+      <div style={{background: 'red', color: 'white', padding: '10px', marginBottom: '10px'}}>
+        WBS Component is rendering! ViewMode: {viewMode}
+      </div>
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Work Breakdown Structure</h1>

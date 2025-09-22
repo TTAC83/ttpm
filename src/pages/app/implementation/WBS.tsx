@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Responsive, WidthProvider, Layout } from "react-grid-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

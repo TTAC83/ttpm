@@ -5,14 +5,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2, Database, List, AlertTriangle, ChevronRight, ChevronDown } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
-import { wbsService, type MasterTask as WBSMasterTask } from '@/lib/wbsService';
+import { 
+  Plus, 
+  Edit, 
+  Trash2, 
+  Database, 
+  ChevronRight, 
+  ChevronDown, 
+  Settings,
+  AlertTriangle,
+  FolderPlus,
+  FileText,
+  Layers
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface MasterStep {
   id: number;
@@ -37,25 +47,39 @@ interface MasterTask {
   };
 }
 
+interface TreeNode {
+  id: string;
+  type: 'step' | 'task' | 'subtask';
+  data: MasterStep | MasterTask;
+  children: TreeNode[];
+  level: number;
+}
+
 export const MasterDataManagement = () => {
   const { isInternalAdmin } = useAuth();
   const { toast } = useToast();
   
   const [steps, setSteps] = useState<MasterStep[]>([]);
   const [tasks, setTasks] = useState<MasterTask[]>([]);
+  const [treeData, setTreeData] = useState<TreeNode[]>([]);
   const [loading, setLoading] = useState(true);
-  const [stepDialogOpen, setStepDialogOpen] = useState(false);
-  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
-  const [editingStep, setEditingStep] = useState<MasterStep | null>(null);
-  const [editingTask, setEditingTask] = useState<MasterTask | null>(null);
-  const [expandedTasks, setExpandedTasks] = useState<Set<number>>(new Set());
-  const [parentTaskForSubtask, setParentTaskForSubtask] = useState<MasterTask | null>(null);
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+  const [selectedNode, setSelectedNode] = useState<TreeNode | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [editingInline, setEditingInline] = useState<string | null>(null);
+  const [inlineValue, setInlineValue] = useState('');
 
   useEffect(() => {
     if (isInternalAdmin()) {
       fetchMasterData();
     }
   }, []);
+
+  useEffect(() => {
+    if (steps.length > 0 || tasks.length > 0) {
+      buildTreeData();
+    }
+  }, [steps, tasks]);
 
   const fetchMasterData = async () => {
     try {
@@ -75,10 +99,7 @@ export const MasterDataManagement = () => {
       if (tasksResponse.error) throw tasksResponse.error;
 
       setSteps(stepsResponse.data || []);
-      
-      // Organize tasks hierarchically
-      const organizedTasks = organizeTaskHierarchy(tasksResponse.data || []);
-      setTasks(organizedTasks);
+      setTasks(organizeTaskHierarchy(tasksResponse.data || []));
     } catch (error: any) {
       toast({
         title: "Error",
@@ -87,38 +108,6 @@ export const MasterDataManagement = () => {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleSaveStep = async (stepData: { name: string; position: number }) => {
-    try {
-      if (editingStep) {
-        const { error } = await supabase
-          .from('master_steps')
-          .update(stepData)
-          .eq('id', editingStep.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('master_steps')
-          .insert(stepData);
-        if (error) throw error;
-      }
-
-      toast({
-        title: editingStep ? "Step Updated" : "Step Created",
-        description: `Master step has been ${editingStep ? 'updated' : 'created'} successfully`,
-      });
-
-      setStepDialogOpen(false);
-      setEditingStep(null);
-      fetchMasterData();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to save step",
-        variant: "destructive",
-      });
     }
   };
 
@@ -147,211 +136,374 @@ export const MasterDataManagement = () => {
     return rootTasks;
   };
 
-  const toggleTaskExpansion = (taskId: number) => {
-    const newExpanded = new Set(expandedTasks);
-    if (newExpanded.has(taskId)) {
-      newExpanded.delete(taskId);
-    } else {
-      newExpanded.add(taskId);
+  const buildTreeData = () => {
+    const tree: TreeNode[] = [];
+
+    steps.forEach(step => {
+      const stepNode: TreeNode = {
+        id: `step-${step.id}`,
+        type: 'step',
+        data: step,
+        children: [],
+        level: 0
+      };
+
+      // Add tasks for this step
+      const stepTasks = tasks.filter(task => task.step_id === step.id && !task.parent_task_id);
+      stepTasks.forEach(task => {
+        const taskNode = buildTaskNode(task, 1);
+        stepNode.children.push(taskNode);
+      });
+
+      tree.push(stepNode);
+    });
+
+    setTreeData(tree);
+  };
+
+  const buildTaskNode = (task: MasterTask, level: number): TreeNode => {
+    const taskNode: TreeNode = {
+      id: `task-${task.id}`,
+      type: task.parent_task_id ? 'subtask' : 'task',
+      data: task,
+      children: [],
+      level
+    };
+
+    // Add subtasks
+    if (task.subtasks) {
+      task.subtasks.forEach(subtask => {
+        const subtaskNode = buildTaskNode(subtask, level + 1);
+        taskNode.children.push(subtaskNode);
+      });
     }
-    setExpandedTasks(newExpanded);
+
+    return taskNode;
   };
 
-  const handleAddSubtask = (parentTask: MasterTask) => {
-    setParentTaskForSubtask(parentTask);
-    setEditingTask(null);
-    setTaskDialogOpen(true);
+  const toggleExpansion = (nodeId: string) => {
+    const newExpanded = new Set(expandedNodes);
+    if (newExpanded.has(nodeId)) {
+      newExpanded.delete(nodeId);
+    } else {
+      newExpanded.add(nodeId);
+    }
+    setExpandedNodes(newExpanded);
   };
 
-  const handleSaveTask = async (taskData: { 
-    step_id: number; 
-    title: string; 
-    details?: string; 
-    planned_start_offset_days: number;
-    planned_end_offset_days: number;
-    position: number;
-    technology_scope: string;
-    assigned_role?: string;
-  }) => {
+  const handleNodeClick = (node: TreeNode) => {
+    setSelectedNode(node);
+    setSidebarOpen(true);
+  };
+
+  const startInlineEdit = (nodeId: string, currentValue: string) => {
+    setEditingInline(nodeId);
+    setInlineValue(currentValue);
+  };
+
+  const saveInlineEdit = async (nodeId: string) => {
+    if (!editingInline || !inlineValue.trim()) return;
+
     try {
-      if (editingTask) {
-        const { error } = await supabase
-          .from('master_tasks')
-          .update(taskData)
-          .eq('id', editingTask.id);
-        if (error) throw error;
+      const [type, id] = nodeId.split('-');
+      
+      if (type === 'step') {
+        await supabase
+          .from('master_steps')
+          .update({ name: inlineValue.trim() })
+          .eq('id', parseInt(id));
       } else {
-        // Add parent_task_id if creating a subtask
-        const insertData = parentTaskForSubtask 
-          ? { ...taskData, parent_task_id: parentTaskForSubtask.id }
-          : taskData;
-          
-        const { error } = await supabase
+        await supabase
           .from('master_tasks')
-          .insert(insertData);
-        if (error) throw error;
+          .update({ title: inlineValue.trim() })
+          .eq('id', parseInt(id));
       }
 
+      await fetchMasterData();
+      setEditingInline(null);
+      setInlineValue('');
+      
       toast({
-        title: editingTask ? "Task Updated" : "Task Created",
-        description: `Master task has been ${editingTask ? 'updated' : 'created'} successfully`,
+        title: "Updated",
+        description: "Item updated successfully",
       });
-
-      setTaskDialogOpen(false);
-      setEditingTask(null);
-      setParentTaskForSubtask(null);
-      fetchMasterData();
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to save task",
+        description: "Failed to update item",
         variant: "destructive",
       });
     }
   };
 
-  const handleDeleteStep = async (stepId: number) => {
-    if (!confirm('Are you sure you want to delete this step? This will also delete all associated tasks.')) return;
+  const cancelInlineEdit = () => {
+    setEditingInline(null);
+    setInlineValue('');
+  };
 
+  const addNewStep = async () => {
     try {
+      const maxPosition = Math.max(...steps.map(s => s.position), 0);
       const { error } = await supabase
         .from('master_steps')
-        .delete()
-        .eq('id', stepId);
+        .insert({ 
+          name: 'New Step', 
+          position: maxPosition + 1 
+        });
 
       if (error) throw error;
-
+      await fetchMasterData();
+      
       toast({
-        title: "Step Deleted",
-        description: "Master step has been deleted successfully",
+        title: "Step Added",
+        description: "New step created successfully",
       });
-
-      fetchMasterData();
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to delete step",
+        description: "Failed to create step",
         variant: "destructive",
       });
     }
   };
 
-  const handleDeleteTask = async (taskId: number) => {
-    if (!confirm('Are you sure you want to delete this task? This will also delete all sub-tasks.')) return;
-
+  const addNewTask = async (stepId: number, parentTaskId?: number) => {
     try {
+      const stepTasks = tasks.filter(t => t.step_id === stepId && t.parent_task_id === parentTaskId);
+      const maxPosition = Math.max(...stepTasks.map(t => t.position), 0);
+      
       const { error } = await supabase
         .from('master_tasks')
-        .delete()
-        .eq('id', taskId);
+        .insert({
+          step_id: stepId,
+          title: parentTaskId ? 'New Subtask' : 'New Task',
+          details: '',
+          planned_start_offset_days: 0,
+          planned_end_offset_days: 1,
+          position: maxPosition + 1,
+          technology_scope: 'both',
+          parent_task_id: parentTaskId || null
+        });
 
       if (error) throw error;
-
+      await fetchMasterData();
+      
       toast({
-        title: "Task Deleted",
-        description: "Master task has been deleted successfully",
+        title: parentTaskId ? "Subtask Added" : "Task Added",
+        description: `New ${parentTaskId ? 'subtask' : 'task'} created successfully`,
       });
-
-      fetchMasterData();
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to delete task",
+        description: `Failed to create ${parentTaskId ? 'subtask' : 'task'}`,
         variant: "destructive",
       });
     }
   };
 
-  const renderTaskRow = (task: MasterTask, level = 0): React.ReactNode[] => {
-    const rows: React.ReactNode[] = [];
-    const hasSubtasks = task.subtasks && task.subtasks.length > 0;
-    const isExpanded = expandedTasks.has(task.id);
+  const deleteItem = async (nodeId: string) => {
+    const [type, id] = nodeId.split('-');
+    const itemName = type === 'step' ? 'step' : 'task';
+    
+    if (!confirm(`Are you sure you want to delete this ${itemName}? This will also delete all nested items.`)) {
+      return;
+    }
 
-    rows.push(
-      <TableRow key={task.id}>
-        <TableCell>{task.master_steps?.name}</TableCell>
-        <TableCell>{task.position}</TableCell>
-        <TableCell>
-          <div className="flex items-center gap-2" style={{ paddingLeft: `${level * 24}px` }}>
-            {hasSubtasks && (
+    try {
+      if (type === 'step') {
+        await supabase.from('master_steps').delete().eq('id', parseInt(id));
+      } else {
+        await supabase.from('master_tasks').delete().eq('id', parseInt(id));
+      }
+
+      await fetchMasterData();
+      setSidebarOpen(false);
+      
+      toast({
+        title: "Deleted",
+        description: `${itemName.charAt(0).toUpperCase() + itemName.slice(1)} deleted successfully`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: `Failed to delete ${itemName}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getTechScopeColor = (scope: string) => {
+    switch (scope) {
+      case 'iot': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'vision': return 'bg-green-100 text-green-800 border-green-200';
+      case 'both': return 'bg-purple-100 text-purple-800 border-purple-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getTechScopeLabel = (scope: string) => {
+    switch (scope) {
+      case 'iot': return 'IoT';
+      case 'vision': return 'Vision';
+      case 'both': return 'Both';
+      default: return scope;
+    }
+  };
+
+  const renderTreeNode = (node: TreeNode): React.ReactNode => {
+    const isExpanded = expandedNodes.has(node.id);
+    const hasChildren = node.children.length > 0;
+    const isEditing = editingInline === node.id;
+    
+    return (
+      <div key={node.id} className="select-none">
+        <div 
+          className={`flex items-center gap-2 py-2 px-2 rounded-md hover:bg-muted/50 group transition-colors
+            ${selectedNode?.id === node.id ? 'bg-muted' : ''}
+          `}
+          style={{ paddingLeft: `${node.level * 24 + 8}px` }}
+        >
+          {/* Expand/Collapse Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0 hover:bg-muted-foreground/20"
+            onClick={() => hasChildren && toggleExpansion(node.id)}
+          >
+            {hasChildren ? (
+              isExpanded ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )
+            ) : (
+              <div className="w-4 h-4" />
+            )}
+          </Button>
+
+          {/* Node Icon */}
+          <div className="flex-shrink-0">
+            {node.type === 'step' ? (
+              <FolderPlus className="h-4 w-4 text-blue-600" />
+            ) : node.type === 'task' ? (
+              <FileText className="h-4 w-4 text-green-600" />
+            ) : (
+              <Layers className="h-4 w-4 text-orange-600" />
+            )}
+          </div>
+
+          {/* Node Content */}
+          <div className="flex-1 flex items-center gap-2 min-w-0">
+            {isEditing ? (
+              <Input
+                value={inlineValue}
+                onChange={(e) => setInlineValue(e.target.value)}
+                onBlur={() => saveInlineEdit(node.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') saveInlineEdit(node.id);
+                  if (e.key === 'Escape') cancelInlineEdit();
+                }}
+                className="h-7 text-sm"
+                autoFocus
+              />
+            ) : (
+              <>
+                <span
+                  className="font-medium text-sm cursor-pointer hover:text-primary truncate"
+                  onClick={() => handleNodeClick(node)}
+                  onDoubleClick={() => {
+                    const name = node.type === 'step' 
+                      ? (node.data as MasterStep).name 
+                      : (node.data as MasterTask).title;
+                    startInlineEdit(node.id, name);
+                  }}
+                >
+                  {node.type === 'step' 
+                    ? (node.data as MasterStep).name 
+                    : (node.data as MasterTask).title}
+                </span>
+
+                {/* Technology Scope Badge for Tasks */}
+                {node.type !== 'step' && (
+                  <Badge 
+                    variant="outline" 
+                    className={`text-xs px-2 py-0 ${getTechScopeColor((node.data as MasterTask).technology_scope)}`}
+                  >
+                    {getTechScopeLabel((node.data as MasterTask).technology_scope)}
+                  </Badge>
+                )}
+
+                {/* Task Timing Info */}
+                {node.type !== 'step' && (
+                  <span className="text-xs text-muted-foreground">
+                    {(node.data as MasterTask).planned_start_offset_days}d → {(node.data as MasterTask).planned_end_offset_days}d
+                  </span>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {node.type === 'step' && (
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-6 w-6 p-0"
-                onClick={() => toggleTaskExpansion(task.id)}
+                onClick={() => addNewTask((node.data as MasterStep).id)}
+                title="Add task"
               >
-                {isExpanded ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" />
-                )}
+                <Plus className="h-3 w-3" />
               </Button>
             )}
-            {!hasSubtasks && level > 0 && <div className="w-6" />}
-            <span className="font-medium">{task.title}</span>
-          </div>
-        </TableCell>
-        <TableCell>
-          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-            task.technology_scope === 'iot' ? 'bg-blue-100 text-blue-800' :
-            task.technology_scope === 'vision' ? 'bg-green-100 text-green-800' :
-            'bg-purple-100 text-purple-800'
-          }`}>
-            {task.technology_scope === 'iot' ? 'IoT' : 
-             task.technology_scope === 'vision' ? 'Vision' : 
-             'Both'}
-          </span>
-        </TableCell>
-        <TableCell>
-          {task.assigned_role ? (
-            <span className="text-sm text-muted-foreground">
-              {task.assigned_role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-            </span>
-          ) : (
-            <span className="text-sm text-muted-foreground">-</span>
-          )}
-        </TableCell>
-        <TableCell>{task.planned_start_offset_days} days</TableCell>
-        <TableCell>{task.planned_end_offset_days} days</TableCell>
-        <TableCell>
-          <div className="flex gap-2">
-            {!task.parent_task_id && (
+            
+            {node.type === 'task' && (
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => handleAddSubtask(task)}
+                className="h-6 w-6 p-0"
+                onClick={() => addNewTask((node.data as MasterTask).step_id, (node.data as MasterTask).id)}
                 title="Add subtask"
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-3 w-3" />
               </Button>
             )}
+            
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => { setEditingTask(task); setParentTaskForSubtask(null); setTaskDialogOpen(true); }}
+              className="h-6 w-6 p-0"
+              onClick={() => {
+                const name = node.type === 'step' 
+                  ? (node.data as MasterStep).name 
+                  : (node.data as MasterTask).title;
+                startInlineEdit(node.id, name);
+              }}
+              title="Edit"
             >
-              <Edit className="h-4 w-4" />
+              <Edit className="h-3 w-3" />
             </Button>
+            
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => handleDeleteTask(task.id)}
+              className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+              onClick={() => deleteItem(node.id)}
+              title="Delete"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-3 w-3" />
             </Button>
           </div>
-        </TableCell>
-      </TableRow>
+        </div>
+
+        {/* Render Children */}
+        {hasChildren && isExpanded && (
+          <div>
+            {node.children.map(child => renderTreeNode(child))}
+          </div>
+        )}
+      </div>
     );
-
-    // Add subtask rows if expanded
-    if (hasSubtasks && isExpanded) {
-      task.subtasks!.forEach(subtask => {
-        rows.push(...renderTaskRow(subtask, level + 1));
-      });
-    }
-
-    return rows;
   };
 
   if (!isInternalAdmin()) {
@@ -368,306 +520,158 @@ export const MasterDataManagement = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Master Data Management</h1>
-          <p className="text-muted-foreground">
-            Manage project steps and task templates
-          </p>
+    <div className="flex h-[calc(100vh-8rem)] gap-6">
+      {/* Main Tree View */}
+      <div className="flex-1 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Project Template</h1>
+            <p className="text-muted-foreground">
+              Manage project steps, tasks, and subtasks
+            </p>
+          </div>
+          <Button onClick={addNewStep} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Add Step
+          </Button>
         </div>
+
+        {/* Warning Alert */}
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-orange-800">Important Notice</h4>
+                <p className="text-sm text-orange-700">
+                  Changes to master data affect <strong>NEW projects only</strong>. Existing projects and their tasks will not be modified.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tree View */}
+        <Card className="flex-1">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-lg">Project Structure</CardTitle>
+              <Badge variant="outline" className="text-xs">
+                Double-click to rename
+              </Badge>
+            </div>
+            <CardDescription>
+              Expand steps to view tasks and subtasks. Technology scope filters apply to new projects.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="border rounded-md h-[calc(100vh-24rem)] overflow-auto bg-background">
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
+                </div>
+              ) : treeData.length === 0 ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <Database className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-muted-foreground">No project structure found</p>
+                    <p className="text-sm text-muted-foreground">Add a step to get started</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-2">
+                  {treeData.map(node => renderTreeNode(node))}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Warning Alert */}
-      <Card className="border-orange-200 bg-orange-50">
-        <CardContent className="pt-6">
-          <div className="flex items-start gap-2">
-            <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5" />
-            <div>
-              <h4 className="font-medium text-orange-800">Important Notice</h4>
-              <p className="text-sm text-orange-700">
-                Changes to master data affect <strong>NEW projects only</strong>. Existing projects and their tasks will not be modified.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Tabs defaultValue="steps" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="steps">Steps</TabsTrigger>
-          <TabsTrigger value="tasks">Tasks</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="steps" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Master Steps</CardTitle>
-                  <CardDescription>
-                    Manage project step categories
-                  </CardDescription>
-                </div>
-                <Dialog open={stepDialogOpen} onOpenChange={setStepDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button onClick={() => { setEditingStep(null); setStepDialogOpen(true); }}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Step
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <StepDialog
-                      step={editingStep}
-                      onSave={handleSaveStep}
-                      onClose={() => { setStepDialogOpen(false); setEditingStep(null); }}
-                    />
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Position</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {steps.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={3} className="text-center py-8">
-                          <List className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                          <p className="text-muted-foreground">No master steps found</p>
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      steps.map((step) => (
-                        <TableRow key={step.id}>
-                          <TableCell>{step.position}</TableCell>
-                          <TableCell className="font-medium">{step.name}</TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => { setEditingStep(step); setStepDialogOpen(true); }}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteStep(step.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="tasks" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Master Tasks</CardTitle>
-                  <CardDescription>
-                    Manage task templates with timing offsets and technology scope
-                  </CardDescription>
-                </div>
-                <Dialog open={taskDialogOpen} onOpenChange={setTaskDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button onClick={() => { setEditingTask(null); setParentTaskForSubtask(null); setTaskDialogOpen(true); }}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Task
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
-                    <TaskDialog
-                      task={editingTask}
-                      steps={steps}
-                      parentTask={parentTaskForSubtask}
-                      onSave={handleSaveTask}
-                      onClose={() => { 
-                        setTaskDialogOpen(false); 
-                        setEditingTask(null); 
-                        setParentTaskForSubtask(null); 
-                      }}
-                    />
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Step</TableHead>
-                      <TableHead>Position</TableHead>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Technology Scope</TableHead>
-                      <TableHead>Assigned Role</TableHead>
-                      <TableHead>Start Offset</TableHead>
-                      <TableHead>End Offset</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {tasks.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={8} className="text-center py-8">
-                          <List className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                          <p className="text-muted-foreground">No master tasks found</p>
-                        </TableCell>
-                      </TableRow>
-                     ) : (
-                       tasks.map((task) => renderTaskRow(task)).flat()
-                     )}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      {/* Detailed Sidebar */}
+      {sidebarOpen && selectedNode && (
+        <DetailSidebar
+          node={selectedNode}
+          onClose={() => setSidebarOpen(false)}
+          onUpdate={fetchMasterData}
+        />
+      )}
     </div>
   );
 };
 
-// Step Dialog Component
-const StepDialog = ({ 
-  step, 
-  onSave, 
-  onClose 
-}: {
-  step: MasterStep | null;
-  onSave: (data: Partial<MasterStep>) => void;
+// Detail Sidebar Component
+interface DetailSidebarProps {
+  node: TreeNode;
   onClose: () => void;
-}) => {
-  const [formData, setFormData] = useState({
-    name: step?.name || '',
-    position: step?.position || 0,
-  });
-  const [loading, setLoading] = useState(false);
+  onUpdate: () => void;
+}
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await onSave(formData);
-    } finally {
-      setLoading(false);
+const DetailSidebar = ({ node, onClose, onUpdate }: DetailSidebarProps) => {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState<any>({});
+
+  useEffect(() => {
+    if (node.type === 'step') {
+      const step = node.data as MasterStep;
+      setFormData({
+        name: step.name,
+        position: step.position
+      });
+    } else {
+      const task = node.data as MasterTask;
+      setFormData({
+        title: task.title,
+        details: task.details || '',
+        planned_start_offset_days: task.planned_start_offset_days,
+        planned_end_offset_days: task.planned_end_offset_days,
+        position: task.position,
+        technology_scope: task.technology_scope,
+        assigned_role: task.assigned_role || ''
+      });
     }
-  };
+  }, [node]);
 
-  return (
-    <>
-      <DialogHeader>
-        <DialogTitle>{step ? 'Edit Step' : 'Create New Step'}</DialogTitle>
-        <DialogDescription>
-          {step ? 'Update the step details' : 'Add a new master step'}
-        </DialogDescription>
-      </DialogHeader>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">Step Name *</Label>
-          <Input
-            id="name"
-            value={formData.name}
-            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-            placeholder="Enter step name"
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="position">Position</Label>
-          <Input
-            id="position"
-            type="number"
-            min="0"
-            value={formData.position}
-            onChange={(e) => setFormData(prev => ({ ...prev, position: parseInt(e.target.value) || 0 }))}
-            placeholder="Step order position"
-          />
-        </div>
-        <div className="flex gap-2 pt-4">
-          <Button type="submit" disabled={loading || !formData.name}>
-            {loading ? 'Saving...' : (step ? 'Update Step' : 'Create Step')}
-          </Button>
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-        </div>
-      </form>
-    </>
-  );
-};
-
-// Task Dialog Component
-const TaskDialog = ({ 
-  task, 
-  steps,
-  parentTask,
-  onSave, 
-  onClose 
-}: {
-  task: MasterTask | null;
-  steps: MasterStep[];
-  parentTask?: MasterTask | null;
-  onSave: (data: any) => void;
-  onClose: () => void;
-}) => {
-  const [formData, setFormData] = useState({
-    step_id: task?.step_id || parentTask?.step_id || 0,
-    title: task?.title || '',
-    details: task?.details || '',
-    planned_start_offset_days: task?.planned_start_offset_days || 0,
-    planned_end_offset_days: task?.planned_end_offset_days || 1,
-    position: task?.position || 0,
-    iot: task?.technology_scope === 'iot' || task?.technology_scope === 'both' || !task,
-    vision: task?.technology_scope === 'vision' || task?.technology_scope === 'both' || !task,
-    assigned_role: task?.assigned_role || '',
-  });
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const handleSave = async () => {
     try {
-      const technology_scope = formData.iot && formData.vision ? 'both' : 
-                               formData.iot ? 'iot' : 
-                               formData.vision ? 'vision' : 'both';
-      
-      await onSave({
-        step_id: formData.step_id,
-        title: formData.title,
-        details: formData.details,
-        planned_start_offset_days: formData.planned_start_offset_days,
-        planned_end_offset_days: formData.planned_end_offset_days,
-        position: formData.position,
-        technology_scope,
-        assigned_role: formData.assigned_role || null
+      setLoading(true);
+      const [type, id] = node.id.split('-');
+
+      if (type === 'step') {
+        await supabase
+          .from('master_steps')
+          .update({
+            name: formData.name,
+            position: formData.position
+          })
+          .eq('id', parseInt(id));
+      } else {
+        await supabase
+          .from('master_tasks')
+          .update({
+            title: formData.title,
+            details: formData.details,
+            planned_start_offset_days: formData.planned_start_offset_days,
+            planned_end_offset_days: formData.planned_end_offset_days,
+            position: formData.position,
+            technology_scope: formData.technology_scope,
+            assigned_role: formData.assigned_role || null
+          })
+          .eq('id', parseInt(id));
+      }
+
+      toast({
+        title: "Updated",
+        description: "Changes saved successfully",
+      });
+
+      onUpdate();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to save changes",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -675,152 +679,134 @@ const TaskDialog = ({
   };
 
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>
-          {task ? 'Edit Task' : parentTask ? `Add Subtask to "${parentTask.title}"` : 'Create New Task'}
-        </DialogTitle>
-        <DialogDescription>
-          {task ? 'Update the task template' : parentTask ? 'Add a new subtask' : 'Add a new master task template'}
-        </DialogDescription>
-      </DialogHeader>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {parentTask && (
-          <div className="p-3 bg-muted rounded-md">
-            <p className="text-sm text-muted-foreground">
-              <strong>Parent Task:</strong> {parentTask.title} ({parentTask.master_steps?.name})
-            </p>
-          </div>
+    <Card className="w-80 h-fit">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            {node.type === 'step' ? 'Step Details' : 'Task Details'}
+          </CardTitle>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            ×
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {node.type === 'step' ? (
+          <>
+            <div>
+              <Label htmlFor="step-name">Step Name</Label>
+              <Input
+                id="step-name"
+                value={formData.name || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="step-position">Position</Label>
+              <Input
+                id="step-position"
+                type="number"
+                value={formData.position || 0}
+                onChange={(e) => setFormData(prev => ({ ...prev, position: parseInt(e.target.value) }))}
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            <div>
+              <Label htmlFor="task-title">Task Title</Label>
+              <Input
+                id="task-title"
+                value={formData.title || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="task-details">Details</Label>
+              <Textarea
+                id="task-details"
+                value={formData.details || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, details: e.target.value }))}
+                rows={3}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label htmlFor="start-offset">Start Offset (days)</Label>
+                <Input
+                  id="start-offset"
+                  type="number"
+                  value={formData.planned_start_offset_days || 0}
+                  onChange={(e) => setFormData(prev => ({ ...prev, planned_start_offset_days: parseInt(e.target.value) }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="end-offset">End Offset (days)</Label>
+                <Input
+                  id="end-offset"
+                  type="number"
+                  value={formData.planned_end_offset_days || 0}
+                  onChange={(e) => setFormData(prev => ({ ...prev, planned_end_offset_days: parseInt(e.target.value) }))}
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="tech-scope">Technology Scope</Label>
+              <Select 
+                value={formData.technology_scope || 'both'} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, technology_scope: value }))}
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-background border shadow-lg z-50">
+                  <SelectItem value="both">Both (IoT + Vision)</SelectItem>
+                  <SelectItem value="iot">IoT Only</SelectItem>
+                  <SelectItem value="vision">Vision Only</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="assigned-role">Assigned Role</Label>
+              <Select 
+                value={formData.assigned_role || ''} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, assigned_role: value }))}
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent className="bg-background border shadow-lg z-50">
+                  <SelectItem value="">No Assignment</SelectItem>
+                  <SelectItem value="customer_project_lead">Customer Project Lead</SelectItem>
+                  <SelectItem value="implementation_lead">Implementation Lead</SelectItem>
+                  <SelectItem value="ai_iot_engineer">AI IoT Engineer</SelectItem>
+                  <SelectItem value="project_coordinator">Project Coordinator</SelectItem>
+                  <SelectItem value="technical_project_lead">Technical Project Lead</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="position">Position</Label>
+              <Input
+                id="position"
+                type="number"
+                value={formData.position || 0}
+                onChange={(e) => setFormData(prev => ({ ...prev, position: parseInt(e.target.value) }))}
+              />
+            </div>
+          </>
         )}
         
-        <div className="space-y-2">
-          <Label htmlFor="step_id">Step *</Label>
-          <select
-            id="step_id"
-            value={formData.step_id}
-            onChange={(e) => setFormData(prev => ({ ...prev, step_id: parseInt(e.target.value) }))}
-            className="w-full p-2 border rounded-md"
-            required
-            disabled={!!parentTask}
-          >
-            <option value={0}>Select a step</option>
-            {steps.map((step) => (
-              <option key={step.id} value={step.id}>
-                {step.name}
-              </option>
-            ))}
-          </select>
-          {parentTask && (
-            <p className="text-xs text-muted-foreground">
-              Subtasks inherit the parent's step
-            </p>
-          )}
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="title">Task Title *</Label>
-          <Input
-            id="title"
-            value={formData.title}
-            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-            placeholder="Enter task title"
-            required
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="details">Details</Label>
-          <Textarea
-            id="details"
-            value={formData.details}
-            onChange={(e) => setFormData(prev => ({ ...prev, details: e.target.value }))}
-            placeholder="Enter task details"
-            rows={3}
-          />
-        </div>
-        
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="space-y-2">
-            <Label htmlFor="start_offset">Start Offset (days)</Label>
-            <Input
-              id="start_offset"
-              type="number"
-              min="0"
-              value={formData.planned_start_offset_days}
-              onChange={(e) => setFormData(prev => ({ ...prev, planned_start_offset_days: parseInt(e.target.value) || 0 }))}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="end_offset">End Offset (days)</Label>
-            <Input
-              id="end_offset"
-              type="number"
-              min="1"
-              value={formData.planned_end_offset_days}
-              onChange={(e) => setFormData(prev => ({ ...prev, planned_end_offset_days: parseInt(e.target.value) || 1 }))}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="position">Position</Label>
-            <Input
-              id="position"
-              type="number"
-              min="0"
-              value={formData.position}
-              onChange={(e) => setFormData(prev => ({ ...prev, position: parseInt(e.target.value) || 0 }))}
-            />
-          </div>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="assigned_role">Assigned Role</Label>
-          <select
-            id="assigned_role"
-            value={formData.assigned_role}
-            onChange={(e) => setFormData(prev => ({ ...prev, assigned_role: e.target.value }))}
-            className="w-full p-2 border rounded-md"
-          >
-            <option value="">No specific role assignment</option>
-            <option value="customer_project_lead">Customer Project Lead</option>
-            <option value="implementation_lead">Implementation Lead</option>
-            <option value="ai_iot_engineer">AI/IoT Engineer</option>
-            <option value="project_coordinator">Project Coordinator</option>
-            <option value="technical_project_lead">Technical Project Lead</option>
-          </select>
-        </div>
-        
-        <div className="space-y-3">
-          <Label>Technology Scope *</Label>
-          <div className="flex flex-col space-y-2">
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="task-iot"
-                checked={formData.iot}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, iot: checked as boolean }))}
-              />
-              <Label htmlFor="task-iot">IoT</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="task-vision"
-                checked={formData.vision}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, vision: checked as boolean }))}
-              />
-              <Label htmlFor="task-vision">Vision</Label>
-            </div>
-          </div>
-        </div>
-        
-        <div className="flex gap-2 pt-4">
-          <Button type="submit" disabled={loading || !formData.title || !formData.step_id || (!formData.iot && !formData.vision)}>
-            {loading ? 'Saving...' : (task ? 'Update Task' : 'Create Task')}
-          </Button>
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-        </div>
-      </form>
-    </>
+        <Button 
+          onClick={handleSave} 
+          disabled={loading} 
+          className="w-full"
+        >
+          {loading ? 'Saving...' : 'Save Changes'}
+        </Button>
+      </CardContent>
+    </Card>
   );
 };
 

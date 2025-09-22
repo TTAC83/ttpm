@@ -106,7 +106,7 @@ const TaskCard = ({ task, setSelectedTask, setIsTaskDialogOpen }: {
   );
 };
 
-export const TaskList = ({ 
+const TaskList = ({ 
   tasks, 
   filterBySearch, 
   filterByDateRange, 
@@ -129,3 +129,5 @@ export const TaskList = ({
     </div>
   );
 };
+
+export default TaskList;

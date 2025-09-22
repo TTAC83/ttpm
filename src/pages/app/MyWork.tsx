@@ -7,7 +7,7 @@ import CreateEventDialog from "@/components/CreateEventDialog";
 import { ProductGapDrawer } from "@/components/ProductGapDrawer";
 import { VisionModelDialog } from "@/components/VisionModelDialog";
 import { FeatureRequestDialog } from "@/components/FeatureRequestDialog";
-import { TaskList } from "@/components/TaskList";
+import TaskList from "@/components/TaskList";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

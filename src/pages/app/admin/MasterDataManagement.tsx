@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Plus, 
@@ -20,9 +21,12 @@ import {
   AlertTriangle,
   FolderPlus,
   FileText,
-  Layers
+  Layers,
+  List,
+  BarChart3
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { MasterDataGanttView } from '@/components/MasterDataGanttView';
 
 interface MasterStep {
   id: number;
@@ -68,6 +72,7 @@ export const MasterDataManagement = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [editingInline, setEditingInline] = useState<string | null>(null);
   const [inlineValue, setInlineValue] = useState('');
+  const [viewMode, setViewMode] = useState<'tree' | 'gantt'>('tree');
 
   useEffect(() => {
     if (isInternalAdmin()) {
@@ -521,7 +526,7 @@ export const MasterDataManagement = () => {
 
   return (
     <div className="flex h-[calc(100vh-8rem)] gap-6">
-      {/* Main Tree View */}
+      {/* Main View */}
       <div className="flex-1 space-y-4">
         <div className="flex items-center justify-between">
           <div>
@@ -530,10 +535,24 @@ export const MasterDataManagement = () => {
               Manage project steps, tasks, and subtasks
             </p>
           </div>
-          <Button onClick={addNewStep} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Add Step
-          </Button>
+          <div className="flex items-center gap-4">
+            {/* View Toggle */}
+            <div className="flex items-center gap-2">
+              <List className={`h-4 w-4 ${viewMode === 'tree' ? 'text-primary' : 'text-muted-foreground'}`} />
+              <Switch
+                checked={viewMode === 'gantt'}
+                onCheckedChange={(checked) => setViewMode(checked ? 'gantt' : 'tree')}
+              />
+              <BarChart3 className={`h-4 w-4 ${viewMode === 'gantt' ? 'text-primary' : 'text-muted-foreground'}`} />
+              <span className="text-sm font-medium">
+                {viewMode === 'tree' ? 'Tree View' : 'Gantt View'}
+              </span>
+            </div>
+            <Button onClick={addNewStep} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Add Step
+            </Button>
+          </div>
         </div>
 
         {/* Warning Alert */}
@@ -551,41 +570,63 @@ export const MasterDataManagement = () => {
           </CardContent>
         </Card>
 
-        {/* Tree View */}
-        <Card className="flex-1">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-lg">Project Structure</CardTitle>
-              <Badge variant="outline" className="text-xs">
-                Double-click to rename
-              </Badge>
-            </div>
-            <CardDescription>
-              Expand steps to view tasks and subtasks. Technology scope filters apply to new projects.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="border rounded-md h-[calc(100vh-24rem)] overflow-auto bg-background">
-              {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
-                </div>
-              ) : treeData.length === 0 ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-center">
-                    <Database className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                    <p className="text-muted-foreground">No project structure found</p>
-                    <p className="text-sm text-muted-foreground">Add a step to get started</p>
+        {/* Dynamic View */}
+        {viewMode === 'tree' ? (
+          <Card className="flex-1">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-lg">Project Structure</CardTitle>
+                <Badge variant="outline" className="text-xs">
+                  Double-click to rename
+                </Badge>
+              </div>
+              <CardDescription>
+                Expand steps to view tasks and subtasks. Technology scope filters apply to new projects.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="border rounded-md h-[calc(100vh-24rem)] overflow-auto bg-background">
+                {loading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
                   </div>
-                </div>
-              ) : (
-                <div className="p-2">
-                  {treeData.map(node => renderTreeNode(node))}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                ) : treeData.length === 0 ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <Database className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-muted-foreground">No project structure found</p>
+                      <p className="text-sm text-muted-foreground">Add a step to get started</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-2">
+                    {treeData.map(node => renderTreeNode(node))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="flex-1 h-[calc(100vh-24rem)] overflow-auto">
+            <MasterDataGanttView
+              steps={steps}
+              tasks={tasks}
+              onEditTask={(task) => {
+                const taskNode: TreeNode = {
+                  id: `task-${task.id}`,
+                  type: task.parent_task_id ? 'subtask' : 'task',
+                  data: task,
+                  children: [],
+                  level: task.parent_task_id ? 2 : 1
+                };
+                setSelectedNode(taskNode);
+                setSidebarOpen(true);
+              }}
+              onAddTask={addNewTask}
+              onDeleteTask={(taskId) => deleteItem(`task-${taskId}`)}
+            />
+          </div>
+        )}
       </div>
 
       {/* Detailed Sidebar */}

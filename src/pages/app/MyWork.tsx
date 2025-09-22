@@ -7,6 +7,7 @@ import CreateEventDialog from "@/components/CreateEventDialog";
 import { ProductGapDrawer } from "@/components/ProductGapDrawer";
 import { VisionModelDialog } from "@/components/VisionModelDialog";
 import { FeatureRequestDialog } from "@/components/FeatureRequestDialog";
+import { TaskList } from "@/components/TaskList";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -532,43 +533,13 @@ export default function MyWork() {
 
         {/* Tasks Tab */}
         <TabsContent value="tasks" className="space-y-4">
-          {tasks
-            .filter(task => filterBySearch(task.task_title + ' ' + (task.task_details || '')))
-            .filter(task => filterByDateRange(task.planned_start) || filterByDateRange(task.planned_end))
-            .map((task) => (
-              <Card key={task.id} className={cn(
-                "transition-shadow hover:shadow-md",
-                isOverdue(task.planned_end) && task.status !== 'Done' && "border-red-200 bg-red-50"
-              )}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold">{task.task_title}</h3>
-                        <Badge className={getStatusColor(task.status)}>{task.status}</Badge>
-                        {isOverdue(task.planned_end) && task.status !== 'Done' && (
-                          <Badge variant="destructive">Overdue</Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-2">{task.task_details}</p>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span>Customer: {task.project?.company?.name || 'N/A'}</span>
-                        <span>Project: {task.project?.name}</span>
-                        <span>Step: {task.step_name}</span>
-                        {task.planned_start && <span>Start: {format(parseISO(task.planned_start), 'MMM dd')}</span>}
-                        {task.planned_end && <span>Due: {format(parseISO(task.planned_end), 'MMM dd')}</span>}
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm" onClick={() => {
-                      setSelectedTask(task);
-                      setIsTaskDialogOpen(true);
-                    }}>
-                      View Task
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          <TaskList 
+            tasks={tasks}
+            filterBySearch={filterBySearch}
+            filterByDateRange={filterByDateRange}
+            setSelectedTask={setSelectedTask}
+            setIsTaskDialogOpen={setIsTaskDialogOpen}
+          />
         </TabsContent>
 
         {/* Actions Tab */}

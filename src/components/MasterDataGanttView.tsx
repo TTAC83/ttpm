@@ -96,7 +96,7 @@ export const MasterDataGanttView = ({
   };
 
   return (
-    <div className="space-y-6 h-full overflow-y-auto">
+    <div className="space-y-6 min-h-full">
       {ganttData.steps.map(step => (
         <Card key={step.id} className="overflow-visible">
           <CardHeader className="pb-3 bg-muted/20">

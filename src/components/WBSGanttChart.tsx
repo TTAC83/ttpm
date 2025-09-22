@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ZoomIn, ZoomOut, Maximize2, FileDown, Eye } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, FileDown, Eye, ChevronDown, ChevronRight, Expand, Minimize } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { formatDateUK } from '@/lib/dateUtils';
@@ -24,6 +24,8 @@ interface TaskWithDates {
   duration_days: number | null;
   is_milestone: boolean;
   subtasks?: TaskWithDates[];
+  level: number; // 0=step, 1=task, 2=subtask, etc.
+  parent_id?: string;
 }
 
 interface StepGroup {
@@ -32,6 +34,14 @@ interface StepGroup {
   planned_start: string | null;
   planned_end: string | null;
   step_order: number;
+  aggregated_start?: string | null;
+  aggregated_end?: string | null;
+  level: number; // Always 0 for steps
+  id: string;
+}
+
+interface CollapsibleState {
+  [key: string]: boolean; // key = item id, value = is expanded
 }
 
 export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
@@ -44,6 +54,8 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [exportType, setExportType] = useState<'single' | 'multi'>('single');
   const [isExporting, setIsExporting] = useState(false);
+  const [collapsedItems, setCollapsedItems] = useState<CollapsibleState>({});
+  const [expandAll, setExpandAll] = useState(false);
 
   useEffect(() => {
     loadWBSData();
@@ -83,6 +95,7 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
       const processedTasks: TaskWithDates[] = [];
       
       let stepStartOffset = 0; // Days from contract start
+      let allDates: Date[] = [];
 
       tasks.forEach((task, taskIndex) => {
         // Calculate start date based on step order and task sequence using offset fields
@@ -96,6 +109,32 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
         const taskEnd = new Date(taskStart);
         taskEnd.setDate(taskEnd.getDate() + actualDuration - 1);
 
+        allDates.push(taskStart, taskEnd);
+
+        const processedSubtasks: TaskWithDates[] = task.subtasks?.map((subtask, subtaskIndex) => {
+          const subtaskStartOffset = subtask.planned_start_offset_days || taskStartOffset + subtaskIndex;
+          const subtaskDuration = (subtask.planned_end_offset_days || subtaskStartOffset) - subtaskStartOffset + 1;
+          
+          const subtaskStart = new Date(contractStartDate);
+          subtaskStart.setDate(subtaskStart.getDate() + subtaskStartOffset);
+          const subtaskEnd = new Date(subtaskStart);
+          subtaskEnd.setDate(subtaskEnd.getDate() + Math.max(1, subtaskDuration) - 1);
+
+          allDates.push(subtaskStart, subtaskEnd);
+
+          return {
+            id: subtask.id.toString(),
+            title: subtask.title,
+            step_name: step.step_name,
+            planned_start: subtaskStart.toISOString().split('T')[0],
+            planned_end: subtaskEnd.toISOString().split('T')[0],
+            duration_days: Math.max(1, subtaskDuration),
+            is_milestone: Math.max(1, subtaskDuration) === 1,
+            level: 2,
+            parent_id: task.id.toString(),
+          };
+        }) || [];
+
         const processedTask: TaskWithDates = {
           id: task.id.toString(),
           title: task.title,
@@ -103,23 +142,10 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
           planned_start: taskStart.toISOString().split('T')[0],
           planned_end: taskEnd.toISOString().split('T')[0],
           duration_days: actualDuration,
-          is_milestone: actualDuration === 1, // Consider 1-day tasks as milestones
-          subtasks: task.subtasks?.map((subtask, subtaskIndex) => {
-            const subtaskStart = new Date(taskStart);
-            subtaskStart.setDate(subtaskStart.getDate() + subtaskIndex);
-            const subtaskEnd = new Date(subtaskStart);
-            subtaskEnd.setDate(subtaskEnd.getDate());
-
-            return {
-              id: subtask.id.toString(),
-              title: subtask.title,
-              step_name: step.step_name,
-              planned_start: subtaskStart.toISOString().split('T')[0],
-              planned_end: subtaskEnd.toISOString().split('T')[0],
-              duration_days: 1,
-              is_milestone: false,
-            };
-          }) || []
+          is_milestone: actualDuration === 1,
+          subtasks: processedSubtasks,
+          level: 1,
+          parent_id: step.id.toString(),
         };
 
         processedTasks.push(processedTask);
@@ -128,17 +154,24 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
         stepStartOffset = Math.max(stepStartOffset, taskStartOffset + actualDuration);
       });
 
-      // Calculate step overall dates
-      const stepStart = processedTasks.length > 0 ? processedTasks[0].planned_start : null;
-      const stepEnd = processedTasks.length > 0 ? 
-        processedTasks[processedTasks.length - 1].planned_end : null;
+      // Calculate aggregated step dates (earliest start, latest end)
+      const stepAggregatedStart = allDates.length > 0 
+        ? new Date(Math.min(...allDates.map(d => d.getTime())))
+        : null;
+      const stepAggregatedEnd = allDates.length > 0 
+        ? new Date(Math.max(...allDates.map(d => d.getTime())))
+        : null;
 
       stepGroups.push({
+        id: step.id.toString(),
         step_name: step.step_name,
         tasks: processedTasks,
-        planned_start: stepStart,
-        planned_end: stepEnd,
-        step_order: stepIndex // Use index since step_order may not exist
+        planned_start: processedTasks.length > 0 ? processedTasks[0].planned_start : null,
+        planned_end: processedTasks.length > 0 ? processedTasks[processedTasks.length - 1].planned_end : null,
+        aggregated_start: stepAggregatedStart?.toISOString().split('T')[0] || null,
+        aggregated_end: stepAggregatedEnd?.toISOString().split('T')[0] || null,
+        step_order: stepIndex,
+        level: 0,
       });
     });
 
@@ -146,30 +179,118 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
   };
 
   const stepGroups = processWBSForGantt();
+  
+  // Initialize collapsed state for all items (default: all collapsed except steps)
+  useEffect(() => {
+    const initialState: CollapsibleState = {};
+    stepGroups.forEach(step => {
+      // Steps are always visible but collapsed by default
+      initialState[step.id] = false;
+      step.tasks.forEach(task => {
+        initialState[task.id] = false;
+        task.subtasks?.forEach(subtask => {
+          initialState[subtask.id] = false;
+        });
+      });
+    });
+    setCollapsedItems(prev => ({ ...initialState, ...prev }));
+  }, [stepGroups.length]);
+
+  // Get all visible items based on collapse state
+  const getVisibleItems = (): (StepGroup | TaskWithDates)[] => {
+    const visibleItems: (StepGroup | TaskWithDates)[] = [];
+    
+    stepGroups.forEach(step => {
+      // Steps are always visible
+      visibleItems.push(step);
+      
+      // Show tasks if step is expanded
+      if (collapsedItems[step.id]) {
+        step.tasks.forEach(task => {
+          visibleItems.push(task);
+          
+          // Show subtasks if task is expanded
+          if (collapsedItems[task.id] && task.subtasks) {
+            task.subtasks.forEach(subtask => {
+              visibleItems.push(subtask);
+            });
+          }
+        });
+      }
+    });
+    
+    return visibleItems;
+  };
+
+  const visibleItems = getVisibleItems();
   const allTasks = stepGroups.flatMap(group => group.tasks);
   const allSubtasks = allTasks.flatMap(task => task.subtasks || []);
   const allItems = [...allTasks, ...allSubtasks];
 
   // Helper functions for Gantt visualization
-  const getItemColor = (item: TaskWithDates): string => {
-    if (item.is_milestone) return '#8b5cf6'; // Purple for milestones
-    return '#3b82f6'; // Blue for regular tasks
+  const getItemColor = (item: TaskWithDates | StepGroup): string => {
+    if ('level' in item) {
+      if (item.level === 0) return 'hsl(var(--primary))'; // Steps - primary color
+      if (item.level === 1) return 'hsl(var(--secondary))'; // Tasks - secondary color
+      if (item.level === 2) return 'hsl(var(--accent))'; // Subtasks - accent color
+    }
+    if ('is_milestone' in item && item.is_milestone) return 'hsl(var(--destructive))'; // Milestones
+    return 'hsl(var(--muted))';
   };
 
-  const getItemWidth = (item: TaskWithDates): number => {
-    if (!item.planned_start || !item.planned_end) return 20;
+  const getItemOpacity = (item: TaskWithDates | StepGroup): number => {
+    if ('level' in item) {
+      if (item.level === 0) return 1.0; // Steps fully opaque
+      if (item.level === 1) return 0.85; // Tasks slightly transparent
+      if (item.level === 2) return 0.7; // Subtasks more transparent
+    }
+    return 0.8;
+  };
+
+  const getItemWidth = (item: TaskWithDates | StepGroup): number => {
+    let startDate: string | null = null;
+    let endDate: string | null = null;
     
-    const start = new Date(item.planned_start);
-    const end = new Date(item.planned_end);
+    if ('aggregated_start' in item && 'aggregated_end' in item) {
+      // For steps, use aggregated dates when collapsed, actual dates when expanded
+      if (collapsedItems[item.id]) {
+        startDate = item.planned_start;
+        endDate = item.planned_end;
+      } else {
+        startDate = item.aggregated_start;
+        endDate = item.aggregated_end;
+      }
+    } else {
+      startDate = item.planned_start;
+      endDate = item.planned_end;
+    }
+    
+    if (!startDate || !endDate) return 20;
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
     const duration = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))) + 1;
     
     return Math.max(20, duration * 10 * zoomLevel);
   };
 
-  const getItemPosition = (item: TaskWithDates): number => {
-    if (!item.planned_start || allItems.length === 0) return 0;
+  const getItemPosition = (item: TaskWithDates | StepGroup): number => {
+    let startDate: string | null = null;
     
-    const start = new Date(item.planned_start);
+    if ('aggregated_start' in item) {
+      // For steps, use aggregated dates when collapsed, actual dates when expanded
+      if (collapsedItems[item.id]) {
+        startDate = item.planned_start;
+      } else {
+        startDate = item.aggregated_start;
+      }
+    } else {
+      startDate = item.planned_start;
+    }
+    
+    if (!startDate || allItems.length === 0) return 0;
+    
+    const start = new Date(startDate);
     const projectStart = allItems.reduce((earliest, i) => {
       if (!i.planned_start) return earliest;
       const itemStart = new Date(i.planned_start);
@@ -254,6 +375,44 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
 
   const handleTogglePresentationMode = () => {
     setPresentationMode(!presentationMode);
+  };
+
+  // Collapse/Expand handlers
+  const toggleItem = (itemId: string) => {
+    setCollapsedItems(prev => ({
+      ...prev,
+      [itemId]: !prev[itemId]
+    }));
+  };
+
+  const handleExpandAll = () => {
+    const newState: CollapsibleState = {};
+    stepGroups.forEach(step => {
+      newState[step.id] = true;
+      step.tasks.forEach(task => {
+        newState[task.id] = true;
+        task.subtasks?.forEach(subtask => {
+          newState[subtask.id] = true;
+        });
+      });
+    });
+    setCollapsedItems(newState);
+    setExpandAll(true);
+  };
+
+  const handleCollapseAll = () => {
+    const newState: CollapsibleState = {};
+    stepGroups.forEach(step => {
+      newState[step.id] = false;
+      step.tasks.forEach(task => {
+        newState[task.id] = false;
+        task.subtasks?.forEach(subtask => {
+          newState[subtask.id] = false;
+        });
+      });
+    });
+    setCollapsedItems(newState);
+    setExpandAll(false);
   };
 
   // PDF Export functionality
@@ -448,6 +607,24 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
             >
               <Eye className="h-4 w-4" />
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExpandAll}
+              disabled={expandAll}
+            >
+              <Expand className="h-4 w-4 mr-1" />
+              Expand All
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCollapseAll}
+              disabled={!expandAll}
+            >
+              <Minimize className="h-4 w-4 mr-1" />
+              Collapse All
+            </Button>
             <Dialog open={exportModalOpen} onOpenChange={setExportModalOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm" disabled={isExporting}>
@@ -501,136 +678,202 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
         </div>
       </CardHeader>
 
-      <CardContent className="p-6">
-        <div className="relative">
-          {/* Date markers */}
-          <div className="mb-4 relative" style={{ minHeight: '30px' }}>
-            {dateMarkers.map((marker, index) => (
-              <div
-                key={index}
-                className="absolute top-0 text-xs text-muted-foreground whitespace-nowrap"
-                style={{ left: `${marker.position}px` }}
-              >
-                <div className="border-l border-muted-foreground/30 h-4 mb-1"></div>
-                <div className="transform -translate-x-1/2">
-                  {marker.label}
+      <CardContent className="p-0">
+        <div 
+          className="overflow-auto border rounded-lg bg-background"
+          style={{ 
+            maxHeight: presentationMode ? 'none' : '70vh',
+            minHeight: '400px'
+          }}
+        >
+          {/* Timeline Header */}
+          <div className="sticky top-0 z-20 bg-background border-b">
+            <div className="flex">
+              {/* Tasks column header */}
+              <div className="w-80 p-4 border-r bg-muted/50 font-semibold">
+                Tasks & Timeline
+              </div>
+              
+              {/* Date markers header */}
+              <div className="flex-1 relative p-2 bg-muted/30">
+                <div className="flex items-center text-xs text-muted-foreground mb-2">
+                  <span>Timeline ({Math.round(zoomLevel * 100)}% zoom)</span>
+                </div>
+                <div className="relative h-6">
+                  {dateMarkers.map((marker, index) => (
+                    <div
+                      key={index}
+                      className="absolute top-0 text-xs text-muted-foreground whitespace-nowrap"
+                      style={{ left: `${marker.position}px` }}
+                    >
+                      <div className="w-px h-4 bg-border mr-1"></div>
+                      {marker.label}
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
-
-          {/* Today line */}
-          <div
-            className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10"
-            style={{ left: `${todayPosition}px` }}
-          >
-            <div className="absolute -top-2 -left-8 text-xs text-red-500 font-medium">
-              Today
             </div>
           </div>
 
-          {/* Steps and Tasks */}
-          <div className="space-y-6">
-            {stepGroups.map((step, stepIndex) => (
-              <div key={step.step_name} className="space-y-2">
-                {/* Step header */}
-                <div className="flex items-center gap-4 py-2 border-b">
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-semibold text-lg">{step.step_name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {step.tasks.length} tasks
-                      {step.planned_start && step.planned_end && (
-                        <span className="ml-2">
-                          ({formatDateUK(step.planned_start)} - {formatDateUK(step.planned_end)})
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                </div>
+          {/* Gantt Chart Content */}
+          <div className="relative">
+            {/* Today line */}
+            <div
+              className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10 pointer-events-none"
+              style={{ left: `${320 + todayPosition}px` }}
+            >
+              <div className="absolute -top-4 -left-8 text-xs text-red-500 font-medium bg-background px-1 rounded">
+                Today
+              </div>
+            </div>
 
-                {/* Tasks in this step */}
-                {step.tasks.map((task, taskIndex) => (
-                  <div key={task.id} className="ml-4 space-y-1">
-                    {/* Main task bar */}
-                    <div className="flex items-center gap-4 py-1">
-                      <div className="min-w-0 w-64 flex-shrink-0">
-                        <div className="text-sm font-medium truncate" title={task.title}>
-                          {task.title}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {task.duration_days} days
-                          {task.is_milestone && (
-                            <span className="ml-2 text-purple-600">• Milestone</span>
+            {/* Hierarchical Items */}
+            {visibleItems.map((item, index) => {
+              const isStep = 'step_name' in item && 'tasks' in item;
+              const isTask = !isStep && 'level' in item && item.level === 1;
+              const isSubtask = !isStep && 'level' in item && item.level === 2;
+              
+              let indentLevel = 0;
+              let hasChildren = false;
+              let isExpanded = false;
+              
+              if (isStep) {
+                indentLevel = 0;
+                hasChildren = (item as StepGroup).tasks.length > 0;
+                isExpanded = collapsedItems[item.id];
+              } else if (isTask) {
+                indentLevel = 1;
+                hasChildren = ((item as TaskWithDates).subtasks?.length || 0) > 0;
+                isExpanded = collapsedItems[item.id];
+              } else if (isSubtask) {
+                indentLevel = 2;
+                hasChildren = false;
+                isExpanded = false;
+              }
+
+              const bgColorClass = isStep 
+                ? 'bg-background' 
+                : isTask 
+                  ? 'bg-muted/10' 
+                  : 'bg-muted/20';
+              
+              const hoverClass = isStep 
+                ? 'hover:bg-muted/30' 
+                : isTask 
+                  ? 'hover:bg-muted/50' 
+                  : 'hover:bg-muted/70';
+
+              return (
+                <div key={`${item.id}-${index}`} className={`border-b border-border/50 ${bgColorClass}`}>
+                  <div className={`flex items-center ${hoverClass} transition-colors animate-fade-in`}>
+                    {/* Item Info with Hierarchy */}
+                    <div className="w-80 p-2 border-r flex items-center gap-2">
+                      <div style={{ marginLeft: `${indentLevel * 16}px` }} className="flex items-center gap-1">
+                        {/* Expand/Collapse Button */}
+                        {hasChildren && (
+                          <button
+                            onClick={() => toggleItem(item.id)}
+                            className="p-1 hover:bg-muted rounded transition-colors"
+                            title={isExpanded ? 'Collapse' : 'Expand'}
+                          >
+                            {isExpanded ? (
+                              <ChevronDown className="h-3 w-3" />
+                            ) : (
+                              <ChevronRight className="h-3 w-3" />
+                            )}
+                          </button>
+                        )}
+                        {!hasChildren && <div className="w-5"></div>}
+                        
+                        {/* Item Title */}
+                        <div className="flex items-center gap-2 flex-1">
+                          <div className={`${isStep ? 'text-sm font-semibold text-primary' : isTask ? 'text-sm font-medium' : 'text-sm'}`}>
+                            {isStep ? (item as StepGroup).step_name : (item as TaskWithDates).title}
+                          </div>
+                          
+                          {/* Additional Info */}
+                          {isStep && (
+                            <span className="text-xs text-muted-foreground">
+                              ({(item as StepGroup).tasks.length} tasks)
+                            </span>
+                          )}
+                          {!isStep && (item as TaskWithDates).is_milestone && (
+                            <span className="text-xs bg-purple-100 text-purple-700 px-1 rounded">
+                              Milestone
+                            </span>
                           )}
                         </div>
                       </div>
                       
-                      <div className="relative flex-1 h-6">
-                        {task.planned_start && task.planned_end && (
-                          <div
-                            className="absolute top-1 h-4 rounded border border-gray-300 flex items-center justify-center text-xs text-white font-medium shadow-sm"
-                            style={{
-                              left: `${getItemPosition(task)}px`,
-                              width: `${getItemWidth(task)}px`,
-                              backgroundColor: getItemColor(task),
-                            }}
-                          >
-                            {task.is_milestone ? '♦' : ''}
-                          </div>
+                      {/* Expand/Collapse Button on Timeline Side */}
+                      {hasChildren && (
+                        <button
+                          onClick={() => toggleItem(item.id)}
+                          className="p-1 hover:bg-muted rounded transition-colors ml-auto"
+                          title={isExpanded ? 'Collapse' : 'Expand'}
+                        >
+                          {isExpanded ? (
+                            <ChevronDown className="h-3 w-3" />
+                          ) : (
+                            <ChevronRight className="h-3 w-3" />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                    
+                    {/* Timeline Bar */}
+                    <div className="flex-1 relative p-2" style={{ minHeight: isStep ? '44px' : isTask ? '36px' : '28px' }}>
+                      <div
+                        className={`rounded transition-all duration-200 flex items-center justify-start pl-2 text-xs font-medium text-white shadow-sm hover-scale`}
+                        style={{
+                          backgroundColor: getItemColor(item),
+                          opacity: getItemOpacity(item),
+                          width: `${getItemWidth(item)}px`,
+                          marginLeft: `${getItemPosition(item)}px`,
+                          height: isStep ? '24px' : isTask ? '16px' : '12px',
+                        }}
+                      >
+                        {getItemWidth(item) > (isStep ? 80 : isTask ? 60 : 40) && (
+                          <span className="truncate">
+                            {isStep ? (item as StepGroup).step_name : (item as TaskWithDates).title}
+                          </span>
                         )}
                       </div>
                     </div>
-
-                    {/* Subtasks */}
-                    {task.subtasks?.map((subtask, subtaskIndex) => (
-                      <div key={subtask.id} className="ml-6 flex items-center gap-4 py-0.5">
-                        <div className="min-w-0 w-56 flex-shrink-0">
-                          <div className="text-xs text-muted-foreground truncate" title={subtask.title}>
-                            └ {subtask.title}
-                          </div>
-                          <div className="text-xs text-muted-foreground/70">
-                            {subtask.duration_days} days
-                          </div>
-                        </div>
-                        
-                        <div className="relative flex-1 h-4">
-                          {subtask.planned_start && subtask.planned_end && (
-                            <div
-                              className="absolute top-0.5 h-3 rounded border border-gray-300 bg-gray-400"
-                              style={{
-                                left: `${getItemPosition(subtask)}px`,
-                                width: `${getItemWidth(subtask)}px`,
-                              }}
-                            />
-                          )}
-                        </div>
-                      </div>
-                    ))}
                   </div>
-                ))}
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
+        </div>
 
-          {/* Legend */}
-          <div className="mt-8 pt-4 border-t">
-            <div className="flex items-center gap-6 text-xs text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-3 bg-blue-500 rounded border"></div>
-                <span>Regular Task</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-3 bg-purple-500 rounded border flex items-center justify-center text-white">♦</div>
-                <span>Milestone</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-3 bg-gray-400 rounded border"></div>
-                <span>Subtask</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-0.5 h-4 bg-red-500"></div>
-                <span>Today</span>
-              </div>
+        {/* Legend */}
+        <div className={`mt-4 p-4 bg-muted/30 rounded-lg ${presentationMode ? 'hidden' : ''}`}>
+          <div className="text-sm font-medium mb-2">Legend</div>
+          <div className="flex flex-wrap gap-4 text-xs">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--primary))' }}></div>
+              <span>Steps (always visible)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--secondary))' }}></div>
+              <span>Tasks</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--accent))' }}></div>
+              <span>Subtasks</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--destructive))' }}></div>
+              <span>Milestones</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-px h-4 bg-red-500"></div>
+              <span>Today</span>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <ChevronRight className="h-3 w-3" />
+              <span>Click to expand/collapse</span>
             </div>
           </div>
         </div>

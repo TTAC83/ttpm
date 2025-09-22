@@ -95,135 +95,10 @@ export const MasterDataGanttView = ({
     }
   };
 
-  const renderTimelineHeader = () => {
-    const days = Array.from({ length: ganttData.maxDays + 1 }, (_, i) => i);
-    const dayWidth = 40; // Fixed width per day
-    
-    return (
-      <div 
-        className="flex border-b bg-muted/30 sticky top-0 z-10"
-        style={{ minWidth: `${(ganttData.maxDays + 1) * dayWidth}px` }}
-      >
-        {days.map(day => (
-          <div
-            key={day}
-            className="flex-shrink-0 text-center text-xs font-medium py-2 border-r border-border/50"
-            style={{ width: `${dayWidth}px` }}
-          >
-            Day {day}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  const renderTaskRow = (task: MasterTask & { level?: number }, stepId: number) => {
-    const duration = task.planned_end_offset_days - task.planned_start_offset_days;
-    const dayWidth = 40;
-    const leftOffset = task.planned_start_offset_days * dayWidth;
-    const barWidth = Math.max(duration * dayWidth, dayWidth * 0.5);
-    const level = (task as any).level || 0;
-
-    return (
-      <div key={task.id} className="flex border-b border-border/30 hover:bg-muted/20 group">
-        {/* Fixed Task Info Column */}
-        <div className="w-80 flex-shrink-0 bg-background border-r border-border sticky left-0 z-20">
-          <div 
-            className="flex items-center gap-2 p-3 h-12"
-            style={{ paddingLeft: `${level * 20 + 12}px` }}
-          >
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-medium text-sm truncate">{task.title}</span>
-                <Badge 
-                  variant="outline" 
-                  className={`text-xs px-1.5 py-0 border-0 text-white ${getTechScopeColor(task.technology_scope)}`}
-                >
-                  {getTechScopeLabel(task.technology_scope)}
-                </Badge>
-              </div>
-              {task.assigned_role && (
-                <Badge variant="secondary" className="text-xs">
-                  {task.assigned_role.replace('_', ' ')}
-                </Badge>
-              )}
-            </div>
-            
-            {/* Action Buttons */}
-            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              {!task.parent_task_id && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0"
-                  onClick={() => onAddTask(stepId, task.id)}
-                  title="Add subtask"
-                >
-                  <Plus className="h-3 w-3" />
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0"
-                onClick={() => onEditTask(task)}
-                title="Edit task"
-              >
-                <Edit className="h-3 w-3" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                onClick={() => onDeleteTask(task.id)}
-                title="Delete task"
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            </div>
-          </div>
-        </div>
-        
-        {/* Scrollable Timeline Column */}
-        <div 
-          className="relative h-12 bg-background"
-          style={{ minWidth: `${(ganttData.maxDays + 1) * dayWidth}px` }}
-        >
-          {/* Vertical day lines */}
-          {Array.from({ length: ganttData.maxDays + 1 }, (_, i) => (
-            <div
-              key={i}
-              className="absolute top-0 bottom-0 border-r border-border/20"
-              style={{ left: `${i * dayWidth}px` }}
-            />
-          ))}
-          
-          {/* Task bar */}
-          <div
-            className={`absolute top-2 bottom-2 rounded transition-all cursor-pointer ${
-              task.parent_task_id 
-                ? 'bg-orange-400 hover:bg-orange-500' 
-                : 'bg-primary hover:bg-primary/80'
-            }`}
-            style={{
-              left: `${leftOffset}px`,
-              width: `${barWidth}px`
-            }}
-            title={`${task.title}: Days ${task.planned_start_offset_days}-${task.planned_end_offset_days} (${duration} days)`}
-          >
-            <div className="px-2 py-1 text-xs font-medium text-white truncate">
-              {duration}d
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 h-full overflow-y-auto">
       {ganttData.steps.map(step => (
-        <Card key={step.id} className="overflow-hidden">
+        <Card key={step.id} className="overflow-visible">
           <CardHeader className="pb-3 bg-muted/20">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-semibold text-primary">
@@ -257,20 +132,135 @@ export const MasterDataGanttView = ({
             ) : (
               <div className="relative">
                 {/* Header with frozen task column and scrollable timeline */}
-                <div className="flex border-b-2 border-border bg-background sticky top-0 z-30">
-                  <div className="w-80 flex-shrink-0 bg-muted/50 border-r border-border sticky left-0 z-40">
+                <div className="flex border-b-2 border-border bg-background">
+                  <div className="w-80 flex-shrink-0 bg-muted/50 border-r border-border">
                     <div className="p-3 font-semibold text-sm">
                       Tasks & Timeline
                     </div>
                   </div>
-                  <div className="overflow-x-auto">
-                    {renderTimelineHeader()}
+                  <div className="flex-1 overflow-x-auto">
+                    <div 
+                      className="flex border-b bg-muted/30"
+                      style={{ minWidth: `${(ganttData.maxDays + 1) * 40}px` }}
+                    >
+                      {Array.from({ length: ganttData.maxDays + 1 }, (_, i) => (
+                        <div
+                          key={i}
+                          className="flex-shrink-0 text-center text-xs font-medium py-2 border-r border-border/50"
+                          style={{ width: '40px' }}
+                        >
+                          Day {i}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
                 
-                {/* Task rows with horizontal scroll */}
-                <div className="overflow-x-auto">
-                  {step.tasks.map(task => renderTaskRow(task, step.id))}
+                {/* Task rows with coordinated horizontal scroll */}
+                <div className="flex">
+                  <div className="w-80 flex-shrink-0 bg-background border-r border-border">
+                    {step.tasks.map(task => (
+                      <div key={task.id} className="border-b border-border/30 hover:bg-muted/20 group">
+                        <div 
+                          className="flex items-center gap-2 p-3 h-12"
+                          style={{ paddingLeft: `${((task as any).level || 0) * 20 + 12}px` }}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-medium text-sm truncate">{task.title}</span>
+                              <Badge 
+                                variant="outline" 
+                                className={`text-xs px-1.5 py-0 border-0 text-white ${getTechScopeColor(task.technology_scope)}`}
+                              >
+                                {getTechScopeLabel(task.technology_scope)}
+                              </Badge>
+                            </div>
+                            {task.assigned_role && (
+                              <Badge variant="secondary" className="text-xs">
+                                {task.assigned_role.replace('_', ' ')}
+                              </Badge>
+                            )}
+                          </div>
+                          
+                          {/* Action Buttons */}
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {!task.parent_task_id && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0"
+                                onClick={() => onAddTask(step.id, task.id)}
+                                title="Add subtask"
+                              >
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={() => onEditTask(task)}
+                              title="Edit task"
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                              onClick={() => onDeleteTask(task.id)}
+                              title="Delete task"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Scrollable timeline bars */}
+                  <div className="flex-1 overflow-x-auto">
+                    <div style={{ minWidth: `${(ganttData.maxDays + 1) * 40}px` }}>
+                      {step.tasks.map(task => {
+                        const duration = task.planned_end_offset_days - task.planned_start_offset_days;
+                        const dayWidth = 40;
+                        const leftOffset = task.planned_start_offset_days * dayWidth;
+                        const barWidth = Math.max(duration * dayWidth, dayWidth * 0.5);
+
+                        return (
+                          <div key={task.id} className="relative h-12 border-b border-border/30 hover:bg-muted/20">
+                            {/* Vertical day lines */}
+                            {Array.from({ length: ganttData.maxDays + 1 }, (_, i) => (
+                              <div
+                                key={i}
+                                className="absolute top-0 bottom-0 border-r border-border/20"
+                                style={{ left: `${i * dayWidth}px` }}
+                              />
+                            ))}
+                            
+                            {/* Task bar */}
+                            <div
+                              className={`absolute top-2 bottom-2 rounded transition-all cursor-pointer ${
+                                task.parent_task_id 
+                                  ? 'bg-orange-400 hover:bg-orange-500' 
+                                  : 'bg-primary hover:bg-primary/80'
+                              }`}
+                              style={{
+                                left: `${leftOffset}px`,
+                                width: `${barWidth}px`
+                              }}
+                              title={`${task.title}: Days ${task.planned_start_offset_days}-${task.planned_end_offset_days} (${duration} days)`}
+                            >
+                              <div className="px-2 py-1 text-xs font-medium text-white truncate">
+                                {duration}d
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

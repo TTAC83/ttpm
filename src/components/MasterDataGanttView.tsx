@@ -172,51 +172,61 @@ export const MasterDataGanttView = ({
     );
   };
 
-  // Custom vertical scrollbar (controls vertical scrolling)
-  const VerticalScrollbar = () => {
+  // Left-side native-like vertical scrollbar controlling the main container
+  const LeftScrollbar = () => {
     const trackRef = useRef<HTMLDivElement>(null);
 
     const onDrag = (e: React.MouseEvent) => {
+      e.preventDefault();
       const track = trackRef.current;
-      if (!track) return;
+      const container = verticalRef.current;
+      if (!track || !container) return;
       const startY = e.clientY;
-      const startTop = vScrollTop;
+      const startScrollTop = container.scrollTop;
 
       const move = (me: MouseEvent) => {
-        const delta = me.clientY - startY;
         const trackHeight = track.clientHeight;
-        const visible = verticalRef.current?.clientHeight || 1;
-        const content = verticalRef.current?.scrollHeight || visible;
+        const visible = container.clientHeight;
+        const content = container.scrollHeight;
+        const maxScroll = Math.max(0, content - visible);
         const thumbH = Math.max(24, (visible / content) * trackHeight);
-        const newTopPx = (startTop / (vMaxScrollTop || 1)) * (trackHeight - thumbH) + delta;
-        const clampedPx = Math.max(0, Math.min(trackHeight - thumbH, newTopPx));
-        const newScrollTop = (clampedPx / (trackHeight - thumbH)) * (vMaxScrollTop || 1);
-        handleVerticalScroll(newScrollTop);
+        const startThumbTopPx = (startScrollTop / (maxScroll || 1)) * (trackHeight - thumbH);
+        const delta = me.clientY - startY;
+        const newThumbTopPx = Math.max(0, Math.min(trackHeight - thumbH, startThumbTopPx + delta));
+        const newScrollTop = (newThumbTopPx / (trackHeight - thumbH)) * (maxScroll || 1);
+        container.scrollTop = newScrollTop;
+        setVScrollTop(newScrollTop);
+        setVMaxScrollTop(maxScroll);
       };
+
       const up = () => {
         document.removeEventListener('mousemove', move);
         document.removeEventListener('mouseup', up);
       };
+
       document.addEventListener('mousemove', move);
       document.addEventListener('mouseup', up);
     };
 
-    // derive sizes
-    const visible = verticalRef.current?.clientHeight || 1;
-    const content = verticalRef.current?.scrollHeight || visible;
-    if (content <= visible) return null;
-    const trackHeight = 320;
+    const container = verticalRef.current;
+    const visible = container?.clientHeight || 0;
+    const content = container?.scrollHeight || 0;
+    const overflow = content > visible && visible > 0;
+    if (!overflow) return null;
+
+    const trackHeight = visible; // match container height
+    const maxScroll = Math.max(0, content - visible);
     const thumbHeight = Math.max(24, (visible / content) * trackHeight);
-    const thumbTop = (vScrollTop / (vMaxScrollTop || 1)) * (trackHeight - thumbHeight);
+    const thumbTop = (vScrollTop / (maxScroll || 1)) * (trackHeight - thumbHeight);
 
     return (
-      <div className="absolute left-0 top-0 bottom-0 w-4 bg-muted/50 rounded-r-full border border-l-0 border-border z-50 shadow-lg">
-        <div className="relative h-full p-0.5" ref={trackRef}>
+      <div className="absolute left-0 top-0 bottom-0 w-3 z-[60] select-none">
+        <div ref={trackRef} className="relative h-full bg-muted/40 border-r border-border">
           <div
-            className="absolute left-0.5 right-0.5 bg-foreground/80 hover:bg-foreground rounded-full cursor-pointer transition-colors shadow-sm"
+            className="absolute left-0 right-0 bg-foreground/70 hover:bg-foreground rounded-r cursor-pointer"
             style={{ height: `${thumbHeight}px`, top: `${thumbTop}px` }}
             onMouseDown={onDrag}
-            title={`Vertical: ${Math.round((vScrollTop / (vMaxScrollTop || 1)) * 100)}%`}
+            title={`Vertical: ${Math.round((vScrollTop / (maxScroll || 1)) * 100)}%`}
           />
         </div>
       </div>
@@ -236,18 +246,12 @@ export const MasterDataGanttView = ({
     }
   };
   return (
-    <div className="flex h-full">
-      {/* Left vertical scrollbar */}
-      <div className="relative">
-        <VerticalScrollbar />
-      </div>
-      
-      {/* Main content with controlled scroll */}
+    <div className="relative" style={{ height: 'calc(100vh - 24rem)' }}>
+      {/* Main scrollable content */}
       <div 
-        ref={verticalRef} 
-        onScroll={onVerticalContainerScroll} 
-        className="flex-1 space-y-6 overflow-y-auto overflow-x-hidden"
-        style={{ height: 'calc(100vh - 24rem)' }}
+        ref={verticalRef}
+        onScroll={onVerticalContainerScroll}
+        className="h-full overflow-y-auto space-y-6 pr-6"
       >
       {ganttData.steps.map(step => (
         <Card key={step.id} className="overflow-visible">
@@ -446,10 +450,9 @@ export const MasterDataGanttView = ({
           </CardContent>
         </Card>
       ))}
-      
-      {/* Horizontal scrollbar - positioned over content */}
-      <HorizontalScrollbar />
       </div>
+      <LeftScrollbar />
+      <HorizontalScrollbar />
     </div>
   );
 };

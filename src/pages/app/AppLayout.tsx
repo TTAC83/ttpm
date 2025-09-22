@@ -169,6 +169,7 @@ export const AppLayout = () => {
   });
   console.log('🔍 DEBUG - Visible items after filtering:', visibleItems.map(i => i.label));
   console.log('🔍 DEBUG - Has expense access:', hasExpenseAccess);
+  const myWorkItem = NAV.find(i => i.label === 'My Work');
 
   return (
     <SidebarProvider>
@@ -185,7 +186,8 @@ export const AppLayout = () => {
           
           <SidebarContent>
             <SidebarMenu className="p-2">
-              {visibleItems.map(item => renderNavItem(item))}
+              {myWorkItem && renderNavItem(myWorkItem)}
+              {visibleItems.filter(item => item.label !== 'My Work').map(item => renderNavItem(item))}
             </SidebarMenu>
           </SidebarContent>
           

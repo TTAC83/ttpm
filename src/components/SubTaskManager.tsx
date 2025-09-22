@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Edit3, Save, X } from "lucide-react";
 import { MasterTask } from "@/lib/wbsService";
 import { toast } from "sonner";
+import { TaskEditSidebar } from "./TaskEditSidebar";
 
 interface SubTaskManagerProps {
   parentTask: MasterTask;
@@ -24,7 +25,7 @@ export function SubTaskManager({
   onSubTaskDelete 
 }: SubTaskManagerProps) {
   const [isCreating, setIsCreating] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingSidebar, setEditingSidebar] = useState<MasterTask | null>(null);
   const [newSubTask, setNewSubTask] = useState({
     title: "",
     details: "",
@@ -73,10 +74,14 @@ export function SubTaskManager({
     toast.success("Sub-task created successfully");
   };
 
-  const handleUpdateSubTask = (subTask: MasterTask) => {
-    onSubTaskUpdate(subTask.id, subTask);
-    setEditingId(null);
+  const handleUpdateSubTask = (taskId: number, updates: Partial<MasterTask>) => {
+    onSubTaskUpdate(taskId, updates);
+    setEditingSidebar(null);
     toast.success("Sub-task updated successfully");
+  };
+
+  const handleEditSubTask = (subTask: MasterTask) => {
+    setEditingSidebar(subTask);
   };
 
   const handleDeleteSubTask = (subTaskId: number) => {
@@ -224,10 +229,7 @@ export function SubTaskManager({
             <SubTaskItem
               key={subTask.id}
               subTask={subTask}
-              isEditing={editingId === subTask.id}
-              onEdit={() => setEditingId(subTask.id)}
-              onSave={handleUpdateSubTask}
-              onCancel={() => setEditingId(null)}
+              onEdit={() => handleEditSubTask(subTask)}
               onDelete={() => handleDeleteSubTask(subTask.id)}
               technologyScopeOptions={technologyScopeOptions}
               assignedRoleOptions={assignedRoleOptions}
@@ -235,16 +237,22 @@ export function SubTaskManager({
           ))}
         </div>
       )}
+
+      {/* Edit Sidebar */}
+      <TaskEditSidebar
+        open={!!editingSidebar}
+        onOpenChange={(open) => !open && setEditingSidebar(null)}
+        task={editingSidebar}
+        onSave={handleUpdateSubTask}
+        type="subtask"
+      />
     </div>
   );
 }
 
 interface SubTaskItemProps {
   subTask: MasterTask;
-  isEditing: boolean;
   onEdit: () => void;
-  onSave: (subTask: MasterTask) => void;
-  onCancel: () => void;
   onDelete: () => void;
   technologyScopeOptions: { value: string; label: string }[];
   assignedRoleOptions: { value: string; label: string }[];
@@ -252,128 +260,11 @@ interface SubTaskItemProps {
 
 function SubTaskItem({ 
   subTask, 
-  isEditing, 
   onEdit, 
-  onSave, 
-  onCancel, 
   onDelete,
   technologyScopeOptions,
   assignedRoleOptions
 }: SubTaskItemProps) {
-  const [editData, setEditData] = useState(subTask);
-
-  if (isEditing) {
-    return (
-      <Card className="border-l-4 border-l-blue-500">
-        <CardContent className="pt-4 space-y-4">
-          <div>
-            <Label htmlFor="edit-title">Title</Label>
-            <Input
-              id="edit-title"
-              value={editData.title}
-              onChange={(e) => setEditData({ ...editData, title: e.target.value })}
-            />
-          </div>
-          <div>
-            <Label htmlFor="edit-details">Details</Label>
-            <Textarea
-              id="edit-details"
-              value={editData.details || ""}
-              onChange={(e) => setEditData({ ...editData, details: e.target.value })}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="edit-start">Start Offset (days)</Label>
-              <Input
-                id="edit-start"
-                type="number"
-                value={editData.planned_start_offset_days}
-                onChange={(e) => setEditData({ 
-                  ...editData, 
-                  planned_start_offset_days: parseInt(e.target.value) || 0 
-                })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit-end">End Offset (days)</Label>
-              <Input
-                id="edit-end"
-                type="number"
-                value={editData.planned_end_offset_days}
-                onChange={(e) => setEditData({ 
-                  ...editData, 
-                  planned_end_offset_days: parseInt(e.target.value) || 1 
-                })}
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="edit-position">Position</Label>
-              <Input
-                id="edit-position"
-                type="number"
-                min="1"
-                value={editData.position}
-                onChange={(e) => setEditData({ 
-                  ...editData, 
-                  position: parseInt(e.target.value) || 1
-                })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit-scope">Technology Scope</Label>
-              <Select 
-                value={editData.technology_scope} 
-                onValueChange={(value) => setEditData({ ...editData, technology_scope: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {technologyScopeOptions.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="edit-role">Assigned Role</Label>
-              <Select 
-                value={editData.assigned_role} 
-                onValueChange={(value) => setEditData({ ...editData, assigned_role: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {assignedRoleOptions.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button size="sm" onClick={() => onSave(editData)}>
-              <Save className="h-4 w-4 mr-1" />
-              Save
-            </Button>
-            <Button size="sm" variant="outline" onClick={onCancel}>
-              <X className="h-4 w-4 mr-1" />
-              Cancel
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card className="border-l-4 border-l-green-500">
       <CardContent className="pt-4">

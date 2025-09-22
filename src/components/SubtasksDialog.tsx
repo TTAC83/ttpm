@@ -15,6 +15,7 @@ import CreateEventDialog from '@/components/CreateEventDialog';
 import { format } from 'date-fns';
 import { formatDateUK } from '@/lib/dateUtils';
 import { cn } from '@/lib/utils';
+import { SubtaskEditSidebar } from './SubtaskEditSidebar';
 
 interface Subtask {
   id: string;
@@ -58,7 +59,7 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
   const [addingSubtask, setAddingSubtask] = useState(false);
-  const [editingSubtask, setEditingSubtask] = useState<Subtask | null>(null);
+  const [editingSubtaskSidebar, setEditingSubtaskSidebar] = useState<Subtask | null>(null);
   const [createEventDialogOpen, setCreateEventDialogOpen] = useState(false);
   const [selectedSubtaskForEvent, setSelectedSubtaskForEvent] = useState<{ title: string } | null>(null);
   
@@ -143,31 +144,9 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
     e.preventDefault();
     
     try {
-      if (editingSubtask) {
-        // Update existing subtask
-        const { error } = await supabase
-          .from('subtasks')
-          .update({
-            title: formData.title,
-            details: formData.details || null,
-            planned_start: formData.planned_start?.toISOString().split('T')[0] || null,
-            planned_end: formData.planned_end?.toISOString().split('T')[0] || null,
-            planned_start_offset_days: formData.planned_start_offset_days,
-            planned_end_offset_days: formData.planned_end_offset_days,
-            position: formData.position,
-            technology_scope: formData.technology_scope,
-            assigned_role: formData.assigned_role,
-            status: formData.status as any,
-            assignee: formData.assignee === 'unassigned' ? null : formData.assignee,
-          })
-          .eq('id', editingSubtask.id);
-
-        if (error) throw error;
-
-        toast({
-          title: "Subtask Updated",
-          description: "Subtask has been updated successfully",
-        });
+      if (editingSubtaskSidebar) {
+        // This case is now handled by the sidebar component
+        return;
       } else {
         // Create new subtask
         const { error } = await supabase
@@ -196,7 +175,7 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
       }
 
       setAddingSubtask(false);
-      setEditingSubtask(null);
+      setEditingSubtaskSidebar(null);
       setFormData({
         title: '',
         details: '',
@@ -221,21 +200,38 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
   };
 
   const handleEdit = (subtask: Subtask) => {
-    setEditingSubtask(subtask);
-    setFormData({
-      title: subtask.title,
-      details: subtask.details || '',
-      planned_start: subtask.planned_start ? new Date(subtask.planned_start) : null,
-      planned_end: subtask.planned_end ? new Date(subtask.planned_end) : null,
-      planned_start_offset_days: subtask.planned_start_offset_days || 0,
-      planned_end_offset_days: subtask.planned_end_offset_days || 1,
-      position: subtask.position || 1,
-      technology_scope: subtask.technology_scope || 'both',
-      assigned_role: subtask.assigned_role || 'implementation_lead',
-      status: subtask.status as 'Planned' | 'In Progress' | 'Blocked' | 'Done',
-      assignee: subtask.assignee || 'unassigned',
-    });
-    setAddingSubtask(true);
+    setEditingSubtaskSidebar(subtask);
+  };
+
+  const handleSidebarSave = async (updatedSubtask: Subtask) => {
+    try {
+      const { error } = await supabase
+        .from('subtasks')
+        .update({
+          title: updatedSubtask.title,
+          details: updatedSubtask.details,
+          planned_start: updatedSubtask.planned_start,
+          planned_end: updatedSubtask.planned_end,
+          planned_start_offset_days: updatedSubtask.planned_start_offset_days,
+          planned_end_offset_days: updatedSubtask.planned_end_offset_days,
+          position: updatedSubtask.position,
+          technology_scope: updatedSubtask.technology_scope,
+          assigned_role: updatedSubtask.assigned_role,
+          status: updatedSubtask.status as any,
+          assignee: updatedSubtask.assignee,
+        })
+        .eq('id', updatedSubtask.id);
+
+      if (error) throw error;
+
+      fetchSubtasks();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update subtask",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDelete = async (subtaskId: string) => {
@@ -265,7 +261,7 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
   };
 
   const handleNewSubtask = () => {
-    setEditingSubtask(null);
+    setEditingSubtaskSidebar(null);
     setFormData({
       title: '',
       details: '',
@@ -302,7 +298,7 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
           {addingSubtask && (
             <div className="border rounded-lg p-4 space-y-4">
               <h3 className="text-lg font-semibold">
-                {editingSubtask ? 'Edit Subtask' : 'Add New Subtask'}
+                {editingSubtaskSidebar ? 'Edit Subtask' : 'Add New Subtask'}
               </h3>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
@@ -497,14 +493,14 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
 
                 <div className="flex gap-2">
                   <Button type="submit">
-                    {editingSubtask ? 'Update Subtask' : 'Create Subtask'}
+                    {editingSubtaskSidebar ? 'Update Subtask' : 'Create Subtask'}
                   </Button>
                   <Button 
                     type="button" 
                     variant="outline" 
                     onClick={() => {
                       setAddingSubtask(false);
-                      setEditingSubtask(null);
+                      setEditingSubtaskSidebar(null);
                     }}
                   >
                     Cancel
@@ -641,6 +637,15 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
             )}
           </div>
         </div>
+
+        {/* Edit Sidebar */}
+        <SubtaskEditSidebar
+          open={!!editingSubtaskSidebar}
+          onOpenChange={(open) => !open && setEditingSubtaskSidebar(null)}
+          subtask={editingSubtaskSidebar}
+          profiles={profiles}
+          onSave={handleSidebarSave}
+        />
 
         {/* Create Event Dialog */}
         {projectId && (

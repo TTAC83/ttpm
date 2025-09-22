@@ -236,10 +236,8 @@ export const MasterDataGanttView = ({
     }
   };
   return (
-    <div className="relative">
+    <div className="space-y-6 min-h-full relative">
       <HorizontalScrollbar />
-      <VerticalScrollbar />
-      <div ref={verticalRef} onScroll={onVerticalContainerScroll} className="space-y-6 h-[calc(100vh-24rem)] overflow-y-auto pr-6">
       {ganttData.steps.map(step => (
         <Card key={step.id} className="overflow-visible">
           <CardHeader className="pb-3 bg-muted/20">
@@ -437,7 +435,6 @@ export const MasterDataGanttView = ({
           </CardContent>
         </Card>
       ))}
-      </div>
     </div>
   );
 };

@@ -607,7 +607,7 @@ export const MasterDataManagement = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="flex-1 h-[calc(100vh-24rem)] overflow-hidden">
+          <div className="flex-1 h-[calc(100vh-24rem)] overflow-y-scroll overflow-x-hidden" style={{ scrollbarGutter: 'stable' }}>
             <MasterDataGanttView
               steps={steps}
               tasks={tasks}

@@ -159,10 +159,10 @@ export const MasterDataGanttView = ({
     const thumbTop = (scrollLeft / (maxScrollLeft || 1)) * (trackHeight - thumbHeight);
 
     return (
-      <div className="fixed right-12 top-1/2 -translate-y-1/2 w-3 h-[320px] bg-muted/30 rounded-full border border-border z-40">
-        <div className="relative h-full" ref={scrollbarRef}>
+      <div className="fixed right-12 top-1/2 -translate-y-1/2 w-4 h-[320px] bg-muted/50 rounded-full border border-border z-[9998] shadow-lg backdrop-blur-sm">
+        <div className="relative h-full p-0.5" ref={scrollbarRef}>
           <div
-            className="absolute left-0 right-0 bg-primary/60 hover:bg-primary/80 rounded-full cursor-pointer transition-colors"
+            className="absolute left-0.5 right-0.5 bg-primary/80 hover:bg-primary rounded-full cursor-pointer transition-colors shadow-sm"
             style={{ height: `${thumbHeight}px`, top: `${thumbTop}px` }}
             onMouseDown={handleScrollbarDrag}
             title={`Horizontal: ${Math.round((scrollLeft / (maxScrollLeft || 1)) * 100)}%`}
@@ -210,10 +210,10 @@ export const MasterDataGanttView = ({
     const thumbTop = (vScrollTop / (vMaxScrollTop || 1)) * (trackHeight - thumbHeight);
 
     return (
-      <div className="fixed right-4 top-1/2 -translate-y-1/2 w-3 h-[320px] bg-muted/30 rounded-full border border-border z-40">
-        <div className="relative h-full" ref={trackRef}>
+      <div className="fixed right-4 top-1/2 -translate-y-1/2 w-4 h-[320px] bg-muted/50 rounded-full border border-border z-[9999] shadow-lg backdrop-blur-sm">
+        <div className="relative h-full p-0.5" ref={trackRef}>
           <div
-            className="absolute left-0 right-0 bg-foreground/60 hover:bg-foreground rounded-full cursor-pointer transition-colors"
+            className="absolute left-0.5 right-0.5 bg-foreground/80 hover:bg-foreground rounded-full cursor-pointer transition-colors shadow-sm"
             style={{ height: `${thumbHeight}px`, top: `${thumbTop}px` }}
             onMouseDown={onDrag}
             title={`Vertical: ${Math.round((vScrollTop / (vMaxScrollTop || 1)) * 100)}%`}

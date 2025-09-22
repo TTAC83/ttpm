@@ -149,9 +149,10 @@ export const AppLayout = () => {
   };
 
   const currentRole = profile?.role as Role;
-  console.log('AppLayout: Current role:', currentRole, 'Profile:', profile);
+  console.log('🔍 DEBUG - Current role:', currentRole);
+  console.log('🔍 DEBUG - Profile object:', profile);
   let visibleItems = visibleItemsForRole(currentRole);
-  console.log('AppLayout: Visible items before filtering:', visibleItems.map(i => i.label));
+  console.log('🔍 DEBUG - Visible items before filtering:', visibleItems.map(i => i.label));
   
   // Filter out expenses if user doesn't have expense access
   visibleItems = visibleItems.filter(item => {
@@ -160,7 +161,8 @@ export const AppLayout = () => {
     }
     return true;
   });
-  console.log('AppLayout: Visible items after filtering:', visibleItems.map(i => i.label));
+  console.log('🔍 DEBUG - Visible items after filtering:', visibleItems.map(i => i.label));
+  console.log('🔍 DEBUG - Has expense access:', hasExpenseAccess);
 
   return (
     <SidebarProvider>

@@ -545,6 +545,10 @@ export default function MyWork() {
         {/* Actions Tab */}
         <TabsContent value="actions" className="space-y-4">
           {actions
+            .filter(action => {
+              const isCompleted = action.status?.toLowerCase() === 'done' || action.status?.toLowerCase() === 'closed';
+              return !isCompleted;
+            })
             .filter(action => filterBySearch(action.title + ' ' + (action.details || '')))
             .filter(action => filterByDateRange(action.planned_date))
             .map((action) => (
@@ -752,12 +756,8 @@ export default function MyWork() {
           open={isActionDialogOpen}
           onOpenChange={setIsActionDialogOpen}
           onSave={(updatedAction) => {
-            setActions(prevActions => 
-              prevActions.map(action => 
-                action.id === updatedAction.id ? { ...action, ...updatedAction } : action
-              )
-            );
             setIsActionDialogOpen(false);
+            fetchData(); // Refresh data from database
           }}
         />
       )}

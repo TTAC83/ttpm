@@ -45,6 +45,11 @@ export const MasterDataGanttView = ({
   const timelineRefs = useRef<HTMLDivElement[]>([]);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [maxScrollLeft, setMaxScrollLeft] = useState(0);
+
+  // Vertical scroll management
+  const verticalRef = useRef<HTMLDivElement | null>(null);
+  const [vScrollTop, setVScrollTop] = useState(0);
+  const [vMaxScrollTop, setVMaxScrollTop] = useState(0);
   
   const ganttData = useMemo(() => {
     const maxDays = Math.max(
@@ -114,22 +119,26 @@ export const MasterDataGanttView = ({
       const maxScroll = timelineRefs.current[0].scrollWidth - timelineRefs.current[0].clientWidth;
       setMaxScrollLeft(Math.max(0, maxScroll));
     }
+    if (verticalRef.current) {
+      const maxV = verticalRef.current.scrollHeight - verticalRef.current.clientHeight;
+      setVMaxScrollTop(Math.max(0, maxV));
+    }
   }, [ganttData]);
 
-  // Custom scrollbar component
+  // Custom scrollbar for horizontal timeline (vertical slider)
   const HorizontalScrollbar = () => {
     const scrollbarRef = useRef<HTMLDivElement>(null);
     
     const handleScrollbarDrag = (e: React.MouseEvent) => {
       if (!scrollbarRef.current) return;
       
-      const startX = e.clientX;
+      const startY = e.clientY;
       const startScrollLeft = scrollLeft;
       
       const handleMouseMove = (e: MouseEvent) => {
-        const deltaX = e.clientX - startX;
-        const scrollbarWidth = scrollbarRef.current?.clientWidth || 0;
-        const scrollRatio = deltaX / scrollbarWidth;
+        const deltaY = e.clientY - startY;
+        const trackHeight = scrollbarRef.current?.clientHeight || 1;
+        const scrollRatio = deltaY / trackHeight;
         const newScrollLeft = Math.max(0, Math.min(maxScrollLeft, startScrollLeft + scrollRatio * maxScrollLeft));
         handleTimelineScroll(newScrollLeft);
       };
@@ -145,32 +154,92 @@ export const MasterDataGanttView = ({
 
     if (maxScrollLeft <= 0) return null;
 
-    const thumbWidth = Math.max(20, (300 / (maxScrollLeft + 300)) * 300);
-    const thumbLeft = (scrollLeft / maxScrollLeft) * (300 - thumbWidth);
+    const trackHeight = 320;
+    const thumbHeight = Math.max(24, (trackHeight * (timelineRefs.current[0]?.clientWidth || 0)) / (timelineRefs.current[0]?.scrollWidth || 1));
+    const thumbTop = (scrollLeft / (maxScrollLeft || 1)) * (trackHeight - thumbHeight);
 
     return (
-      <div className="fixed right-4 top-1/2 transform -translate-y-1/2 w-4 h-80 bg-muted/30 rounded-full border border-border z-40">
-        <div className="absolute inset-0 flex flex-col">
-          <div className="flex-1 relative">
-            <div
-              ref={scrollbarRef}
-              className="absolute inset-x-0 bg-primary/60 hover:bg-primary/80 rounded-full cursor-pointer transition-colors"
-              style={{
-                height: `${thumbWidth}px`,
-                top: `${thumbLeft}px`
-              }}
-              onMouseDown={handleScrollbarDrag}
-              title={`Scroll position: ${Math.round((scrollLeft / maxScrollLeft) * 100)}%`}
-            />
-          </div>
+      <div className="fixed right-12 top-1/2 -translate-y-1/2 w-3 h-[320px] bg-muted/30 rounded-full border border-border z-40">
+        <div className="relative h-full" ref={scrollbarRef}>
+          <div
+            className="absolute left-0 right-0 bg-primary/60 hover:bg-primary/80 rounded-full cursor-pointer transition-colors"
+            style={{ height: `${thumbHeight}px`, top: `${thumbTop}px` }}
+            onMouseDown={handleScrollbarDrag}
+            title={`Horizontal: ${Math.round((scrollLeft / (maxScrollLeft || 1)) * 100)}%`}
+          />
         </div>
       </div>
     );
   };
 
+  // Custom vertical scrollbar (controls vertical scrolling)
+  const VerticalScrollbar = () => {
+    const trackRef = useRef<HTMLDivElement>(null);
+
+    const onDrag = (e: React.MouseEvent) => {
+      const track = trackRef.current;
+      if (!track) return;
+      const startY = e.clientY;
+      const startTop = vScrollTop;
+
+      const move = (me: MouseEvent) => {
+        const delta = me.clientY - startY;
+        const trackHeight = track.clientHeight;
+        const visible = verticalRef.current?.clientHeight || 1;
+        const content = verticalRef.current?.scrollHeight || visible;
+        const thumbH = Math.max(24, (visible / content) * trackHeight);
+        const newTopPx = (startTop / (vMaxScrollTop || 1)) * (trackHeight - thumbH) + delta;
+        const clampedPx = Math.max(0, Math.min(trackHeight - thumbH, newTopPx));
+        const newScrollTop = (clampedPx / (trackHeight - thumbH)) * (vMaxScrollTop || 1);
+        handleVerticalScroll(newScrollTop);
+      };
+      const up = () => {
+        document.removeEventListener('mousemove', move);
+        document.removeEventListener('mouseup', up);
+      };
+      document.addEventListener('mousemove', move);
+      document.addEventListener('mouseup', up);
+    };
+
+    // derive sizes
+    const visible = verticalRef.current?.clientHeight || 1;
+    const content = verticalRef.current?.scrollHeight || visible;
+    if (content <= visible) return null;
+    const trackHeight = 320;
+    const thumbHeight = Math.max(24, (visible / content) * trackHeight);
+    const thumbTop = (vScrollTop / (vMaxScrollTop || 1)) * (trackHeight - thumbHeight);
+
+    return (
+      <div className="fixed right-4 top-1/2 -translate-y-1/2 w-3 h-[320px] bg-muted/30 rounded-full border border-border z-40">
+        <div className="relative h-full" ref={trackRef}>
+          <div
+            className="absolute left-0 right-0 bg-foreground/60 hover:bg-foreground rounded-full cursor-pointer transition-colors"
+            style={{ height: `${thumbHeight}px`, top: `${thumbTop}px` }}
+            onMouseDown={onDrag}
+            title={`Vertical: ${Math.round((vScrollTop / (vMaxScrollTop || 1)) * 100)}%`}
+          />
+        </div>
+      </div>
+    );
+  };
+
+  const onVerticalContainerScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    setVScrollTop(el.scrollTop);
+    setVMaxScrollTop(Math.max(0, el.scrollHeight - el.clientHeight));
+  };
+
+  const handleVerticalScroll = (newTop: number) => {
+    setVScrollTop(newTop);
+    if (verticalRef.current && verticalRef.current.scrollTop !== newTop) {
+      verticalRef.current.scrollTop = newTop;
+    }
+  };
   return (
-    <div className="space-y-6 min-h-full relative">
+    <div className="relative">
       <HorizontalScrollbar />
+      <VerticalScrollbar />
+      <div ref={verticalRef} onScroll={onVerticalContainerScroll} className="space-y-6 h-[calc(100vh-24rem)] overflow-y-auto pr-6">
       {ganttData.steps.map(step => (
         <Card key={step.id} className="overflow-visible">
           <CardHeader className="pb-3 bg-muted/20">
@@ -368,6 +437,7 @@ export const MasterDataGanttView = ({
           </CardContent>
         </Card>
       ))}
+      </div>
     </div>
   );
 };

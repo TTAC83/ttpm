@@ -148,9 +148,15 @@ export const AppLayout = () => {
     }
   };
 
-  const currentRole = (profile?.role as Role) ?? 'external_user';
-  console.log('🔍 DEBUG - Current role:', currentRole);
-  console.log('🔍 DEBUG - Profile object:', profile);
+  const roleCandidates: Role[] = [
+    'internal_admin',
+    'internal_user',
+    'external_admin',
+    'external_user',
+  ];
+  const rawRole = (profile?.role as Role) || undefined;
+  const currentRole: Role = roleCandidates.includes(rawRole as Role) ? (rawRole as Role) : 'external_user';
+  console.log('🔍 DEBUG - Effective role:', currentRole, 'Raw role:', rawRole);
   let visibleItems = visibleItemsForRole(currentRole);
   console.log('🔍 DEBUG - Visible items before filtering:', visibleItems.map(i => i.label));
   

@@ -16,6 +16,22 @@ export interface DashboardAction {
 }
 
 export const actionsService = {
+  // Update an action
+  async updateAction(actionId: string, updates: any) {
+    const { data, error } = await supabase
+      .from('actions')
+      .update(updates)
+      .eq('id', actionId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[Actions] Update error:', error);
+      throw error;
+    }
+
+    return data;
+  },
   // Get critical or overdue actions for dashboard
   async getDashboardActions() {
     // Build today in UK timezone (YYYY-MM-DD) so overdue is strictly before today

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { tasksService } from "@/lib/tasksService";
+import { actionsService } from "@/lib/actionsService";
 import { toast } from "sonner";
 import { TaskEditDialog } from "@/components/TaskEditDialog";
 import { EditActionDialog } from "@/components/EditActionDialog";
@@ -755,9 +756,15 @@ export default function MyWork() {
           profiles={profiles}
           open={isActionDialogOpen}
           onOpenChange={setIsActionDialogOpen}
-          onSave={(updatedAction) => {
-            setIsActionDialogOpen(false);
-            fetchData(); // Refresh data from database
+          onSave={async (updatedAction) => {
+            try {
+              await actionsService.updateAction(selectedAction.id, updatedAction);
+              setIsActionDialogOpen(false);
+              fetchData(); // Refresh data from database
+            } catch (error) {
+              console.error('Failed to update action:', error);
+              toast.error('Failed to update action');
+            }
           }}
         />
       )}

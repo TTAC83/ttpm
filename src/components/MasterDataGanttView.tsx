@@ -159,28 +159,42 @@ export const MasterDataGanttView = ({
                 {/* Task rows with coordinated horizontal scroll */}
                 <div className="flex">
                   <div className="w-80 flex-shrink-0 bg-background border-r border-border">
-                    {step.tasks.map(task => (
-                      <div key={task.id} className="border-b border-border/30 hover:bg-muted/20 group">
-                        <div 
-                          className="flex items-center gap-2 p-3 h-12"
-                          style={{ paddingLeft: `${((task as any).level || 0) * 20 + 12}px` }}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium text-sm truncate">{task.title}</span>
-                              <Badge 
-                                variant="outline" 
-                                className={`text-xs px-1.5 py-0 border-0 text-white ${getTechScopeColor(task.technology_scope)}`}
-                              >
-                                {getTechScopeLabel(task.technology_scope)}
-                              </Badge>
-                            </div>
-                            {task.assigned_role && (
-                              <Badge variant="secondary" className="text-xs">
-                                {task.assigned_role.replace('_', ' ')}
-                              </Badge>
+                    {step.tasks.map(task => {
+                      const level = (task as any).level || 0;
+                      const isSubtask = level > 0;
+                      
+                      return (
+                        <div key={task.id} className="border-b border-border/30 hover:bg-muted/20 group">
+                          <div 
+                            className="flex items-center gap-2 p-3 h-12"
+                            style={{ paddingLeft: `${level * 24 + 12}px` }}
+                          >
+                            {/* Hierarchy indicator */}
+                            {isSubtask && (
+                              <div className="flex items-center mr-2">
+                                <div className="w-4 h-0.5 bg-border"></div>
+                                <div className="w-2 h-2 rounded-full bg-muted-foreground/40 ml-1"></div>
+                              </div>
                             )}
-                          </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className={`font-medium text-sm truncate ${isSubtask ? 'text-muted-foreground' : ''}`}>
+                                  {task.title}
+                                </span>
+                                <Badge 
+                                  variant="outline" 
+                                  className={`text-xs px-1.5 py-0 border-0 text-white ${getTechScopeColor(task.technology_scope)}`}
+                                >
+                                  {getTechScopeLabel(task.technology_scope)}
+                                </Badge>
+                              </div>
+                              {task.assigned_role && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {task.assigned_role.replace('_', ' ')}
+                                </Badge>
+                              )}
+                            </div>
                           
                           {/* Action Buttons */}
                           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -214,9 +228,10 @@ export const MasterDataGanttView = ({
                               <Trash2 className="h-3 w-3" />
                             </Button>
                           </div>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                   
                   {/* Scrollable timeline bars */}

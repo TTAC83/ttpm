@@ -513,7 +513,10 @@ export default function MyWork() {
           </TabsTrigger>
           <TabsTrigger value="actions" className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" />
-            Actions ({actions.length})
+            Actions ({actions.filter(action => {
+              const isCompleted = action.status?.toLowerCase() === 'done' || action.status?.toLowerCase() === 'closed';
+              return !isCompleted;
+            }).length})
           </TabsTrigger>
           <TabsTrigger value="events" className="flex items-center gap-2">
             <CalendarIcon className="w-4 h-4" />

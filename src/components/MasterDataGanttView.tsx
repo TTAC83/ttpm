@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -42,6 +42,9 @@ export const MasterDataGanttView = ({
   onAddTask,
   onDeleteTask
 }: MasterDataGanttViewProps) => {
+  const timelineRefs = useRef<HTMLDivElement[]>([]);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [maxScrollLeft, setMaxScrollLeft] = useState(0);
   
   const ganttData = useMemo(() => {
     const maxDays = Math.max(
@@ -95,8 +98,79 @@ export const MasterDataGanttView = ({
     }
   };
 
+  // Sync scroll across all timeline elements
+  const handleTimelineScroll = (scrollLeft: number) => {
+    setScrollLeft(scrollLeft);
+    timelineRefs.current.forEach(ref => {
+      if (ref && ref.scrollLeft !== scrollLeft) {
+        ref.scrollLeft = scrollLeft;
+      }
+    });
+  };
+
+  // Update max scroll when data changes
+  useEffect(() => {
+    if (timelineRefs.current[0]) {
+      const maxScroll = timelineRefs.current[0].scrollWidth - timelineRefs.current[0].clientWidth;
+      setMaxScrollLeft(Math.max(0, maxScroll));
+    }
+  }, [ganttData]);
+
+  // Custom scrollbar component
+  const HorizontalScrollbar = () => {
+    const scrollbarRef = useRef<HTMLDivElement>(null);
+    
+    const handleScrollbarDrag = (e: React.MouseEvent) => {
+      if (!scrollbarRef.current) return;
+      
+      const startX = e.clientX;
+      const startScrollLeft = scrollLeft;
+      
+      const handleMouseMove = (e: MouseEvent) => {
+        const deltaX = e.clientX - startX;
+        const scrollbarWidth = scrollbarRef.current?.clientWidth || 0;
+        const scrollRatio = deltaX / scrollbarWidth;
+        const newScrollLeft = Math.max(0, Math.min(maxScrollLeft, startScrollLeft + scrollRatio * maxScrollLeft));
+        handleTimelineScroll(newScrollLeft);
+      };
+      
+      const handleMouseUp = () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+      
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    };
+
+    if (maxScrollLeft <= 0) return null;
+
+    const thumbWidth = Math.max(20, (300 / (maxScrollLeft + 300)) * 300);
+    const thumbLeft = (scrollLeft / maxScrollLeft) * (300 - thumbWidth);
+
+    return (
+      <div className="fixed right-4 top-1/2 transform -translate-y-1/2 w-4 h-80 bg-muted/30 rounded-full border border-border z-40">
+        <div className="absolute inset-0 flex flex-col">
+          <div className="flex-1 relative">
+            <div
+              ref={scrollbarRef}
+              className="absolute inset-x-0 bg-primary/60 hover:bg-primary/80 rounded-full cursor-pointer transition-colors"
+              style={{
+                height: `${thumbWidth}px`,
+                top: `${thumbLeft}px`
+              }}
+              onMouseDown={handleScrollbarDrag}
+              title={`Scroll position: ${Math.round((scrollLeft / maxScrollLeft) * 100)}%`}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="space-y-6 min-h-full">
+    <div className="space-y-6 min-h-full relative">
+      <HorizontalScrollbar />
       {ganttData.steps.map(step => (
         <Card key={step.id} className="overflow-visible">
           <CardHeader className="pb-3 bg-muted/20">
@@ -138,7 +212,13 @@ export const MasterDataGanttView = ({
                       Tasks & Timeline
                     </div>
                   </div>
-                  <div className="flex-1 overflow-x-auto">
+                  <div 
+                    className="flex-1 overflow-x-auto"
+                    ref={(el) => {
+                      if (el) timelineRefs.current[0] = el;
+                    }}
+                    onScroll={(e) => handleTimelineScroll(e.currentTarget.scrollLeft)}
+                  >
                     <div 
                       className="flex border-b bg-muted/30"
                       style={{ minWidth: `${(ganttData.maxDays + 1) * 40}px` }}
@@ -235,7 +315,13 @@ export const MasterDataGanttView = ({
                   </div>
                   
                   {/* Scrollable timeline bars */}
-                  <div className="flex-1 overflow-x-auto">
+                  <div 
+                    className="flex-1 overflow-x-auto"
+                    ref={(el) => {
+                      if (el) timelineRefs.current[ganttData.steps.findIndex(s => s.id === step.id) + 1] = el;
+                    }}
+                    onScroll={(e) => handleTimelineScroll(e.currentTarget.scrollLeft)}
+                  >
                     <div style={{ minWidth: `${(ganttData.maxDays + 1) * 40}px` }}>
                       {step.tasks.map(task => {
                         const duration = task.planned_end_offset_days - task.planned_start_offset_days;

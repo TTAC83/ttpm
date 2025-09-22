@@ -68,7 +68,7 @@ export const productGapsService = {
       .from('product_gaps')
       .select(`
         *,
-        projects!inner(name, companies!inner(name)),
+        projects!inner(name, company_id, companies!inner(name)),
         assigned_to_profile:profiles!assigned_to(name),
         created_by_profile:profiles!created_by(name)
       `)
@@ -99,7 +99,7 @@ export const productGapsService = {
         status,
         created_at,
         feature_request_id,
-        projects!inner(name, companies!inner(name))
+        projects!inner(name, company_id, companies!inner(name))
       `)
       .eq('status', 'Live')
       .order('created_at', { ascending: false });

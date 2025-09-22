@@ -251,10 +251,12 @@ export const MasterDataGanttView = ({
       <div 
         ref={verticalRef}
         onScroll={onVerticalContainerScroll}
-        className="h-full overflow-y-auto space-y-6 pr-6"
+        className="h-full overflow-y-auto pl-6"
+        style={{ direction: 'rtl', scrollbarGutter: 'stable both-edges' }}
       >
-      {ganttData.steps.map(step => (
-        <Card key={step.id} className="overflow-visible">
+        <div className="space-y-6" style={{ direction: 'ltr' }}>
+          {ganttData.steps.map(step => (
+            <Card key={step.id} className="overflow-visible">
           <CardHeader className="pb-3 bg-muted/20">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-semibold text-primary">
@@ -450,8 +452,8 @@ export const MasterDataGanttView = ({
           </CardContent>
         </Card>
       ))}
+        </div>
       </div>
-      <LeftScrollbar />
       <HorizontalScrollbar />
     </div>
   );

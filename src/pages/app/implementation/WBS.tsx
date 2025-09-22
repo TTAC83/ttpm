@@ -79,6 +79,10 @@ interface WBSProps {
 }
 
 export default function WBS({ projectId }: WBSProps = {}) {
+  // Debug react instance/version to diagnose hook dispatcher null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  console.log('WBS: React version', (React as any)?.version);
+
   // Determine project ID from prop or query string without router hooks
   const currentProjectId = useMemo(() => {
     if (projectId) return projectId;

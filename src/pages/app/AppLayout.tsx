@@ -174,13 +174,7 @@ export const AppLayout = () => {
           
           <SidebarContent>
             <SidebarMenu className="p-2">
-              {NAV.filter(item => {
-                // Show all items for internal users, filter by role for external users
-                if (!profile?.is_internal) {
-                  return !item.roles || (profile?.role && item.roles.includes(profile.role as Role));
-                }
-                return true;
-              }).map(item => renderNavItem(item))}
+              {visibleItems.map(item => renderNavItem(item))}
             </SidebarMenu>
           </SidebarContent>
           

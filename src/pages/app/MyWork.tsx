@@ -25,15 +25,13 @@ import {
   TrendingUp,
   Filter,
   Plus,
-  Search,
-  DollarSign
+  Search
 } from "lucide-react";
 import { format, isAfter, isBefore, parseISO, addDays, subDays } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import type { DateRange } from "react-day-picker";
-import { MyExpensesSection } from "@/components/MyExpensesSection";
 
 interface Task {
   id: string;
@@ -387,19 +385,10 @@ export default function MyWork() {
           <h1 className="text-3xl font-bold">My Work</h1>
           <p className="text-muted-foreground">Your personal dashboard for tasks, actions, and assignments</p>
         </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => navigate('/app/expenses')}
-          >
-            <DollarSign className="w-4 h-4 mr-2" />
-            View All Expenses
-          </Button>
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Quick Add
-          </Button>
-        </div>
+        <Button>
+          <Plus className="w-4 h-4 mr-2" />
+          Quick Add
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -835,12 +824,6 @@ export default function MyWork() {
           }}
         />
       )}
-
-      {/* My Expenses Section */}
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold tracking-tight">My Expenses</h2>
-        <MyExpensesSection />
-      </div>
     </div>
   );
 }

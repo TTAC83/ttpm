@@ -2749,42 +2749,57 @@ export type Database = {
         Row: {
           actual_end: string | null
           actual_start: string | null
+          assigned_role: string | null
           assignee: string | null
           created_at: string
           details: string | null
           id: string
           planned_end: string | null
+          planned_end_offset_days: number
           planned_start: string | null
+          planned_start_offset_days: number
+          position: number
           status: Database["public"]["Enums"]["task_status"]
           task_id: string
+          technology_scope: string
           title: string
           updated_at: string
         }
         Insert: {
           actual_end?: string | null
           actual_start?: string | null
+          assigned_role?: string | null
           assignee?: string | null
           created_at?: string
           details?: string | null
           id?: string
           planned_end?: string | null
+          planned_end_offset_days?: number
           planned_start?: string | null
+          planned_start_offset_days?: number
+          position?: number
           status?: Database["public"]["Enums"]["task_status"]
           task_id: string
+          technology_scope?: string
           title: string
           updated_at?: string
         }
         Update: {
           actual_end?: string | null
           actual_start?: string | null
+          assigned_role?: string | null
           assignee?: string | null
           created_at?: string
           details?: string | null
           id?: string
           planned_end?: string | null
+          planned_end_offset_days?: number
           planned_start?: string | null
+          planned_start_offset_days?: number
+          position?: number
           status?: Database["public"]["Enums"]["task_status"]
           task_id?: string
+          technology_scope?: string
           title?: string
           updated_at?: string
         }

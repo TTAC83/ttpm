@@ -30,7 +30,7 @@ export function SubTaskManager({
     details: "",
     planned_start_offset_days: 0,
     planned_end_offset_days: 1,
-    position: 0,
+    position: (parentTask.subtasks?.length || 0) + 1,
     technology_scope: "both",
     assigned_role: "implementation_lead"
   });
@@ -57,8 +57,7 @@ export function SubTaskManager({
 
     onSubTaskCreate({
       ...newSubTask,
-      step_id: parentTask.step_id,
-      position: (parentTask.subtasks?.length || 0) + 1
+      step_id: parentTask.step_id
     });
 
     setNewSubTask({
@@ -66,7 +65,7 @@ export function SubTaskManager({
       details: "",
       planned_start_offset_days: 0,
       planned_end_offset_days: 1,
-      position: 0,
+      position: (parentTask.subtasks?.length || 0) + 1,
       technology_scope: "both",
       assigned_role: "implementation_lead"
     });
@@ -153,7 +152,20 @@ export function SubTaskManager({
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="subtask-position">Position</Label>
+                <Input
+                  id="subtask-position"
+                  type="number"
+                  min="1"
+                  value={newSubTask.position}
+                  onChange={(e) => setNewSubTask({ 
+                    ...newSubTask, 
+                    position: parseInt(e.target.value) || 1
+                  })}
+                />
+              </div>
               <div>
                 <Label htmlFor="subtask-scope">Technology Scope</Label>
                 <Select 
@@ -296,7 +308,20 @@ function SubTaskItem({
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="edit-position">Position</Label>
+              <Input
+                id="edit-position"
+                type="number"
+                min="1"
+                value={editData.position}
+                onChange={(e) => setEditData({ 
+                  ...editData, 
+                  position: parseInt(e.target.value) || 1
+                })}
+              />
+            </div>
             <div>
               <Label htmlFor="edit-scope">Technology Scope</Label>
               <Select 
@@ -358,7 +383,10 @@ function SubTaskItem({
             {subTask.details && (
               <p className="text-xs text-muted-foreground mt-1">{subTask.details}</p>
             )}
-            <div className="flex gap-2 mt-2">
+            <div className="flex gap-2 mt-2 flex-wrap">
+              <Badge variant="secondary" className="text-xs">
+                Position: {subTask.position}
+              </Badge>
               <Badge variant="secondary" className="text-xs">
                 Days: {subTask.planned_start_offset_days} - {subTask.planned_end_offset_days}
               </Badge>

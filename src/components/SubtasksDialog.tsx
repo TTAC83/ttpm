@@ -27,6 +27,11 @@ interface Subtask {
   actual_end: string | null;
   status: string;
   assignee: string | null;
+  planned_start_offset_days: number;
+  planned_end_offset_days: number;
+  position: number;
+  technology_scope: string;
+  assigned_role: string | null;
   created_at: string;
   updated_at: string;
   profiles?: {
@@ -62,9 +67,28 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
     details: '',
     planned_start: null as Date | null,
     planned_end: null as Date | null,
+    planned_start_offset_days: 0,
+    planned_end_offset_days: 1,
+    position: 1,
+    technology_scope: 'both',
+    assigned_role: 'implementation_lead',
     status: 'Planned' as 'Planned' | 'In Progress' | 'Blocked' | 'Done',
     assignee: 'unassigned' as string,
   });
+
+  const technologyScopeOptions = [
+    { value: "both", label: "Both IoT & Vision" },
+    { value: "iot", label: "IoT Only" },
+    { value: "vision", label: "Vision Only" }
+  ];
+
+  const assignedRoleOptions = [
+    { value: "implementation_lead", label: "Implementation Lead" },
+    { value: "ai_iot_engineer", label: "AI/IoT Engineer" },
+    { value: "project_coordinator", label: "Project Coordinator" },
+    { value: "technical_project_lead", label: "Technical Project Lead" },
+    { value: "customer_project_lead", label: "Customer Project Lead" }
+  ];
 
   useEffect(() => {
     if (open) {
@@ -86,7 +110,7 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
           )
         `)
         .eq('task_id', taskId)
-        .order('created_at');
+        .order('position', { ascending: true });
 
       if (error) throw error;
       setSubtasks(data || []);
@@ -128,6 +152,11 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
             details: formData.details || null,
             planned_start: formData.planned_start?.toISOString().split('T')[0] || null,
             planned_end: formData.planned_end?.toISOString().split('T')[0] || null,
+            planned_start_offset_days: formData.planned_start_offset_days,
+            planned_end_offset_days: formData.planned_end_offset_days,
+            position: formData.position,
+            technology_scope: formData.technology_scope,
+            assigned_role: formData.assigned_role,
             status: formData.status as any,
             assignee: formData.assignee === 'unassigned' ? null : formData.assignee,
           })
@@ -149,6 +178,11 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
             details: formData.details || null,
             planned_start: formData.planned_start?.toISOString().split('T')[0] || null,
             planned_end: formData.planned_end?.toISOString().split('T')[0] || null,
+            planned_start_offset_days: formData.planned_start_offset_days,
+            planned_end_offset_days: formData.planned_end_offset_days,
+            position: formData.position,
+            technology_scope: formData.technology_scope,
+            assigned_role: formData.assigned_role,
             status: formData.status as any,
             assignee: formData.assignee === 'unassigned' ? null : formData.assignee,
           });
@@ -168,6 +202,11 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
         details: '',
         planned_start: null,
         planned_end: null,
+        planned_start_offset_days: 0,
+        planned_end_offset_days: 1,
+        position: subtasks.length + 1,
+        technology_scope: 'both',
+        assigned_role: 'implementation_lead',
         status: 'Planned',
         assignee: 'unassigned',
       });
@@ -188,6 +227,11 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
       details: subtask.details || '',
       planned_start: subtask.planned_start ? new Date(subtask.planned_start) : null,
       planned_end: subtask.planned_end ? new Date(subtask.planned_end) : null,
+      planned_start_offset_days: subtask.planned_start_offset_days || 0,
+      planned_end_offset_days: subtask.planned_end_offset_days || 1,
+      position: subtask.position || 1,
+      technology_scope: subtask.technology_scope || 'both',
+      assigned_role: subtask.assigned_role || 'implementation_lead',
       status: subtask.status as 'Planned' | 'In Progress' | 'Blocked' | 'Done',
       assignee: subtask.assignee || 'unassigned',
     });
@@ -227,6 +271,11 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
       details: '',
       planned_start: null,
       planned_end: null,
+      planned_start_offset_days: 0,
+      planned_end_offset_days: 1,
+      position: subtasks.length + 1,
+      technology_scope: 'both',
+      assigned_role: 'implementation_lead',
       status: 'Planned' as 'Planned' | 'In Progress' | 'Blocked' | 'Done',
       assignee: 'unassigned',
     });
@@ -292,6 +341,85 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
                     placeholder="Enter subtask details"
                     rows={3}
                   />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="start-offset">Start Offset (days)</Label>
+                    <Input
+                      id="start-offset"
+                      type="number"
+                      value={formData.planned_start_offset_days}
+                      onChange={(e) => setFormData(prev => ({ 
+                        ...prev, 
+                        planned_start_offset_days: parseInt(e.target.value) || 0 
+                      }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="end-offset">End Offset (days)</Label>
+                    <Input
+                      id="end-offset"
+                      type="number"
+                      value={formData.planned_end_offset_days}
+                      onChange={(e) => setFormData(prev => ({ 
+                        ...prev, 
+                        planned_end_offset_days: parseInt(e.target.value) || 1 
+                      }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="position">Position</Label>
+                    <Input
+                      id="position"
+                      type="number"
+                      min="1"
+                      value={formData.position}
+                      onChange={(e) => setFormData(prev => ({ 
+                        ...prev, 
+                        position: parseInt(e.target.value) || 1 
+                      }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="technology-scope">Technology Scope</Label>
+                    <Select 
+                      value={formData.technology_scope} 
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, technology_scope: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {technologyScopeOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="assigned-role">Assigned Role</Label>
+                    <Select 
+                      value={formData.assigned_role} 
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, assigned_role: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {assignedRoleOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-3">
@@ -416,10 +544,13 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
                 <TableHeader>
                   <TableRow>
                     <TableHead>Title</TableHead>
+                    <TableHead>Position</TableHead>
+                    <TableHead>Offsets</TableHead>
+                    <TableHead>Tech Scope</TableHead>
+                    <TableHead>Role</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Assignee</TableHead>
-                    <TableHead>Planned Start</TableHead>
-                    <TableHead>Planned End</TableHead>
+                    <TableHead>Planned Dates</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -435,6 +566,24 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
                         </div>
                       </TableCell>
                       <TableCell>
+                        <span className="text-sm font-medium">{subtask.position || '-'}</span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          {subtask.planned_start_offset_days || 0} - {subtask.planned_end_offset_days || 1} days
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm">
+                          {technologyScopeOptions.find(opt => opt.value === subtask.technology_scope)?.label || 'Both IoT & Vision'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm">
+                          {assignedRoleOptions.find(opt => opt.value === subtask.assigned_role)?.label || 'Implementation Lead'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
                         <span className={`px-2 py-1 rounded text-xs ${
                           subtask.status === 'Done' ? 'bg-green-100 text-green-700' :
                           subtask.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
@@ -448,10 +597,12 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
                         {subtask.profiles?.name || 'Unassigned'}
                       </TableCell>
                       <TableCell>
-                        {subtask.planned_start ? formatDateUK(subtask.planned_start) : '-'}
-                      </TableCell>
-                      <TableCell>
-                        {subtask.planned_end ? formatDateUK(subtask.planned_end) : '-'}
+                        <div className="text-sm">
+                          {subtask.planned_start ? formatDateUK(subtask.planned_start) : '-'}
+                          {subtask.planned_end && (
+                            <div className="text-muted-foreground">to {formatDateUK(subtask.planned_end)}</div>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">

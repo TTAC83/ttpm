@@ -5,11 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RotateCcw, ZoomIn, ZoomOut, ArrowDown, ArrowRight, Grid3x3 } from "lucide-react";
+import { RotateCcw, ZoomIn, ZoomOut, ArrowDown, ArrowRight, Grid3x3, BarChart } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { wbsService, type MasterStep, type MasterTask } from "@/lib/wbsService";
 import { useToast } from "@/hooks/use-toast";
 import { WBSTaskDialog } from "@/components/WBSTaskDialog";
+import { WBSGanttChart } from "@/components/WBSGanttChart";
 import { calculateProjectCompletion, ProjectCompletion } from '@/lib/projectCompletionService';
 import { Progress } from '@/components/ui/progress';
 import "react-grid-layout/css/styles.css";
@@ -105,6 +106,7 @@ export default function WBS({ projectId }: WBSProps = {}) {
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
   const [isProjectSpecific, setIsProjectSpecific] = useState(!!currentProjectId);
   const [projectCompletion, setProjectCompletion] = useState<ProjectCompletion | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'gantt'>('grid');
 
   // Load data on mount - use project-specific data if projectId is provided
   useEffect(() => {
@@ -406,90 +408,113 @@ export default function WBS({ projectId }: WBSProps = {}) {
         </div>
         
         <div className="flex items-center gap-4">
-          {/* Layout Mode Selector */}
-          <Tabs value={layoutMode} onValueChange={(value) => applyLayoutMode(value as any)} className="flex-shrink-0">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="sequential" className="flex items-center gap-1">
-                <ArrowRight className="h-3 w-3" />
-                Sequential
-              </TabsTrigger>
-              <TabsTrigger value="parallel" className="flex items-center gap-1">
-                <ArrowDown className="h-3 w-3" />
-                Parallel
-              </TabsTrigger>
-              <TabsTrigger value="custom" className="flex items-center gap-1">
+          {/* View Mode Selector */}
+          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'grid' | 'gantt')} className="flex-shrink-0">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="grid" className="flex items-center gap-1">
                 <Grid3x3 className="h-3 w-3" />
-                Row-based
+                Grid View
+              </TabsTrigger>
+              <TabsTrigger value="gantt" className="flex items-center gap-1">
+                <BarChart className="h-3 w-3" />
+                Gantt View
               </TabsTrigger>
             </TabsList>
           </Tabs>
 
-          {/* Zoom Controls */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setZoom(Math.max(50, zoom - 25))}
-              disabled={zoom <= 50}
-            >
-              <ZoomOut className="h-4 w-4" />
-            </Button>
-            <Select value={zoom.toString()} onValueChange={(value) => setZoom(parseInt(value))}>
-              <SelectTrigger className="w-20">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ZOOM_LEVELS.map(level => (
-                  <SelectItem key={level} value={level.toString()}>
-                    {level}%
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setZoom(Math.min(125, zoom + 25))}
-              disabled={zoom >= 125}
-            >
-              <ZoomIn className="h-4 w-4" />
-            </Button>
-          </div>
+          {/* Layout Mode Selector - only show in grid view */}
+          {viewMode === 'grid' && (
+            <Tabs value={layoutMode} onValueChange={(value) => applyLayoutMode(value as any)} className="flex-shrink-0">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="sequential" className="flex items-center gap-1">
+                  <ArrowRight className="h-3 w-3" />
+                  Sequential
+                </TabsTrigger>
+                <TabsTrigger value="parallel" className="flex items-center gap-1">
+                  <ArrowDown className="h-3 w-3" />
+                  Parallel
+                </TabsTrigger>
+                <TabsTrigger value="custom" className="flex items-center gap-1">
+                  <Grid3x3 className="h-3 w-3" />
+                  Row-based
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          )}
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleResetLayout}
-            disabled={!canUpdate}
-          >
-            <RotateCcw className="h-4 w-4 mr-2" />
-            Reset Layout
-          </Button>
+          {/* Zoom Controls - only show in grid view */}
+          {viewMode === 'grid' && (
+            <>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setZoom(Math.max(50, zoom - 25))}
+                  disabled={zoom <= 50}
+                >
+                  <ZoomOut className="h-4 w-4" />
+                </Button>
+                <Select value={zoom.toString()} onValueChange={(value) => setZoom(parseInt(value))}>
+                  <SelectTrigger className="w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ZOOM_LEVELS.map(level => (
+                      <SelectItem key={level} value={level.toString()}>
+                        {level}%
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setZoom(Math.min(125, zoom + 25))}
+                  disabled={zoom >= 125}
+                >
+                  <ZoomIn className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleResetLayout}
+                disabled={!canUpdate}
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Reset Layout
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
-      <div className="mb-4 text-sm text-muted-foreground">
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
-            <ArrowRight className="h-3 w-3 text-blue-400" />
-            <span>Sequential: Steps arranged horizontally in order</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <ArrowDown className="h-3 w-3 text-green-400" />
-            <span>Parallel: Each step in its own row for parallel execution</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Grid3x3 className="h-3 w-3 text-purple-400" />
-            <span>Row-based: Assign cards to specific rows manually</span>
+      {viewMode === 'grid' && (
+        <div className="mb-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <ArrowRight className="h-3 w-3 text-blue-400" />
+              <span>Sequential: Steps arranged horizontally in order</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <ArrowDown className="h-3 w-3 text-green-400" />
+              <span>Parallel: Each step in its own row for parallel execution</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Grid3x3 className="h-3 w-3 text-purple-400" />
+              <span>Row-based: Assign cards to specific rows manually</span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      <div 
-        className="relative border rounded-lg bg-muted/50 p-4 overflow-auto"
-        style={{ transform: `scale(${zoom / 100})`, transformOrigin: "top left", minHeight: "600px" }}
-      >
-        <ResponsiveGridLayout
+      {viewMode === 'grid' ? (
+        <div 
+          className="relative border rounded-lg bg-muted/50 p-4 overflow-auto"
+          style={{ transform: `scale(${zoom / 100})`, transformOrigin: "top left", minHeight: "600px" }}
+        >
+          <ResponsiveGridLayout
           className="layout"
           layouts={layouts}
           onLayoutChange={handleLayoutChange}
@@ -586,19 +611,22 @@ export default function WBS({ projectId }: WBSProps = {}) {
           ))}
         </ResponsiveGridLayout>
       </div>
+    ) : (
+      <WBSGanttChart projectId={currentProjectId} />
+    )}
 
-      {selectedStep && (
-        <WBSTaskDialog
-          isOpen={isTaskDialogOpen}
-          onClose={() => {
-            setIsTaskDialogOpen(false);
-            setSelectedStep(null);
-          }}
-          step={selectedStep}
-          tasks={stepTasks[selectedStep.id] || []}
-          onSave={handleTaskSave}
-        />
-      )}
+    {selectedStep && (
+      <WBSTaskDialog
+        isOpen={isTaskDialogOpen}
+        onClose={() => {
+          setIsTaskDialogOpen(false);
+          setSelectedStep(null);
+        }}
+        step={selectedStep}
+        tasks={stepTasks[selectedStep.id] || []}
+        onSave={handleTaskSave}
+      />
+    )}
     </div>
   );
 }

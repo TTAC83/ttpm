@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 export const AuthPage = () => {
   const [email, setEmail] = useState('');
@@ -21,6 +22,7 @@ export const AuthPage = () => {
   const [resetMessage, setResetMessage] = useState('');
   
   const { signIn, signInWithMagicLink } = useAuth();
+  const navigate = useNavigate();
 
   const handleEmailPasswordSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +35,9 @@ export const AuthPage = () => {
       console.log('Attempting sign in with:', { email: email.trim() });
       const result = await signIn(email.trim(), password);
       console.log('Sign in result:', result);
+      if (!result?.error) {
+        navigate('/app');
+      }
     } finally {
       setLoading(false);
     }

@@ -612,7 +612,6 @@ export const MasterDataManagement = () => {
               steps={steps}
               tasks={tasks}
               onEditTask={(task) => {
-                console.log('Edit task clicked:', task);
                 const taskNode: TreeNode = {
                   id: `task-${task.id}`,
                   type: task.parent_task_id ? 'subtask' : 'task',
@@ -620,10 +619,8 @@ export const MasterDataManagement = () => {
                   children: [],
                   level: task.parent_task_id ? 2 : 1
                 };
-                console.log('Setting selectedNode:', taskNode);
                 setSelectedNode(taskNode);
                 setSidebarOpen(true);
-                console.log('Sidebar should be open now');
               }}
               onAddTask={addNewTask}
               onDeleteTask={(taskId) => deleteItem(`task-${taskId}`)}
@@ -633,19 +630,13 @@ export const MasterDataManagement = () => {
       </div>
 
       {/* Detailed Sidebar */}
-      {(() => {
-        console.log('Sidebar state:', { sidebarOpen, selectedNode: selectedNode?.id });
-        return sidebarOpen && selectedNode && (
-          <DetailSidebar
-            node={selectedNode}
-            onClose={() => {
-              console.log('Closing sidebar');
-              setSidebarOpen(false);
-            }}
-            onUpdate={fetchMasterData}
-          />
-        );
-      })()}
+      {sidebarOpen && selectedNode && (
+        <DetailSidebar
+          node={selectedNode}
+          onClose={() => setSidebarOpen(false)}
+          onUpdate={fetchMasterData}
+        />
+      )}
     </div>
   );
 };
@@ -729,7 +720,8 @@ const DetailSidebar = ({ node, onClose, onUpdate }: DetailSidebarProps) => {
   };
 
   return (
-    <Card className="w-80 h-fit">
+    <div className="fixed top-0 right-0 h-full w-80 bg-white border-l border-border shadow-lg z-50 overflow-y-auto">
+      <Card className="h-full border-0 rounded-none shadow-none">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
@@ -859,7 +851,8 @@ const DetailSidebar = ({ node, onClose, onUpdate }: DetailSidebarProps) => {
           {loading ? 'Saving...' : 'Save Changes'}
         </Button>
       </CardContent>
-    </Card>
+      </Card>
+    </div>
   );
 };
 

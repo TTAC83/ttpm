@@ -55,6 +55,11 @@ const getStatusColor = (status: string) => {
   }
 };
 
+const isCompletedStatus = (status: string) => {
+  const s = status?.toLowerCase?.() ?? '';
+  return s === 'completed' || s === 'complete' || s === 'done' || s === 'closed';
+};
+
 const TaskCard = ({ task, setSelectedTask, setIsTaskDialogOpen }: {
   task: Task;
   setSelectedTask: (task: Task) => void;
@@ -116,6 +121,7 @@ const TaskList = ({
   return (
     <div className="space-y-4">
       {tasks
+        .filter(task => !isCompletedStatus(task.status))
         .filter(task => filterBySearch(task.task_title + ' ' + (task.task_details || '')))
         .filter(task => filterByDateRange(task.planned_start) || filterByDateRange(task.planned_end))
         .map((task) => (

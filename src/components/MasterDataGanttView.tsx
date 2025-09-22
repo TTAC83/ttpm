@@ -210,7 +210,7 @@ export const MasterDataGanttView = ({
     const thumbTop = (vScrollTop / (vMaxScrollTop || 1)) * (trackHeight - thumbHeight);
 
     return (
-      <div className="fixed right-4 top-1/2 -translate-y-1/2 w-4 h-[320px] bg-muted/50 rounded-full border border-border z-[9999] shadow-lg backdrop-blur-sm">
+      <div className="absolute left-0 top-0 bottom-0 w-4 bg-muted/50 rounded-r-full border border-l-0 border-border z-50 shadow-lg">
         <div className="relative h-full p-0.5" ref={trackRef}>
           <div
             className="absolute left-0.5 right-0.5 bg-foreground/80 hover:bg-foreground rounded-full cursor-pointer transition-colors shadow-sm"
@@ -236,8 +236,19 @@ export const MasterDataGanttView = ({
     }
   };
   return (
-    <div className="space-y-6 min-h-full relative">
-      <HorizontalScrollbar />
+    <div className="flex h-full">
+      {/* Left vertical scrollbar */}
+      <div className="relative">
+        <VerticalScrollbar />
+      </div>
+      
+      {/* Main content with controlled scroll */}
+      <div 
+        ref={verticalRef} 
+        onScroll={onVerticalContainerScroll} 
+        className="flex-1 space-y-6 overflow-y-auto overflow-x-hidden"
+        style={{ height: 'calc(100vh - 24rem)' }}
+      >
       {ganttData.steps.map(step => (
         <Card key={step.id} className="overflow-visible">
           <CardHeader className="pb-3 bg-muted/20">
@@ -435,6 +446,10 @@ export const MasterDataGanttView = ({
           </CardContent>
         </Card>
       ))}
+      
+      {/* Horizontal scrollbar - positioned over content */}
+      <HorizontalScrollbar />
+      </div>
     </div>
   );
 };

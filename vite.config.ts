@@ -11,20 +11,16 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   plugins: [
-    react(),
     mode === "development" && componentTagger(),
-    VitePWA({
+    mode === "production" && VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["/offline.html", "/icons/icon-192.png", "/icons/icon-256.png", "/icons/icon-384.png", "/icons/icon-512.png", "/icons/maskable-192.png", "/icons/maskable-512.png"],
-      manifest: false, // We use our own manifest
-      devOptions: {
-        enabled: true
-      },
+      manifest: false,
       workbox: {
         navigateFallback: "/",
         navigateFallbackDenylist: [/^\/api\//, /^\/rest\//, /^\/storage\//],
         globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
-        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB limit
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
         runtimeCaching: [
           {
             urlPattern: ({ request, sameOrigin }) =>

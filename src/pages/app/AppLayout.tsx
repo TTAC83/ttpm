@@ -188,7 +188,18 @@ export const AppLayout = () => {
           
           <SidebarContent>
             <SidebarMenu className="p-2">
-              {myWorkNav && renderNavItem(myWorkNav)}
+              {/* Hardcoded My Work link to guarantee visibility for internal users */}
+              <SidebarMenuItem key="my-work-hardcoded">
+                <SidebarMenuButton
+                  onClick={() => handleNavigation('/app/my-work')}
+                  isActive={location.pathname.startsWith('/app/my-work')}
+                  className="w-full justify-start"
+                >
+                  {getIcon('User')}
+                  <span>My Work</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
               {visibleItems.filter(item => item.label !== 'My Work').map(item => renderNavItem(item))}
             </SidebarMenu>
           </SidebarContent>

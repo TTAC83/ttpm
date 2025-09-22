@@ -262,14 +262,17 @@ export const ICON_MAP = {
 } as const;
 
 export function visibleItemsForRole(role: Role | null | undefined): NavItem[] {
+  // Default unknown/undefined roles to the most permissive non-internal role
+  const effectiveRole: Role = (role as Role) ?? 'external_user';
+
   const canSee = (item: NavItem) =>
-    !item.roles || (role && item.roles.includes(role as Role));
+    !item.roles || item.roles.includes(effectiveRole);
 
   const filterRecursive = (items: NavItem[]): NavItem[] =>
     items
       .filter(canSee)
-      .map(i => i.children ? ({ ...i, children: filterRecursive(i.children) }) : i)
-      .filter(i => (i.children ? i.children.length > 0 : true));
+      .map((i) => (i.children ? { ...i, children: filterRecursive(i.children) } : i))
+      .filter((i) => (i.children ? i.children.length > 0 : true));
 
   return filterRecursive(NAV);
 }

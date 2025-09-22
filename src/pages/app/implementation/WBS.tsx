@@ -85,15 +85,15 @@ export default function WBS({ projectId }: WBSProps = {}) {
   console.log('WBS: Component rendering, projectId:', projectId);
   
 
-  // Determine project ID from prop or query string without router hooks
-  const currentProjectId = useMemo(() => {
+  // Determine project ID from prop or query string without router hooks or React hooks
+  const currentProjectId: string | undefined = (() => {
     if (projectId) return projectId;
     if (typeof window !== 'undefined') {
       const sp = new URLSearchParams(window.location.search);
       return (sp.get('projectId') as string | null) || undefined;
     }
     return undefined;
-  }, [projectId]);
+  })();
   
   // Inject CSS for grid layout
   useEffect(() => {

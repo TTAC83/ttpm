@@ -16,7 +16,6 @@ interface PendingExpense {
   expense_id: string;
   expense_date: string;
   expense_description: string;
-  project_name: string;
   assignee_name: string;
   import_customer: string;
   net: number;
@@ -25,6 +24,14 @@ interface PendingExpense {
   is_billable: boolean;
   category: string;
   status: string;
+  customer: string;
+  assignee_description: string;
+  assignment_notes: string;
+  assigned_at: string;
+  source: string;
+  account: string;
+  account_code: string;
+  vat_rate: number;
 }
 
 export const ProjectCosts = () => {
@@ -164,7 +171,7 @@ export const ProjectCosts = () => {
                    </TableCell>
                    <TableCell>{expense.import_customer || 'N/A'}</TableCell>
                    <TableCell>
-                     <div className="font-medium">{expense.project_name}</div>
+                     <div className="font-medium">{expense.customer || 'No Project'}</div>
                    </TableCell>
                    <TableCell>
                      <Switch

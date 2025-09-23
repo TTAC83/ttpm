@@ -25,7 +25,9 @@ interface AdminExpense {
   is_billable: boolean;
   category: string;
   assignee_description: string;
-  assigned_to_user_id: string;
+  assignment_notes: string;
+  assigned_at: string;
+  vat_rate: number;
 }
 
 export const AdminExpenseManagement = () => {
@@ -173,10 +175,10 @@ export const AdminExpenseManagement = () => {
 
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                   <div>
-                    <span className="text-muted-foreground">Assigned To:</span>
+                    <span className="text-muted-foreground">Customer:</span>
                     <div className="font-medium flex items-center gap-1">
                       <User className="h-3 w-3" />
-                      User ID: {expense.assigned_to_user_id}
+                      {expense.customer || 'N/A'}
                     </div>
                   </div>
                   <div>

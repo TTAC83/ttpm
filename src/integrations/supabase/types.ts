@@ -409,7 +409,7 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "v_impl_companies"
-            referencedColumns: ["id"]
+            referencedColumns: ["company_id"]
           },
           {
             foreignKeyName: "bau_customers_primary_contact_fkey"
@@ -1378,7 +1378,7 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "v_impl_companies"
-            referencedColumns: ["id"]
+            referencedColumns: ["company_id"]
           },
           {
             foreignKeyName: "impl_weekly_reviews_week_start_fkey"
@@ -2082,7 +2082,7 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "v_impl_companies"
-            referencedColumns: ["id"]
+            referencedColumns: ["company_id"]
           },
           {
             foreignKeyName: "profiles_expense_approver_user_id_fkey"
@@ -2320,7 +2320,7 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "v_impl_companies"
-            referencedColumns: ["id"]
+            referencedColumns: ["company_id"]
           },
           {
             foreignKeyName: "projects_customer_project_lead_fkey"
@@ -3161,7 +3161,7 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "v_impl_companies"
-            referencedColumns: ["id"]
+            referencedColumns: ["company_id"]
           },
         ]
       }
@@ -3310,8 +3310,8 @@ export type Database = {
       v_impl_companies: {
         Row: {
           active_projects: number | null
+          company_id: string | null
           first_project_date: string | null
-          id: string | null
           is_internal: boolean | null
           latest_contract_date: string | null
           name: string | null

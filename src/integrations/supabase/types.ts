@@ -3376,8 +3376,8 @@ export type Database = {
       v_master_steps: {
         Row: {
           id: number | null
-          name: string | null
           position: number | null
+          step_name: string | null
           task_count: number | null
         }
         Relationships: []

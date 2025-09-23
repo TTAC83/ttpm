@@ -11,6 +11,7 @@ import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { DatePicker } from "@/components/ui/date-picker";
+import { toISODateString } from "@/lib/dateUtils";
 
 interface Task {
   id: string;
@@ -80,7 +81,7 @@ export function TaskEditDialog({ task, profiles, open, onOpenChange, onSave }: T
   const handleDateChange = (field: string, date: Date | undefined) => {
     setFormData(prev => ({
       ...prev,
-      [field]: date ? date.toISOString().split('T')[0] : null
+      [field]: date ? toISODateString(date) : null
     }));
   };
 

@@ -1098,9 +1098,8 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
             <div className="text-sm mb-1">Project Status</div>
             <div className="flex gap-2">
               <Button 
-                variant={statusTouched ? (projectStatus === "on_track" ? "default" : "outline") : "outline"}
+                variant={projectStatus === "on_track" ? "default" : "outline"}
                 className={
-                  !statusTouched ? "bg-muted text-muted-foreground border-muted" :
                   projectStatus === "on_track" ? "bg-green-600 hover:bg-green-700 text-white" : ""
                 }
                 onClick={() => { setProjectStatus("on_track"); setStatusTouched(true); }}
@@ -1108,9 +1107,8 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
                 On track
               </Button>
               <Button 
-                variant={statusTouched ? (projectStatus === "off_track" ? "default" : "outline") : "outline"}
+                variant={projectStatus === "off_track" ? "default" : "outline"}
                 className={
-                  !statusTouched ? "bg-muted text-muted-foreground border-muted" :
                   projectStatus === "off_track" ? "bg-red-600 hover:bg-red-700 text-white" : ""
                 }
                 onClick={() => { setProjectStatus("off_track"); setStatusTouched(true); }}
@@ -1123,9 +1121,8 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
             <div className="text-sm mb-1">Customer Health</div>
             <div className="flex gap-2">
               <Button 
-                variant={healthTouched ? (customerHealth === "green" ? "default" : "outline") : "outline"} 
+                variant={customerHealth === "green" ? "default" : "outline"} 
                 className={
-                  !healthTouched ? "bg-muted text-muted-foreground border-muted" :
                   customerHealth === "green" ? "bg-green-600 hover:bg-green-700 text-white" : ""
                 }
                 onClick={() => { setCustomerHealth("green"); setHealthTouched(true); }}
@@ -1133,9 +1130,8 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
                 Green
               </Button>
               <Button 
-                variant={healthTouched ? (customerHealth === "red" ? "default" : "outline") : "outline"} 
+                variant={customerHealth === "red" ? "default" : "outline"} 
                 className={
-                  !healthTouched ? "bg-muted text-muted-foreground border-muted" :
                   customerHealth === "red" ? "bg-red-600 hover:bg-red-700 text-white" : ""
                 }
                 onClick={() => { setCustomerHealth("red"); setHealthTouched(true); }}

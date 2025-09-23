@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { DatePicker } from "@/components/ui/date-picker";
 
 interface Task {
   id: string;
@@ -151,108 +152,40 @@ export function TaskEditDialog({ task, profiles, open, onOpenChange, onSave }: T
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Planned Start</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.planned_start && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.planned_start ? format(new Date(formData.planned_start), "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={formData.planned_start ? new Date(formData.planned_start) : undefined}
-                    onSelect={(date) => handleDateChange('planned_start', date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <DatePicker
+                value={formData.planned_start ? new Date(formData.planned_start) : null}
+                onChange={(date) => handleDateChange('planned_start', date)}
+                placeholder="Select planned start date"
+              />
             </div>
 
             <div className="space-y-2">
               <Label>Planned End</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.planned_end && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.planned_end ? format(new Date(formData.planned_end), "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={formData.planned_end ? new Date(formData.planned_end) : undefined}
-                    onSelect={(date) => handleDateChange('planned_end', date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <DatePicker
+                value={formData.planned_end ? new Date(formData.planned_end) : null}
+                onChange={(date) => handleDateChange('planned_end', date)}
+                placeholder="Select planned end date"
+              />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Actual Start</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.actual_start && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.actual_start ? format(new Date(formData.actual_start), "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={formData.actual_start ? new Date(formData.actual_start) : undefined}
-                    onSelect={(date) => handleDateChange('actual_start', date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <DatePicker
+                value={formData.actual_start ? new Date(formData.actual_start) : null}
+                onChange={(date) => handleDateChange('actual_start', date)}
+                placeholder="Select actual start date"
+              />
             </div>
 
             <div className="space-y-2">
               <Label>Actual End</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.actual_end && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.actual_end ? format(new Date(formData.actual_end), "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={formData.actual_end ? new Date(formData.actual_end) : undefined}
-                    onSelect={(date) => handleDateChange('actual_end', date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <DatePicker
+                value={formData.actual_end ? new Date(formData.actual_end) : null}
+                onChange={(date) => handleDateChange('actual_end', date)}
+                placeholder="Select actual end date"
+              />
             </div>
           </div>
 

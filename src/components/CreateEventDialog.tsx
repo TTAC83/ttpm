@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { DatePicker } from '@/components/ui/date-picker';
 
 interface ProjectMember {
   user_id: string;
@@ -51,8 +52,6 @@ const CreateEventDialog = ({
     is_critical: false
   });
 
-  const [startDateOpen, setStartDateOpen] = useState(false);
-  const [endDateOpen, setEndDateOpen] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -85,8 +84,6 @@ const CreateEventDialog = ({
       const dateString = format(date, 'yyyy-MM-dd');
       setFormData(prev => ({ ...prev, [field]: dateString }));
     }
-    if (field === 'start_date') setStartDateOpen(false);
-    if (field === 'end_date') setEndDateOpen(false);
   };
 
   const handleAttendeeToggle = (userId: string) => {
@@ -228,54 +225,22 @@ const CreateEventDialog = ({
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label>Start Date *</Label>
-              <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.start_date && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.start_date ? format(new Date(formData.start_date), "PPP") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={formData.start_date ? new Date(formData.start_date) : undefined}
-                    onSelect={(date) => handleDateSelect('start_date', date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <DatePicker
+                value={formData.start_date ? new Date(formData.start_date) : null}
+                onChange={(date) => handleDateSelect('start_date', date)}
+                placeholder="Select start date"
+                required
+              />
             </div>
 
             <div className="space-y-2">
               <Label>End Date *</Label>
-              <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.end_date && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.end_date ? format(new Date(formData.end_date), "PPP") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={formData.end_date ? new Date(formData.end_date) : undefined}
-                    onSelect={(date) => handleDateSelect('end_date', date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <DatePicker
+                value={formData.end_date ? new Date(formData.end_date) : null}
+                onChange={(date) => handleDateSelect('end_date', date)}
+                placeholder="Select end date"
+                required
+              />
             </div>
           </div>
 

@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { DatePicker } from "@/components/ui/date-picker";
 
 interface Action {
   id: string;
@@ -137,28 +138,11 @@ export function EditActionDialog({
 
             <div className="space-y-2">
               <Label>Planned Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.planned_date && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.planned_date ? format(formData.planned_date, "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={formData.planned_date}
-                    onSelect={(date) => setFormData(prev => ({ ...prev, planned_date: date }))}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <DatePicker
+                value={formData.planned_date}
+                onChange={(date) => setFormData(prev => ({ ...prev, planned_date: date }))}
+                placeholder="Select planned date"
+              />
             </div>
           </div>
 

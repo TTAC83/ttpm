@@ -1,5 +1,5 @@
 import * as React from "react"
-import { format, parse, isValid } from "date-fns"
+import { format, parse, isValid as isValidDate } from "date-fns"
 import { CalendarIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -48,38 +48,90 @@ const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
     const [isOpen, setIsOpen] = React.useState(false)
     const [inputValue, setInputValue] = React.useState("")
     const [isTyping, setIsTyping] = React.useState(false)
+    const [isValid, setIsValid] = React.useState(true)
 
     // Sync input value with prop value
     React.useEffect(() => {
       if (value && !isTyping) {
         setInputValue(formatDisplay(value))
+        setIsValid(true)
       } else if (!value && !isTyping) {
         setInputValue("")
+        setIsValid(true)
       }
     }, [value, formatDisplay, isTyping])
 
+    // Format input with date mask (DD/MM/YYYY)
+    const formatDateMask = (input: string) => {
+      // Remove all non-numeric characters
+      const numbers = input.replace(/\D/g, '')
+      
+      // Apply mask format DD/MM/YYYY
+      let masked = ''
+      for (let i = 0; i < numbers.length && i < 8; i++) {
+        if (i === 2 || i === 4) {
+          masked += '/'
+        }
+        masked += numbers[i]
+      }
+      return masked
+    }
+
+    // Validate date format and value
+    const validateDate = (dateString: string) => {
+      if (!dateString || dateString === "") return true // Empty is valid
+      
+      // Check if format matches DD/MM/YYYY exactly
+      const formatRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/
+      const match = dateString.match(formatRegex)
+      
+      if (!match) return false
+      
+      const [, day, month, year] = match
+      const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+      
+      // Check if date is valid and matches input
+      return (
+        date.getDate() === parseInt(day) &&
+        date.getMonth() === parseInt(month) - 1 &&
+        date.getFullYear() === parseInt(year)
+      )
+    }
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newValue = e.target.value
-      setInputValue(newValue)
+      const rawValue = e.target.value
+      const maskedValue = formatDateMask(rawValue)
+      
+      setInputValue(maskedValue)
       setIsTyping(true)
 
-      // Try to parse the input as user types
-      if (newValue.trim() === "") {
-        onChange?.(null)
-        return
-      }
+      // Validate as user types
+      const valid = validateDate(maskedValue)
+      setIsValid(valid)
 
-      const parsedDate = parseInput(newValue)
-      if (parsedDate && isValid(parsedDate)) {
-        // Check min/max constraints
-        if (minDate && parsedDate < minDate) return
-        if (maxDate && parsedDate > maxDate) return
-        
-        onChange?.(parsedDate)
+      // Try to parse and update if valid
+      if (valid && maskedValue.length === 10) {
+        const parsedDate = parseUKDate(maskedValue)
+        if (parsedDate && isValidDate(parsedDate)) {
+          // Check min/max constraints
+          if (minDate && parsedDate < minDate) return
+          if (maxDate && parsedDate > maxDate) return
+          
+          onChange?.(parsedDate)
+        }
+      } else if (maskedValue === "") {
+        onChange?.(null)
       }
     }
 
-    const handleInputBlur = () => {
+    const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+      // Prevent blur if date is invalid and not empty
+      if (inputValue && !isValid) {
+        e.preventDefault()
+        e.target.focus()
+        return
+      }
+      
       setIsTyping(false)
       // Reformat the input to ensure consistency
       if (value) {
@@ -90,7 +142,15 @@ const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
     const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Enter") {
         e.preventDefault()
-        handleInputBlur()
+        // Only allow enter if valid
+        if (isValid) {
+          handleInputBlur(e as any)
+        }
+      }
+      
+      // Prevent tab if invalid
+      if (e.key === "Tab" && inputValue && !isValid) {
+        e.preventDefault()
       }
     }
 
@@ -103,7 +163,7 @@ const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
     }
 
     const displayValue = value ? formatDisplay(value) : ""
-    const showError = error && error.length > 0
+    const showError = (error && error.length > 0) || (!isValid && inputValue.length > 0)
 
     return (
       <div className="relative">
@@ -118,13 +178,14 @@ const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
                   onChange={handleInputChange}
                   onBlur={handleInputBlur}
                   onKeyDown={handleInputKeyDown}
-                  placeholder={value ? "" : placeholder}
+                  placeholder={value || inputValue ? "" : "DD/MM/YYYY"}
                   disabled={disabled}
                   required={required}
                   data-testid={testId}
                   className={cn(
-                    "pr-10",
+                    "pr-10 font-mono", // Use monospace font for better alignment
                     showError && "border-destructive focus-visible:ring-destructive",
+                    !isValid && inputValue.length > 0 && "border-destructive",
                     className
                   )}
                   {...props}
@@ -182,7 +243,7 @@ const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
         </Popover>
         {showError && (
           <p className="text-sm text-destructive mt-1" role="alert">
-            {error}
+            {error || (!isValid && inputValue.length > 0 ? "Please enter a valid date in DD/MM/YYYY format" : "")}
           </p>
         )}
       </div>

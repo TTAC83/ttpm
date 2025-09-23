@@ -235,6 +235,7 @@ const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
                 if (maxDate && date > maxDate) return true
                 return false
               }}
+              defaultMonth={value || undefined}
               initialFocus
               fixedWeeks
               className="pointer-events-auto"

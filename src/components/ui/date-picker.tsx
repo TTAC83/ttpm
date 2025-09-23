@@ -32,7 +32,7 @@ const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
   ({
     value,
     onChange,
-    placeholder = "Pick a date",
+    placeholder = "DD/MM/YYYY",
     disabled = false,
     className,
     error,
@@ -118,7 +118,7 @@ const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
                   onChange={handleInputChange}
                   onBlur={handleInputBlur}
                   onKeyDown={handleInputKeyDown}
-                  placeholder={placeholder}
+                  placeholder={value ? "" : placeholder}
                   disabled={disabled}
                   required={required}
                   data-testid={testId}

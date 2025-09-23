@@ -3012,14 +3012,10 @@ export type Database = {
       }
       v_approved_expenses: {
         Row: {
+          account: string | null
+          account_code: string | null
           approved_at: string | null
-          approved_by: string | null
-          approved_by_name: string | null
           assigned_at: string | null
-          assigned_by: string | null
-          assigned_to_project_id: string | null
-          assigned_to_solutions_project_id: string | null
-          assigned_to_user_id: string | null
           assignee_description: string | null
           assignee_name: string | null
           assignment_notes: string | null
@@ -3033,21 +3029,12 @@ export type Database = {
           import_customer: string | null
           is_billable: boolean | null
           net: number | null
-          project_name: string | null
-          reviewed_at: string | null
-          reviewed_by: string | null
+          source: string | null
           status: Database["public"]["Enums"]["expense_status_enum"] | null
-          updated_at: string | null
           vat: number | null
+          vat_rate: number | null
         }
         Relationships: [
-          {
-            foreignKeyName: "expense_assignments_reviewed_by_fkey"
-            columns: ["reviewed_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
           {
             foreignKeyName: "fk_expense_assignments_expense_id"
             columns: ["expense_id"]
@@ -3275,24 +3262,23 @@ export type Database = {
         Row: {
           account: string | null
           account_code: string | null
-          approved_at: string | null
-          approved_by: string | null
-          approved_by_name: string | null
           assigned_at: string | null
+          assigned_to_project_id: string | null
           assigned_to_user_id: string | null
           assignee_description: string | null
           assignee_name: string | null
           assignment_notes: string | null
           category: Database["public"]["Enums"]["expense_category_enum"] | null
           customer: string | null
-          description: string | null
           expense_date: string | null
+          expense_description: string | null
           expense_id: string | null
           gross: number | null
           id: string | null
+          import_customer: string | null
           is_billable: boolean | null
           net: number | null
-          project_name: string | null
+          source: string | null
           status: Database["public"]["Enums"]["expense_status_enum"] | null
           vat: number | null
           vat_rate: number | null
@@ -3324,21 +3310,20 @@ export type Database = {
           account: string | null
           account_code: string | null
           assigned_at: string | null
-          assigned_to_project_id: string | null
-          assigned_to_user_id: string | null
           assignee_description: string | null
           assignee_name: string | null
           assignment_notes: string | null
           category: Database["public"]["Enums"]["expense_category_enum"] | null
           customer: string | null
-          description: string | null
           expense_date: string | null
+          expense_description: string | null
           expense_id: string | null
           gross: number | null
           id: string | null
+          import_customer: string | null
           is_billable: boolean | null
           net: number | null
-          project_name: string | null
+          source: string | null
           status: Database["public"]["Enums"]["expense_status_enum"] | null
           vat: number | null
           vat_rate: number | null
@@ -3391,13 +3376,15 @@ export type Database = {
           assignment_notes: string | null
           category: Database["public"]["Enums"]["expense_category_enum"] | null
           customer: string | null
-          description: string | null
           expense_date: string | null
+          expense_description: string | null
           expense_id: string | null
           gross: number | null
           id: string | null
+          import_customer: string | null
           is_billable: boolean | null
           net: number | null
+          source: string | null
           status: Database["public"]["Enums"]["expense_status_enum"] | null
           vat: number | null
           vat_rate: number | null

@@ -233,15 +233,15 @@ export type Database = {
             foreignKeyName: "bau_change_requests_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
-            referencedRelation: "v_bau_list"
+            referencedRelation: "v_bau_latest_review"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "bau_change_requests_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
-            referencedRelation: "v_bau_projects_like"
-            referencedColumns: ["bau_customer_id"]
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -285,15 +285,15 @@ export type Database = {
             foreignKeyName: "bau_contacts_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
-            referencedRelation: "v_bau_list"
+            referencedRelation: "v_bau_latest_review"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "bau_contacts_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
-            referencedRelation: "v_bau_projects_like"
-            referencedColumns: ["bau_customer_id"]
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "bau_contacts_profile_id_fkey"
@@ -332,15 +332,15 @@ export type Database = {
             foreignKeyName: "bau_customer_aliases_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
-            referencedRelation: "v_bau_list"
+            referencedRelation: "v_bau_latest_review"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "bau_customer_aliases_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
-            referencedRelation: "v_bau_projects_like"
-            referencedColumns: ["bau_customer_id"]
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -409,7 +409,7 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "v_impl_companies"
-            referencedColumns: ["company_id"]
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "bau_customers_primary_contact_fkey"
@@ -454,15 +454,15 @@ export type Database = {
             foreignKeyName: "bau_expense_links_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
-            referencedRelation: "v_bau_list"
+            referencedRelation: "v_bau_latest_review"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "bau_expense_links_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
-            referencedRelation: "v_bau_projects_like"
-            referencedColumns: ["bau_customer_id"]
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "bau_expense_links_expense_assignment_id_fkey"
@@ -563,15 +563,15 @@ export type Database = {
             foreignKeyName: "bau_sites_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
-            referencedRelation: "v_bau_list"
+            referencedRelation: "v_bau_latest_review"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "bau_sites_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
-            referencedRelation: "v_bau_projects_like"
-            referencedColumns: ["bau_customer_id"]
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -624,15 +624,15 @@ export type Database = {
             foreignKeyName: "bau_tickets_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
-            referencedRelation: "v_bau_list"
+            referencedRelation: "v_bau_latest_review"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "bau_tickets_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
-            referencedRelation: "v_bau_projects_like"
-            referencedColumns: ["bau_customer_id"]
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -679,15 +679,15 @@ export type Database = {
             foreignKeyName: "bau_visits_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
-            referencedRelation: "v_bau_list"
+            referencedRelation: "v_bau_latest_review"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "bau_visits_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
-            referencedRelation: "v_bau_projects_like"
-            referencedColumns: ["bau_customer_id"]
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -740,15 +740,15 @@ export type Database = {
             foreignKeyName: "bau_weekly_metrics_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
-            referencedRelation: "v_bau_list"
+            referencedRelation: "v_bau_latest_review"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "bau_weekly_metrics_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
-            referencedRelation: "v_bau_projects_like"
-            referencedColumns: ["bau_customer_id"]
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "bau_weekly_metrics_source_upload_id_fkey"
@@ -805,15 +805,15 @@ export type Database = {
             foreignKeyName: "bau_weekly_reviews_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
-            referencedRelation: "v_bau_list"
+            referencedRelation: "v_bau_latest_review"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "bau_weekly_reviews_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
-            referencedRelation: "v_bau_projects_like"
-            referencedColumns: ["bau_customer_id"]
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1378,7 +1378,7 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "v_impl_companies"
-            referencedColumns: ["company_id"]
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "impl_weekly_reviews_week_start_fkey"
@@ -2082,7 +2082,7 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "v_impl_companies"
-            referencedColumns: ["company_id"]
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "profiles_expense_approver_user_id_fkey"
@@ -2320,7 +2320,7 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "v_impl_companies"
-            referencedColumns: ["company_id"]
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "projects_customer_project_lead_fkey"
@@ -3091,15 +3091,15 @@ export type Database = {
             foreignKeyName: "bau_expense_links_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
-            referencedRelation: "v_bau_list"
+            referencedRelation: "v_bau_latest_review"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "bau_expense_links_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
-            referencedRelation: "v_bau_projects_like"
-            referencedColumns: ["bau_customer_id"]
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_expense_assignments_expense_id"
@@ -3112,54 +3112,41 @@ export type Database = {
       }
       v_bau_latest_review: {
         Row: {
-          bau_customer_id: string | null
+          customer_health: Database["public"]["Enums"]["bau_health_enum"] | null
           date_from: string | null
           date_to: string | null
+          devices_deployed: number | null
           escalation: string | null
-          health: Database["public"]["Enums"]["bau_health_simple"] | null
+          go_live_date: string | null
+          id: string | null
+          name: string | null
+          notes: string | null
+          reason_code: string | null
+          review_health: Database["public"]["Enums"]["bau_health_simple"] | null
           reviewed_at: string | null
-          reviewed_by: string | null
+          reviewed_by_name: string | null
+          site_name: string | null
+          sla_resolution_hours: number | null
+          sla_response_mins: number | null
+          subscription_plan: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "bau_weekly_reviews_bau_customer_id_fkey"
-            columns: ["bau_customer_id"]
-            isOneToOne: false
-            referencedRelation: "bau_customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bau_weekly_reviews_bau_customer_id_fkey"
-            columns: ["bau_customer_id"]
-            isOneToOne: false
-            referencedRelation: "v_bau_list"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bau_weekly_reviews_bau_customer_id_fkey"
-            columns: ["bau_customer_id"]
-            isOneToOne: false
-            referencedRelation: "v_bau_projects_like"
-            referencedColumns: ["bau_customer_id"]
-          },
-        ]
+        Relationships: []
       }
       v_bau_list: {
         Row: {
           company_id: string | null
           company_name: string | null
-          created_at: string | null
           devices_deployed: number | null
           go_live_date: string | null
           health: Database["public"]["Enums"]["bau_health_enum"] | null
           id: string | null
           name: string | null
+          notes: string | null
           open_tickets: number | null
           site_name: string | null
           sla_resolution_hours: number | null
           sla_response_mins: number | null
           subscription_plan: string | null
-          total_tickets: number | null
         }
         Relationships: [
           {
@@ -3174,19 +3161,21 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "v_impl_companies"
-            referencedColumns: ["company_id"]
+            referencedColumns: ["id"]
           },
         ]
       }
       v_bau_metric_agg: {
         Row: {
-          avg_value: number | null
           bau_customer_id: string | null
-          first_from: string | null
-          last_to: string | null
+          customer_name: string | null
+          date_from: string | null
+          date_to: string | null
           metric_key: string | null
-          points: number | null
-          sum_value: number | null
+          metric_label: string | null
+          metric_unit: string | null
+          metric_value: number | null
+          metric_value_text: string | null
         }
         Relationships: [
           {
@@ -3200,42 +3189,31 @@ export type Database = {
             foreignKeyName: "bau_weekly_metrics_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
-            referencedRelation: "v_bau_list"
+            referencedRelation: "v_bau_latest_review"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "bau_weekly_metrics_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
-            referencedRelation: "v_bau_projects_like"
-            referencedColumns: ["bau_customer_id"]
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
           },
         ]
       }
       v_bau_metric_trend: {
         Row: {
           bau_customer_id: string | null
+          customer_name: string | null
           date_from: string | null
           date_to: string | null
           metric_key: string | null
+          metric_label: string | null
+          metric_unit: string | null
           metric_value_numeric: number | null
           metric_value_text: string | null
-        }
-        Insert: {
-          bau_customer_id?: string | null
-          date_from?: string | null
-          date_to?: string | null
-          metric_key?: string | null
-          metric_value_numeric?: number | null
-          metric_value_text?: string | null
-        }
-        Update: {
-          bau_customer_id?: string | null
-          date_from?: string | null
-          date_to?: string | null
-          metric_key?: string | null
-          metric_value_numeric?: number | null
-          metric_value_text?: string | null
+          percent_change: number | null
+          prev_value: number | null
         }
         Relationships: [
           {
@@ -3249,65 +3227,40 @@ export type Database = {
             foreignKeyName: "bau_weekly_metrics_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
-            referencedRelation: "v_bau_list"
+            referencedRelation: "v_bau_latest_review"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "bau_weekly_metrics_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
-            referencedRelation: "v_bau_projects_like"
-            referencedColumns: ["bau_customer_id"]
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
           },
         ]
       }
       v_bau_my_tickets: {
         Row: {
-          assigned_to: string | null
           assigned_to_name: string | null
-          bau_customer_id: string | null
           created_at: string | null
           customer_name: string | null
           description: string | null
           id: string | null
           priority: number | null
-          raised_by: string | null
           raised_by_name: string | null
           site_name: string | null
           status: Database["public"]["Enums"]["ticket_status_enum"] | null
           title: string | null
           updated_at: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "bau_tickets_bau_customer_id_fkey"
-            columns: ["bau_customer_id"]
-            isOneToOne: false
-            referencedRelation: "bau_customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bau_tickets_bau_customer_id_fkey"
-            columns: ["bau_customer_id"]
-            isOneToOne: false
-            referencedRelation: "v_bau_list"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bau_tickets_bau_customer_id_fkey"
-            columns: ["bau_customer_id"]
-            isOneToOne: false
-            referencedRelation: "v_bau_projects_like"
-            referencedColumns: ["bau_customer_id"]
-          },
-        ]
+        Relationships: []
       }
       v_bau_projects_like: {
         Row: {
-          bau_customer_id: string | null
           customer_name: string | null
-          name: string | null
-          project_type: string | null
+          domain: Database["public"]["Enums"]["work_domain"] | null
+          project_name: string | null
+          project_start_date: string | null
           site_name: string | null
         }
         Relationships: []
@@ -3320,41 +3273,31 @@ export type Database = {
       }
       v_expense_admin_queue: {
         Row: {
+          account: string | null
+          account_code: string | null
           approved_at: string | null
           approved_by: string | null
+          approved_by_name: string | null
           assigned_at: string | null
-          assigned_by: string | null
-          assigned_to_project_id: string | null
-          assigned_to_solutions_project_id: string | null
           assigned_to_user_id: string | null
           assignee_description: string | null
           assignee_name: string | null
           assignment_notes: string | null
           category: Database["public"]["Enums"]["expense_category_enum"] | null
           customer: string | null
+          description: string | null
           expense_date: string | null
-          expense_description: string | null
           expense_id: string | null
           gross: number | null
           id: string | null
-          import_customer: string | null
           is_billable: boolean | null
           net: number | null
           project_name: string | null
-          reviewed_at: string | null
-          reviewed_by: string | null
           status: Database["public"]["Enums"]["expense_status_enum"] | null
-          updated_at: string | null
           vat: number | null
+          vat_rate: number | null
         }
         Relationships: [
-          {
-            foreignKeyName: "expense_assignments_reviewed_by_fkey"
-            columns: ["reviewed_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
           {
             foreignKeyName: "fk_expense_assignments_expense_id"
             columns: ["expense_id"]
@@ -3366,48 +3309,41 @@ export type Database = {
       }
       v_impl_companies: {
         Row: {
-          company_id: string | null
-          company_name: string | null
+          active_projects: number | null
+          first_project_date: string | null
+          id: string | null
+          is_internal: boolean | null
+          latest_contract_date: string | null
+          name: string | null
+          project_count: number | null
         }
         Relationships: []
       }
       v_impl_lead_queue: {
         Row: {
-          approved_at: string | null
-          approved_by: string | null
+          account: string | null
+          account_code: string | null
           assigned_at: string | null
-          assigned_by: string | null
           assigned_to_project_id: string | null
-          assigned_to_solutions_project_id: string | null
           assigned_to_user_id: string | null
           assignee_description: string | null
           assignee_name: string | null
           assignment_notes: string | null
           category: Database["public"]["Enums"]["expense_category_enum"] | null
           customer: string | null
+          description: string | null
           expense_date: string | null
-          expense_description: string | null
           expense_id: string | null
           gross: number | null
           id: string | null
-          import_customer: string | null
           is_billable: boolean | null
           net: number | null
           project_name: string | null
-          reviewed_at: string | null
-          reviewed_by: string | null
           status: Database["public"]["Enums"]["expense_status_enum"] | null
-          updated_at: string | null
           vat: number | null
+          vat_rate: number | null
         }
         Relationships: [
-          {
-            foreignKeyName: "expense_assignments_reviewed_by_fkey"
-            columns: ["reviewed_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
           {
             foreignKeyName: "fk_expense_assignments_expense_id"
             columns: ["expense_id"]
@@ -3419,14 +3355,13 @@ export type Database = {
       }
       v_impl_open_blockers: {
         Row: {
-          age_days: number | null
-          customer_name: string | null
+          created_by_name: string | null
+          description: string | null
           estimated_complete_date: string | null
           id: string | null
           is_critical: boolean | null
-          is_overdue: boolean | null
-          owner: string | null
-          project_id: string | null
+          owner_name: string | null
+          project_domain: Database["public"]["Enums"]["work_domain"] | null
           project_name: string | null
           raised_at: string | null
           reason_code: string | null
@@ -3434,29 +3369,15 @@ export type Database = {
             | Database["public"]["Enums"]["implementation_blocker_status_enum"]
             | null
           title: string | null
+          updated_at: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "implementation_blockers_owner_fkey"
-            columns: ["owner"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "implementation_blockers_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       v_master_steps: {
         Row: {
           id: number | null
+          name: string | null
           position: number | null
-          step_name: string | null
           task_count: number | null
         }
         Relationships: []
@@ -3465,43 +3386,23 @@ export type Database = {
         Row: {
           account: string | null
           account_code: string | null
-          approved_at: string | null
-          approved_by: string | null
           assigned_at: string | null
-          assigned_by: string | null
-          assigned_to_project_id: string | null
-          assigned_to_solutions_project_id: string | null
-          assigned_to_user_id: string | null
           assignee_description: string | null
-          assignee_name: string | null
           assignment_notes: string | null
           category: Database["public"]["Enums"]["expense_category_enum"] | null
           customer: string | null
+          description: string | null
           expense_date: string | null
-          expense_description: string | null
           expense_id: string | null
           gross: number | null
           id: string | null
-          import_customer: string | null
           is_billable: boolean | null
           net: number | null
-          reviewed_at: string | null
-          reviewed_by: string | null
-          source: string | null
           status: Database["public"]["Enums"]["expense_status_enum"] | null
-          updated_at: string | null
           vat: number | null
           vat_rate: number | null
-          vat_rate_name: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "expense_assignments_reviewed_by_fkey"
-            columns: ["reviewed_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
           {
             foreignKeyName: "fk_expense_assignments_expense_id"
             columns: ["expense_id"]
@@ -3513,10 +3414,15 @@ export type Database = {
       }
       v_my_feature_requests: {
         Row: {
+          complete_date: string | null
           created_at: string | null
-          created_by: string | null
+          created_by_name: string | null
+          date_raised: string | null
+          design_start_date: string | null
+          dev_start_date: string | null
           id: string | null
           problem_statement: string | null
+          required_date: string | null
           requirements: string | null
           solution_overview: string | null
           status:
@@ -3528,47 +3434,7 @@ export type Database = {
           user_story_outcome: string | null
           user_story_role: string | null
         }
-        Insert: {
-          created_at?: string | null
-          created_by?: string | null
-          id?: string | null
-          problem_statement?: string | null
-          requirements?: string | null
-          solution_overview?: string | null
-          status?:
-            | Database["public"]["Enums"]["feature_request_status_enum"]
-            | null
-          title?: string | null
-          updated_at?: string | null
-          user_story_goal?: string | null
-          user_story_outcome?: string | null
-          user_story_role?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          created_by?: string | null
-          id?: string | null
-          problem_statement?: string | null
-          requirements?: string | null
-          solution_overview?: string | null
-          status?:
-            | Database["public"]["Enums"]["feature_request_status_enum"]
-            | null
-          title?: string | null
-          updated_at?: string | null
-          user_story_goal?: string | null
-          user_story_outcome?: string | null
-          user_story_role?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "feature_requests_created_by_profiles_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Functions: {

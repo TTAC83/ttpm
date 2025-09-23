@@ -85,11 +85,24 @@ export const blockersService = {
     const { data, error } = await supabase
       .from('v_impl_open_blockers')
       .select('*')
-      .order('is_overdue', { ascending: false })
       .order('raised_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    
+    // Calculate is_overdue client-side and sort
+    const result = (data || []).map(blocker => ({
+      ...blocker,
+      is_overdue: blocker.estimated_complete_date && new Date() > new Date(blocker.estimated_complete_date)
+    }));
+    
+    // Sort by overdue first, then by raised_at
+    result.sort((a, b) => {
+      if (a.is_overdue && !b.is_overdue) return -1;
+      if (!a.is_overdue && b.is_overdue) return 1;
+      return new Date(b.raised_at).getTime() - new Date(a.raised_at).getTime();
+    });
+    
+    return result;
   },
 
   // Get all blockers with filters

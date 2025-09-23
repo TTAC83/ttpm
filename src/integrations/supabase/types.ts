@@ -3311,10 +3311,10 @@ export type Database = {
         Row: {
           active_projects: number | null
           company_id: string | null
+          company_name: string | null
           first_project_date: string | null
           is_internal: boolean | null
           latest_contract_date: string | null
-          name: string | null
           project_count: number | null
         }
         Relationships: []

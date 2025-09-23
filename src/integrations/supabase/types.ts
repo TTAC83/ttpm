@@ -2258,6 +2258,7 @@ export type Database = {
       }
       projects: {
         Row: {
+          account_manager: string | null
           ai_iot_engineer: string | null
           company_id: string
           contract_signed_date: string
@@ -2270,11 +2271,14 @@ export type Database = {
           name: string
           product_description: string | null
           project_coordinator: string | null
+          sales_lead: string | null
           site_address: string | null
           site_name: string | null
+          solution_consultant: string | null
           technical_project_lead: string | null
         }
         Insert: {
+          account_manager?: string | null
           ai_iot_engineer?: string | null
           company_id: string
           contract_signed_date: string
@@ -2287,11 +2291,14 @@ export type Database = {
           name: string
           product_description?: string | null
           project_coordinator?: string | null
+          sales_lead?: string | null
           site_address?: string | null
           site_name?: string | null
+          solution_consultant?: string | null
           technical_project_lead?: string | null
         }
         Update: {
+          account_manager?: string | null
           ai_iot_engineer?: string | null
           company_id?: string
           contract_signed_date?: string
@@ -2304,8 +2311,10 @@ export type Database = {
           name?: string
           product_description?: string | null
           project_coordinator?: string | null
+          sales_lead?: string | null
           site_address?: string | null
           site_name?: string | null
+          solution_consultant?: string | null
           technical_project_lead?: string | null
         }
         Relationships: [

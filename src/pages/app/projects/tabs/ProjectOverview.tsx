@@ -40,6 +40,9 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
     ai_iot_engineer: project.ai_iot_engineer || 'unassigned',
     technical_project_lead: project.technical_project_lead || 'unassigned',
     project_coordinator: project.project_coordinator || 'unassigned',
+    sales_lead: project.sales_lead || 'unassigned',
+    solution_consultant: project.solution_consultant || 'unassigned',
+    account_manager: project.account_manager || 'unassigned',
     line_description: project.line_description || '',
     product_description: project.product_description || '',
   });
@@ -83,6 +86,9 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
           ai_iot_engineer: formData.ai_iot_engineer === 'unassigned' ? null : formData.ai_iot_engineer,
           technical_project_lead: formData.technical_project_lead === 'unassigned' ? null : formData.technical_project_lead,
           project_coordinator: formData.project_coordinator === 'unassigned' ? null : formData.project_coordinator,
+          sales_lead: formData.sales_lead === 'unassigned' ? null : formData.sales_lead,
+          solution_consultant: formData.solution_consultant === 'unassigned' ? null : formData.solution_consultant,
+          account_manager: formData.account_manager === 'unassigned' ? null : formData.account_manager,
           line_description: formData.line_description || null,
           product_description: formData.product_description || null,
         })
@@ -120,6 +126,9 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
       ai_iot_engineer: project.ai_iot_engineer || 'unassigned',
       technical_project_lead: project.technical_project_lead || 'unassigned',
       project_coordinator: project.project_coordinator || 'unassigned',
+      sales_lead: project.sales_lead || 'unassigned',
+      solution_consultant: project.solution_consultant || 'unassigned',
+      account_manager: project.account_manager || 'unassigned',
       line_description: project.line_description || '',
       product_description: project.product_description || '',
     });
@@ -319,7 +328,7 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                     </Select>
                   </div>
 
-                  <div className="space-y-2 md:col-span-2">
+                  <div className="space-y-2">
                     <Label>Project Coordinator</Label>
                     <Select 
                       value={formData.project_coordinator} 
@@ -327,6 +336,66 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select coordinator" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unassigned">Not assigned</SelectItem>
+                        {internalProfiles.map((profile) => (
+                          <SelectItem key={profile.user_id} value={profile.user_id}>
+                            {profile.name || 'Unnamed User'}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Sales Lead</Label>
+                    <Select 
+                      value={formData.sales_lead} 
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, sales_lead: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select sales lead" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unassigned">Not assigned</SelectItem>
+                        {internalProfiles.map((profile) => (
+                          <SelectItem key={profile.user_id} value={profile.user_id}>
+                            {profile.name || 'Unnamed User'}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Solution Consultant</Label>
+                    <Select 
+                      value={formData.solution_consultant} 
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, solution_consultant: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select solution consultant" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unassigned">Not assigned</SelectItem>
+                        {internalProfiles.map((profile) => (
+                          <SelectItem key={profile.user_id} value={profile.user_id}>
+                            {profile.name || 'Unnamed User'}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Account Manager</Label>
+                    <Select 
+                      value={formData.account_manager} 
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, account_manager: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select account manager" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="unassigned">Not assigned</SelectItem>
@@ -416,9 +485,21 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                     <p className="text-sm font-medium">Technical Project Lead</p>
                     <p className="text-sm text-muted-foreground">{getProfileName(project.technical_project_lead)}</p>
                   </div>
-                  <div className="md:col-span-2">
+                  <div>
                     <p className="text-sm font-medium">Project Coordinator</p>
                     <p className="text-sm text-muted-foreground">{getProfileName(project.project_coordinator)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Sales Lead</p>
+                    <p className="text-sm text-muted-foreground">{getProfileName(project.sales_lead)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Solution Consultant</p>
+                    <p className="text-sm text-muted-foreground">{getProfileName(project.solution_consultant)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Account Manager</p>
+                    <p className="text-sm text-muted-foreground">{getProfileName(project.account_manager)}</p>
                   </div>
                 </div>
               </div>

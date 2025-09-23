@@ -455,31 +455,25 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   const [statusTouched, setStatusTouched] = useState(false);
   const [healthTouched, setHealthTouched] = useState(false);
 
-  // Track previous values to detect customer/week changes
-  const previousCompanyId = useRef(companyId);
-  const previousWeekStart = useRef(weekStart);
-
+  // Reset states immediately when companyId or weekStart changes
   useEffect(() => {
-    previousCompanyId.current = companyId;
-    previousWeekStart.current = weekStart;
+    setProjectStatus(null);
+    setCustomerHealth(null);
+    setNotes("");
+    setReasonCode("");
+    setStatusTouched(false);
+    setHealthTouched(false);
   }, [companyId, weekStart]);
 
+  // Load saved data when reviewQ.data changes
   useEffect(() => {
     if (reviewQ.data) {
       setProjectStatus(reviewQ.data.project_status ?? null);
       setCustomerHealth(reviewQ.data.customer_health ?? null);
       setNotes(reviewQ.data.notes ?? "");
       setReasonCode(reviewQ.data.reason_code ?? "");
-    } else {
-      // Only reset when switching to a different company/week
-      if (companyId !== previousCompanyId.current || weekStart !== previousWeekStart.current) {
-        setProjectStatus(null);
-        setCustomerHealth(null);
-        setNotes("");
-        setReasonCode("");
-      }
     }
-  }, [reviewQ.data, companyId, weekStart]);
+  }, [reviewQ.data]);
 
   const autoSaveMutation = useMutation({
     mutationFn: (params: { projectStatus: "on_track"|"off_track"|null, customerHealth: "green"|"red"|null, notes: string, reasonCode: string }) => 

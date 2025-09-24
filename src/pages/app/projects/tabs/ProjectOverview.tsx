@@ -52,7 +52,10 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
     account_manager: project.account_manager || 'unassigned',
     line_description: project.line_description || '',
     product_description: project.product_description || '',
+    contracted_lines: project.contracted_lines?.toString() || '',
   });
+
+  const [contractedLinesError, setContractedLinesError] = useState<string>('');
 
   const [usefulLinks, setUsefulLinks] = useState<Link[]>(() => {
     try {
@@ -147,6 +150,15 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
   const handleSave = async (e?: React.FormEvent) => {
     e?.preventDefault();
     
+    // Validate contracted lines
+    const contractedLinesNum = parseInt(formData.contracted_lines);
+    if (formData.contracted_lines && (isNaN(contractedLinesNum) || contractedLinesNum < 0)) {
+      setContractedLinesError("Contracted Lines must be an integer ≥ 0");
+      return;
+    } else {
+      setContractedLinesError("");
+    }
+    
     // Validate break clause fields if enabled
     if (formData.break_clause_enabled) {
       if (!formData.break_clause_project_date) {
@@ -203,6 +215,7 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
           account_manager: formData.account_manager === 'unassigned' ? null : formData.account_manager,
           line_description: formData.line_description || null,
           product_description: formData.product_description || null,
+          contracted_lines: formData.contracted_lines ? parseInt(formData.contracted_lines) : null,
           useful_links: usefulLinks as any,
         })
         .eq('id', project.id);
@@ -251,7 +264,9 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
       account_manager: project.account_manager || 'unassigned',
       line_description: project.line_description || '',
       product_description: project.product_description || '',
+      contracted_lines: project.contracted_lines?.toString() || '',
     });
+    setContractedLinesError('');
     setUsefulLinks(() => {
       try {
         return Array.isArray(project.useful_links) ? project.useful_links : [];
@@ -394,6 +409,24 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                       onChange={(e) => setFormData(prev => ({ ...prev, contract_end_date: e.target.value }))}
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contracted_lines">Contracted Lines</Label>
+                  <Input
+                    id="contracted_lines"
+                    type="number"
+                    min="0"
+                    value={formData.contracted_lines}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, contracted_lines: e.target.value }));
+                      if (contractedLinesError) setContractedLinesError("");
+                    }}
+                    className={contractedLinesError ? "border-destructive" : ""}
+                  />
+                  {contractedLinesError && (
+                    <p className="text-sm text-destructive">{contractedLinesError}</p>
+                  )}
                 </div>
 
                 <div className="space-y-4">
@@ -702,6 +735,12 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                     <div>
                       <p className="text-sm font-medium">Contract End Date</p>
                       <p className="text-sm text-muted-foreground">{formatDateUK(project.contract_end_date)}</p>
+                    </div>
+                  )}
+                  {project.contracted_lines !== null && (
+                    <div>
+                      <p className="text-sm font-medium">Contracted Lines</p>
+                      <p className="text-sm text-muted-foreground">{project.contracted_lines}</p>
                     </div>
                   )}
                   <div>

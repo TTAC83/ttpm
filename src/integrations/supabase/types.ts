@@ -2267,6 +2267,7 @@ export type Database = {
           contract_end_date: string | null
           contract_signed_date: string
           contract_start_date: string | null
+          contracted_lines: number | null
           created_at: string
           customer_project_lead: string | null
           domain: Database["public"]["Enums"]["work_domain"]
@@ -2293,6 +2294,7 @@ export type Database = {
           contract_end_date?: string | null
           contract_signed_date: string
           contract_start_date?: string | null
+          contracted_lines?: number | null
           created_at?: string
           customer_project_lead?: string | null
           domain: Database["public"]["Enums"]["work_domain"]
@@ -2319,6 +2321,7 @@ export type Database = {
           contract_end_date?: string | null
           contract_signed_date?: string
           contract_start_date?: string | null
+          contracted_lines?: number | null
           created_at?: string
           customer_project_lead?: string | null
           domain?: Database["public"]["Enums"]["work_domain"]

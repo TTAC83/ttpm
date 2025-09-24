@@ -244,7 +244,7 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
         </CardHeader>
         <CardContent className="space-y-6">
           {editing ? (
-            <form onSubmit={handleSave} className="space-y-4">
+            <form onSubmit={handleSave} className="space-y-4 max-h-[calc(100vh-12rem)] overflow-y-auto">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="name">Project Name *</Label>

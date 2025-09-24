@@ -2260,6 +2260,9 @@ export type Database = {
         Row: {
           account_manager: string | null
           ai_iot_engineer: string | null
+          arr: number | null
+          auto_renewal: boolean | null
+          billing_terms: string | null
           break_clause_enabled: boolean | null
           break_clause_key_points_md: string | null
           break_clause_project_date: string | null
@@ -2267,26 +2270,36 @@ export type Database = {
           contract_end_date: string | null
           contract_signed_date: string
           contract_start_date: string | null
+          contracted_days: number | null
           contracted_lines: number | null
           created_at: string
           customer_project_lead: string | null
+          deviation_of_terms: string | null
           domain: Database["public"]["Enums"]["work_domain"]
+          hardware_fee: number | null
           id: string
           implementation_lead: string | null
           line_description: string | null
+          mrr: number | null
           name: string
+          payment_terms_days: number | null
           product_description: string | null
           project_coordinator: string | null
           sales_lead: string | null
+          services_fee: number | null
           site_address: string | null
           site_name: string | null
           solution_consultant: string | null
+          standard_terms: boolean | null
           technical_project_lead: string | null
           useful_links: Json | null
         }
         Insert: {
           account_manager?: string | null
           ai_iot_engineer?: string | null
+          arr?: number | null
+          auto_renewal?: boolean | null
+          billing_terms?: string | null
           break_clause_enabled?: boolean | null
           break_clause_key_points_md?: string | null
           break_clause_project_date?: string | null
@@ -2294,26 +2307,36 @@ export type Database = {
           contract_end_date?: string | null
           contract_signed_date: string
           contract_start_date?: string | null
+          contracted_days?: number | null
           contracted_lines?: number | null
           created_at?: string
           customer_project_lead?: string | null
+          deviation_of_terms?: string | null
           domain: Database["public"]["Enums"]["work_domain"]
+          hardware_fee?: number | null
           id?: string
           implementation_lead?: string | null
           line_description?: string | null
+          mrr?: number | null
           name: string
+          payment_terms_days?: number | null
           product_description?: string | null
           project_coordinator?: string | null
           sales_lead?: string | null
+          services_fee?: number | null
           site_address?: string | null
           site_name?: string | null
           solution_consultant?: string | null
+          standard_terms?: boolean | null
           technical_project_lead?: string | null
           useful_links?: Json | null
         }
         Update: {
           account_manager?: string | null
           ai_iot_engineer?: string | null
+          arr?: number | null
+          auto_renewal?: boolean | null
+          billing_terms?: string | null
           break_clause_enabled?: boolean | null
           break_clause_key_points_md?: string | null
           break_clause_project_date?: string | null
@@ -2321,20 +2344,27 @@ export type Database = {
           contract_end_date?: string | null
           contract_signed_date?: string
           contract_start_date?: string | null
+          contracted_days?: number | null
           contracted_lines?: number | null
           created_at?: string
           customer_project_lead?: string | null
+          deviation_of_terms?: string | null
           domain?: Database["public"]["Enums"]["work_domain"]
+          hardware_fee?: number | null
           id?: string
           implementation_lead?: string | null
           line_description?: string | null
+          mrr?: number | null
           name?: string
+          payment_terms_days?: number | null
           product_description?: string | null
           project_coordinator?: string | null
           sales_lead?: string | null
+          services_fee?: number | null
           site_address?: string | null
           site_name?: string | null
           solution_consultant?: string | null
+          standard_terms?: boolean | null
           technical_project_lead?: string | null
           useful_links?: Json | null
         }

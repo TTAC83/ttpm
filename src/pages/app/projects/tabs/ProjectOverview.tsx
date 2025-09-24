@@ -53,9 +53,29 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
     line_description: project.line_description || '',
     product_description: project.product_description || '',
     contracted_lines: project.contracted_lines?.toString() || '',
+    billing_terms: project.billing_terms || '',
+    hardware_fee: project.hardware_fee?.toString() || '',
+    services_fee: project.services_fee?.toString() || '',
+    arr: project.arr?.toString() || '',
+    mrr: project.mrr?.toString() || '',
+    payment_terms_days: project.payment_terms_days?.toString() || '',
+    contracted_days: project.contracted_days?.toString() || '',
+    auto_renewal: project.auto_renewal ?? true,
+    standard_terms: project.standard_terms ?? true,
+    deviation_of_terms: project.deviation_of_terms || '',
   });
 
   const [contractedLinesError, setContractedLinesError] = useState<string>('');
+  
+  // Billing Info validation errors
+  const [billingTermsError, setBillingTermsError] = useState<string>('');
+  const [hardwareFeeError, setHardwareFeeError] = useState<string>('');
+  const [servicesFeeError, setServicesFeeError] = useState<string>('');
+  const [arrError, setArrError] = useState<string>('');
+  const [mrrError, setMrrError] = useState<string>('');
+  const [paymentTermsDaysError, setPaymentTermsDaysError] = useState<string>('');
+  const [contractedDaysError, setContractedDaysError] = useState<string>('');
+  const [deviationOfTermsError, setDeviationOfTermsError] = useState<string>('');
 
   const [usefulLinks, setUsefulLinks] = useState<Link[]>(() => {
     try {
@@ -150,14 +170,92 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
   const handleSave = async (e?: React.FormEvent) => {
     e?.preventDefault();
     
+    // Clear all errors
+    setContractedLinesError("");
+    setBillingTermsError("");
+    setHardwareFeeError("");
+    setServicesFeeError("");
+    setArrError("");
+    setMrrError("");
+    setPaymentTermsDaysError("");
+    setContractedDaysError("");
+    setDeviationOfTermsError("");
+    
+    let hasErrors = false;
+    
     // Validate contracted lines
     const contractedLinesNum = parseInt(formData.contracted_lines);
     if (formData.contracted_lines && (isNaN(contractedLinesNum) || contractedLinesNum < 0)) {
       setContractedLinesError("Contracted Lines must be an integer ≥ 0");
-      return;
-    } else {
-      setContractedLinesError("");
+      hasErrors = true;
     }
+    
+    // Validate billing fields
+    if (formData.billing_terms && formData.billing_terms.length > 2000) {
+      setBillingTermsError("Billing Terms must be 2000 characters or less");
+      hasErrors = true;
+    }
+    
+    if (formData.hardware_fee) {
+      const fee = parseFloat(formData.hardware_fee);
+      if (isNaN(fee) || fee < 0) {
+        setHardwareFeeError("Hardware Fee must be a number ≥ 0");
+        hasErrors = true;
+      }
+    }
+    
+    if (formData.services_fee) {
+      const fee = parseFloat(formData.services_fee);
+      if (isNaN(fee) || fee < 0) {
+        setServicesFeeError("Services Fee must be a number ≥ 0");
+        hasErrors = true;
+      }
+    }
+    
+    if (formData.arr) {
+      const arr = parseFloat(formData.arr);
+      if (isNaN(arr) || arr < 0) {
+        setArrError("ARR must be a number ≥ 0");
+        hasErrors = true;
+      }
+    }
+    
+    if (formData.mrr) {
+      const mrr = parseFloat(formData.mrr);
+      if (isNaN(mrr) || mrr < 0) {
+        setMrrError("MRR must be a number ≥ 0");
+        hasErrors = true;
+      }
+    }
+    
+    if (formData.payment_terms_days) {
+      const days = parseInt(formData.payment_terms_days);
+      if (isNaN(days) || days < 0) {
+        setPaymentTermsDaysError("Payment Terms must be an integer ≥ 0");
+        hasErrors = true;
+      }
+    }
+    
+    if (formData.contracted_days) {
+      const days = parseInt(formData.contracted_days);
+      if (isNaN(days) || days < 0) {
+        setContractedDaysError("Contracted Days must be an integer ≥ 0");
+        hasErrors = true;
+      }
+    }
+    
+    // Validate deviation of terms
+    if (!formData.standard_terms) {
+      if (!formData.deviation_of_terms.trim()) {
+        setDeviationOfTermsError("Deviation of Terms is required when Standard Terms is disabled");
+        hasErrors = true;
+      } else if (formData.deviation_of_terms.length > 2000) {
+        setDeviationOfTermsError("Deviation of Terms must be 2000 characters or less");
+        hasErrors = true;
+      }
+    }
+    
+    if (hasErrors) return;
     
     // Validate break clause fields if enabled
     if (formData.break_clause_enabled) {
@@ -216,6 +314,16 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
           line_description: formData.line_description || null,
           product_description: formData.product_description || null,
           contracted_lines: formData.contracted_lines ? parseInt(formData.contracted_lines) : null,
+          billing_terms: formData.billing_terms || null,
+          hardware_fee: formData.hardware_fee ? parseFloat(formData.hardware_fee) : null,
+          services_fee: formData.services_fee ? parseFloat(formData.services_fee) : null,
+          arr: formData.arr ? parseFloat(formData.arr) : null,
+          mrr: formData.mrr ? parseFloat(formData.mrr) : null,
+          payment_terms_days: formData.payment_terms_days ? parseInt(formData.payment_terms_days) : null,
+          contracted_days: formData.contracted_days ? parseInt(formData.contracted_days) : null,
+          auto_renewal: formData.auto_renewal,
+          standard_terms: formData.standard_terms,
+          deviation_of_terms: formData.standard_terms ? null : (formData.deviation_of_terms || null),
           useful_links: usefulLinks as any,
         })
         .eq('id', project.id);
@@ -265,8 +373,26 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
       line_description: project.line_description || '',
       product_description: project.product_description || '',
       contracted_lines: project.contracted_lines?.toString() || '',
+      billing_terms: project.billing_terms || '',
+      hardware_fee: project.hardware_fee?.toString() || '',
+      services_fee: project.services_fee?.toString() || '',
+      arr: project.arr?.toString() || '',
+      mrr: project.mrr?.toString() || '',
+      payment_terms_days: project.payment_terms_days?.toString() || '',
+      contracted_days: project.contracted_days?.toString() || '',
+      auto_renewal: project.auto_renewal ?? true,
+      standard_terms: project.standard_terms ?? true,
+      deviation_of_terms: project.deviation_of_terms || '',
     });
     setContractedLinesError('');
+    setBillingTermsError('');
+    setHardwareFeeError('');
+    setServicesFeeError('');
+    setArrError('');
+    setMrrError('');
+    setPaymentTermsDaysError('');
+    setContractedDaysError('');
+    setDeviationOfTermsError('');
     setUsefulLinks(() => {
       try {
         return Array.isArray(project.useful_links) ? project.useful_links : [];
@@ -486,6 +612,213 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                           Supports markdown formatting. Maximum 2000 characters.
                         </p>
                       </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Billing Info Section */}
+              <div className="space-y-4 border-t pt-4">
+                <h4 className="font-medium">Billing Info</h4>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="billing_terms">Billing Terms</Label>
+                    <span className="text-xs text-muted-foreground">
+                      {formData.billing_terms?.length || 0}/2000
+                    </span>
+                  </div>
+                  <Textarea
+                    id="billing_terms"
+                    value={formData.billing_terms}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value.length <= 2000) {
+                        setFormData(prev => ({ ...prev, billing_terms: value }));
+                        if (billingTermsError) setBillingTermsError("");
+                      }
+                    }}
+                    rows={4}
+                    placeholder="Enter billing terms..."
+                    className={billingTermsError ? "border-destructive" : ""}
+                  />
+                  {billingTermsError && (
+                    <p className="text-sm text-destructive">{billingTermsError}</p>
+                  )}
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="hardware_fee">Hardware Fee (£)</Label>
+                    <Input
+                      id="hardware_fee"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.hardware_fee}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, hardware_fee: e.target.value }));
+                        if (hardwareFeeError) setHardwareFeeError("");
+                      }}
+                      className={hardwareFeeError ? "border-destructive" : ""}
+                    />
+                    {hardwareFeeError && (
+                      <p className="text-sm text-destructive">{hardwareFeeError}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="services_fee">Services Fee (£)</Label>
+                    <Input
+                      id="services_fee"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.services_fee}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, services_fee: e.target.value }));
+                        if (servicesFeeError) setServicesFeeError("");
+                      }}
+                      className={servicesFeeError ? "border-destructive" : ""}
+                    />
+                    {servicesFeeError && (
+                      <p className="text-sm text-destructive">{servicesFeeError}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="arr">ARR (£)</Label>
+                    <Input
+                      id="arr"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.arr}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, arr: e.target.value }));
+                        if (arrError) setArrError("");
+                      }}
+                      className={arrError ? "border-destructive" : ""}
+                    />
+                    {arrError && (
+                      <p className="text-sm text-destructive">{arrError}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="mrr">MRR (£)</Label>
+                    <Input
+                      id="mrr"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.mrr}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, mrr: e.target.value }));
+                        if (mrrError) setMrrError("");
+                      }}
+                      className={mrrError ? "border-destructive" : ""}
+                    />
+                    {mrrError && (
+                      <p className="text-sm text-destructive">{mrrError}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="payment_terms_days">Payment Terms (days)</Label>
+                    <Input
+                      id="payment_terms_days"
+                      type="number"
+                      min="0"
+                      value={formData.payment_terms_days}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, payment_terms_days: e.target.value }));
+                        if (paymentTermsDaysError) setPaymentTermsDaysError("");
+                      }}
+                      className={paymentTermsDaysError ? "border-destructive" : ""}
+                    />
+                    {paymentTermsDaysError && (
+                      <p className="text-sm text-destructive">{paymentTermsDaysError}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="contracted_days">Contracted Days</Label>
+                    <Input
+                      id="contracted_days"
+                      type="number"
+                      min="0"
+                      value={formData.contracted_days}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, contracted_days: e.target.value }));
+                        if (contractedDaysError) setContractedDaysError("");
+                      }}
+                      className={contractedDaysError ? "border-destructive" : ""}
+                    />
+                    {contractedDaysError && (
+                      <p className="text-sm text-destructive">{contractedDaysError}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="auto_renewal"
+                      checked={formData.auto_renewal}
+                      onCheckedChange={(checked) => {
+                        setFormData(prev => ({ ...prev, auto_renewal: checked }));
+                      }}
+                    />
+                    <Label htmlFor="auto_renewal" className="font-medium">
+                      Auto Renewal
+                    </Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="standard_terms"
+                      checked={formData.standard_terms}
+                      onCheckedChange={(checked) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          standard_terms: checked,
+                          // Clear deviation when enabling standard terms
+                          deviation_of_terms: checked ? '' : prev.deviation_of_terms
+                        }));
+                        if (checked && deviationOfTermsError) setDeviationOfTermsError("");
+                      }}
+                    />
+                    <Label htmlFor="standard_terms" className="font-medium">
+                      Standard Terms
+                    </Label>
+                  </div>
+
+                  {!formData.standard_terms && (
+                    <div className="space-y-2 pl-6 border-l-2 border-muted">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="deviation_of_terms">Deviation of Terms *</Label>
+                        <span className="text-xs text-muted-foreground">
+                          {formData.deviation_of_terms?.length || 0}/2000
+                        </span>
+                      </div>
+                      <Textarea
+                        id="deviation_of_terms"
+                        value={formData.deviation_of_terms}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value.length <= 2000) {
+                            setFormData(prev => ({ ...prev, deviation_of_terms: value }));
+                            if (deviationOfTermsError) setDeviationOfTermsError("");
+                          }
+                        }}
+                        rows={4}
+                        placeholder="Describe deviations from standard terms..."
+                        className={deviationOfTermsError ? "border-destructive" : ""}
+                      />
+                      {deviationOfTermsError && (
+                        <p className="text-sm text-destructive">{deviationOfTermsError}</p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -767,6 +1100,78 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                         </div>
                       </div>
                     )}
+                  </div>
+                )}
+              </div>
+
+              {/* Billing Info Section - View Mode */}
+              <div className="space-y-3 border-t pt-4">
+                <h4 className="font-medium">Billing Info</h4>
+                
+                {project.billing_terms && (
+                  <div>
+                    <p className="text-sm font-medium">Billing Terms</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-line">{project.billing_terms}</p>
+                  </div>
+                )}
+
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {project.hardware_fee !== null && (
+                    <div>
+                      <p className="text-sm font-medium">Hardware Fee</p>
+                      <p className="text-sm text-muted-foreground">£{project.hardware_fee?.toFixed(2)}</p>
+                    </div>
+                  )}
+                  {project.services_fee !== null && (
+                    <div>
+                      <p className="text-sm font-medium">Services Fee</p>
+                      <p className="text-sm text-muted-foreground">£{project.services_fee?.toFixed(2)}</p>
+                    </div>
+                  )}
+                  {project.arr !== null && (
+                    <div>
+                      <p className="text-sm font-medium">ARR</p>
+                      <p className="text-sm text-muted-foreground">£{project.arr?.toFixed(2)}</p>
+                    </div>
+                  )}
+                  {project.mrr !== null && (
+                    <div>
+                      <p className="text-sm font-medium">MRR</p>
+                      <p className="text-sm text-muted-foreground">£{project.mrr?.toFixed(2)}</p>
+                    </div>
+                  )}
+                  {project.payment_terms_days !== null && (
+                    <div>
+                      <p className="text-sm font-medium">Payment Terms</p>
+                      <p className="text-sm text-muted-foreground">{project.payment_terms_days} days</p>
+                    </div>
+                  )}
+                  {project.contracted_days !== null && (
+                    <div>
+                      <p className="text-sm font-medium">Contracted Days</p>
+                      <p className="text-sm text-muted-foreground">{project.contracted_days}</p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-medium">Auto Renewal</p>
+                    <Badge variant={project.auto_renewal ? "default" : "secondary"}>
+                      {project.auto_renewal ? "Yes" : "No"}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Standard Terms</p>
+                    <Badge variant={project.standard_terms ? "default" : "secondary"}>
+                      {project.standard_terms ? "Yes" : "No"}
+                    </Badge>
+                  </div>
+                </div>
+
+                {!project.standard_terms && project.deviation_of_terms && (
+                  <div className="pl-4 border-l-2 border-muted">
+                    <p className="text-sm font-medium">Deviation of Terms</p>
+                    <div className="text-sm text-muted-foreground whitespace-pre-line bg-muted p-3 rounded-md">
+                      {project.deviation_of_terms}
+                    </div>
                   </div>
                 )}
               </div>

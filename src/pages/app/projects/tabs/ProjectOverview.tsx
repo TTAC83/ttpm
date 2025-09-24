@@ -323,6 +323,39 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                 />
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="site_address">Site Address</Label>
+                <Textarea
+                  id="site_address"
+                  value={formData.site_address}
+                  onChange={(e) => setFormData(prev => ({ ...prev, site_address: e.target.value }))}
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="line_description">Line Description</Label>
+                  <Textarea
+                    id="line_description"
+                    value={formData.line_description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, line_description: e.target.value }))}
+                    rows={4}
+                    placeholder="Describe the production line setup..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="product_description">Product Description</Label>
+                  <Textarea
+                    id="product_description"
+                    value={formData.product_description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, product_description: e.target.value }))}
+                    rows={4}
+                    placeholder="Describe the products being manufactured..."
+                  />
+                </div>
+              </div>
+
               {/* Contract Section */}
               <div className="space-y-4 border-t pt-4">
                 <h4 className="font-medium">Contract</h4>
@@ -396,39 +429,6 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                       </div>
                     </div>
                   )}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="site_address">Site Address</Label>
-                <Textarea
-                  id="site_address"
-                  value={formData.site_address}
-                  onChange={(e) => setFormData(prev => ({ ...prev, site_address: e.target.value }))}
-                  rows={3}
-                />
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="line_description">Line Description</Label>
-                  <Textarea
-                    id="line_description"
-                    value={formData.line_description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, line_description: e.target.value }))}
-                    rows={4}
-                    placeholder="Describe the production line setup..."
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="product_description">Product Description</Label>
-                  <Textarea
-                    id="product_description"
-                    value={formData.product_description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, product_description: e.target.value }))}
-                    rows={4}
-                    placeholder="Describe the products being manufactured..."
-                  />
                 </div>
               </div>
 

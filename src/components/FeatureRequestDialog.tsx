@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -82,20 +82,56 @@ export function FeatureRequestDialog({
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: featureRequest?.title || "",
-      problem_statement: featureRequest?.problem_statement || "",
-      user_story_role: featureRequest?.user_story_role || "",
-      user_story_goal: featureRequest?.user_story_goal || "",
-      user_story_outcome: featureRequest?.user_story_outcome || "",
-      solution_overview: featureRequest?.solution_overview || "",
-      requirements: featureRequest?.requirements || "",
-      required_date: featureRequest?.required_date || "",
-      design_start_date: featureRequest?.design_start_date || "",
-      dev_start_date: featureRequest?.dev_start_date || "",
-      complete_date: featureRequest?.complete_date || "",
-      status: (featureRequest?.status as FeatureRequestStatus) || 'Requested',
+      title: "",
+      problem_statement: "",
+      user_story_role: "",
+      user_story_goal: "",
+      user_story_outcome: "",
+      solution_overview: "",
+      requirements: "",
+      required_date: "",
+      design_start_date: "",
+      dev_start_date: "",
+      complete_date: "",
+      status: 'Requested',
     },
   });
+
+  // Reset form when featureRequest changes
+  useEffect(() => {
+    if (featureRequest) {
+      form.reset({
+        title: featureRequest.title || "",
+        problem_statement: featureRequest.problem_statement || "",
+        user_story_role: featureRequest.user_story_role || "",
+        user_story_goal: featureRequest.user_story_goal || "",
+        user_story_outcome: featureRequest.user_story_outcome || "",
+        solution_overview: featureRequest.solution_overview || "",
+        requirements: featureRequest.requirements || "",
+        required_date: featureRequest.required_date || "",
+        design_start_date: featureRequest.design_start_date || "",
+        dev_start_date: featureRequest.dev_start_date || "",
+        complete_date: featureRequest.complete_date || "",
+        status: (featureRequest.status as FeatureRequestStatus) || 'Requested',
+      });
+    } else {
+      // Reset to empty form for new requests
+      form.reset({
+        title: "",
+        problem_statement: "",
+        user_story_role: "",
+        user_story_goal: "",
+        user_story_outcome: "",
+        solution_overview: "",
+        requirements: "",
+        required_date: "",
+        design_start_date: "",
+        dev_start_date: "",
+        complete_date: "",
+        status: 'Requested',
+      });
+    }
+  }, [featureRequest, form]);
 
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);

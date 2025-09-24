@@ -9,12 +9,6 @@ All colors MUST be HSL.
 */
 
 @layer base {
-  /* Fix viewport height issues */
-  html, body, #root {
-    height: 100%;
-    overflow: hidden;
-  }
-  
   :root {
     /* Thingtrax Brand Colors */
     --thingtrax-black: 20 8% 16%;           /* #2D2A26 - Primary brand black */

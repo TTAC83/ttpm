@@ -2264,7 +2264,9 @@ export type Database = {
           break_clause_key_points_md: string | null
           break_clause_project_date: string | null
           company_id: string
+          contract_end_date: string | null
           contract_signed_date: string
+          contract_start_date: string | null
           created_at: string
           customer_project_lead: string | null
           domain: Database["public"]["Enums"]["work_domain"]
@@ -2288,7 +2290,9 @@ export type Database = {
           break_clause_key_points_md?: string | null
           break_clause_project_date?: string | null
           company_id: string
+          contract_end_date?: string | null
           contract_signed_date: string
+          contract_start_date?: string | null
           created_at?: string
           customer_project_lead?: string | null
           domain: Database["public"]["Enums"]["work_domain"]
@@ -2312,7 +2316,9 @@ export type Database = {
           break_clause_key_points_md?: string | null
           break_clause_project_date?: string | null
           company_id?: string
+          contract_end_date?: string | null
           contract_signed_date?: string
+          contract_start_date?: string | null
           created_at?: string
           customer_project_lead?: string | null
           domain?: Database["public"]["Enums"]["work_domain"]

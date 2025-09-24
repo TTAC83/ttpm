@@ -37,6 +37,8 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
     site_address: project.site_address || '',
     domain: project.domain || '',
     contract_signed_date: project.contract_signed_date || '',
+    contract_start_date: project.contract_start_date || '',
+    contract_end_date: project.contract_end_date || '',
     break_clause_enabled: project.break_clause_enabled || false,
     break_clause_project_date: project.break_clause_project_date || '',
     break_clause_key_points_md: project.break_clause_key_points_md || '',
@@ -186,6 +188,8 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
           site_address: formData.site_address || null,
           domain: formData.domain,
           contract_signed_date: formData.contract_signed_date,
+          contract_start_date: formData.contract_start_date || null,
+          contract_end_date: formData.contract_end_date || null,
           break_clause_enabled: formData.break_clause_enabled,
           break_clause_project_date: formData.break_clause_enabled ? formData.break_clause_project_date || null : null,
           break_clause_key_points_md: formData.break_clause_enabled ? formData.break_clause_key_points_md || null : null,
@@ -232,6 +236,8 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
       site_address: project.site_address || '',
       domain: project.domain || '',
       contract_signed_date: project.contract_signed_date || '',
+      contract_start_date: project.contract_start_date || '',
+      contract_end_date: project.contract_end_date || '',
       break_clause_enabled: project.break_clause_enabled || false,
       break_clause_project_date: project.break_clause_project_date || '',
       break_clause_key_points_md: project.break_clause_key_points_md || '',
@@ -360,14 +366,34 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
               <div className="space-y-4 border-t pt-4">
                 <h4 className="font-medium">Contract</h4>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="contract_signed_date">Contract Signed Date *</Label>
-                  <Input
-                    id="contract_signed_date"
-                    type="date"
-                    value={formData.contract_signed_date}
-                    onChange={(e) => setFormData(prev => ({ ...prev, contract_signed_date: e.target.value }))}
-                  />
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="contract_signed_date">Contract Signed Date *</Label>
+                    <Input
+                      id="contract_signed_date"
+                      type="date"
+                      value={formData.contract_signed_date}
+                      onChange={(e) => setFormData(prev => ({ ...prev, contract_signed_date: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contract_start_date">Contract Start Date</Label>
+                    <Input
+                      id="contract_start_date"
+                      type="date"
+                      value={formData.contract_start_date}
+                      onChange={(e) => setFormData(prev => ({ ...prev, contract_start_date: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contract_end_date">Contract End Date</Label>
+                    <Input
+                      id="contract_end_date"
+                      type="date"
+                      value={formData.contract_end_date}
+                      onChange={(e) => setFormData(prev => ({ ...prev, contract_end_date: e.target.value }))}
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-4">
@@ -661,11 +687,23 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
               {/* Contract Section */}
               <div className="space-y-3 border-t pt-4">
                 <h4 className="font-medium">Contract</h4>
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                   <div>
                     <p className="text-sm font-medium">Contract Signed Date</p>
                     <p className="text-sm text-muted-foreground">{formatDateUK(project.contract_signed_date)}</p>
                   </div>
+                  {project.contract_start_date && (
+                    <div>
+                      <p className="text-sm font-medium">Contract Start Date</p>
+                      <p className="text-sm text-muted-foreground">{formatDateUK(project.contract_start_date)}</p>
+                    </div>
+                  )}
+                  {project.contract_end_date && (
+                    <div>
+                      <p className="text-sm font-medium">Contract End Date</p>
+                      <p className="text-sm text-muted-foreground">{formatDateUK(project.contract_end_date)}</p>
+                    </div>
+                  )}
                   <div>
                     <p className="text-sm font-medium">Break Clause</p>
                     <Badge variant={project.break_clause_enabled ? "default" : "secondary"}>

@@ -183,14 +183,16 @@ export const LinkManager = ({
                         </div>
                         <div className="flex gap-2">
                           <Button
+                            type="button"
                             size="sm"
                             onClick={() => saveLink(link.id)}
                             disabled={!link.name.trim() || !link.url.trim() || !isValidUrl(link.url)}
                             className="text-xs"
                           >
-                            Save
+                            Add
                           </Button>
                           <Button
+                            type="button"
                             size="sm"
                             variant="outline"
                             onClick={() => cancelEdit(link.id)}
@@ -209,6 +211,7 @@ export const LinkManager = ({
                         </div>
                         <div className="flex gap-1">
                           <Button
+                            type="button"
                             size="sm"
                             variant="ghost"
                             onClick={() => setEditingId(link.id)}
@@ -217,6 +220,7 @@ export const LinkManager = ({
                             <Edit3 className="h-3 w-3" />
                           </Button>
                           <Button
+                            type="button"
                             size="sm"
                             variant="ghost"
                             onClick={() => removeLink(link.id)}
@@ -233,6 +237,7 @@ export const LinkManager = ({
 
               {links.length < maxLinks && (
                 <Button
+                  type="button"
                   variant="outline"
                   onClick={addLink}
                   className="w-full text-sm"

@@ -175,7 +175,7 @@ export const AppLayout = () => {
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-full">
+      <div className="flex h-full w-full">{/* Use full height of parent */}
         <Sidebar collapsible="none">
           <SidebarHeader className="border-b border-sidebar-border p-4">
             <div className="flex items-center gap-3">

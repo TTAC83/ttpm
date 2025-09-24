@@ -634,6 +634,30 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                 </div>
               </div>
 
+              {project.site_address && (
+                <div>
+                  <p className="text-sm font-medium">Site Address</p>
+                  <p className="text-sm text-muted-foreground whitespace-pre-line">{project.site_address}</p>
+                </div>
+              )}
+
+              {(project.line_description || project.product_description) && (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {project.line_description && (
+                    <div>
+                      <p className="text-sm font-medium">Line Description</p>
+                      <p className="text-sm text-muted-foreground whitespace-pre-line">{project.line_description}</p>
+                    </div>
+                  )}
+                  {project.product_description && (
+                    <div>
+                      <p className="text-sm font-medium">Product Description</p>
+                      <p className="text-sm text-muted-foreground whitespace-pre-line">{project.product_description}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Contract Section */}
               <div className="space-y-3 border-t pt-4">
                 <h4 className="font-medium">Contract</h4>
@@ -669,30 +693,6 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                   </div>
                 )}
               </div>
-
-              {project.site_address && (
-                <div>
-                  <p className="text-sm font-medium">Site Address</p>
-                  <p className="text-sm text-muted-foreground whitespace-pre-line">{project.site_address}</p>
-                </div>
-              )}
-
-              {(project.line_description || project.product_description) && (
-                <div className="grid gap-4 md:grid-cols-2">
-                  {project.line_description && (
-                    <div>
-                      <p className="text-sm font-medium">Line Description</p>
-                      <p className="text-sm text-muted-foreground whitespace-pre-line">{project.line_description}</p>
-                    </div>
-                  )}
-                  {project.product_description && (
-                    <div>
-                      <p className="text-sm font-medium">Product Description</p>
-                      <p className="text-sm text-muted-foreground whitespace-pre-line">{project.product_description}</p>
-                    </div>
-                  )}
-                </div>
-              )}
 
               <div className="space-y-3">
                 <h4 className="font-medium">Team Assignments</h4>

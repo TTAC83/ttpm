@@ -56,6 +56,65 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
     }
   });
 
+  // Local storage key for this project's draft data
+  const localStorageKey = `project-edit-${project.id}`;
+
+  useEffect(() => {
+    if (profile?.is_internal) {
+      fetchInternalProfiles();
+    }
+    
+    // Load draft data from localStorage when editing starts
+    if (editing) {
+      loadDraftData();
+    }
+  }, [profile, editing]);
+
+  const loadDraftData = () => {
+    try {
+      const savedDraft = localStorage.getItem(localStorageKey);
+      if (savedDraft) {
+        const draft = JSON.parse(savedDraft);
+        setFormData(draft.formData || formData);
+        setUsefulLinks(draft.usefulLinks || usefulLinks);
+      }
+    } catch (error) {
+      console.error('Error loading draft data:', error);
+    }
+  };
+
+  const saveDraftData = () => {
+    try {
+      const draftData = {
+        formData,
+        usefulLinks,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(localStorageKey, JSON.stringify(draftData));
+    } catch (error) {
+      console.error('Error saving draft data:', error);
+    }
+  };
+
+  const clearDraftData = () => {
+    try {
+      localStorage.removeItem(localStorageKey);
+    } catch (error) {
+      console.error('Error clearing draft data:', error);
+    }
+  };
+
+  // Save draft data whenever form data changes during editing
+  useEffect(() => {
+    if (editing) {
+      const timeoutId = setTimeout(() => {
+        saveDraftData();
+      }, 500); // Debounce saves
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [formData, usefulLinks, editing]);
+
   useEffect(() => {
     if (profile?.is_internal) {
       fetchInternalProfiles();
@@ -79,7 +138,8 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     setLoading(true);
     try {
       const { error } = await supabase
@@ -111,6 +171,8 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
         description: "Project details have been updated successfully",
       });
 
+      // Clear draft data after successful save
+      clearDraftData();
       setEditing(false);
       onUpdate();
     } catch (error: any) {
@@ -149,6 +211,7 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
         return [];
       }
     });
+    clearDraftData(); // Clear any saved draft when canceling
     setEditing(false);
   };
 
@@ -181,7 +244,7 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
         </CardHeader>
         <CardContent className="space-y-6">
           {editing ? (
-            <form className="space-y-4">
+            <form onSubmit={handleSave} className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="name">Project Name *</Label>
@@ -437,11 +500,11 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
               />
 
               <div className="flex gap-2 pt-4">
-                <Button onClick={handleSave} disabled={loading}>
+                <Button type="submit" disabled={loading}>
                   <Save className="h-4 w-4 mr-2" />
                   {loading ? 'Saving...' : 'Save Changes'}
                 </Button>
-                <Button variant="outline" onClick={handleCancel}>
+                <Button type="button" variant="outline" onClick={handleCancel}>
                   <X className="h-4 w-4 mr-2" />
                   Cancel
                 </Button>

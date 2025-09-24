@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateUK } from '@/lib/dateUtils';
@@ -36,6 +37,9 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
     site_address: project.site_address || '',
     domain: project.domain || '',
     contract_signed_date: project.contract_signed_date || '',
+    break_clause_enabled: project.break_clause_enabled || false,
+    break_clause_project_date: project.break_clause_project_date || '',
+    break_clause_key_points_md: project.break_clause_key_points_md || '',
     customer_project_lead: project.customer_project_lead || 'unassigned',
     implementation_lead: project.implementation_lead || 'unassigned',
     ai_iot_engineer: project.ai_iot_engineer || 'unassigned',
@@ -140,6 +144,38 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
 
   const handleSave = async (e?: React.FormEvent) => {
     e?.preventDefault();
+    
+    // Validate break clause fields if enabled
+    if (formData.break_clause_enabled) {
+      if (!formData.break_clause_project_date) {
+        toast({
+          title: "Validation Error",
+          description: "Break Clause / Project Date is required when Break Clause is enabled",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (!formData.break_clause_key_points_md?.trim()) {
+        toast({
+          title: "Validation Error", 
+          description: "Key Points are required when Break Clause is enabled",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Check if break clause date is >= project start date (if exists)
+      if (project.project_start && formData.break_clause_project_date < project.project_start) {
+        toast({
+          title: "Validation Error",
+          description: "Break Clause / Project Date must be on or after the project start date",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+    
     setLoading(true);
     try {
       const { error } = await supabase
@@ -150,6 +186,9 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
           site_address: formData.site_address || null,
           domain: formData.domain,
           contract_signed_date: formData.contract_signed_date,
+          break_clause_enabled: formData.break_clause_enabled,
+          break_clause_project_date: formData.break_clause_enabled ? formData.break_clause_project_date || null : null,
+          break_clause_key_points_md: formData.break_clause_enabled ? formData.break_clause_key_points_md || null : null,
           customer_project_lead: formData.customer_project_lead === 'unassigned' ? null : formData.customer_project_lead,
           implementation_lead: formData.implementation_lead === 'unassigned' ? null : formData.implementation_lead,
           ai_iot_engineer: formData.ai_iot_engineer === 'unassigned' ? null : formData.ai_iot_engineer,
@@ -193,6 +232,9 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
       site_address: project.site_address || '',
       domain: project.domain || '',
       contract_signed_date: project.contract_signed_date || '',
+      break_clause_enabled: project.break_clause_enabled || false,
+      break_clause_project_date: project.break_clause_project_date || '',
+      break_clause_key_points_md: project.break_clause_key_points_md || '',
       customer_project_lead: project.customer_project_lead || 'unassigned',
       implementation_lead: project.implementation_lead || 'unassigned',
       ai_iot_engineer: project.ai_iot_engineer || 'unassigned',
@@ -272,15 +314,19 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                 </div>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="site_name">Site Name</Label>
-                  <Input
-                    id="site_name"
-                    value={formData.site_name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, site_name: e.target.value }))}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="site_name">Site Name</Label>
+                <Input
+                  id="site_name"
+                  value={formData.site_name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, site_name: e.target.value }))}
+                />
+              </div>
+
+              {/* Contract Section */}
+              <div className="space-y-4 border-t pt-4">
+                <h4 className="font-medium">Contract</h4>
+                
                 <div className="space-y-2">
                   <Label htmlFor="contract_signed_date">Contract Signed Date *</Label>
                   <Input
@@ -289,6 +335,67 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                     value={formData.contract_signed_date}
                     onChange={(e) => setFormData(prev => ({ ...prev, contract_signed_date: e.target.value }))}
                   />
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="break_clause_enabled"
+                      checked={formData.break_clause_enabled}
+                      onCheckedChange={(checked) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          break_clause_enabled: checked,
+                          // Clear fields when disabling
+                          break_clause_project_date: checked ? prev.break_clause_project_date : '',
+                          break_clause_key_points_md: checked ? prev.break_clause_key_points_md : ''
+                        }));
+                      }}
+                    />
+                    <Label htmlFor="break_clause_enabled" className="font-medium">
+                      Break Clause?
+                    </Label>
+                  </div>
+
+                  {formData.break_clause_enabled && (
+                    <div className="space-y-4 pl-6 border-l-2 border-muted">
+                      <div className="space-y-2">
+                        <Label htmlFor="break_clause_project_date">Break Clause / Project Date *</Label>
+                        <Input
+                          id="break_clause_project_date"
+                          type="date"
+                          value={formData.break_clause_project_date}
+                          onChange={(e) => setFormData(prev => ({ ...prev, break_clause_project_date: e.target.value }))}
+                          min={project.project_start || undefined}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="break_clause_key_points_md">Key Points *</Label>
+                          <span className="text-xs text-muted-foreground">
+                            {formData.break_clause_key_points_md?.length || 0}/2000
+                          </span>
+                        </div>
+                        <Textarea
+                          id="break_clause_key_points_md"
+                          value={formData.break_clause_key_points_md}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (value.length <= 2000) {
+                              setFormData(prev => ({ ...prev, break_clause_key_points_md: value }));
+                            }
+                          }}
+                          rows={6}
+                          placeholder="Enter key points in markdown format..."
+                          className="font-mono text-sm"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Supports markdown formatting. Maximum 2000 characters.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -525,10 +632,42 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                   <p className="text-sm font-medium">Site Name</p>
                   <p className="text-sm text-muted-foreground">{project.site_name || 'Not specified'}</p>
                 </div>
-                <div>
-                  <p className="text-sm font-medium">Contract Signed</p>
-                  <p className="text-sm text-muted-foreground">{formatDateUK(project.contract_signed_date)}</p>
+              </div>
+
+              {/* Contract Section */}
+              <div className="space-y-3 border-t pt-4">
+                <h4 className="font-medium">Contract</h4>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <p className="text-sm font-medium">Contract Signed Date</p>
+                    <p className="text-sm text-muted-foreground">{formatDateUK(project.contract_signed_date)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Break Clause</p>
+                    <Badge variant={project.break_clause_enabled ? "default" : "secondary"}>
+                      {project.break_clause_enabled ? "Yes" : "No"}
+                    </Badge>
+                  </div>
                 </div>
+                
+                {project.break_clause_enabled && (
+                  <div className="space-y-3 pl-4 border-l-2 border-muted">
+                    <div>
+                      <p className="text-sm font-medium">Break Clause / Project Date</p>
+                      <p className="text-sm text-muted-foreground">
+                        {project.break_clause_project_date ? formatDateUK(project.break_clause_project_date) : 'Not set'}
+                      </p>
+                    </div>
+                    {project.break_clause_key_points_md && (
+                      <div>
+                        <p className="text-sm font-medium">Key Points</p>
+                        <div className="text-sm text-muted-foreground whitespace-pre-line bg-muted p-3 rounded-md">
+                          {project.break_clause_key_points_md}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {project.site_address && (

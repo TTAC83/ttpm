@@ -2260,6 +2260,9 @@ export type Database = {
         Row: {
           account_manager: string | null
           ai_iot_engineer: string | null
+          break_clause_enabled: boolean | null
+          break_clause_key_points_md: string | null
+          break_clause_project_date: string | null
           company_id: string
           contract_signed_date: string
           created_at: string
@@ -2281,6 +2284,9 @@ export type Database = {
         Insert: {
           account_manager?: string | null
           ai_iot_engineer?: string | null
+          break_clause_enabled?: boolean | null
+          break_clause_key_points_md?: string | null
+          break_clause_project_date?: string | null
           company_id: string
           contract_signed_date: string
           created_at?: string
@@ -2302,6 +2308,9 @@ export type Database = {
         Update: {
           account_manager?: string | null
           ai_iot_engineer?: string | null
+          break_clause_enabled?: boolean | null
+          break_clause_key_points_md?: string | null
+          break_clause_project_date?: string | null
           company_id?: string
           contract_signed_date?: string
           created_at?: string

@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateUK } from '@/lib/dateUtils';
 import { Edit, Save, X } from 'lucide-react';
+import { LinkManager, type Link } from '@/components/LinkManager';
 
 interface ProjectOverviewProps {
   project: any;
@@ -45,6 +46,14 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
     account_manager: project.account_manager || 'unassigned',
     line_description: project.line_description || '',
     product_description: project.product_description || '',
+  });
+
+  const [usefulLinks, setUsefulLinks] = useState<Link[]>(() => {
+    try {
+      return Array.isArray(project.useful_links) ? project.useful_links : [];
+    } catch {
+      return [];
+    }
   });
 
   useEffect(() => {
@@ -91,6 +100,7 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
           account_manager: formData.account_manager === 'unassigned' ? null : formData.account_manager,
           line_description: formData.line_description || null,
           product_description: formData.product_description || null,
+          useful_links: usefulLinks as any,
         })
         .eq('id', project.id);
 
@@ -131,6 +141,13 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
       account_manager: project.account_manager || 'unassigned',
       line_description: project.line_description || '',
       product_description: project.product_description || '',
+    });
+    setUsefulLinks(() => {
+      try {
+        return Array.isArray(project.useful_links) ? project.useful_links : [];
+      } catch {
+        return [];
+      }
     });
     setEditing(false);
   };
@@ -410,6 +427,15 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                 </div>
               </div>
 
+              <LinkManager
+                links={usefulLinks}
+                onChange={setUsefulLinks}
+                maxLinks={20}
+                isEditing={true}
+                title="Useful Links"
+                className="pt-4"
+              />
+
               <div className="flex gap-2 pt-4">
                 <Button onClick={handleSave} disabled={loading}>
                   <Save className="h-4 w-4 mr-2" />
@@ -503,6 +529,14 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                   </div>
                 </div>
               </div>
+
+              <LinkManager
+                links={usefulLinks}
+                onChange={setUsefulLinks}
+                isEditing={false}
+                title="Useful Links"
+                className="pt-4"
+              />
             </div>
           )}
         </CardContent>

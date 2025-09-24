@@ -2276,6 +2276,7 @@ export type Database = {
           site_name: string | null
           solution_consultant: string | null
           technical_project_lead: string | null
+          useful_links: Json | null
         }
         Insert: {
           account_manager?: string | null
@@ -2296,6 +2297,7 @@ export type Database = {
           site_name?: string | null
           solution_consultant?: string | null
           technical_project_lead?: string | null
+          useful_links?: Json | null
         }
         Update: {
           account_manager?: string | null
@@ -2316,6 +2318,7 @@ export type Database = {
           site_name?: string | null
           solution_consultant?: string | null
           technical_project_lead?: string | null
+          useful_links?: Json | null
         }
         Relationships: [
           {

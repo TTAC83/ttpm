@@ -72,11 +72,25 @@ export const Dashboard = () => {
       try {
         // Ensure weeks exist and get current week start for weekly reviews
         await ensureWeeks();
-        const today = new Date();
-        const currentWeekStart = new Date(today);
-        currentWeekStart.setDate(today.getDate() - today.getDay() + 1); // Monday of current week
-        const weekStartStr = currentWeekStart.toISOString().split('T')[0];
-        setCurrentWeek(weekStartStr);
+        
+        // Get the current week from the weeks table instead of calculating it
+        const { data: weeksData } = await supabase
+          .from('impl_weekly_weeks')
+          .select('week_start, week_end, available_at')
+          .order('week_start', { ascending: false });
+        
+        // Find the current week (the second highest date available, as per Weekly Review logic)
+        let weekStartStr = null;
+        if (weeksData && weeksData.length >= 2) {
+          weekStartStr = weeksData[1].week_start; // Current week (second from top)
+        } else if (weeksData && weeksData.length > 0) {
+          weekStartStr = weeksData[0].week_start; // Fallback to first available week
+        }
+        
+        if (weekStartStr) {
+          setCurrentWeek(weekStartStr);
+          console.log('Setting current week to:', weekStartStr);
+        }
 
         // Fetch implementation projects with weekly review data
         const { data: projectsData, error: projectsError } = await supabase

@@ -9,13 +9,54 @@ interface ImplementationKPIBarProps {
 export function ImplementationKPIBar({ selectedWeek }: ImplementationKPIBarProps) {
   const statsQ = useQuery({
     queryKey: ["impl-stats", selectedWeek],
-    queryFn: () => selectedWeek ? loadWeeklyStats(selectedWeek) : Promise.resolve(null),
+    queryFn: () => {
+      console.log('Loading stats for week:', selectedWeek);
+      return selectedWeek ? loadWeeklyStats(selectedWeek) : Promise.resolve(null);
+    },
     enabled: !!selectedWeek,
     staleTime: 5 * 60 * 1000,
   });
 
-  if (!selectedWeek || !statsQ.data) {
-    return null;
+  console.log('KPI Bar - selectedWeek:', selectedWeek, 'statsData:', statsQ.data, 'loading:', statsQ.isLoading, 'error:', statsQ.error);
+
+  if (!selectedWeek) {
+    return (
+      <Card className="p-4">
+        <div className="text-center text-muted-foreground">
+          No week selected for KPI display
+        </div>
+      </Card>
+    );
+  }
+
+  if (statsQ.isLoading) {
+    return (
+      <Card className="p-4">
+        <div className="text-center text-muted-foreground">
+          Loading KPI data for week {selectedWeek}...
+        </div>
+      </Card>
+    );
+  }
+
+  if (statsQ.error) {
+    return (
+      <Card className="p-4">
+        <div className="text-center text-destructive">
+          Error loading KPI data: {(statsQ.error as Error).message}
+        </div>
+      </Card>
+    );
+  }
+
+  if (!statsQ.data) {
+    return (
+      <Card className="p-4">
+        <div className="text-center text-muted-foreground">
+          No KPI data available for week {selectedWeek}
+        </div>
+      </Card>
+    );
   }
 
   return (

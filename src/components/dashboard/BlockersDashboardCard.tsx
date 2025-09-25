@@ -523,110 +523,114 @@ export function BlockersDashboardCard({ mode = 'all', order = ['product_gaps','a
 
   return (
     <div className="space-y-6">
-      {/* Escalations Table */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-red-500" />
-            Escalations
-          </CardTitle>
-          <div className="text-sm text-muted-foreground">
-            <span className="font-medium">{blockers.length}</span> total escalations
-            {blockers.filter(b => b.is_critical).length > 0 && (
-              <span className="ml-2">
-                • <span className="font-medium text-red-600">{blockers.filter(b => b.is_critical).length}</span> critical
-              </span>
-            )}
-          </div>
-          <Button asChild variant="outline" size="sm">
-            <Link to="/app/implementation/blockers">
-              View All <ExternalLink className="h-4 w-4 ml-1" />
-            </Link>
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="text-center py-4">
-              <p className="text-muted-foreground">Loading escalations...</p>
+      {/* Escalations Table - always show when mode includes escalations */}
+      {(mode === 'all' || mode === 'escalations') && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Escalations
+            </CardTitle>
+            <div className="text-sm text-muted-foreground">
+              <span className="font-medium">{blockers.length}</span> total escalations
+              {blockers.filter(b => b.is_critical).length > 0 && (
+                <span className="ml-2">
+                  • <span className="font-medium text-red-600">{blockers.filter(b => b.is_critical).length}</span> critical
+                </span>
+              )}
             </div>
-          ) : blockers.length === 0 ? (
-            <div className="text-center py-8">
-              <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-green-500" />
-              <h3 className="text-lg font-semibold mb-2 text-green-700">No Active Escalations</h3>
-              <p className="text-muted-foreground">
-                No escalations requiring attention!
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
-                  Showing {blockers.length} escalation{blockers.length !== 1 ? 's' : ''}
+            <Button asChild variant="outline" size="sm">
+              <Link to="/app/implementation/blockers">
+                View All <ExternalLink className="h-4 w-4 ml-1" />
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="text-center py-4">
+                <p className="text-muted-foreground">Loading escalations...</p>
+              </div>
+            ) : blockers.length === 0 ? (
+              <div className="text-center py-8">
+                <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-green-500" />
+                <h3 className="text-lg font-semibold mb-2 text-green-700">No Active Escalations</h3>
+                <p className="text-muted-foreground">
+                  No escalations requiring attention!
                 </p>
-                {blockers.some(blocker => blocker.is_overdue) && (
-                  <Badge variant="destructive" className="text-xs">
-                    {blockers.filter(blocker => blocker.is_overdue).length} Overdue
-                  </Badge>
-                )}
               </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    Showing {blockers.length} escalation{blockers.length !== 1 ? 's' : ''}
+                  </p>
+                  {blockers.some(blocker => blocker.is_overdue) && (
+                    <Badge variant="destructive" className="text-xs">
+                      {blockers.filter(blocker => blocker.is_overdue).length} Overdue
+                    </Badge>
+                  )}
+                </div>
 
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Project</TableHead>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Est. Complete</TableHead>
-                      <TableHead>Age</TableHead>
-                      <TableHead>Reason Code</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {blockers.map((blocker) => (
-                      <TableRow
-                        key={`blocker-${blocker.id}`}
-                        className={`${getRowClassName(blocker.is_overdue)} cursor-pointer hover:bg-muted/50 transition-colors`}
-                        onClick={() => handleEditBlocker(blocker)}
-                      >
-                        <TableCell className="font-medium">
-                          {blocker.customer_name}
-                        </TableCell>
-                        <TableCell>
-                          <Link 
-                            to={`/app/projects/${blocker.project_id}?tab=blockers`}
-                            className="text-blue-600 hover:text-blue-800 hover:underline"
-                          >
-                            {blocker.project_name}
-                          </Link>
-                        </TableCell>
-                        <TableCell>
-                          <p className="font-medium line-clamp-1">{blocker.title}</p>
-                        </TableCell>
-                        <TableCell>
-                          {blocker.estimated_complete_date
-                            ? formatDateUK(blocker.estimated_complete_date)
-                            : "-"}
-                        </TableCell>
-                        <TableCell>
-                          <span className={blocker.is_overdue ? "text-red-600 font-medium" : ""}>
-                            {blocker.age_days}d
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm">
-                            {blocker.reason_code || "-"}
-                          </span>
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Project</TableHead>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Est. Complete</TableHead>
+                        <TableHead>Age</TableHead>
+                        <TableHead>Reason Code</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {blockers.map((blocker) => (
+                        <TableRow
+                          key={`blocker-${blocker.id}`}
+                          className={`${getRowClassName(blocker.is_overdue)} cursor-pointer hover:bg-muted/50 transition-colors`}
+                          onClick={() => handleEditBlocker(blocker)}
+                        >
+                          <TableCell className="font-medium">
+                            {blocker.customer_name}
+                          </TableCell>
+                          <TableCell>
+                            <Link 
+                              to={`/app/projects/${blocker.project_id}?tab=blockers`}
+                              className="text-blue-600 hover:text-blue-800 hover:underline"
+                            >
+                              {blocker.project_name}
+                            </Link>
+                          </TableCell>
+                          <TableCell>
+                            <p className="font-medium line-clamp-1">{blocker.title}</p>
+                          </TableCell>
+                          <TableCell>
+                            {blocker.estimated_complete_date
+                              ? formatDateUK(blocker.estimated_complete_date)
+                              : "-"}
+                          </TableCell>
+                          <TableCell>
+                            <span className={blocker.is_overdue ? "text-red-600 font-medium" : ""}>
+                              {blocker.age_days}d
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm">
+                              {blocker.reason_code || "-"}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Actions, Tasks, Product Gaps in custom order */}
 
       {(mode === 'all' || mode === 'actions_tasks_gaps') && (
         <>

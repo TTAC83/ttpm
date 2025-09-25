@@ -560,15 +560,12 @@ export const Dashboard = () => {
         </p>
       </div>
       
-      {/* Custom reordered sections for internal users */}
-      {profile?.is_internal ? (
-        <div className="space-y-6">
-          {/* 1. Escalations only */}
-          <BlockersDashboardCard />
-        </div>
-      ) : null}
+      {/* 1. Escalations - first */}
+      {profile?.is_internal && (
+        <BlockersDashboardCard mode="escalations" />
+      )}
       
-      {/* 2. Implementation Projects (for all users) */}
+      {/* 2. Implementation Projects - second */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Implementation Projects</CardTitle>
@@ -654,7 +651,7 @@ export const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* 7-Day Calendar */}
+      {/* 3. Critical Events - third */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Critical Events</CardTitle>
@@ -742,6 +739,11 @@ export const Dashboard = () => {
           </div>
         </CardContent>
        </Card>
+
+      {/* 4. Critical and overdue actions, 5. Critical and overdue tasks, 6. Product Gaps */}
+      {profile?.is_internal && (
+        <BlockersDashboardCard mode="actions_tasks_gaps" order={['actions', 'tasks', 'product_gaps']} />
+      )}
     </div>
   );
 };

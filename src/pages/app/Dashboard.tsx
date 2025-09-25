@@ -7,10 +7,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { formatDateUK } from '@/lib/dateUtils';
 import { useNavigate, Link } from 'react-router-dom';
 import { BlockersDashboardCard } from '@/components/dashboard/BlockersDashboardCard';
+import { ImplementationKPIBar } from '@/components/dashboard/ImplementationKPIBar';
 import { calculateMultipleProjectCompletions, ProjectCompletion } from '@/lib/projectCompletionService';
 import { Progress } from '@/components/ui/progress';
 import { Smile, Frown, CheckCircle, AlertCircle, Bug, AlertTriangle, ExternalLink } from 'lucide-react';
 import { productGapsService } from '@/lib/productGapsService';
+import { ensureWeeks, listWeeks } from '@/lib/implementationWeekly';
 
 interface ImplementationProject {
   id: string;
@@ -48,6 +50,7 @@ export const Dashboard = () => {
   const [projectCompletions, setProjectCompletions] = useState<Map<string, ProjectCompletion>>(new Map());
   const [companiesWithGaps, setCompaniesWithGaps] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [currentWeek, setCurrentWeek] = useState<string | null>(null);
 
   // Generate 7-day date range (previous 2 days, today, next 4 days)
   const generateDateRange = () => {
@@ -67,11 +70,13 @@ export const Dashboard = () => {
 
   const fetchDashboardData = async () => {
       try {
-        // Get current week start for weekly reviews
+        // Ensure weeks exist and get current week start for weekly reviews
+        await ensureWeeks();
         const today = new Date();
         const currentWeekStart = new Date(today);
         currentWeekStart.setDate(today.getDate() - today.getDay() + 1); // Monday of current week
         const weekStartStr = currentWeekStart.toISOString().split('T')[0];
+        setCurrentWeek(weekStartStr);
 
         // Fetch implementation projects with weekly review data
         const { data: projectsData, error: projectsError } = await supabase
@@ -576,6 +581,11 @@ export const Dashboard = () => {
           Client overview and upcoming events
         </p>
       </div>
+      
+      {/* Implementation KPI Bar - current week overview */}
+      {currentWeek && (
+        <ImplementationKPIBar selectedWeek={currentWeek} />
+      )}
       
       {/* 1. Escalations - first */}
       {profile?.is_internal && (

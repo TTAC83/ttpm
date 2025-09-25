@@ -559,6 +559,92 @@ export const Dashboard = () => {
         </p>
       </div>
       
+      {/* Implementation Projects Summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Implementation Projects</CardTitle>
+          <CardDescription>Current implementation projects with health and status indicators</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {projects.map((project) => {
+              const completion = projectCompletions.get(project.id);
+              return (
+                <div key={project.id} className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-medium truncate">{project.name}</h3>
+                    <div className="flex items-center gap-2">
+                      {/* Feature Gap Icon */}
+                      {companiesWithGaps.has(project.company_name) && (
+                        <div title="Has Product Gaps">
+                          <Bug className="h-4 w-4 text-orange-600" />
+                        </div>
+                      )}
+                      
+                      {/* Health Icon */}
+                      {project.customer_health === 'green' && (
+                        <div title="Customer Health: Green">
+                          <Smile className="h-4 w-4 text-green-600" />
+                        </div>
+                      )}
+                      {project.customer_health === 'red' && (
+                        <div title="Customer Health: Red">
+                          <Frown className="h-4 w-4 text-red-600" />
+                        </div>
+                      )}
+                      
+                      {/* Project Status Icon */}
+                      {project.project_status === 'on_track' && (
+                        <div title="Project Status: On Track">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        </div>
+                      )}
+                      {project.project_status === 'off_track' && (
+                        <div title="Project Status: Off Track">
+                          <AlertCircle className="h-4 w-4 text-red-600" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">{project.company_name}</p>
+                    <Badge variant="outline" className="text-xs">
+                      {project.domain}
+                    </Badge>
+                    
+                    {/* Completion Progress */}
+                    {completion && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-muted-foreground">
+                            % Complete
+                          </span>
+                          <span className="text-sm font-bold">
+                            {completion.completionPercentage}%
+                          </span>
+                        </div>
+                        <Progress 
+                          value={completion.completionPercentage} 
+                          className="h-2"
+                        />
+                        <div className="text-xs text-muted-foreground">
+                          {completion.completedTasks} of {completion.totalTasks} tasks completed
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {projects.length === 0 && (
+            <div className="text-center text-muted-foreground py-4">
+              No implementation projects found
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Implementation Blockers */}
       {profile?.is_internal && (
         <BlockersDashboardCard />
@@ -652,92 +738,6 @@ export const Dashboard = () => {
           </div>
         </CardContent>
        </Card>
-
-      {/* Implementation Projects Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Implementation Projects</CardTitle>
-          <CardDescription>Current implementation projects with health and status indicators</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {projects.map((project) => {
-              const completion = projectCompletions.get(project.id);
-              return (
-                <div key={project.id} className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-medium truncate">{project.name}</h3>
-                    <div className="flex items-center gap-2">
-                      {/* Feature Gap Icon */}
-                      {companiesWithGaps.has(project.company_name) && (
-                        <div title="Has Product Gaps">
-                          <Bug className="h-4 w-4 text-orange-600" />
-                        </div>
-                      )}
-                      
-                      {/* Health Icon */}
-                      {project.customer_health === 'green' && (
-                        <div title="Customer Health: Green">
-                          <Smile className="h-4 w-4 text-green-600" />
-                        </div>
-                      )}
-                      {project.customer_health === 'red' && (
-                        <div title="Customer Health: Red">
-                          <Frown className="h-4 w-4 text-red-600" />
-                        </div>
-                      )}
-                      
-                      {/* Project Status Icon */}
-                      {project.project_status === 'on_track' && (
-                        <div title="Project Status: On Track">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                        </div>
-                      )}
-                      {project.project_status === 'off_track' && (
-                        <div title="Project Status: Off Track">
-                          <AlertCircle className="h-4 w-4 text-red-600" />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <p className="text-sm text-muted-foreground">{project.company_name}</p>
-                    <Badge variant="outline" className="text-xs">
-                      {project.domain}
-                    </Badge>
-                    
-                    {/* Completion Progress */}
-                    {completion && (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-muted-foreground">
-                            % Complete
-                          </span>
-                          <span className="text-sm font-bold">
-                            {completion.completionPercentage}%
-                          </span>
-                        </div>
-                        <Progress 
-                          value={completion.completionPercentage} 
-                          className="h-2"
-                        />
-                        <div className="text-xs text-muted-foreground">
-                          {completion.completedTasks} of {completion.totalTasks} tasks completed
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          {projects.length === 0 && (
-            <div className="text-center text-muted-foreground py-4">
-              No implementation projects found
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 };

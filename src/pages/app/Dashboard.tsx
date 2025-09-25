@@ -90,11 +90,28 @@ export const Dashboard = () => {
 
         if (projectsError) throw projectsError;
 
-        // Get weekly reviews for current week
-        const { data: reviewsData } = await supabase
+        // Get weekly reviews - first try current week, then fall back to most recent
+        let { data: reviewsData } = await supabase
           .from('impl_weekly_reviews')
-          .select('company_id, customer_health, project_status')
+          .select('company_id, customer_health, project_status, week_start')
           .eq('week_start', weekStartStr);
+
+        // If no reviews for current week, get the most recent reviews for each company
+        if (!reviewsData || reviewsData.length === 0) {
+          const { data: recentReviews } = await supabase
+            .from('impl_weekly_reviews')
+            .select('company_id, customer_health, project_status, week_start')
+            .order('week_start', { ascending: false });
+          
+          // Get the most recent review for each company
+          const companyReviews = new Map();
+          recentReviews?.forEach(review => {
+            if (!companyReviews.has(review.company_id)) {
+              companyReviews.set(review.company_id, review);
+            }
+          });
+          reviewsData = Array.from(companyReviews.values());
+        }
 
         const reviewsMap = new Map((reviewsData || []).map(r => [r.company_id, r]));
 

@@ -154,7 +154,7 @@ export const Dashboard = () => {
         
         const allEvents: UpcomingEvent[] = [];
 
-        // Fetch critical tasks with planned dates within range (filter by critical statuses)
+        // Fetch critical tasks with planned dates within range (filter by critical statuses only)
         const { data: tasksData, error: tasksError } = await supabase
           .from('project_tasks')
           .select(`
@@ -172,7 +172,7 @@ export const Dashboard = () => {
           .or(`planned_start.gte.${startDate},planned_end.gte.${startDate}`)
           .or(`planned_start.lte.${endDate},planned_end.lte.${endDate}`)
           .not('planned_start', 'is', null)
-          .or('status.eq.Blocked,and(planned_end.lt.now(),planned_end.not.is.null)')
+          .eq('status', 'Blocked')
           .neq('status', 'Done')
 
         if (!tasksError && tasksData) {

@@ -1,14 +1,15 @@
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDateUK } from '@/lib/dateUtils';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { BlockersDashboardCard } from '@/components/dashboard/BlockersDashboardCard';
 import { calculateMultipleProjectCompletions, ProjectCompletion } from '@/lib/projectCompletionService';
 import { Progress } from '@/components/ui/progress';
-import { Smile, Frown, CheckCircle, AlertCircle, Bug } from 'lucide-react';
+import { Smile, Frown, CheckCircle, AlertCircle, Bug, AlertTriangle, ExternalLink } from 'lucide-react';
 import { productGapsService } from '@/lib/productGapsService';
 
 interface ImplementationProject {
@@ -559,12 +560,15 @@ export const Dashboard = () => {
         </p>
       </div>
       
-      {/* Implementation Blockers */}
-      {profile?.is_internal && (
-        <BlockersDashboardCard />
-      )}
-
-      {/* Implementation Projects Summary */}
+      {/* Custom reordered sections for internal users */}
+      {profile?.is_internal ? (
+        <div className="space-y-6">
+          {/* 1. Escalations only */}
+          <BlockersDashboardCard />
+        </div>
+      ) : null}
+      
+      {/* 2. Implementation Projects (for all users) */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Implementation Projects</CardTitle>

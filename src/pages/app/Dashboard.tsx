@@ -8,7 +8,8 @@ import { useNavigate } from 'react-router-dom';
 import { BlockersDashboardCard } from '@/components/dashboard/BlockersDashboardCard';
 import { calculateMultipleProjectCompletions, ProjectCompletion } from '@/lib/projectCompletionService';
 import { Progress } from '@/components/ui/progress';
-import { Smile, Frown, CheckCircle, AlertCircle } from 'lucide-react';
+import { Smile, Frown, CheckCircle, AlertCircle, Bug } from 'lucide-react';
+import { productGapsService } from '@/lib/productGapsService';
 
 interface ImplementationProject {
   id: string;
@@ -44,6 +45,7 @@ export const Dashboard = () => {
   const [events, setEvents] = useState<UpcomingEvent[]>([]);
   const [allCalendarEvents, setAllCalendarEvents] = useState<UpcomingEvent[]>([]);
   const [projectCompletions, setProjectCompletions] = useState<Map<string, ProjectCompletion>>(new Map());
+  const [companiesWithGaps, setCompaniesWithGaps] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   // Generate 7-day date range (previous 2 days, today, next 4 days)
@@ -112,6 +114,20 @@ export const Dashboard = () => {
         if (projectIds.length > 0) {
           const completions = await calculateMultipleProjectCompletions(projectIds);
           setProjectCompletions(completions);
+        }
+
+        // Fetch product gaps to determine which companies have gaps
+        try {
+          const allGaps = await productGapsService.getAllProductGaps();
+          const companiesWithGapsSet = new Set(
+            allGaps
+              .filter(gap => gap.status === 'Live')
+              .map(gap => gap.company_name)
+              .filter(Boolean)
+          );
+          setCompaniesWithGaps(companiesWithGapsSet);
+        } catch (error) {
+          console.warn('Failed to fetch product gaps:', error);
         }
 
         // Fetch upcoming events for the 7-day range
@@ -652,6 +668,13 @@ export const Dashboard = () => {
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-medium truncate">{project.name}</h3>
                     <div className="flex items-center gap-2">
+                      {/* Feature Gap Icon */}
+                      {companiesWithGaps.has(project.company_name) && (
+                        <div title="Has Product Gaps">
+                          <Bug className="h-4 w-4 text-orange-600" />
+                        </div>
+                      )}
+                      
                       {/* Health Icon */}
                       {project.customer_health === 'green' && (
                         <div title="Customer Health: Green">

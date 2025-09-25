@@ -559,6 +559,11 @@ export const Dashboard = () => {
         </p>
       </div>
       
+      {/* Implementation Blockers */}
+      {profile?.is_internal && (
+        <BlockersDashboardCard />
+      )}
+
       {/* Implementation Projects Summary */}
       <Card>
         <CardHeader>

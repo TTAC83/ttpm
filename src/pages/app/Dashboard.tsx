@@ -650,11 +650,6 @@ export const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Implementation Blockers */}
-      {profile?.is_internal && (
-        <BlockersDashboardCard />
-      )}
-
       {/* 7-Day Calendar */}
       <Card>
         <CardHeader>

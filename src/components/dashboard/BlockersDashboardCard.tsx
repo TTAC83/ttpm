@@ -46,7 +46,7 @@ interface DashboardBlocker {
 
 type DashboardItem = (DashboardBlocker & { type: 'blocker' }) | (DashboardProductGap & { type: 'product_gap', customer_name: string, is_overdue: boolean });
 
-export function BlockersDashboardCard() {
+export function BlockersDashboardCard({ mode = 'all', order = ['product_gaps','actions','tasks'] }: { mode?: 'all' | 'escalations' | 'actions_tasks_gaps'; order?: Array<'product_gaps' | 'actions' | 'tasks'> }) {
   const [blockers, setBlockers] = useState<DashboardBlocker[]>([]);
   const [productGaps, setProductGaps] = useState<DashboardProductGap[]>([]);
   const [actions, setActions] = useState<DashboardAction[]>([]);
@@ -189,6 +189,338 @@ export function BlockersDashboardCard() {
     return isOverdue ? "bg-red-50 dark:bg-red-950/20" : "";
   };
 
+  const renderProductGaps = () => (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <CardTitle className="flex items-center gap-2">
+          <AlertTriangle className="h-5 w-5 text-amber-500" />
+          Product Gaps
+        </CardTitle>
+        <Button asChild variant="outline" size="sm">
+          <Link to="/app/product-gaps">
+            View All <ExternalLink className="h-4 w-4 ml-1" />
+          </Link>
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="text-center py-4">
+            <p className="text-muted-foreground">Loading product gaps...</p>
+          </div>
+        ) : productGaps.length === 0 ? (
+          <div className="text-center py-8">
+            <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-green-500" />
+            <h3 className="text-lg font-semibold mb-2 text-green-700">No Product Gaps</h3>
+            <p className="text-muted-foreground">
+              No product gaps requiring attention!
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Showing {productGaps.length} product gap{productGaps.length !== 1 ? 's' : ''}
+              </p>
+              {productGaps.some(gap => gap.estimated_complete_date && new Date(gap.estimated_complete_date) < new Date()) && (
+                <Badge variant="destructive" className="text-xs">
+                  {productGaps.filter(gap => gap.estimated_complete_date && new Date(gap.estimated_complete_date) < new Date()).length} Overdue
+                </Badge>
+              )}
+            </div>
+
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Project</TableHead>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Feature Request</TableHead>
+                    <TableHead>Est. Complete</TableHead>
+                    <TableHead>Age</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {productGaps.map((gap) => {
+                    const isOverdue = gap.estimated_complete_date && new Date(gap.estimated_complete_date) < new Date();
+                    return (
+                      <TableRow
+                        key={`product-gap-${gap.id}`}
+                        className={`${getRowClassName(!!isOverdue)} cursor-pointer hover:bg-muted/50 transition-colors`}
+                        onClick={() => {
+                          setSelectedProductGap(gap);
+                          setProductGapDrawerOpen(true);
+                        }}
+                      >
+                        <TableCell className="font-medium">
+                          {gap.company_name}
+                        </TableCell>
+                        <TableCell>
+                          <Link 
+                            to={`/app/projects/${gap.project_id}?tab=product-gaps`}
+                            className="text-blue-600 hover:text-blue-800 hover:underline"
+                          >
+                            {gap.project_name}
+                          </Link>
+                        </TableCell>
+                        <TableCell>
+                          <p className="font-medium line-clamp-1">{gap.title}</p>
+                        </TableCell>
+                        <TableCell>
+                          {gap.feature_request_id ? (
+                            <Link
+                              to={`/app/feature-requests/${gap.feature_request_id}`}
+                              className="text-blue-600 hover:text-blue-800 hover:underline"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              View Feature
+                            </Link>
+                          ) : (
+                            <span className="text-muted-foreground">None</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {gap.estimated_complete_date
+                            ? formatDateUK(gap.estimated_complete_date)
+                            : "-"}
+                        </TableCell>
+                        <TableCell>
+                          <span className={isOverdue ? "text-red-600 font-medium" : ""}>
+                            {gap.age_days}d
+                          </span>
+                        </TableCell>
+                        <TableCell>{getProductGapStatusBadge(gap)}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  const renderActions = () => (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <div>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-orange-500" />
+            Critical & Overdue Actions
+          </CardTitle>
+          <div className="text-sm text-muted-foreground">
+            <span className="font-medium">{actions.length}</span> actions requiring attention
+            {actions.filter(a => a.is_critical).length > 0 && (
+              <span className="ml-2">
+                • <span className="font-medium text-orange-600">{actions.filter(a => a.is_critical).length}</span> critical
+              </span>
+            )}
+          </div>
+        </div>
+        <Button asChild variant="outline" size="sm">
+          <Link to="/app/actions">
+            View All <ExternalLink className="h-4 w-4 ml-1" />
+          </Link>
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="text-center py-4">
+            <p className="text-muted-foreground">Loading actions...</p>
+          </div>
+        ) : actions.length === 0 ? (
+          <div className="text-center py-8">
+            <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-green-500" />
+            <h3 className="text-lg font-semibold mb-2 text-green-700">No Critical Actions</h3>
+            <p className="text-muted-foreground">
+              No critical or overdue actions requiring attention!
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Showing {actions.length} action{actions.length !== 1 ? 's' : ''}
+              </p>
+              {actions.some(action => action.is_overdue) && (
+                <Badge variant="destructive" className="text-xs">
+                  {actions.filter(action => action.is_overdue).length} Overdue
+                </Badge>
+              )}
+            </div>
+
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Project</TableHead>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Planned Date</TableHead>
+                    <TableHead>Age</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {actions.map((action) => (
+                    <TableRow
+                      key={`action-${action.id}`}
+                      className={`${getRowClassName(action.is_overdue)} cursor-pointer hover:bg-muted/50 transition-colors`}
+                      onClick={() => {
+                        setSelectedAction(action);
+                        setActionDialogOpen(true);
+                      }}
+                    >
+                      <TableCell className="font-medium">
+                        {action.company_name}
+                      </TableCell>
+                      <TableCell>
+                        <Link 
+                          to={`/app/projects/${action.project_id}?tab=tasks`}
+                          className="text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                          {action.project_name}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <p className="font-medium line-clamp-1">{action.title}</p>
+                      </TableCell>
+                      <TableCell>
+                        {action.planned_date
+                          ? formatDateUK(action.planned_date)
+                          : "-"}
+                      </TableCell>
+                      <TableCell>
+                        {action.age_days ? (
+                          <span className={action.is_overdue ? "text-red-600 font-medium" : ""}>
+                            {action.age_days}d
+                          </span>
+                        ) : "-"}
+                      </TableCell>
+                      <TableCell>{getActionStatusBadge(action)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  const renderTasks = () => (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <div>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-purple-500" />
+            Critical & Overdue Tasks
+          </CardTitle>
+          <div className="text-sm text-muted-foreground">
+            <span className="font-medium">{tasks.length}</span> tasks requiring attention
+            {tasks.filter(t => t.is_critical).length > 0 && (
+              <span className="ml-2">
+                • <span className="font-medium text-purple-600">{tasks.filter(t => t.is_critical).length}</span> blocked
+              </span>
+            )}
+          </div>
+        </div>
+        <Button asChild variant="outline" size="sm">
+          <Link to="/app/tasks">
+            View All <ExternalLink className="h-4 w-4 ml-1" />
+          </Link>
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="text-center py-4">
+            <p className="text-muted-foreground">Loading tasks...</p>
+          </div>
+        ) : tasks.length === 0 ? (
+          <div className="text-center py-8">
+            <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-green-500" />
+            <h3 className="text-lg font-semibold mb-2 text-green-700">No Critical Tasks</h3>
+            <p className="text-muted-foreground">
+              No blocked or overdue tasks requiring attention!
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Showing {tasks.length} task{tasks.length !== 1 ? 's' : ''}
+              </p>
+              {tasks.some(task => task.is_overdue) && (
+                <Badge variant="destructive" className="text-xs">
+                  {tasks.filter(task => task.is_overdue).length} Overdue
+                </Badge>
+              )}
+            </div>
+
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Project</TableHead>
+                    <TableHead>Task</TableHead>
+                    <TableHead>Planned End</TableHead>
+                    <TableHead>Age</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {tasks.map((task) => (
+                    <TableRow
+                      key={`task-${task.id}`}
+                        className={`${getRowClassName(task.is_overdue)} cursor-pointer hover:bg-muted/50 transition-colors`}
+                        onClick={() => {
+                          setSelectedTask(task);
+                          setTaskEditDialogOpen(true);
+                        }}
+                      >
+                      <TableCell className="font-medium">
+                        {task.company_name}
+                      </TableCell>
+                      <TableCell>
+                        <Link 
+                          to={`/app/projects/${task.project_id}?tab=tasks`}
+                          className="text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                          {task.project_name}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <p className="font-medium line-clamp-1">{task.task_title}</p>
+                      </TableCell>
+                      <TableCell>
+                        {task.planned_end
+                          ? formatDateUK(task.planned_end)
+                          : "-"}
+                      </TableCell>
+                      <TableCell>
+                        {task.age_days ? (
+                          <span className={task.is_overdue ? "text-red-600 font-medium" : ""}>
+                            {task.age_days}d
+                          </span>
+                        ) : "-"}
+                      </TableCell>
+                      <TableCell>{getTaskStatusBadge(task)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="space-y-6">
       {/* Escalations Table */}
@@ -296,335 +628,12 @@ export function BlockersDashboardCard() {
         </CardContent>
       </Card>
 
-      {/* Product Gaps Table */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-amber-500" />
-            Product Gaps
-          </CardTitle>
-          <Button asChild variant="outline" size="sm">
-            <Link to="/app/product-gaps">
-              View All <ExternalLink className="h-4 w-4 ml-1" />
-            </Link>
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="text-center py-4">
-              <p className="text-muted-foreground">Loading product gaps...</p>
-            </div>
-          ) : productGaps.length === 0 ? (
-            <div className="text-center py-8">
-              <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-green-500" />
-              <h3 className="text-lg font-semibold mb-2 text-green-700">No Product Gaps</h3>
-              <p className="text-muted-foreground">
-                No product gaps requiring attention!
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
-                  Showing {productGaps.length} product gap{productGaps.length !== 1 ? 's' : ''}
-                </p>
-                {productGaps.some(gap => gap.estimated_complete_date && new Date(gap.estimated_complete_date) < new Date()) && (
-                  <Badge variant="destructive" className="text-xs">
-                    {productGaps.filter(gap => gap.estimated_complete_date && new Date(gap.estimated_complete_date) < new Date()).length} Overdue
-                  </Badge>
-                )}
-              </div>
+      {(mode === 'all' || mode === 'actions_tasks_gaps') && (
+        <>
+          {order.map((s) => (s === 'actions' ? renderActions() : s === 'tasks' ? renderTasks() : renderProductGaps()))}
+        </>
+      )}
 
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Project</TableHead>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Feature Request</TableHead>
-                      <TableHead>Est. Complete</TableHead>
-                      <TableHead>Age</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {productGaps.map((gap) => {
-                      const isOverdue = gap.estimated_complete_date && new Date(gap.estimated_complete_date) < new Date();
-                      return (
-                        <TableRow
-                          key={`product-gap-${gap.id}`}
-                          className={`${getRowClassName(!!isOverdue)} cursor-pointer hover:bg-muted/50 transition-colors`}
-                          onClick={() => {
-                            setSelectedProductGap(gap);
-                            setProductGapDrawerOpen(true);
-                          }}
-                        >
-                          <TableCell className="font-medium">
-                            {gap.company_name}
-                          </TableCell>
-                          <TableCell>
-                            <Link 
-                              to={`/app/projects/${gap.project_id}?tab=product-gaps`}
-                              className="text-blue-600 hover:text-blue-800 hover:underline"
-                            >
-                              {gap.project_name}
-                            </Link>
-                          </TableCell>
-                          <TableCell>
-                            <p className="font-medium line-clamp-1">{gap.title}</p>
-                          </TableCell>
-                          <TableCell>
-                            {gap.feature_request_id ? (
-                              <Link
-                                to={`/app/feature-requests/${gap.feature_request_id}`}
-                                className="text-blue-600 hover:text-blue-800 hover:underline"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                View Feature
-                              </Link>
-                            ) : (
-                              <span className="text-muted-foreground">None</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {gap.estimated_complete_date
-                              ? formatDateUK(gap.estimated_complete_date)
-                              : "-"}
-                          </TableCell>
-                          <TableCell>
-                            <span className={isOverdue ? "text-red-600 font-medium" : ""}>
-                              {gap.age_days}d
-                            </span>
-                          </TableCell>
-                          <TableCell>{getProductGapStatusBadge(gap)}</TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Actions Table */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-orange-500" />
-              Critical & Overdue Actions
-            </CardTitle>
-            <div className="text-sm text-muted-foreground">
-              <span className="font-medium">{actions.length}</span> actions requiring attention
-              {actions.filter(a => a.is_critical).length > 0 && (
-                <span className="ml-2">
-                  • <span className="font-medium text-orange-600">{actions.filter(a => a.is_critical).length}</span> critical
-                </span>
-              )}
-            </div>
-          </div>
-          <Button asChild variant="outline" size="sm">
-            <Link to="/app/actions">
-              View All <ExternalLink className="h-4 w-4 ml-1" />
-            </Link>
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="text-center py-4">
-              <p className="text-muted-foreground">Loading actions...</p>
-            </div>
-          ) : actions.length === 0 ? (
-            <div className="text-center py-8">
-              <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-green-500" />
-              <h3 className="text-lg font-semibold mb-2 text-green-700">No Critical Actions</h3>
-              <p className="text-muted-foreground">
-                No critical or overdue actions requiring attention!
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
-                  Showing {actions.length} action{actions.length !== 1 ? 's' : ''}
-                </p>
-                {actions.some(action => action.is_overdue) && (
-                  <Badge variant="destructive" className="text-xs">
-                    {actions.filter(action => action.is_overdue).length} Overdue
-                  </Badge>
-                )}
-              </div>
-
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Project</TableHead>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Planned Date</TableHead>
-                      <TableHead>Age</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {actions.map((action) => (
-                      <TableRow
-                        key={`action-${action.id}`}
-                        className={`${getRowClassName(action.is_overdue)} cursor-pointer hover:bg-muted/50 transition-colors`}
-                        onClick={() => {
-                          setSelectedAction(action);
-                          setActionDialogOpen(true);
-                        }}
-                      >
-                        <TableCell className="font-medium">
-                          {action.company_name}
-                        </TableCell>
-                        <TableCell>
-                          <Link 
-                            to={`/app/projects/${action.project_id}?tab=tasks`}
-                            className="text-blue-600 hover:text-blue-800 hover:underline"
-                          >
-                            {action.project_name}
-                          </Link>
-                        </TableCell>
-                        <TableCell>
-                          <p className="font-medium line-clamp-1">{action.title}</p>
-                        </TableCell>
-                        <TableCell>
-                          {action.planned_date
-                            ? formatDateUK(action.planned_date)
-                            : "-"}
-                        </TableCell>
-                        <TableCell>
-                          {action.age_days ? (
-                            <span className={action.is_overdue ? "text-red-600 font-medium" : ""}>
-                              {action.age_days}d
-                            </span>
-                          ) : "-"}
-                        </TableCell>
-                        <TableCell>{getActionStatusBadge(action)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Tasks Table */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-purple-500" />
-              Critical & Overdue Tasks
-            </CardTitle>
-            <div className="text-sm text-muted-foreground">
-              <span className="font-medium">{tasks.length}</span> tasks requiring attention
-              {tasks.filter(t => t.is_critical).length > 0 && (
-                <span className="ml-2">
-                  • <span className="font-medium text-purple-600">{tasks.filter(t => t.is_critical).length}</span> blocked
-                </span>
-              )}
-            </div>
-          </div>
-          <Button asChild variant="outline" size="sm">
-            <Link to="/app/tasks">
-              View All <ExternalLink className="h-4 w-4 ml-1" />
-            </Link>
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="text-center py-4">
-              <p className="text-muted-foreground">Loading tasks...</p>
-            </div>
-          ) : tasks.length === 0 ? (
-            <div className="text-center py-8">
-              <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-green-500" />
-              <h3 className="text-lg font-semibold mb-2 text-green-700">No Critical Tasks</h3>
-              <p className="text-muted-foreground">
-                No blocked or overdue tasks requiring attention!
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
-                  Showing {tasks.length} task{tasks.length !== 1 ? 's' : ''}
-                </p>
-                {tasks.some(task => task.is_overdue) && (
-                  <Badge variant="destructive" className="text-xs">
-                    {tasks.filter(task => task.is_overdue).length} Overdue
-                  </Badge>
-                )}
-              </div>
-
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Project</TableHead>
-                      <TableHead>Task</TableHead>
-                      <TableHead>Planned End</TableHead>
-                      <TableHead>Age</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {tasks.map((task) => (
-                      <TableRow
-                        key={`task-${task.id}`}
-                          className={`${getRowClassName(task.is_overdue)} cursor-pointer hover:bg-muted/50 transition-colors`}
-                          onClick={() => {
-                            setSelectedTask(task);
-                            setTaskEditDialogOpen(true);
-                          }}
-                        >
-                        <TableCell className="font-medium">
-                          {task.company_name}
-                        </TableCell>
-                        <TableCell>
-                          <Link 
-                            to={`/app/projects/${task.project_id}?tab=tasks`}
-                            className="text-blue-600 hover:text-blue-800 hover:underline"
-                          >
-                            {task.project_name}
-                          </Link>
-                        </TableCell>
-                        <TableCell>
-                          <p className="font-medium line-clamp-1">{task.task_title}</p>
-                        </TableCell>
-                        <TableCell>
-                          {task.planned_end
-                            ? formatDateUK(task.planned_end)
-                            : "-"}
-                        </TableCell>
-                        <TableCell>
-                          {task.age_days ? (
-                            <span className={task.is_overdue ? "text-red-600 font-medium" : ""}>
-                              {task.age_days}d
-                            </span>
-                          ) : "-"}
-                        </TableCell>
-                        <TableCell>{getTaskStatusBadge(task)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      
       {/* Blocker Edit Drawer */}
       {selectedBlocker && (
         <BlockerDrawer
@@ -641,6 +650,124 @@ export function BlockersDashboardCard() {
             setDrawerOpen(false);
             setSelectedBlocker(undefined);
             loadDashboardData();
+          }}
+        />
+      )}
+
+      {/* Product Gap Drawer */}
+      {selectedProductGap && (
+        <ProductGapDrawer
+          open={productGapDrawerOpen}
+          productGap={{
+            ...selectedProductGap,
+            description: '',
+            created_at: new Date().toISOString(),
+            created_by: '',
+            updated_at: new Date().toISOString(),
+            status: 'Live' as const
+          }}
+          projectId={selectedProductGap.project_id}
+          onOpenChange={(open) => {
+            setProductGapDrawerOpen(open);
+            if (!open) loadDashboardData();
+          }}
+          onSuccess={() => {
+            setProductGapDrawerOpen(false);
+            setSelectedProductGap(undefined);
+            loadDashboardData();
+          }}
+        />
+      )}
+
+      {/* Action Dialog */}
+      {selectedAction && (
+        <EditActionDialog
+          open={actionDialogOpen}
+          onOpenChange={setActionDialogOpen}
+          action={{
+            ...selectedAction,
+            details: null,
+            notes: null,
+            planned_date: selectedAction.planned_date || null,
+            assignee: selectedAction.assignee || null,
+            created_at: new Date().toISOString()
+          }}
+          profiles={profiles}
+          onSave={async (actionData) => {
+            const id = selectedAction.id;
+            const payload = {
+              title: actionData.title,
+              details: actionData.details,
+              assignee: actionData.assignee,
+              planned_date: actionData.planned_date,
+              notes: actionData.notes,
+              status: actionData.status,
+              is_critical: actionData.is_critical,
+            };
+
+            console.log('[Actions] Updating', id, payload);
+            const { data, error } = await supabase
+              .from('actions')
+              .update(payload)
+              .eq('id', id)
+              .select('id, planned_date, status')
+              .single();
+
+            if (error) {
+              console.error('[Actions] Update failed:', error);
+              import('sonner').then(({ toast }) => toast.error('Failed to update action'));
+              return;
+            }
+
+            console.log('[Actions] Update success ->', data);
+            // Optimistically update local state for immediate reflect
+            setActions(prev => prev.map(a => a.id === id ? { ...a, planned_date: payload.planned_date || undefined, status: payload.status } : a));
+            import('sonner').then(({ toast }) => toast.success('Action updated'));
+            setActionDialogOpen(false);
+            setSelectedAction(undefined);
+            // Also reload to refresh any computed flags
+            loadDashboardData();
+          }}
+        />
+      )}
+
+      {/* Task Edit Dialog */}
+      {selectedTask && (
+        <TaskEditDialog
+          open={taskEditDialogOpen}
+          onOpenChange={setTaskEditDialogOpen}
+          task={{
+            ...selectedTask,
+            task_title: selectedTask.task_title,
+            task_details: '',
+            planned_start: selectedTask.planned_start || undefined,
+            planned_end: selectedTask.planned_end || undefined,
+            actual_start: undefined,
+            actual_end: undefined,
+            status: selectedTask.status,
+            assignee: undefined,
+            step_name: '',
+          }}
+          profiles={profiles}
+          onSave={async (taskData) => {
+            // Update task via API
+            const { error } = await supabase
+              .from('project_tasks')
+              .update({
+                task_title: taskData.task_title,
+                task_details: taskData.task_details,
+                planned_start: taskData.planned_start,
+                planned_end: taskData.planned_end,
+                actual_start: taskData.actual_start,
+                actual_end: taskData.actual_end,
+                status: taskData.status as any,
+                assignee: taskData.assignee,
+              })
+              .eq('id', selectedTask.id);
+              
+            if (!error) {
+              loadDashboardData(); // Refresh data
+            }
           }}
         />
       )}

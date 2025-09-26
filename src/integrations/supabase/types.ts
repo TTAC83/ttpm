@@ -1320,6 +1320,8 @@ export type Database = {
       }
       impl_weekly_reviews: {
         Row: {
+          churn_risk: Database["public"]["Enums"]["churn_risk_level"] | null
+          churn_risk_reason: string | null
           company_id: string
           customer_health:
             | Database["public"]["Enums"]["impl_health_simple"]
@@ -1334,6 +1336,8 @@ export type Database = {
           week_start: string
         }
         Insert: {
+          churn_risk?: Database["public"]["Enums"]["churn_risk_level"] | null
+          churn_risk_reason?: string | null
           company_id: string
           customer_health?:
             | Database["public"]["Enums"]["impl_health_simple"]
@@ -1350,6 +1354,8 @@ export type Database = {
           week_start: string
         }
         Update: {
+          churn_risk?: Database["public"]["Enums"]["churn_risk_level"] | null
+          churn_risk_reason?: string | null
           company_id?: string
           customer_health?:
             | Database["public"]["Enums"]["impl_health_simple"]
@@ -3759,6 +3765,7 @@ export type Database = {
         | "Rejected"
         | "Scheduled"
         | "Completed"
+      churn_risk_level: "Certain" | "High" | "Medium" | "Low"
       expense_category_enum:
         | "FoodDrink"
         | "Hotel"
@@ -3931,6 +3938,7 @@ export const Constants = {
         "Scheduled",
         "Completed",
       ],
+      churn_risk_level: ["Certain", "High", "Medium", "Low"],
       expense_category_enum: [
         "FoodDrink",
         "Hotel",

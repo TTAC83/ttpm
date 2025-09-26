@@ -532,9 +532,9 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
         return; // Don't save if validation fails
       }
 
-      // Validate churn risk reason when churn risk is high
+      // Validate churn risk reason when churn risk is high - but allow saving when risk is Low or null
       if (churnRiskValue && ['Certain', 'High', 'Medium'].includes(churnRiskValue) && !churnRiskReasonValue.trim()) {
-        return; // Don't save if validation fails
+        return; // Don't save if validation fails for high risk without reason
       }
 
       try {
@@ -597,7 +597,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
 
   // Auto-save when churn risk changes (immediate)
   useEffect(() => {
-    if (projectStatus && customerHealth && churnRisk) {
+    if (projectStatus && customerHealth) {
       autoSave(projectStatus, customerHealth, notes, reasonCode, churnRisk, churnRiskReason);
     }
   }, [churnRisk]);

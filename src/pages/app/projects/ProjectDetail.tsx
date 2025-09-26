@@ -302,7 +302,65 @@ export const ProjectDetail = () => {
           </div>
         </div>
 
-        {/* Project Info Grid */}
+        <div className="grid gap-4 md:grid-cols-3">
+          {project.site_name && (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Site</p>
+                    <p className="text-sm text-muted-foreground">{project.site_name}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          {project.site_address && (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Site Address</p>
+                    <p className="text-sm text-muted-foreground">{project.site_address}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">Contract Signed</p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatDateUK(project.contract_signed_date)}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">Created</p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatDateUK(project.created_at)}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Project Features Grid */}
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardContent className="pt-6">
@@ -354,50 +412,6 @@ export const ProjectDetail = () => {
                   <p className="text-sm font-medium">Case Study</p>
                   <p className="text-sm text-muted-foreground">
                     {project.case_study ? 'Yes' : 'No'}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3">
-          {project.site_name && (
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">Site</p>
-                    <p className="text-sm text-muted-foreground">{project.site_name}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-          
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">Contract Signed</p>
-                  <p className="text-sm text-muted-foreground">
-                    {formatDateUK(project.contract_signed_date)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">Created</p>
-                  <p className="text-sm text-muted-foreground">
-                    {formatDateUK(project.created_at)}
                   </p>
                 </div>
               </div>

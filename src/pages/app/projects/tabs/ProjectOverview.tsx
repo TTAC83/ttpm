@@ -63,6 +63,10 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
     auto_renewal: project.auto_renewal ?? true,
     standard_terms: project.standard_terms ?? true,
     deviation_of_terms: project.deviation_of_terms || '',
+    testimonial: project.testimonial || false,
+    reference_call: project.reference_call || false,
+    site_visit: project.site_visit || false,
+    case_study: project.case_study || false,
   });
 
   const [contractedLinesError, setContractedLinesError] = useState<string>('');
@@ -325,6 +329,10 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
           standard_terms: formData.standard_terms,
           deviation_of_terms: formData.standard_terms ? null : (formData.deviation_of_terms || null),
           useful_links: usefulLinks as any,
+          testimonial: formData.testimonial,
+          reference_call: formData.reference_call,
+          site_visit: formData.site_visit,
+          case_study: formData.case_study,
         })
         .eq('id', project.id);
 
@@ -383,6 +391,10 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
       auto_renewal: project.auto_renewal ?? true,
       standard_terms: project.standard_terms ?? true,
       deviation_of_terms: project.deviation_of_terms || '',
+      testimonial: project.testimonial || false,
+      reference_call: project.reference_call || false,
+      site_visit: project.site_visit || false,
+      case_study: project.case_study || false,
     });
     setContractedLinesError('');
     setBillingTermsError('');
@@ -478,6 +490,45 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                   onChange={(e) => setFormData(prev => ({ ...prev, site_address: e.target.value }))}
                   rows={3}
                 />
+              </div>
+              
+              {/* Project Features Section */}
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="text-lg font-medium">Project Features</h3>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="testimonial"
+                      checked={formData.testimonial}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, testimonial: checked }))}
+                    />
+                    <Label htmlFor="testimonial">Testimonial</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="reference_call"
+                      checked={formData.reference_call}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, reference_call: checked }))}
+                    />
+                    <Label htmlFor="reference_call">Reference Call</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="site_visit"
+                      checked={formData.site_visit}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, site_visit: checked }))}
+                    />
+                    <Label htmlFor="site_visit">Site Visit</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="case_study"
+                      checked={formData.case_study}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, case_study: checked }))}
+                    />
+                    <Label htmlFor="case_study">Case Study</Label>
+                  </div>
+                </div>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">

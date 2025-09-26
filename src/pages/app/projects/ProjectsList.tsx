@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateUK } from '@/lib/dateUtils';
-import { Search, Plus, Building, Calendar, Upload, Trash2, Smile, Frown, CheckCircle, AlertCircle } from 'lucide-react';
+import { Search, Plus, Building, Calendar, Upload, Trash2, Smile, Frown, CheckCircle, AlertCircle, TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import { DeleteProjectDialog } from '@/components/DeleteProjectDialog';
 
 interface Project {
@@ -69,7 +69,7 @@ export const ProjectsList = () => {
       
       const { data, error } = await supabase
         .from('impl_weekly_reviews')
-        .select('company_id, customer_health, project_status')
+        .select('company_id, customer_health, project_status, churn_risk')
         .eq('week_start', currentWeek);
       
       if (error) {
@@ -78,11 +78,12 @@ export const ProjectsList = () => {
       }
       
       // Convert to a map for easy lookup
-      const healthMap: Record<string, { customer_health?: string; project_status?: string }> = {};
+      const healthMap: Record<string, { customer_health?: string; project_status?: string; churn_risk?: string }> = {};
       (data || []).forEach(review => {
         healthMap[review.company_id] = {
           customer_health: review.customer_health,
-          project_status: review.project_status
+          project_status: review.project_status,
+          churn_risk: review.churn_risk
         };
       });
       
@@ -180,6 +181,26 @@ export const ProjectsList = () => {
         {health.project_status === "off_track" && (
           <div title="Project Status: Off Track">
             <AlertCircle className="h-4 w-4 text-red-600" />
+          </div>
+        )}
+        {health.churn_risk === "Certain" && (
+          <div title="Churn Risk: Certain">
+            <TrendingDown className="h-4 w-4 text-red-700" />
+          </div>
+        )}
+        {health.churn_risk === "High" && (
+          <div title="Churn Risk: High">
+            <TrendingDown className="h-4 w-4 text-red-600" />
+          </div>
+        )}
+        {health.churn_risk === "Medium" && (
+          <div title="Churn Risk: Medium">
+            <TrendingUp className="h-4 w-4 text-yellow-600" />
+          </div>
+        )}
+        {health.churn_risk === "Low" && (
+          <div title="Churn Risk: Low">
+            <Minus className="h-4 w-4 text-green-600" />
           </div>
         )}
       </div>

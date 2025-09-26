@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateUK } from '@/lib/dateUtils';
-import { ArrowLeft, Building, Calendar, MapPin, Users, Smile, Frown, CheckCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Building, Calendar, MapPin, Users, Smile, Frown, CheckCircle, AlertCircle, TrendingDown, TrendingUp, Minus } from 'lucide-react';
 
 // Tab components
 import ProjectOverview from './tabs/ProjectOverview';
@@ -83,7 +83,7 @@ export const ProjectDetail = () => {
       
       const { data, error } = await supabase
         .from('impl_weekly_reviews')
-        .select('customer_health, project_status')
+        .select('customer_health, project_status, churn_risk')
         .eq('company_id', project.company_id)
         .eq('week_start', currentWeek)
         .maybeSingle();
@@ -243,6 +243,50 @@ export const ProjectDetail = () => {
                     title="Project Status: Off Track - Click to view weekly review"
                   >
                     <AlertCircle className="h-5 w-5 text-red-600" />
+                  </Button>
+                )}
+                {healthStatus?.churn_risk === "Certain" && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleHealthIconClick}
+                    className="h-8 w-8 p-0 hover:bg-red-100"
+                    title="Churn Risk: Certain - Click to view weekly review"
+                  >
+                    <TrendingDown className="h-5 w-5 text-red-700" />
+                  </Button>
+                )}
+                {healthStatus?.churn_risk === "High" && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleHealthIconClick}
+                    className="h-8 w-8 p-0 hover:bg-red-100"
+                    title="Churn Risk: High - Click to view weekly review"
+                  >
+                    <TrendingDown className="h-5 w-5 text-red-600" />
+                  </Button>
+                )}
+                {healthStatus?.churn_risk === "Medium" && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleHealthIconClick}
+                    className="h-8 w-8 p-0 hover:bg-yellow-100"
+                    title="Churn Risk: Medium - Click to view weekly review"
+                  >
+                    <TrendingUp className="h-5 w-5 text-yellow-600" />
+                  </Button>
+                )}
+                {healthStatus?.churn_risk === "Low" && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleHealthIconClick}
+                    className="h-8 w-8 p-0 hover:bg-green-100"
+                    title="Churn Risk: Low - Click to view weekly review"
+                  >
+                    <Minus className="h-5 w-5 text-green-600" />
                   </Button>
                 )}
               </div>

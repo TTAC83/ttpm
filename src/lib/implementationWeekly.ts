@@ -178,12 +178,14 @@ export type ImplWeeklyReview = {
   customer_health: "green" | "red" | null;
   notes: string | null;
   reason_code: string | null;
+  churn_risk: "Certain" | "High" | "Medium" | "Low" | null;
+  churn_risk_reason: string | null;
 };
 
 export async function loadReview(companyId: string, weekStartISO: string): Promise<ImplWeeklyReview | null> {
   const { data, error } = await supabase
     .from("impl_weekly_reviews")
-    .select("project_status,customer_health,notes,reason_code")
+    .select("project_status,customer_health,notes,reason_code,churn_risk,churn_risk_reason")
     .eq("company_id", companyId)
     .eq("week_start", weekStartISO)
     .maybeSingle();
@@ -202,6 +204,8 @@ export async function saveReview(params: {
   customerHealth: "green" | "red" | null;
   notes?: string | null;
   reasonCode?: string | null;
+  churnRisk?: "Certain" | "High" | "Medium" | "Low" | null;
+  churnRiskReason?: string | null;
 }): Promise<void> {
   const { error } = await supabase.rpc("impl_set_weekly_review", {
     p_company_id: params.companyId,
@@ -210,6 +214,8 @@ export async function saveReview(params: {
     p_customer_health: params.customerHealth,
     p_notes: params.notes ?? null,
     p_reason_code: params.reasonCode ?? null,
+    p_churn_risk: params.churnRisk ?? null,
+    p_churn_risk_reason: params.churnRiskReason ?? null,
   });
   if (error) throw error;
 }

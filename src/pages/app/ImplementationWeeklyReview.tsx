@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -15,8 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
-import { CalendarIcon, Plus, Smile, Frown, CheckCircle, AlertCircle, Save, X, AlertTriangle } from "lucide-react";
+import { CalendarIcon, Plus, Smile, Frown, CheckCircle, AlertCircle, Save, X, AlertTriangle, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { computeTaskStatus } from "@/lib/taskStatus";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,7 +26,7 @@ import { BlockerDrawer } from "@/components/BlockerDrawer";
 import { blockersService } from "@/lib/blockersService";
 
 type Company = { company_id: string; company_name: string };
-type CompanyWithHealth = { company_id: string; company_name: string; customer_health?: "green" | "red" | null; project_status?: "on_track" | "off_track" | null };
+type CompanyWithHealth = { company_id: string; company_name: string; customer_health?: "green" | "red" | null; project_status?: "on_track" | "off_track" | null; churn_risk?: "Certain" | "High" | "Medium" | "Low" | null };
 type Week = { week_start: string; week_end: string; available_at: string };
 type Profile = { user_id: string; name: string };
 type TaskRow = {
@@ -105,7 +105,7 @@ export default function ImplementationWeeklyReviewPage() {
       
       const { data, error } = await supabase
         .from('impl_weekly_reviews')
-        .select('company_id, customer_health, project_status')
+        .select('company_id, customer_health, project_status, churn_risk')
         .eq('week_start', selectedWeek);
       
       if (error) {
@@ -142,7 +142,8 @@ export default function ImplementationWeeklyReviewPage() {
       return {
         ...company,
         customer_health: healthInfo?.customer_health || null,
-        project_status: healthInfo?.project_status || null
+        project_status: healthInfo?.project_status || null,
+        churn_risk: healthInfo?.churn_risk || null
       };
     });
     
@@ -287,6 +288,18 @@ export default function ImplementationWeeklyReviewPage() {
                       )}
                       {c.project_status === "off_track" && (
                         <AlertCircle className="h-4 w-4 text-red-600" />
+                      )}
+                      {c.churn_risk === "Low" && (
+                        <TrendingUp className="h-4 w-4 text-green-600" />
+                      )}
+                      {c.churn_risk === "Medium" && (
+                        <TrendingUp className="h-4 w-4 text-amber-600" />
+                      )}
+                      {c.churn_risk === "High" && (
+                        <TrendingUp className="h-4 w-4 text-red-600" />
+                      )}
+                      {c.churn_risk === "Certain" && (
+                        <TrendingUp className="h-4 w-4 text-black" />
                       )}
                     </div>
                   </div>
@@ -452,6 +465,8 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   const [customerHealth, setCustomerHealth] = useState<"green"|"red"|null>(null);
   const [reasonCode, setReasonCode] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
+  const [churnRisk, setChurnRisk] = useState<"Certain"|"High"|"Medium"|"Low"|null>("Low");
+  const [churnRiskReason, setChurnRiskReason] = useState<string>("");
   const [statusTouched, setStatusTouched] = useState(false);
   const [healthTouched, setHealthTouched] = useState(false);
 
@@ -461,6 +476,8 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     setCustomerHealth(null);
     setNotes("");
     setReasonCode("");
+    setChurnRisk("Low");
+    setChurnRiskReason("");
     setStatusTouched(false);
     setHealthTouched(false);
   }, [companyId, weekStart]);
@@ -472,11 +489,13 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
       setCustomerHealth(reviewQ.data.customer_health ?? null);
       setNotes(reviewQ.data.notes ?? "");
       setReasonCode(reviewQ.data.reason_code ?? "");
+      setChurnRisk(reviewQ.data.churn_risk ?? "Low");
+      setChurnRiskReason(reviewQ.data.churn_risk_reason ?? "");
     }
   }, [reviewQ.data]);
 
   const autoSaveMutation = useMutation({
-    mutationFn: (params: { projectStatus: "on_track"|"off_track"|null, customerHealth: "green"|"red"|null, notes: string, reasonCode: string }) => 
+    mutationFn: (params: { projectStatus: "on_track"|"off_track"|null, customerHealth: "green"|"red"|null, notes: string, reasonCode: string, churnRisk: "Certain"|"High"|"Medium"|"Low"|null, churnRiskReason: string }) => 
       saveReview({
         companyId,
         weekStartISO: weekStart,
@@ -484,6 +503,8 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
         customerHealth: params.customerHealth,
         notes: params.notes,
         reasonCode: params.reasonCode,
+        churnRisk: params.churnRisk,
+        churnRiskReason: params.churnRiskReason,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["impl-review", companyId, weekStart] });
@@ -500,7 +521,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
 
   // Auto-save functionality
   const autoSave = useCallback(
-    async (projectStatusValue: "on_track"|"off_track"|null, customerHealthValue: "green"|"red"|null, notesValue: string, reasonCodeValue: string) => {
+    async (projectStatusValue: "on_track"|"off_track"|null, customerHealthValue: "green"|"red"|null, notesValue: string, reasonCodeValue: string, churnRiskValue: "Certain"|"High"|"Medium"|"Low"|null, churnRiskReasonValue: string) => {
       // Don't auto-save if another save is already in progress
       if (autoSaveMutation.isPending) return;
       
@@ -511,12 +532,19 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
         return; // Don't save if validation fails
       }
 
+      // Validate churn risk reason when churn risk is high
+      if (churnRiskValue && ['Certain', 'High', 'Medium'].includes(churnRiskValue) && !churnRiskReasonValue.trim()) {
+        return; // Don't save if validation fails
+      }
+
       try {
         await autoSaveMutation.mutateAsync({
           projectStatus: projectStatusValue,
           customerHealth: customerHealthValue,
           notes: notesValue,
           reasonCode: reasonCodeValue,
+          churnRisk: churnRiskValue,
+          churnRiskReason: churnRiskReasonValue,
         });
       } catch (error) {
         console.error('Auto-save failed:', error);
@@ -528,12 +556,12 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   // Debounced auto-save for text fields
   const debouncedAutoSave = useRef<NodeJS.Timeout>();
   const triggerAutoSave = useCallback(
-    (projectStatusValue: "on_track"|"off_track"|null, customerHealthValue: "green"|"red"|null, notesValue: string, reasonCodeValue: string) => {
+    (projectStatusValue: "on_track"|"off_track"|null, customerHealthValue: "green"|"red"|null, notesValue: string, reasonCodeValue: string, churnRiskValue: "Certain"|"High"|"Medium"|"Low"|null, churnRiskReasonValue: string) => {
       if (debouncedAutoSave.current) {
         clearTimeout(debouncedAutoSave.current);
       }
       debouncedAutoSave.current = setTimeout(() => {
-        autoSave(projectStatusValue, customerHealthValue, notesValue, reasonCodeValue);
+        autoSave(projectStatusValue, customerHealthValue, notesValue, reasonCodeValue, churnRiskValue, churnRiskReasonValue);
       }, 1000); // 1 second delay for text fields
     },
     [autoSave]
@@ -542,30 +570,44 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   // Auto-save when project status changes (immediate)
   useEffect(() => {
     if (projectStatus && customerHealth) {
-      autoSave(projectStatus, customerHealth, notes, reasonCode);
+      autoSave(projectStatus, customerHealth, notes, reasonCode, churnRisk, churnRiskReason);
     }
   }, [projectStatus]);
 
   // Auto-save when customer health changes (immediate)
   useEffect(() => {
     if (projectStatus && customerHealth) {
-      autoSave(projectStatus, customerHealth, notes, reasonCode);
+      autoSave(projectStatus, customerHealth, notes, reasonCode, churnRisk, churnRiskReason);
     }
   }, [customerHealth]);
 
   // Auto-save when reason code changes (immediate, since it's a select)
   useEffect(() => {
     if (projectStatus && customerHealth && reasonCode) {
-      autoSave(projectStatus, customerHealth, notes, reasonCode);
+      autoSave(projectStatus, customerHealth, notes, reasonCode, churnRisk, churnRiskReason);
     }
   }, [reasonCode]);
 
   // Auto-save when notes change (debounced)
   useEffect(() => {
     if (projectStatus && customerHealth) {
-      triggerAutoSave(projectStatus, customerHealth, notes, reasonCode);
+      triggerAutoSave(projectStatus, customerHealth, notes, reasonCode, churnRisk, churnRiskReason);
     }
   }, [notes]);
+
+  // Auto-save when churn risk changes (immediate)
+  useEffect(() => {
+    if (projectStatus && customerHealth && churnRisk) {
+      autoSave(projectStatus, customerHealth, notes, reasonCode, churnRisk, churnRiskReason);
+    }
+  }, [churnRisk]);
+
+  // Auto-save when churn risk reason changes (debounced)
+  useEffect(() => {
+    if (projectStatus && customerHealth && churnRisk && ['Certain', 'High', 'Medium'].includes(churnRisk)) {
+      triggerAutoSave(projectStatus, customerHealth, notes, reasonCode, churnRisk, churnRiskReason);
+    }
+  }, [churnRiskReason]);
 
   const handleEditTask = (task: TaskRow) => {
     setEditingTask(task);
@@ -1161,6 +1203,57 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          )}
+
+          {/* Churn Risk */}
+          <div>
+            <div className="text-sm mb-1">Churn Risk</div>
+            <Select value={churnRisk || "Low"} onValueChange={(value: "Certain"|"High"|"Medium"|"Low") => setChurnRisk(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select churn risk..." />
+              </SelectTrigger>
+              <SelectContent className="z-50 bg-popover text-popover-foreground shadow-md">
+                <SelectItem value="Low">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                    Low
+                  </div>
+                </SelectItem>
+                <SelectItem value="Medium">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                    Medium
+                  </div>
+                </SelectItem>
+                <SelectItem value="High">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                    High
+                  </div>
+                </SelectItem>
+                <SelectItem value="Certain">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-black"></div>
+                    Certain
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Churn Risk Reason for High Risk */}
+          {churnRisk && ['Certain', 'High', 'Medium'].includes(churnRisk) && (
+            <div className="md:col-span-3">
+              <div className="text-sm mb-1">
+                Churn Risk Reason <span className="text-destructive">*</span>
+              </div>
+              <Textarea 
+                value={churnRiskReason} 
+                onChange={(e) => setChurnRiskReason(e.target.value)} 
+                placeholder="Explain the reason for the churn risk..."
+                className="min-h-[80px]"
+              />
             </div>
           )}
           

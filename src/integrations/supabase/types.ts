@@ -2272,6 +2272,7 @@ export type Database = {
           break_clause_enabled: boolean | null
           break_clause_key_points_md: string | null
           break_clause_project_date: string | null
+          case_study: boolean | null
           company_id: string
           contract_end_date: string | null
           contract_signed_date: string
@@ -2291,13 +2292,16 @@ export type Database = {
           payment_terms_days: number | null
           product_description: string | null
           project_coordinator: string | null
+          reference_call: boolean | null
           sales_lead: string | null
           services_fee: number | null
           site_address: string | null
           site_name: string | null
+          site_visit: boolean | null
           solution_consultant: string | null
           standard_terms: boolean | null
           technical_project_lead: string | null
+          testimonial: boolean | null
           useful_links: Json | null
         }
         Insert: {
@@ -2309,6 +2313,7 @@ export type Database = {
           break_clause_enabled?: boolean | null
           break_clause_key_points_md?: string | null
           break_clause_project_date?: string | null
+          case_study?: boolean | null
           company_id: string
           contract_end_date?: string | null
           contract_signed_date: string
@@ -2328,13 +2333,16 @@ export type Database = {
           payment_terms_days?: number | null
           product_description?: string | null
           project_coordinator?: string | null
+          reference_call?: boolean | null
           sales_lead?: string | null
           services_fee?: number | null
           site_address?: string | null
           site_name?: string | null
+          site_visit?: boolean | null
           solution_consultant?: string | null
           standard_terms?: boolean | null
           technical_project_lead?: string | null
+          testimonial?: boolean | null
           useful_links?: Json | null
         }
         Update: {
@@ -2346,6 +2354,7 @@ export type Database = {
           break_clause_enabled?: boolean | null
           break_clause_key_points_md?: string | null
           break_clause_project_date?: string | null
+          case_study?: boolean | null
           company_id?: string
           contract_end_date?: string | null
           contract_signed_date?: string
@@ -2365,13 +2374,16 @@ export type Database = {
           payment_terms_days?: number | null
           product_description?: string | null
           project_coordinator?: string | null
+          reference_call?: boolean | null
           sales_lead?: string | null
           services_fee?: number | null
           site_address?: string | null
           site_name?: string | null
+          site_visit?: boolean | null
           solution_consultant?: string | null
           standard_terms?: boolean | null
           technical_project_lead?: string | null
+          testimonial?: boolean | null
           useful_links?: Json | null
         }
         Relationships: [

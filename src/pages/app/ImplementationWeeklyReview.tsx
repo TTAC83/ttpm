@@ -1209,12 +1209,12 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
           {/* Churn Risk */}
           <div>
             <div className="text-sm mb-1">Churn Risk</div>
-            <Select value={churnRisk || ""} onValueChange={(value: string) => setChurnRisk(value === "" ? null : value as "Certain"|"High"|"Medium"|"Low")}>
+            <Select value={churnRisk || "unselected"} onValueChange={(value: string) => setChurnRisk(value === "unselected" ? null : value as "Certain"|"High"|"Medium"|"Low")}>
               <SelectTrigger>
                 <SelectValue placeholder="Select churn risk..." />
               </SelectTrigger>
               <SelectContent className="z-50 bg-popover text-popover-foreground shadow-md">
-                <SelectItem value="">
+                <SelectItem value="unselected">
                   <span className="text-muted-foreground">Not selected</span>
                 </SelectItem>
                 <SelectItem value="Low">

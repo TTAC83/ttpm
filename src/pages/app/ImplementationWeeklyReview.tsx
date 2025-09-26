@@ -465,7 +465,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   const [customerHealth, setCustomerHealth] = useState<"green"|"red"|null>(null);
   const [reasonCode, setReasonCode] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
-  const [churnRisk, setChurnRisk] = useState<"Certain"|"High"|"Medium"|"Low"|null>("Low");
+  const [churnRisk, setChurnRisk] = useState<"Certain"|"High"|"Medium"|"Low"|null>(null);
   const [churnRiskReason, setChurnRiskReason] = useState<string>("");
   const [statusTouched, setStatusTouched] = useState(false);
   const [healthTouched, setHealthTouched] = useState(false);
@@ -476,7 +476,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     setCustomerHealth(null);
     setNotes("");
     setReasonCode("");
-    setChurnRisk("Low");
+    setChurnRisk(null);
     setChurnRiskReason("");
     setStatusTouched(false);
     setHealthTouched(false);
@@ -489,7 +489,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
       setCustomerHealth(reviewQ.data.customer_health ?? null);
       setNotes(reviewQ.data.notes ?? "");
       setReasonCode(reviewQ.data.reason_code ?? "");
-      setChurnRisk(reviewQ.data.churn_risk ?? "Low");
+      setChurnRisk(reviewQ.data.churn_risk ?? null);
       setChurnRiskReason(reviewQ.data.churn_risk_reason ?? "");
     }
   }, [reviewQ.data]);
@@ -1209,11 +1209,14 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
           {/* Churn Risk */}
           <div>
             <div className="text-sm mb-1">Churn Risk</div>
-            <Select value={churnRisk || "Low"} onValueChange={(value: "Certain"|"High"|"Medium"|"Low") => setChurnRisk(value)}>
+            <Select value={churnRisk || ""} onValueChange={(value: string) => setChurnRisk(value === "" ? null : value as "Certain"|"High"|"Medium"|"Low")}>
               <SelectTrigger>
                 <SelectValue placeholder="Select churn risk..." />
               </SelectTrigger>
               <SelectContent className="z-50 bg-popover text-popover-foreground shadow-md">
+                <SelectItem value="">
+                  <span className="text-muted-foreground">Not selected</span>
+                </SelectItem>
                 <SelectItem value="Low">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-green-500"></div>

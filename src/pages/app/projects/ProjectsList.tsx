@@ -3,13 +3,14 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { useQuery } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateUK } from '@/lib/dateUtils';
-import { Search, Plus, Building, Calendar, Upload, Trash2 } from 'lucide-react';
+import { Search, Plus, Building, Calendar, Upload, Trash2, Smile, Frown, CheckCircle, AlertCircle } from 'lucide-react';
 import { DeleteProjectDialog } from '@/components/DeleteProjectDialog';
 
 interface Project {
@@ -19,6 +20,7 @@ interface Project {
   domain: string;
   contract_signed_date: string;
   created_at: string;
+  company_id: string;
   companies: {
     name: string;
   } | null;
@@ -40,6 +42,56 @@ export const ProjectsList = () => {
     projectName: '',
   });
 
+  // Get current week for health status
+  const { data: currentWeek } = useQuery({
+    queryKey: ['current-week'],
+    queryFn: async () => {
+      const { data: weeksData } = await supabase
+        .from('impl_weekly_weeks')
+        .select('week_start, week_end')
+        .order('week_start', { ascending: false });
+      
+      if (weeksData && weeksData.length >= 2) {
+        return weeksData[1].week_start; // Current week (second from top)
+      } else if (weeksData && weeksData.length > 0) {
+        return weeksData[0].week_start; // Fallback to first available week
+      }
+      return null;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Get health status for all projects
+  const { data: healthStatuses } = useQuery({
+    queryKey: ['projects-health', currentWeek],
+    queryFn: async () => {
+      if (!currentWeek) return {};
+      
+      const { data, error } = await supabase
+        .from('impl_weekly_reviews')
+        .select('company_id, customer_health, project_status')
+        .eq('week_start', currentWeek);
+      
+      if (error) {
+        console.error('Error fetching health statuses:', error);
+        return {};
+      }
+      
+      // Convert to a map for easy lookup
+      const healthMap: Record<string, { customer_health?: string; project_status?: string }> = {};
+      (data || []).forEach(review => {
+        healthMap[review.company_id] = {
+          customer_health: review.customer_health,
+          project_status: review.project_status
+        };
+      });
+      
+      return healthMap;
+    },
+    enabled: !!currentWeek,
+    staleTime: 5 * 60 * 1000,
+  });
+
   useEffect(() => {
     fetchProjects();
   }, []);
@@ -57,6 +109,7 @@ export const ProjectsList = () => {
           domain,
           contract_signed_date,
           created_at,
+          company_id,
           companies (
             name
           )
@@ -101,6 +154,36 @@ export const ProjectsList = () => {
       case 'Hybrid': return 'outline';
       default: return 'outline';
     }
+  };
+
+  const renderHealthIcons = (project: Project) => {
+    const health = healthStatuses?.[project.company_id];
+    if (!health) return null;
+
+    return (
+      <div className="flex items-center gap-1">
+        {health.customer_health === "green" && (
+          <div title="Customer Health: Green">
+            <Smile className="h-4 w-4 text-green-600" />
+          </div>
+        )}
+        {health.customer_health === "red" && (
+          <div title="Customer Health: Red">
+            <Frown className="h-4 w-4 text-red-600" />
+          </div>
+        )}
+        {health.project_status === "on_track" && (
+          <div title="Project Status: On Track">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+          </div>
+        )}
+        {health.project_status === "off_track" && (
+          <div title="Project Status: Off Track">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -157,21 +240,22 @@ export const ProjectsList = () => {
             </div>
           ) : (
             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Project Name</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Site</TableHead>
-                  <TableHead>Domain</TableHead>
-                  <TableHead>Contract Date</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
+               <TableHeader>
+                 <TableRow>
+                   <TableHead>Project Name</TableHead>
+                   <TableHead>Customer</TableHead>
+                   <TableHead>Site</TableHead>
+                   <TableHead>Domain</TableHead>
+                   <TableHead>Status</TableHead>
+                   <TableHead>Contract Date</TableHead>
+                   <TableHead>Created</TableHead>
+                   <TableHead>Actions</TableHead>
+                 </TableRow>
+               </TableHeader>
               <TableBody>
                 {filteredProjects.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
+                   <TableRow>
+                     <TableCell colSpan={8} className="text-center py-8">
                       <div className="flex flex-col items-center gap-2">
                         <Building className="h-8 w-8 text-muted-foreground" />
                         <p className="text-muted-foreground">
@@ -202,9 +286,10 @@ export const ProjectsList = () => {
                         <Badge variant={getDomainBadgeVariant(project.domain)}>
                           {project.domain}
                         </Badge>
-                      </TableCell>
-                      <TableCell>{formatDateUK(project.contract_signed_date)}</TableCell>
-                      <TableCell>{formatDateUK(project.created_at)}</TableCell>
+                       </TableCell>
+                       <TableCell>{renderHealthIcons(project)}</TableCell>
+                       <TableCell>{formatDateUK(project.contract_signed_date)}</TableCell>
+                       <TableCell>{formatDateUK(project.created_at)}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Button asChild variant="ghost" size="sm">

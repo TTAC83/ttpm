@@ -3,12 +3,13 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateUK } from '@/lib/dateUtils';
-import { ArrowLeft, Building, Calendar, MapPin, Users } from 'lucide-react';
+import { ArrowLeft, Building, Calendar, MapPin, Users, Smile, Frown, CheckCircle, AlertCircle } from 'lucide-react';
 
 // Tab components
 import ProjectOverview from './tabs/ProjectOverview';
@@ -38,6 +39,7 @@ interface Project {
   project_coordinator: string | null;
   line_description: string | null;
   product_description: string | null;
+  company_id: string;
   companies: {
     name: string;
   } | null;
@@ -53,6 +55,49 @@ export const ProjectDetail = () => {
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+
+  // Get current week for health status
+  const { data: currentWeek } = useQuery({
+    queryKey: ['current-week'],
+    queryFn: async () => {
+      const { data: weeksData } = await supabase
+        .from('impl_weekly_weeks')
+        .select('week_start, week_end')
+        .order('week_start', { ascending: false });
+      
+      if (weeksData && weeksData.length >= 2) {
+        return weeksData[1].week_start; // Current week (second from top)
+      } else if (weeksData && weeksData.length > 0) {
+        return weeksData[0].week_start; // Fallback to first available week
+      }
+      return null;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Get health status for this project's company
+  const { data: healthStatus } = useQuery({
+    queryKey: ['project-health', project?.company_id, currentWeek],
+    queryFn: async () => {
+      if (!project?.company_id || !currentWeek) return null;
+      
+      const { data, error } = await supabase
+        .from('impl_weekly_reviews')
+        .select('customer_health, project_status')
+        .eq('company_id', project.company_id)
+        .eq('week_start', currentWeek)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching health status:', error);
+        return null;
+      }
+      
+      return data;
+    },
+    enabled: !!project?.company_id && !!currentWeek,
+    staleTime: 5 * 60 * 1000,
+  });
 
   useEffect(() => {
     if (id) {
@@ -108,6 +153,12 @@ export const ProjectDetail = () => {
     }
   };
 
+  const handleHealthIconClick = () => {
+    if (project?.company_id) {
+      navigate('/app/implementation/weekly-review');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-96">
@@ -148,6 +199,53 @@ export const ProjectDetail = () => {
               <Badge variant={getDomainBadgeVariant(project.domain)}>
                 {project.domain}
               </Badge>
+              {/* Health Status Icons */}
+              <div className="flex items-center gap-2">
+                {healthStatus?.customer_health === "green" && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleHealthIconClick}
+                    className="h-8 w-8 p-0 hover:bg-green-100"
+                    title="Customer Health: Green - Click to view weekly review"
+                  >
+                    <Smile className="h-5 w-5 text-green-600" />
+                  </Button>
+                )}
+                {healthStatus?.customer_health === "red" && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleHealthIconClick}
+                    className="h-8 w-8 p-0 hover:bg-red-100"
+                    title="Customer Health: Red - Click to view weekly review"
+                  >
+                    <Frown className="h-5 w-5 text-red-600" />
+                  </Button>
+                )}
+                {healthStatus?.project_status === "on_track" && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleHealthIconClick}
+                    className="h-8 w-8 p-0 hover:bg-green-100"
+                    title="Project Status: On Track - Click to view weekly review"
+                  >
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                  </Button>
+                )}
+                {healthStatus?.project_status === "off_track" && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleHealthIconClick}
+                    className="h-8 w-8 p-0 hover:bg-red-100"
+                    title="Project Status: Off Track - Click to view weekly review"
+                  >
+                    <AlertCircle className="h-5 w-5 text-red-600" />
+                  </Button>
+                )}
+              </div>
             </div>
             <p className="text-muted-foreground flex items-center gap-2">
               <Building className="h-4 w-4" />

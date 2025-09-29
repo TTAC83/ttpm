@@ -10,7 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateUK } from '@/lib/dateUtils';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Download } from 'lucide-react';
+import { SolutionsProjectSelector } from '@/components/SolutionsProjectSelector';
+import { SolutionsProject, convertSolutionsToImplementationProject } from '@/lib/solutionsConversionService';
 
 interface Company {
   id: string;
@@ -31,6 +33,7 @@ export const NewProject = () => {
   const [loading, setLoading] = useState(false);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [internalProfiles, setInternalProfiles] = useState<Profile[]>([]);
+  const [showSolutionsSelector, setShowSolutionsSelector] = useState(false);
   
   const [formData, setFormData] = useState({
     company_name: '', // Changed from company_id
@@ -149,6 +152,37 @@ export const NewProject = () => {
     }
   };
 
+  const handleSolutionsConversion = async (
+    solutionsProject: SolutionsProject, 
+    roleMapping: { [key: string]: string }, 
+    contractDate: string
+  ) => {
+    setLoading(true);
+    try {
+      const project = await convertSolutionsToImplementationProject(
+        solutionsProject, 
+        roleMapping, 
+        contractDate
+      );
+
+      toast({
+        title: "Project Converted",
+        description: "Solutions project has been converted to implementation project successfully",
+      });
+
+      navigate(`/app/projects/${project.id}`);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to convert solutions project",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+      setShowSolutionsSelector(false);
+    }
+  };
+
   if (!isInternalAdmin()) {
     return null;
   }
@@ -176,8 +210,21 @@ export const NewProject = () => {
         <CardHeader>
           <CardTitle>Project Details</CardTitle>
           <CardDescription>
-            Enter the project information and assign team leads
+            Enter the project information and assign team leads, or convert from a Solutions Project
           </CardDescription>
+          {isInternalAdmin() && (
+            <div className="flex gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowSolutionsSelector(true)}
+                className="flex items-center gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Create from Solutions Project
+              </Button>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -382,6 +429,12 @@ export const NewProject = () => {
           </form>
         </CardContent>
       </Card>
+
+      <SolutionsProjectSelector
+        open={showSolutionsSelector}
+        onClose={() => setShowSolutionsSelector(false)}
+        onConvert={handleSolutionsConversion}
+      />
     </div>
   );
 };

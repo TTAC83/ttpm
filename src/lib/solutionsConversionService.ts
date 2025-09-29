@@ -30,7 +30,10 @@ export const PROJECT_ROLES = [
   { value: "implementation_lead", label: "Implementation Lead" },
   { value: "ai_iot_engineer", label: "AI/IoT Engineer" },
   { value: "technical_project_lead", label: "Technical Project Lead" },
-  { value: "project_coordinator", label: "Project Coordinator" }
+  { value: "project_coordinator", label: "Project Coordinator" },
+  { value: "sales_lead", label: "Sales Lead" },
+  { value: "solution_consultant", label: "Solution Consultant" },
+  { value: "account_manager", label: "Account Manager" }
 ];
 
 export const SUGGESTED_ROLE_MAPPINGS = {
@@ -130,6 +133,9 @@ export const convertSolutionsToImplementationProject = async (
     ai_iot_engineer: roleMapping.ai_iot_engineer || null,
     technical_project_lead: roleMapping.technical_project_lead || null,
     project_coordinator: roleMapping.project_coordinator || null,
+    sales_lead: roleMapping.sales_lead || null,
+    solution_consultant: roleMapping.solution_consultant || null,
+    account_manager: roleMapping.account_manager || null,
   };
 
   const { data: project, error: projectError } = await supabase

@@ -12,7 +12,7 @@ import {
   fetchSolutionsProjects, 
   fetchSolutionsProjectById, 
   getConversionMapping,
-  PROJECT_ROLES 
+  SUGGESTED_ROLE_MAPPINGS 
 } from '@/lib/solutionsConversionService';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -95,13 +95,13 @@ export const SolutionsProjectSelector = ({ open, onClose, onConvert }: Solutions
       setSelectedProject(project);
       setConversionMapping(mapping);
       
-      // Set up initial role mappings
+      // Apply default role mappings automatically
       const initialMapping: { [key: string]: string } = {};
       if (mapping.salesperson) {
-        initialMapping.customer_project_lead = mapping.salesperson;
+        initialMapping.sales_lead = mapping.salesperson;
       }
       if (mapping.solutions_consultant) {
-        initialMapping.ai_iot_engineer = mapping.solutions_consultant;
+        initialMapping.solution_consultant = mapping.solutions_consultant;
       }
       
       setRoleMapping(initialMapping);
@@ -219,126 +219,38 @@ export const SolutionsProjectSelector = ({ open, onClose, onConvert }: Solutions
             <Separator />
 
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Team Role Mapping</h3>
-              <p className="text-sm text-muted-foreground">
-                Map the Solutions Project team members to Implementation Project roles. 
-                Only team members who exist as internal users will be mapped.
-              </p>
-
-              {conversionMapping.salesperson && (
-                <div className="p-3 bg-muted rounded-lg">
-                  <div className="text-sm font-medium mb-2">
-                    Salesperson: {getUserName(conversionMapping.salesperson)}
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Map to Implementation Role</Label>
-                    <Select 
-                      value={roleMapping.customer_project_lead || 'none'} 
-                      onValueChange={(value) => setRoleMapping(prev => ({ 
-                        ...prev, 
-                        customer_project_lead: value === 'none' ? '' : value 
-                      }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No assignment</SelectItem>
-                        {PROJECT_ROLES.map((role) => (
-                          <SelectItem key={role.value} value={conversionMapping.salesperson!}>
-                            {role.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              )}
-
-              {conversionMapping.solutions_consultant && (
-                <div className="p-3 bg-muted rounded-lg">
-                  <div className="text-sm font-medium mb-2">
-                    Solutions Consultant: {getUserName(conversionMapping.solutions_consultant)}
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Map to Implementation Role</Label>
-                    <Select 
-                      value={Object.entries(roleMapping).find(([_, userId]) => userId === conversionMapping.solutions_consultant)?.[0] || 'none'} 
-                      onValueChange={(role) => {
-                        if (role === 'none') {
-                          // Remove any existing mapping for this user
-                          const newMapping = { ...roleMapping };
-                          Object.keys(newMapping).forEach(key => {
-                            if (newMapping[key] === conversionMapping.solutions_consultant) {
-                              delete newMapping[key];
-                            }
-                          });
-                          setRoleMapping(newMapping);
-                        } else {
-                          setRoleMapping(prev => ({ ...prev, [role]: conversionMapping.solutions_consultant! }));
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select role (suggested: AI/IoT Engineer)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No assignment</SelectItem>
-                        {PROJECT_ROLES.map((role) => (
-                          <SelectItem key={role.value} value={role.value}>
-                            {role.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              )}
-
-              {conversionMapping.customer_lead_name && (
-                <div className="p-3 bg-muted rounded-lg">
-                  <div className="text-sm font-medium mb-2">
-                    Customer Lead: {conversionMapping.customer_lead_name}
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    This is customer contact information and will not be mapped to internal team roles.
-                  </p>
-                </div>
-              )}
-
-              <div className="space-y-3">
-                <h4 className="font-medium">Additional Team Assignments</h4>
-                <p className="text-sm text-muted-foreground">Assign internal team members to remaining roles:</p>
+              <h3 className="text-lg font-semibold">Default Team Assignments</h3>
+              <div className="p-4 bg-muted rounded-lg space-y-2">
+                <p className="text-sm text-muted-foreground mb-3">
+                  The following team members will be automatically assigned:
+                </p>
                 
-                {PROJECT_ROLES.map((role) => {
-                  const isAlreadyMapped = Object.hasOwnProperty.call(roleMapping, role.value);
-                  return (
-                    <div key={role.value} className="space-y-2">
-                      <Label>{role.label}</Label>
-                      <Select 
-                        value={roleMapping[role.value] || 'none'} 
-                        onValueChange={(value) => setRoleMapping(prev => ({ 
-                          ...prev, 
-                          [role.value]: value === 'none' ? '' : value 
-                        }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select team member" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">No assignment</SelectItem>
-                          {internalProfiles
-                            .filter((profile) => profile.user_id && profile.user_id.trim() !== '')
-                            .map((profile) => (
-                              <SelectItem key={profile.user_id} value={profile.user_id}>
-                                {profile.name || 'Unnamed User'}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  );
-                })}
+                {conversionMapping.salesperson && (
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium">Sales Lead:</span>
+                    <span>{getUserName(conversionMapping.salesperson)}</span>
+                  </div>
+                )}
+                
+                {conversionMapping.solutions_consultant && (
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium">Solution Consultant:</span>
+                    <span>{getUserName(conversionMapping.solutions_consultant)}</span>
+                  </div>
+                )}
+                
+                {conversionMapping.customer_lead_name && (
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium">Customer Lead (info only):</span>
+                    <span>{conversionMapping.customer_lead_name}</span>
+                  </div>
+                )}
+                
+                {!conversionMapping.salesperson && !conversionMapping.solutions_consultant && (
+                  <p className="text-sm text-muted-foreground italic">
+                    No team members found to assign automatically
+                  </p>
+                )}
               </div>
             </div>
 

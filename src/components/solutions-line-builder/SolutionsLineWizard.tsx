@@ -79,7 +79,7 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
 
     try {
       // Load line data
-      const { data: lineData, error: lineError } = await supabase
+      const { data: existingLineData, error: lineError } = await supabase
         .from('solutions_lines')
         .select('*')
         .eq('id', editLineId)
@@ -88,11 +88,11 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
       if (lineError) throw lineError;
 
       setLineData({
-        name: lineData.line_name,
-        min_speed: lineData.min_speed || 0,
-        max_speed: lineData.max_speed || 0,
-        line_description: (lineData as any).line_description || "",
-        product_description: (lineData as any).product_description || "",
+        name: existingLineData.line_name,
+        min_speed: existingLineData.min_speed || 0,
+        max_speed: existingLineData.max_speed || 0,
+        line_description: existingLineData.line_description || "",
+        product_description: existingLineData.product_description || "",
       });
 
       // For solutions lines, we don't have positions/equipment in the database yet

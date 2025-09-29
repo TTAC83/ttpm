@@ -183,12 +183,14 @@ export type ImplWeeklyReview = {
 };
 
 export async function loadReview(companyId: string, weekStartISO: string): Promise<ImplWeeklyReview | null> {
+  console.log('Loading weekly review for:', { companyId, weekStartISO });
   const { data, error } = await supabase
     .from("impl_weekly_reviews")
     .select("project_status,customer_health,notes,reason_code,churn_risk,churn_risk_reason")
     .eq("company_id", companyId)
     .eq("week_start", weekStartISO)
     .maybeSingle();
+  console.log('Load result:', { data, error });
   if (error) {
     // if row not found, return null
     if ((error as any).code === "PGRST116") return null;
@@ -207,7 +209,8 @@ export async function saveReview(params: {
   churnRisk?: "Certain" | "High" | "Medium" | "Low" | null;
   churnRiskReason?: string | null;
 }): Promise<void> {
-  const { error } = await supabase.rpc("impl_set_weekly_review", {
+  console.log('Saving weekly review:', params);
+  const { data, error } = await supabase.rpc("impl_set_weekly_review", {
     p_company_id: params.companyId,
     p_week_start: params.weekStartISO,
     p_project_status: params.projectStatus,
@@ -217,7 +220,11 @@ export async function saveReview(params: {
     p_churn_risk: params.churnRisk ?? null,
     p_churn_risk_reason: params.churnRiskReason ?? null,
   });
-  if (error) throw error;
+  console.log('Save result:', { data, error });
+  if (error) {
+    console.error('Failed to save weekly review:', error);
+    throw error;
+  }
 }
 
 export type WeeklyStats = {

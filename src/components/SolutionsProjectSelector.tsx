@@ -233,14 +233,17 @@ export const SolutionsProjectSelector = ({ open, onClose, onConvert }: Solutions
                   <div className="space-y-2">
                     <Label>Map to Implementation Role</Label>
                     <Select 
-                      value={roleMapping.customer_project_lead || ''} 
-                      onValueChange={(value) => setRoleMapping(prev => ({ ...prev, customer_project_lead: value }))}
+                      value={roleMapping.customer_project_lead || 'none'} 
+                      onValueChange={(value) => setRoleMapping(prev => ({ 
+                        ...prev, 
+                        customer_project_lead: value === 'none' ? '' : value 
+                      }))}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select role" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">No assignment</SelectItem>
+                        <SelectItem value="none">No assignment</SelectItem>
                         {PROJECT_ROLES.map((role) => (
                           <SelectItem key={role.value} value={conversionMapping.salesperson!}>
                             {role.label}
@@ -260,9 +263,18 @@ export const SolutionsProjectSelector = ({ open, onClose, onConvert }: Solutions
                   <div className="space-y-2">
                     <Label>Map to Implementation Role</Label>
                     <Select 
-                      value={Object.entries(roleMapping).find(([_, userId]) => userId === conversionMapping.solutions_consultant)?.[0] || ''} 
+                      value={Object.entries(roleMapping).find(([_, userId]) => userId === conversionMapping.solutions_consultant)?.[0] || 'none'} 
                       onValueChange={(role) => {
-                        if (role) {
+                        if (role === 'none') {
+                          // Remove any existing mapping for this user
+                          const newMapping = { ...roleMapping };
+                          Object.keys(newMapping).forEach(key => {
+                            if (newMapping[key] === conversionMapping.solutions_consultant) {
+                              delete newMapping[key];
+                            }
+                          });
+                          setRoleMapping(newMapping);
+                        } else {
                           setRoleMapping(prev => ({ ...prev, [role]: conversionMapping.solutions_consultant! }));
                         }
                       }}
@@ -271,7 +283,7 @@ export const SolutionsProjectSelector = ({ open, onClose, onConvert }: Solutions
                         <SelectValue placeholder="Select role (suggested: AI/IoT Engineer)" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">No assignment</SelectItem>
+                        <SelectItem value="none">No assignment</SelectItem>
                         {PROJECT_ROLES.map((role) => (
                           <SelectItem key={role.value} value={role.value}>
                             {role.label}
@@ -304,14 +316,17 @@ export const SolutionsProjectSelector = ({ open, onClose, onConvert }: Solutions
                     <div key={role.value} className="space-y-2">
                       <Label>{role.label}</Label>
                       <Select 
-                        value={roleMapping[role.value] || ''} 
-                        onValueChange={(value) => setRoleMapping(prev => ({ ...prev, [role.value]: value }))}
+                        value={roleMapping[role.value] || 'none'} 
+                        onValueChange={(value) => setRoleMapping(prev => ({ 
+                          ...prev, 
+                          [role.value]: value === 'none' ? '' : value 
+                        }))}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select team member" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">No assignment</SelectItem>
+                          <SelectItem value="none">No assignment</SelectItem>
                           {internalProfiles
                             .filter((profile) => profile.user_id && profile.user_id.trim() !== '')
                             .map((profile) => (

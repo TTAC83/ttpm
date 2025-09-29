@@ -37,8 +37,8 @@ export const PROJECT_ROLES = [
 ];
 
 export const SUGGESTED_ROLE_MAPPINGS = {
-  'Solutions Consultant': 'ai_iot_engineer', // Default mapping
-  'Salesperson': 'customer_project_lead', // Default mapping
+  'Solutions Consultant': 'solution_consultant', // Default mapping
+  'Salesperson': 'sales_lead', // Default mapping
 };
 
 export const fetchSolutionsProjects = async (): Promise<SolutionsProject[]> => {

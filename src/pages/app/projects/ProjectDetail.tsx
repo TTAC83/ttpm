@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateUK } from '@/lib/dateUtils';
-import { ArrowLeft, Building, Calendar, MapPin, Users, Smile, Frown, CheckCircle, AlertCircle, TrendingDown, TrendingUp, Minus, MessageSquareQuote, Phone, Eye, FileText } from 'lucide-react';
+import { ArrowLeft, Building, Calendar, MapPin, Users, Smile, Frown, CheckCircle, AlertCircle, TrendingDown, TrendingUp, Minus } from 'lucide-react';
 
 // Tab components
 import ProjectOverview from './tabs/ProjectOverview';
@@ -330,62 +330,6 @@ export const ProjectDetail = () => {
               </CardContent>
             </Card>
           )}
-          
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2">
-                <MessageSquareQuote className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">Testimonial</p>
-                  <p className="text-sm text-muted-foreground">
-                    {project.testimonial ? 'Yes' : 'No'}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">Reference Call</p>
-                  <p className="text-sm text-muted-foreground">
-                    {project.reference_call ? 'Yes' : 'No'}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2">
-                <Eye className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">Site Visit</p>
-                  <p className="text-sm text-muted-foreground">
-                    {project.site_visit ? 'Yes' : 'No'}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">Case Study</p>
-                  <p className="text-sm text-muted-foreground">
-                    {project.case_study ? 'Yes' : 'No'}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
           
           <Card>
             <CardContent className="pt-6">

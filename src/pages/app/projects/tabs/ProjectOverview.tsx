@@ -1083,6 +1083,26 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                   <p className="text-sm text-muted-foreground whitespace-pre-line">{project.site_address}</p>
                 </div>
               )}
+              
+              {/* Project Features */}
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 border-t pt-4">
+                <div>
+                  <p className="text-sm font-medium">Testimonial</p>
+                  <p className="text-sm text-muted-foreground">{project.testimonial ? 'Yes' : 'No'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Reference Call</p>
+                  <p className="text-sm text-muted-foreground">{project.reference_call ? 'Yes' : 'No'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Site Visit</p>
+                  <p className="text-sm text-muted-foreground">{project.site_visit ? 'Yes' : 'No'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Case Study</p>
+                  <p className="text-sm text-muted-foreground">{project.case_study ? 'Yes' : 'No'}</p>
+                </div>
+              </div>
 
               {(project.line_description || project.product_description) && (
                 <div className="grid gap-4 md:grid-cols-2">

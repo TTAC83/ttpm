@@ -176,7 +176,7 @@ export const AppLayout = () => {
   return (
     <SidebarProvider>
       <div className="flex h-screen w-full">
-        <Sidebar collapsible="none">
+        <Sidebar collapsible="icon">
           <SidebarHeader className="border-b border-sidebar-border p-4">
             <div className="flex items-center gap-3">
               <img src="/lovable-uploads/4fec4d14-a56e-4a44-8256-ac94aa43da5c.png" alt="Thingtrax" className="w-8 h-8" />

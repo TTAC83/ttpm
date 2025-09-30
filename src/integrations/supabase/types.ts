@@ -2286,13 +2286,17 @@ export type Database = {
           hardware_fee: number | null
           id: string
           implementation_lead: string | null
+          job_scheduling: string | null
+          job_scheduling_notes: string | null
           line_description: string | null
+          modules_and_features: string | null
           mrr: number | null
           name: string
           payment_terms_days: number | null
           product_description: string | null
           project_coordinator: string | null
           reference_call: boolean | null
+          s3_bucket_required: boolean | null
           sales_lead: string | null
           services_fee: number | null
           site_address: string | null
@@ -2300,9 +2304,14 @@ export type Database = {
           site_visit: boolean | null
           solution_consultant: string | null
           standard_terms: boolean | null
+          tablet_use_cases: string | null
+          teams_id: string | null
+          teams_integration: boolean | null
+          teams_webhook_url: string | null
           technical_project_lead: string | null
           testimonial: boolean | null
           useful_links: Json | null
+          website_url: string | null
         }
         Insert: {
           account_manager?: string | null
@@ -2327,13 +2336,17 @@ export type Database = {
           hardware_fee?: number | null
           id?: string
           implementation_lead?: string | null
+          job_scheduling?: string | null
+          job_scheduling_notes?: string | null
           line_description?: string | null
+          modules_and_features?: string | null
           mrr?: number | null
           name: string
           payment_terms_days?: number | null
           product_description?: string | null
           project_coordinator?: string | null
           reference_call?: boolean | null
+          s3_bucket_required?: boolean | null
           sales_lead?: string | null
           services_fee?: number | null
           site_address?: string | null
@@ -2341,9 +2354,14 @@ export type Database = {
           site_visit?: boolean | null
           solution_consultant?: string | null
           standard_terms?: boolean | null
+          tablet_use_cases?: string | null
+          teams_id?: string | null
+          teams_integration?: boolean | null
+          teams_webhook_url?: string | null
           technical_project_lead?: string | null
           testimonial?: boolean | null
           useful_links?: Json | null
+          website_url?: string | null
         }
         Update: {
           account_manager?: string | null
@@ -2368,13 +2386,17 @@ export type Database = {
           hardware_fee?: number | null
           id?: string
           implementation_lead?: string | null
+          job_scheduling?: string | null
+          job_scheduling_notes?: string | null
           line_description?: string | null
+          modules_and_features?: string | null
           mrr?: number | null
           name?: string
           payment_terms_days?: number | null
           product_description?: string | null
           project_coordinator?: string | null
           reference_call?: boolean | null
+          s3_bucket_required?: boolean | null
           sales_lead?: string | null
           services_fee?: number | null
           site_address?: string | null
@@ -2382,9 +2404,14 @@ export type Database = {
           site_visit?: boolean | null
           solution_consultant?: string | null
           standard_terms?: boolean | null
+          tablet_use_cases?: string | null
+          teams_id?: string | null
+          teams_integration?: boolean | null
+          teams_webhook_url?: string | null
           technical_project_lead?: string | null
           testimonial?: boolean | null
           useful_links?: Json | null
+          website_url?: string | null
         }
         Relationships: [
           {

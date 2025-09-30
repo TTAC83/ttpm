@@ -13,6 +13,7 @@ import { ArrowLeft, Building, Calendar, MapPin, Users, Smile, Frown, CheckCircle
 
 // Tab components
 import ProjectOverview from './tabs/ProjectOverview';
+import { ProjectFactory } from './tabs/ProjectFactory';
 import { ProjectLines } from './tabs/ProjectLines';
 import ProjectTasks from './tabs/ProjectTasks';
 import ProjectGantt from './tabs/ProjectGantt';
@@ -44,6 +45,15 @@ interface Project {
   reference_call: boolean;
   site_visit: boolean;
   case_study: boolean;
+  website_url: string | null;
+  job_scheduling: string | null;
+  job_scheduling_notes: string | null;
+  s3_bucket_required: boolean | null;
+  teams_integration: boolean | null;
+  teams_id: string | null;
+  teams_webhook_url: string | null;
+  tablet_use_cases: string | null;
+  modules_and_features: string | null;
   companies: {
     name: string;
   } | null;
@@ -112,7 +122,7 @@ export const ProjectDetail = () => {
   useEffect(() => {
     // Handle URL parameters to set active tab
     const tab = searchParams.get('tab');
-    if (tab && ['overview', 'lines', 'tasks', 'gantt', 'actions', 'calendar', 'vision-models', 'audit', 'blockers'].includes(tab)) {
+    if (tab && ['overview', 'factory', 'lines', 'tasks', 'gantt', 'actions', 'calendar', 'vision-models', 'audit', 'blockers'].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -364,8 +374,9 @@ export const ProjectDetail = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="space-y-2">
           {/* First row of tabs */}
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="factory">Factory</TabsTrigger>
             <TabsTrigger value="lines">Lines</TabsTrigger>
             <TabsTrigger value="tasks">Tasks</TabsTrigger>
             <TabsTrigger value="gantt">Gantt</TabsTrigger>
@@ -396,6 +407,10 @@ export const ProjectDetail = () => {
 
         <TabsContent value="overview" className="space-y-4">
           <ProjectOverview project={project} onUpdate={fetchProject} />
+        </TabsContent>
+
+        <TabsContent value="factory" className="space-y-4">
+          <ProjectFactory projectId={project.id} projectDomain={project.domain} />
         </TabsContent>
 
         <TabsContent value="lines" className="space-y-4">

@@ -104,9 +104,9 @@ export const AppLayout = () => {
           <SidebarMenuItem>
             <CollapsibleTrigger asChild>
               <SidebarMenuButton className="w-full justify-start">
-                {getIcon(item.iconName)}
-                <span className={`${level === 0 ? "uppercase text-xs tracking-wide font-medium" : "text-sm"} group-data-[state=collapsed]/sidebar-hover:opacity-0 group-data-[state=collapsed]/sidebar-hover:group-hover/sidebar-hover:opacity-100 transition-opacity duration-200`}>{item.label}</span>
-                <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:rotate-90 group-data-[state=collapsed]/sidebar-hover:opacity-0 group-data-[state=collapsed]/sidebar-hover:group-hover/sidebar-hover:opacity-100" />
+                 {getIcon(item.iconName)}
+                 <span className={`${level === 0 ? "uppercase text-xs tracking-wide font-medium" : "text-sm"} group-data-[state=collapsed]:hidden`}>{item.label}</span>
+                 <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:rotate-90 group-data-[state=collapsed]:hidden" />
               </SidebarMenuButton>
             </CollapsibleTrigger>
             <CollapsibleContent>
@@ -126,8 +126,8 @@ export const AppLayout = () => {
               isActive={isActiveRoute(item)}
               className="w-full justify-start"
             >
-              {getIcon(item.iconName)}
-              <span className="group-data-[state=collapsed]/sidebar-hover:opacity-0 group-data-[state=collapsed]/sidebar-hover:group-hover/sidebar-hover:opacity-100 transition-opacity duration-200">{item.label}</span>
+               {getIcon(item.iconName)}
+               <span className="group-data-[state=collapsed]:hidden">{item.label}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         );
@@ -139,8 +139,8 @@ export const AppLayout = () => {
               isActive={isActiveRoute(item)}
               className="text-sm rounded-xl"
             >
-              {getIcon(item.iconName)}
-              <span className="group-data-[state=collapsed]/sidebar-hover:opacity-0 group-data-[state=collapsed]/sidebar-hover:group-hover/sidebar-hover:opacity-100 transition-opacity duration-200">{item.label}</span>
+               {getIcon(item.iconName)}
+               <span className="group-data-[state=collapsed]:hidden">{item.label}</span>
             </SidebarMenuSubButton>
           </SidebarMenuSubItem>
         );
@@ -178,23 +178,23 @@ export const AppLayout = () => {
       <div className="flex h-screen w-full">
         <Sidebar 
           collapsible="icon"
-          className="group/sidebar-hover transition-all duration-200 hover:w-[16rem] data-[state=collapsed]:w-12 data-[state=collapsed]:hover:w-[16rem]"
+          className="transition-all duration-200"
         >
           <SidebarHeader className="border-b border-sidebar-border p-4">
             <div className="flex items-center gap-3">
               <img src="/lovable-uploads/4fec4d14-a56e-4a44-8256-ac94aa43da5c.png" alt="Thingtrax" className="w-8 h-8" />
-              <div className="group-data-[state=collapsed]/sidebar-hover:opacity-0 group-data-[state=collapsed]/sidebar-hover:group-hover/sidebar-hover:opacity-100 transition-opacity duration-200">
+              <div className="group-data-[state=collapsed]:hidden">
                 <h2 className="font-helvetica-display font-semibold text-sidebar-foreground text-lg">thingtrax</h2>
               </div>
             </div>
-            <div className="mt-3">
+            <div className="mt-3 group-data-[state=collapsed]:hidden">
               <Button 
                 variant="ghost" 
                 className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent"
                 onClick={() => handleNavigation('/app/my-work')}
               >
                 {getIcon('User')}
-                <span className="ml-2 group-data-[state=collapsed]/sidebar-hover:opacity-0 group-data-[state=collapsed]/sidebar-hover:group-hover/sidebar-hover:opacity-100 transition-opacity duration-200">My Work</span>
+                <span className="ml-2">My Work</span>
               </Button>
             </div>
           </SidebarHeader>
@@ -208,8 +208,8 @@ export const AppLayout = () => {
                   isActive={location.pathname.startsWith('/app/my-work')}
                   className="w-full justify-start"
                 >
-                  {getIcon('User')}
-                  <span className="group-data-[state=collapsed]/sidebar-hover:opacity-0 group-data-[state=collapsed]/sidebar-hover:group-hover/sidebar-hover:opacity-100 transition-opacity duration-200">My Work</span>
+                 {getIcon('User')}
+                 <span className="group-data-[state=collapsed]:hidden">My Work</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
@@ -226,34 +226,34 @@ export const AppLayout = () => {
                     {getInitials(profile?.name)}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1 min-w-0 group-data-[state=collapsed]/sidebar-hover:opacity-0 group-data-[state=collapsed]/sidebar-hover:group-hover/sidebar-hover:opacity-100 transition-opacity duration-200">
-                  <p className="text-sm font-medium text-sidebar-foreground truncate">
-                    {profile?.name || 'User'}
-                  </p>
-                  <p className="text-xs text-sidebar-foreground/60 truncate">
-                    {user?.email}
-                  </p>
-                </div>
-              </div>
-              
-              {profile?.role && (
-                <Badge 
-                  variant={getRoleBadgeVariant(profile.role, profile.is_internal)}
-                  className="text-xs group-data-[state=collapsed]/sidebar-hover:opacity-0 group-data-[state=collapsed]/sidebar-hover:group-hover/sidebar-hover:opacity-100 transition-opacity duration-200"
-                >
-                  {profile.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                </Badge>
-              )}
-              
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={signOut}
-                className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                <span className="group-data-[state=collapsed]/sidebar-hover:opacity-0 group-data-[state=collapsed]/sidebar-hover:group-hover/sidebar-hover:opacity-100 transition-opacity duration-200">Sign Out</span>
-              </Button>
+                 <div className="flex-1 min-w-0 group-data-[state=collapsed]:hidden">
+                   <p className="text-sm font-medium text-sidebar-foreground truncate">
+                     {profile?.name || 'User'}
+                   </p>
+                   <p className="text-xs text-sidebar-foreground/60 truncate">
+                     {user?.email}
+                   </p>
+                 </div>
+               </div>
+               
+               {profile?.role && (
+                 <Badge 
+                   variant={getRoleBadgeVariant(profile.role, profile.is_internal)}
+                   className="text-xs group-data-[state=collapsed]:hidden"
+                 >
+                   {profile.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                 </Badge>
+               )}
+               
+               <Button 
+                 variant="ghost" 
+                 size="sm" 
+                 onClick={signOut}
+                 className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent"
+               >
+                 <LogOut className="h-4 w-4 mr-2" />
+                 <span className="group-data-[state=collapsed]:hidden">Sign Out</span>
+               </Button>
             </div>
           </SidebarFooter>
         </Sidebar>

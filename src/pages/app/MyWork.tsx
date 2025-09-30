@@ -509,7 +509,7 @@ export default function MyWork() {
         <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="tasks" className="flex items-center gap-2">
             <CheckSquare className="w-4 h-4" />
-            Tasks ({tasks.length})
+            Tasks ({tasks.filter(task => task.actual_end == null).length})
           </TabsTrigger>
           <TabsTrigger value="actions" className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" />

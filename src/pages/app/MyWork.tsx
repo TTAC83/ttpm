@@ -288,11 +288,12 @@ export default function MyWork() {
       const overdueTasks = (tasksData || []).filter(task => 
         task.planned_end && 
         isBefore(parseISO(task.planned_end), today) && 
-        task.status !== 'Done'
+        task.actual_end == null // Only count incomplete tasks
       ).length;
 
       const todayTasks = (tasksData || []).filter(task =>
-        task.planned_start === todayStr || task.planned_end === todayStr
+        (task.planned_start === todayStr || task.planned_end === todayStr) &&
+        task.actual_end == null // Only count incomplete tasks
       ).length;
 
       const criticalActions = (actionsData || []).filter(action => 

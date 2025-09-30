@@ -17,6 +17,7 @@ import { formatDateUK, toISODateString } from '@/lib/dateUtils';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Filter, Users, Edit, CalendarIcon, Save, X, List, Calendar as CalendarPlus } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 import SubtasksDialog from '@/components/SubtasksDialog';
 import CreateEventDialog from '@/components/CreateEventDialog';
 import { useTasksStatus } from '@/hooks/useTaskStatus';
@@ -593,11 +594,13 @@ const TaskEditDialog = ({
 
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="task_details">Task Details</Label>
-              <Input
+              <Textarea
                 id="task_details"
                 value={formData.task_details}
                 onChange={(e) => setFormData(prev => ({ ...prev, task_details: e.target.value }))}
                 placeholder="Enter task details"
+                rows={4}
+                className="resize-none"
               />
             </div>
 

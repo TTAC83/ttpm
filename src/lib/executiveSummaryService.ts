@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { startOfWeek } from "date-fns";
+import { startOfWeek, format } from "date-fns";
 
 export interface ExecutiveSummaryRow {
   project_id: string;
@@ -15,7 +15,7 @@ export interface ExecutiveSummaryRow {
 export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]> {
   // Calculate current week's Monday
   const currentMonday = startOfWeek(new Date(), { weekStartsOn: 1 });
-  const mondayISO = currentMonday.toISOString().split('T')[0];
+  const mondayISO = format(currentMonday, 'yyyy-MM-dd');
   
   console.log('🔍 Fetching executive summary for week:', mondayISO);
 

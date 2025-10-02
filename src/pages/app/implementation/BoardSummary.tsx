@@ -10,9 +10,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Bug } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Bug, FileDown, FileSpreadsheet } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
+import jsPDF from "jspdf";
+import * as XLSX from "xlsx";
 
 export default function BoardSummary() {
   const navigate = useNavigate();
@@ -75,6 +78,99 @@ export default function BoardSummary() {
     return <Bug className="h-6 w-6 text-green-600" />;
   };
 
+  const exportToPDF = () => {
+    const doc = new jsPDF('l', 'mm', 'a4'); // landscape orientation
+    
+    // Add title
+    doc.setFontSize(16);
+    doc.text('Board Summary', 14, 15);
+    
+    // Add export date
+    doc.setFontSize(10);
+    doc.text(`Exported: ${format(new Date(), 'dd MMM yyyy HH:mm')}`, 14, 22);
+    
+    // Prepare table data
+    const headers = [
+      'Customer Name',
+      'Project',
+      'Product Gaps',
+      'Planned Go Live',
+      'Current Status'
+    ];
+    
+    const data = sortedData.map(row => [
+      row.customer_name,
+      row.project_name,
+      row.product_gaps_status === 'critical' ? 'Critical' : 
+        row.product_gaps_status === 'non_critical' ? 'Non-Critical' : 'None',
+      row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : '',
+      row.current_status || ''
+    ]);
+    
+    // Add table using autoTable (requires jspdf-autotable plugin, so we'll do it manually)
+    let y = 30;
+    const lineHeight = 7;
+    const colWidths = [50, 50, 30, 35, 55];
+    
+    // Draw headers
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'bold');
+    let x = 14;
+    headers.forEach((header, i) => {
+      doc.text(header, x, y);
+      x += colWidths[i];
+    });
+    
+    y += lineHeight;
+    doc.setFont(undefined, 'normal');
+    
+    // Draw data rows
+    data.forEach((row) => {
+      x = 14;
+      row.forEach((cell, i) => {
+        const text = String(cell || '');
+        doc.text(text.substring(0, 35), x, y); // Truncate long text
+        x += colWidths[i];
+      });
+      y += lineHeight;
+      
+      // Add new page if needed
+      if (y > 190) {
+        doc.addPage();
+        y = 15;
+      }
+    });
+    
+    doc.save(`board-summary-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  };
+
+  const exportToExcel = () => {
+    const data = sortedData.map(row => ({
+      'Customer Name': row.customer_name,
+      'Project': row.project_name,
+      'Product Gaps': row.product_gaps_status === 'critical' ? 'Critical' : 
+        row.product_gaps_status === 'non_critical' ? 'Non-Critical' : 'None',
+      'Planned Go Live': row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : '',
+      'Current Status': row.current_status || ''
+    }));
+    
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Board Summary');
+    
+    // Set column widths
+    const colWidths = [
+      { wch: 30 }, // Customer Name
+      { wch: 30 }, // Project
+      { wch: 15 }, // Product Gaps
+      { wch: 20 }, // Planned Go Live
+      { wch: 30 }  // Current Status
+    ];
+    worksheet['!cols'] = colWidths;
+    
+    XLSX.writeFile(workbook, `board-summary-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto p-6">
@@ -89,6 +185,16 @@ export default function BoardSummary() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Board Summary</h1>
+        <div className="flex gap-2">
+          <Button onClick={exportToPDF} variant="outline" size="sm">
+            <FileDown className="mr-2 h-4 w-4" />
+            Export PDF
+          </Button>
+          <Button onClick={exportToExcel} variant="outline" size="sm">
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            Export Excel
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-4 items-center">

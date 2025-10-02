@@ -15,7 +15,8 @@ import {
   Package,
   AlertTriangle,
   BarChart3,
-  User
+  User,
+  PieChart
 } from "lucide-react";
 
 export type Role = "internal_admin" | "internal_user" | "external_admin" | "external_user";
@@ -68,6 +69,13 @@ export const NAV: NavItem[] = [
         label: "Dashboard", 
         to: "/app/dashboard", 
         matchPaths: ["/app/dashboard"] 
+      },
+      { 
+        label: "Executive Summary", 
+        to: "/app/implementation/executive-summary", 
+        iconName: "BarChart3",
+        matchPaths: ["/app/implementation/executive-summary"],
+        roles: ["internal_admin", "internal_user"]
       },
       {
         label: "Projects",
@@ -258,7 +266,8 @@ export const ICON_MAP = {
   Package,
   AlertTriangle,
   BarChart3,
-  User
+  User,
+  PieChart
 } as const;
 
 export function visibleItemsForRole(role: Role | null | undefined): NavItem[] {

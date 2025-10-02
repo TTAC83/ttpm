@@ -61,6 +61,7 @@ import ImplementationWeeklyReview from "./pages/app/ImplementationWeeklyReview";
 import WBS from "./pages/app/implementation/WBS";
 import ImplementationEscalations from "./pages/app/ImplementationBlockers";
 import ProductGaps from "./pages/app/ProductGaps";
+import ExecutiveSummary from "./pages/app/implementation/ExecutiveSummary";
 import { InternalRoute } from "@/components/auth/InternalRoute";
 
 const queryClient = new QueryClient();
@@ -253,6 +254,7 @@ const App = () => (
               <Route path="bau/weekly-review-page" element={<WeeklyReviewPage />} />
               <Route path="bau/:id" element={<BAUDetail />} />
               <Route path="implementation/weekly-review" element={<ImplementationWeeklyReview />} />
+              <Route path="implementation/executive-summary" element={<InternalRoute><ExecutiveSummary /></InternalRoute>} />
               <Route path="implementation/wbs" element={<WBS />} />
               <Route path="implementation/blockers" element={<InternalRoute>
                 <ImplementationEscalations />

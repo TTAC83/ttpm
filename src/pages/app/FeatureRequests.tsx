@@ -208,9 +208,6 @@ export default function FeatureRequests() {
                   <TableHead>Title</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Required Date</TableHead>
-                  <TableHead>Created By</TableHead>
-                  <TableHead>Date Raised</TableHead>
-                  <TableHead>Updated</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -243,18 +240,6 @@ export default function FeatureRequests() {
                       ) : (
                         <span className="text-sm text-muted-foreground">-</span>
                       )}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{request.creator?.name || 'Unknown'}</p>
-                        <p className="text-sm text-muted-foreground">User ID: {request.created_by.slice(0, 8)}...</p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {new Date(request.date_raised).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {formatDistanceToNow(new Date(request.updated_at), { addSuffix: true })}
                     </TableCell>
                   </TableRow>
                 ))}

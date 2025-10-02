@@ -207,7 +207,7 @@ export default function FeatureRequests() {
                 <TableRow>
                   <TableHead>Title</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Required Date</TableHead>
+                  <TableHead>Completed Date</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -233,9 +233,9 @@ export default function FeatureRequests() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {request.required_date ? (
+                      {request.complete_date ? (
                         <span className="text-sm">
-                          {new Date(request.required_date).toLocaleDateString()}
+                          {new Date(request.complete_date).toLocaleDateString()}
                         </span>
                       ) : (
                         <span className="text-sm text-muted-foreground">-</span>

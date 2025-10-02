@@ -351,18 +351,23 @@ export type Database = {
           created_by: string
           customer_type: string
           devices_deployed: number | null
+          gateways_required: number | null
           go_live_date: string | null
           health: Database["public"]["Enums"]["bau_health_enum"]
           id: string
+          lines_required: number | null
           name: string
           notes: string | null
           primary_contact: string | null
+          receivers_required: number | null
           salesperson: string | null
+          servers_required: number | null
           site_name: string | null
           sla_resolution_hours: number | null
           sla_response_mins: number | null
           solutions_consultant: string | null
           subscription_plan: string | null
+          tv_display_devices_required: number | null
         }
         Insert: {
           company_id: string
@@ -370,18 +375,23 @@ export type Database = {
           created_by: string
           customer_type?: string
           devices_deployed?: number | null
+          gateways_required?: number | null
           go_live_date?: string | null
           health?: Database["public"]["Enums"]["bau_health_enum"]
           id?: string
+          lines_required?: number | null
           name: string
           notes?: string | null
           primary_contact?: string | null
+          receivers_required?: number | null
           salesperson?: string | null
+          servers_required?: number | null
           site_name?: string | null
           sla_resolution_hours?: number | null
           sla_response_mins?: number | null
           solutions_consultant?: string | null
           subscription_plan?: string | null
+          tv_display_devices_required?: number | null
         }
         Update: {
           company_id?: string
@@ -389,18 +399,23 @@ export type Database = {
           created_by?: string
           customer_type?: string
           devices_deployed?: number | null
+          gateways_required?: number | null
           go_live_date?: string | null
           health?: Database["public"]["Enums"]["bau_health_enum"]
           id?: string
+          lines_required?: number | null
           name?: string
           notes?: string | null
           primary_contact?: string | null
+          receivers_required?: number | null
           salesperson?: string | null
+          servers_required?: number | null
           site_name?: string | null
           sla_resolution_hours?: number | null
           sla_response_mins?: number | null
           solutions_consultant?: string | null
           subscription_plan?: string | null
+          tv_display_devices_required?: number | null
         }
         Relationships: [
           {
@@ -2299,18 +2314,21 @@ export type Database = {
           deviation_of_terms: string | null
           domain: Database["public"]["Enums"]["work_domain"]
           expansion_opportunity: string | null
+          gateways_required: number | null
           hardware_fee: number | null
           id: string
           implementation_lead: string | null
           job_scheduling: string | null
           job_scheduling_notes: string | null
           line_description: string | null
+          lines_required: number | null
           modules_and_features: string | null
           mrr: number | null
           name: string
           payment_terms_days: number | null
           product_description: string | null
           project_coordinator: string | null
+          receivers_required: number | null
           reference_call: boolean | null
           reference_status:
             | Database["public"]["Enums"]["reference_status_enum"]
@@ -2319,6 +2337,7 @@ export type Database = {
           sales_lead: string | null
           salesperson: string | null
           segment: string | null
+          servers_required: number | null
           services_fee: number | null
           site_address: string | null
           site_name: string | null
@@ -2332,6 +2351,7 @@ export type Database = {
           teams_webhook_url: string | null
           technical_project_lead: string | null
           testimonial: boolean | null
+          tv_display_devices_required: number | null
           useful_links: Json | null
           website_url: string | null
         }
@@ -2356,18 +2376,21 @@ export type Database = {
           deviation_of_terms?: string | null
           domain: Database["public"]["Enums"]["work_domain"]
           expansion_opportunity?: string | null
+          gateways_required?: number | null
           hardware_fee?: number | null
           id?: string
           implementation_lead?: string | null
           job_scheduling?: string | null
           job_scheduling_notes?: string | null
           line_description?: string | null
+          lines_required?: number | null
           modules_and_features?: string | null
           mrr?: number | null
           name: string
           payment_terms_days?: number | null
           product_description?: string | null
           project_coordinator?: string | null
+          receivers_required?: number | null
           reference_call?: boolean | null
           reference_status?:
             | Database["public"]["Enums"]["reference_status_enum"]
@@ -2376,6 +2399,7 @@ export type Database = {
           sales_lead?: string | null
           salesperson?: string | null
           segment?: string | null
+          servers_required?: number | null
           services_fee?: number | null
           site_address?: string | null
           site_name?: string | null
@@ -2389,6 +2413,7 @@ export type Database = {
           teams_webhook_url?: string | null
           technical_project_lead?: string | null
           testimonial?: boolean | null
+          tv_display_devices_required?: number | null
           useful_links?: Json | null
           website_url?: string | null
         }
@@ -2413,18 +2438,21 @@ export type Database = {
           deviation_of_terms?: string | null
           domain?: Database["public"]["Enums"]["work_domain"]
           expansion_opportunity?: string | null
+          gateways_required?: number | null
           hardware_fee?: number | null
           id?: string
           implementation_lead?: string | null
           job_scheduling?: string | null
           job_scheduling_notes?: string | null
           line_description?: string | null
+          lines_required?: number | null
           modules_and_features?: string | null
           mrr?: number | null
           name?: string
           payment_terms_days?: number | null
           product_description?: string | null
           project_coordinator?: string | null
+          receivers_required?: number | null
           reference_call?: boolean | null
           reference_status?:
             | Database["public"]["Enums"]["reference_status_enum"]
@@ -2433,6 +2461,7 @@ export type Database = {
           sales_lead?: string | null
           salesperson?: string | null
           segment?: string | null
+          servers_required?: number | null
           services_fee?: number | null
           site_address?: string | null
           site_name?: string | null
@@ -2446,6 +2475,7 @@ export type Database = {
           teams_webhook_url?: string | null
           technical_project_lead?: string | null
           testimonial?: boolean | null
+          tv_display_devices_required?: number | null
           useful_links?: Json | null
           website_url?: string | null
         }

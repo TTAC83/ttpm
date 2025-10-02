@@ -1,17 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ArrowLeft, Building, Calendar, MapPin, Factory } from 'lucide-react';
+import { ArrowLeft, Building, Calendar, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { SolutionsLines } from './tabs/SolutionsLines';
-import { SolutionsHardware } from './tabs/SolutionsHardware';
 import { OverviewTab } from '@/components/shared/OverviewTab';
+import { HardwareTab } from '@/components/shared/HardwareTab';
 
 interface SolutionsProject {
   id: string;
@@ -42,13 +40,6 @@ export const SolutionsProjectDetail = () => {
   const [project, setProject] = useState<SolutionsProject | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
-  const [factoryData, setFactoryData] = useState({
-    servers_required: 0,
-    gateways_required: 0,
-    tv_display_devices_required: 0,
-    receivers_required: 0,
-    lines_required: 0,
-  });
 
   const fetchProject = async () => {
     if (!id) return;
@@ -62,16 +53,6 @@ export const SolutionsProjectDetail = () => {
 
       if (error) throw error;
       setProject(data);
-      
-      if (data) {
-        setFactoryData({
-          servers_required: data.servers_required || 0,
-          gateways_required: data.gateways_required || 0,
-          tv_display_devices_required: data.tv_display_devices_required || 0,
-          receivers_required: data.receivers_required || 0,
-          lines_required: data.lines_required || 0,
-        });
-      }
     } catch (error) {
       console.error('Error fetching solutions project:', error);
       toast({
@@ -94,7 +75,7 @@ export const SolutionsProjectDetail = () => {
 
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['overview', 'factory', 'lines', 'hardware'].includes(tab)) {
+    if (tab && ['overview', 'factory', 'lines'].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -112,31 +93,6 @@ export const SolutionsProjectDetail = () => {
     }
   };
 
-  const handleFactoryUpdate = async (field: string, value: number) => {
-    if (!project) return;
-
-    try {
-      const { error } = await supabase
-        .from('solutions_projects')
-        .update({ [field]: value })
-        .eq('id', project.id);
-
-      if (error) throw error;
-
-      setFactoryData(prev => ({ ...prev, [field]: value }));
-      toast({
-        title: 'Success',
-        description: 'Factory requirement updated successfully',
-      });
-    } catch (error) {
-      console.error('Error updating factory requirement:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update factory requirement',
-        variant: 'destructive',
-      });
-    }
-  };
 
   if (loading) {
     return (
@@ -157,74 +113,6 @@ export const SolutionsProjectDetail = () => {
     );
   }
 
-  const FactoryRequirements = () => (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          <Factory className="h-5 w-5" />
-          <CardTitle>Hardware Requirements</CardTitle>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="servers_required">Servers Required</Label>
-            <Input
-              id="servers_required"
-              type="number"
-              min="0"
-              value={factoryData.servers_required}
-              onChange={(e) => handleFactoryUpdate('servers_required', parseInt(e.target.value) || 0)}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="gateways_required">Gateways Required</Label>
-            <Input
-              id="gateways_required"
-              type="number"
-              min="0"
-              value={factoryData.gateways_required}
-              onChange={(e) => handleFactoryUpdate('gateways_required', parseInt(e.target.value) || 0)}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="tv_display_devices_required">TV Display Devices Required</Label>
-            <Input
-              id="tv_display_devices_required"
-              type="number"
-              min="0"
-              value={factoryData.tv_display_devices_required}
-              onChange={(e) => handleFactoryUpdate('tv_display_devices_required', parseInt(e.target.value) || 0)}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="receivers_required">Receivers Required</Label>
-            <Input
-              id="receivers_required"
-              type="number"
-              min="0"
-              value={factoryData.receivers_required}
-              onChange={(e) => handleFactoryUpdate('receivers_required', parseInt(e.target.value) || 0)}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="lines_required">Lines Required</Label>
-            <Input
-              id="lines_required"
-              type="number"
-              min="0"
-              value={factoryData.lines_required}
-              onChange={(e) => handleFactoryUpdate('lines_required', parseInt(e.target.value) || 0)}
-            />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
 
   return (
     <div className="space-y-6">
@@ -295,11 +183,10 @@ export const SolutionsProjectDetail = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-4 lg:w-auto">
+        <TabsList className="grid grid-cols-3 lg:w-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="factory">Hardware</TabsTrigger>
           <TabsTrigger value="lines">Lines</TabsTrigger>
-          <TabsTrigger value="hardware">Hardware</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -307,15 +194,11 @@ export const SolutionsProjectDetail = () => {
         </TabsContent>
 
         <TabsContent value="factory" className="space-y-4">
-          <FactoryRequirements />
+          <HardwareTab projectId={project.id} type="solutions" onUpdate={fetchProject} />
         </TabsContent>
 
         <TabsContent value="lines" className="space-y-4">
           <SolutionsLines solutionsProjectId={project.id} />
-        </TabsContent>
-
-        <TabsContent value="hardware" className="space-y-4">
-          <SolutionsHardware solutionsProjectId={project.id} />
         </TabsContent>
       </Tabs>
     </div>

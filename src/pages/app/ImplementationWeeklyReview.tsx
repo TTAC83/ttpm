@@ -1206,44 +1206,17 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
           {/* Churn Risk */}
           <div>
             <div className="text-sm mb-1">Churn Risk</div>
-            <div className="flex gap-2 flex-wrap">
-              <Button 
-                variant={churnRisk === "Low" ? "default" : "outline"} 
-                className={
-                  churnRisk === "Low" ? "bg-green-600 hover:bg-green-700 text-white" : ""
-                }
-                onClick={() => setChurnRisk("Low")}
-              >
-                Low
-              </Button>
-              <Button 
-                variant={churnRisk === "Medium" ? "default" : "outline"} 
-                className={
-                  churnRisk === "Medium" ? "bg-yellow-600 hover:bg-yellow-700 text-white" : ""
-                }
-                onClick={() => setChurnRisk("Medium")}
-              >
-                Medium
-              </Button>
-              <Button 
-                variant={churnRisk === "High" ? "default" : "outline"} 
-                className={
-                  churnRisk === "High" ? "bg-orange-600 hover:bg-orange-700 text-white" : ""
-                }
-                onClick={() => setChurnRisk("High")}
-              >
-                High
-              </Button>
-              <Button 
-                variant={churnRisk === "Certain" ? "default" : "outline"} 
-                className={
-                  churnRisk === "Certain" ? "bg-red-600 hover:bg-red-700 text-white" : ""
-                }
-                onClick={() => setChurnRisk("Certain")}
-              >
-                Certain
-              </Button>
-            </div>
+            <Select value={churnRisk || ''} onValueChange={(value) => setChurnRisk(value as any)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select churn risk" />
+              </SelectTrigger>
+              <SelectContent className="z-50 bg-popover text-popover-foreground shadow-md">
+                <SelectItem value="Low">Low</SelectItem>
+                <SelectItem value="Medium">Medium</SelectItem>
+                <SelectItem value="High">High</SelectItem>
+                <SelectItem value="Certain">Certain</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           
           {/* Reason Code for Red Health */}

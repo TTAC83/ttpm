@@ -176,6 +176,7 @@ export async function loadEventsAroundWeek(companyId: string, mondayISO: string)
 export type ImplWeeklyReview = {
   project_status: "on_track" | "off_track" | null;
   customer_health: "green" | "red" | null;
+  churn_risk: "Low" | "Medium" | "High" | "Certain" | null;
   notes: string | null;
   reason_code: string | null;
   weekly_summary: string | null;
@@ -205,6 +206,7 @@ export async function saveReview(params: {
   weekStartISO: string;
   projectStatus: "on_track" | "off_track" | null;
   customerHealth: "green" | "red" | null;
+  churnRisk?: "Low" | "Medium" | "High" | "Certain" | null;
   notes?: string | null;
   reasonCode?: string | null;
   weeklySummary?: string | null;
@@ -217,6 +219,7 @@ export async function saveReview(params: {
     p_week_start: params.weekStartISO,
     p_project_status: params.projectStatus,
     p_customer_health: params.customerHealth,
+    p_churn_risk: params.churnRisk ?? null,
     p_notes: params.notes ?? null,
     p_reason_code: params.reasonCode ?? null,
     p_weekly_summary: params.weeklySummary ?? null,

@@ -452,6 +452,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
 
   const [projectStatus, setProjectStatus] = useState<"on_track"|"off_track"|null>(null);
   const [customerHealth, setCustomerHealth] = useState<"green"|"red"|null>(null);
+  const [churnRisk, setChurnRisk] = useState<"Low"|"Medium"|"High"|"Certain"|null>(null);
   const [reasonCode, setReasonCode] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [weeklySummary, setWeeklySummary] = useState<string>("");
@@ -467,6 +468,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   useEffect(() => {
     setProjectStatus(null);
     setCustomerHealth(null);
+    setChurnRisk(null);
     setNotes("");
     setReasonCode("");
     setWeeklySummary("");
@@ -481,6 +483,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     if (reviewQ.data) {
       setProjectStatus(reviewQ.data.project_status ?? null);
       setCustomerHealth(reviewQ.data.customer_health ?? null);
+      setChurnRisk(reviewQ.data.churn_risk ?? null);
       setNotes(reviewQ.data.notes ?? "");
       setReasonCode(reviewQ.data.reason_code ?? "");
       setWeeklySummary(reviewQ.data.weekly_summary ?? "");

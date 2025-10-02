@@ -810,6 +810,7 @@ export type Database = {
       bau_weekly_reviews: {
         Row: {
           bau_customer_id: string
+          churn_risk: Database["public"]["Enums"]["churn_risk_level"] | null
           date_from: string
           date_to: string
           escalation: string | null
@@ -821,6 +822,7 @@ export type Database = {
         }
         Insert: {
           bau_customer_id: string
+          churn_risk?: Database["public"]["Enums"]["churn_risk_level"] | null
           date_from: string
           date_to: string
           escalation?: string | null
@@ -832,6 +834,7 @@ export type Database = {
         }
         Update: {
           bau_customer_id?: string
+          churn_risk?: Database["public"]["Enums"]["churn_risk_level"] | null
           date_from?: string
           date_to?: string
           escalation?: string | null
@@ -3986,6 +3989,15 @@ export type Database = {
       }
       set_bau_weekly_review: {
         Args:
+          | {
+              p_bau_customer_id: string
+              p_churn_risk?: Database["public"]["Enums"]["churn_risk_level"]
+              p_date_from: string
+              p_date_to: string
+              p_escalation?: string
+              p_health: Database["public"]["Enums"]["bau_health_simple"]
+              p_reason_code?: string
+            }
           | {
               p_bau_customer_id: string
               p_date_from: string

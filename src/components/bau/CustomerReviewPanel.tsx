@@ -32,6 +32,7 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
   hasNext
 }) => {
   const [health, setHealth] = useState<'green' | 'red' | ''>('');
+  const [churnRisk, setChurnRisk] = useState<'Low' | 'Medium' | 'High' | 'Certain' | ''>('');
   const [reasonCode, setReasonCode] = useState('');
   const [escalation, setEscalation] = useState('');
   const [trendDrawer, setTrendDrawer] = useState<{
@@ -98,6 +99,7 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
   useEffect(() => {
     if (existingReview) {
       setHealth(existingReview.health);
+      setChurnRisk(existingReview.churn_risk || '');
       // Only update reason code if it exists in the review, otherwise preserve current state
       if (existingReview.reason_code) {
         setReasonCode(existingReview.reason_code);
@@ -107,6 +109,7 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
       // Only reset when switching to a different customer
       if (customer?.id !== previousCustomerId.current) {
         setHealth('');
+        setChurnRisk('');
         setReasonCode('');
         setEscalation('');
       }
@@ -115,7 +118,7 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
 
   // Auto-save with debouncing
   const autoSave = useCallback(
-    async (healthValue: 'green' | 'red' | '', reasonCodeValue: string, escalationValue: string) => {
+    async (healthValue: 'green' | 'red' | '', churnRiskValue: 'Low' | 'Medium' | 'High' | 'Certain' | '', reasonCodeValue: string, escalationValue: string) => {
       if (!customer || !selectedWeek || !healthValue) return; // Don't save if no health selected
 
       // Validate required fields when health is red
@@ -131,6 +134,7 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
           weekFrom: selectedWeek.date_from,
           weekTo: selectedWeek.date_to,
           health: healthValue as 'green' | 'red',
+          churnRisk: churnRiskValue || undefined,
           reasonCode: reasonCodeValue,
           escalation: escalationValue
         });
@@ -144,12 +148,12 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
   // Debounced auto-save for text fields
   const debouncedAutoSave = useRef<NodeJS.Timeout>();
   const triggerAutoSave = useCallback(
-    (healthValue: 'green' | 'red' | '', reasonCodeValue: string, escalationValue: string) => {
+    (healthValue: 'green' | 'red' | '', churnRiskValue: 'Low' | 'Medium' | 'High' | 'Certain' | '', reasonCodeValue: string, escalationValue: string) => {
       if (debouncedAutoSave.current) {
         clearTimeout(debouncedAutoSave.current);
       }
       debouncedAutoSave.current = setTimeout(() => {
-        autoSave(healthValue, reasonCodeValue, escalationValue);
+        autoSave(healthValue, churnRiskValue, reasonCodeValue, escalationValue);
       }, 1000); // 1 second delay for text fields
     },
     [autoSave]
@@ -158,21 +162,28 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
   // Auto-save when health changes (immediate)
   useEffect(() => {
     if (customer && selectedWeek && health) { // Only save if health is selected
-      autoSave(health, reasonCode, escalation);
+      autoSave(health, churnRisk, reasonCode, escalation);
     }
   }, [health]); // Only trigger on health changes
+
+  // Auto-save when churn risk changes (immediate)
+  useEffect(() => {
+    if (customer && selectedWeek && health) {
+      autoSave(health, churnRisk, reasonCode, escalation);
+    }
+  }, [churnRisk]); // Only trigger on churn risk changes
 
   // Auto-save when reason code changes (immediate, since it's a select)
   useEffect(() => {
     if (customer && selectedWeek && health && reasonCode) {
-      autoSave(health, reasonCode, escalation);
+      autoSave(health, churnRisk, reasonCode, escalation);
     }
   }, [reasonCode]); // Only trigger on reason code changes
 
   // Auto-save when escalation changes (debounced)
   useEffect(() => {
     if (customer && selectedWeek && health && escalation) {
-      triggerAutoSave(health, reasonCode, escalation);
+      triggerAutoSave(health, churnRisk, reasonCode, escalation);
     }
   }, [escalation]); // Only trigger on escalation changes
 
@@ -367,6 +378,22 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
                   </ToggleGroupItem>
                 </ToggleGroup>
 
+                {/* Churn Risk */}
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Churn Risk</label>
+                  <Select value={churnRisk || ''} onValueChange={(value) => setChurnRisk(value as any)}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select churn risk" />
+                    </SelectTrigger>
+                    <SelectContent className="z-50 bg-popover text-popover-foreground shadow-md">
+                      <SelectItem value="Low">Low</SelectItem>
+                      <SelectItem value="Medium">Medium</SelectItem>
+                      <SelectItem value="High">High</SelectItem>
+                      <SelectItem value="Certain">Certain</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {health === 'red' && (
                   <div className="space-y-4">
                     <div>
@@ -377,7 +404,7 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
                         <SelectTrigger className="mt-1">
                           <SelectValue placeholder="Select a reason code..." />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="z-50 bg-popover text-popover-foreground shadow-md">
                           <SelectItem value="data-inaccuracy">Data Inaccuracy</SelectItem>
                           <SelectItem value="feature-product-gap">Feature/Product Gap</SelectItem>
                           <SelectItem value="implementation-delay-tt">Implementations Delay - TT</SelectItem>

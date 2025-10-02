@@ -25,6 +25,7 @@ export interface WeeklyReview {
   date_from: string;
   date_to: string;
   health: 'green' | 'red';
+  churn_risk?: 'Low' | 'Medium' | 'High' | 'Certain' | null;
   reason_code?: string | null;
   escalation: string | null;
   reviewed_by: string;
@@ -148,12 +149,13 @@ export const getMetricTrend = async (
   return data.reverse(); // Return in chronological order for chart
 };
 
-// Save weekly review (health + escalation + reason_code)
+// Save weekly review (health + churn_risk + escalation + reason_code)
 export const saveReview = async ({
   customerId,
   weekFrom,
   weekTo,
   health,
+  churnRisk,
   reasonCode,
   escalation
 }: {
@@ -161,6 +163,7 @@ export const saveReview = async ({
   weekFrom: string;
   weekTo: string;
   health: 'green' | 'red';
+  churnRisk?: 'Low' | 'Medium' | 'High' | 'Certain';
   reasonCode?: string;
   escalation?: string;
 }): Promise<void> => {
@@ -170,6 +173,7 @@ export const saveReview = async ({
     p_date_to: weekTo,
     p_health: health,
     p_reason_code: reasonCode || null,
+    p_churn_risk: churnRisk || null,
     p_escalation: escalation || null
   });
 

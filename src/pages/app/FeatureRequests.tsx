@@ -207,7 +207,7 @@ export default function FeatureRequests() {
                 <TableRow>
                   <TableHead>Title</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Completed Date</TableHead>
+                  <TableHead>Release Date</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

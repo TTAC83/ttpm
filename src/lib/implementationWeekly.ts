@@ -188,7 +188,7 @@ export async function loadReview(companyId: string, weekStartISO: string): Promi
   console.log('Loading weekly review for:', { companyId, weekStartISO });
   const { data, error } = await supabase
     .from("impl_weekly_reviews")
-    .select("project_status,customer_health,notes,reason_code,weekly_summary,planned_go_live_date,current_status")
+    .select("project_status,customer_health,churn_risk,notes,reason_code,weekly_summary,planned_go_live_date,current_status")
     .eq("company_id", companyId)
     .eq("week_start", weekStartISO)
     .maybeSingle();
@@ -198,7 +198,10 @@ export async function loadReview(companyId: string, weekStartISO: string): Promi
     if ((error as any).code === "PGRST116") return null;
     throw error;
   }
-  return data ?? null;
+  return data ? {
+    ...data,
+    churn_risk: data.churn_risk as "Low" | "Medium" | "High" | "Certain" | null
+  } as ImplWeeklyReview : null;
 }
 
 export async function saveReview(params: {
@@ -214,7 +217,7 @@ export async function saveReview(params: {
   currentStatus?: string | null;
 }): Promise<void> {
   console.log('Saving weekly review:', params);
-  const { data, error } = await supabase.rpc("impl_set_weekly_review", {
+  const { data, error } = await supabase.rpc("impl_set_weekly_review" as any, {
     p_company_id: params.companyId,
     p_week_start: params.weekStartISO,
     p_project_status: params.projectStatus,
@@ -225,7 +228,7 @@ export async function saveReview(params: {
     p_weekly_summary: params.weeklySummary ?? null,
     p_planned_go_live_date: params.plannedGoLiveDate ?? null,
     p_current_status: params.currentStatus ?? null,
-  });
+  } as any);
   console.log('Save result:', { data, error });
   if (error) {
     console.error('Failed to save weekly review:', error);

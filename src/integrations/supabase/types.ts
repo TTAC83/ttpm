@@ -3909,6 +3909,18 @@ export type Database = {
       impl_set_weekly_review: {
         Args:
           | {
+              p_churn_risk?: Database["public"]["Enums"]["churn_risk_level"]
+              p_company_id: string
+              p_current_status?: string
+              p_customer_health: Database["public"]["Enums"]["impl_health_simple"]
+              p_notes?: string
+              p_planned_go_live_date?: string
+              p_project_status: Database["public"]["Enums"]["impl_week_status"]
+              p_reason_code?: string
+              p_week_start: string
+              p_weekly_summary?: string
+            }
+          | {
               p_company_id: string
               p_current_status?: string
               p_customer_health: Database["public"]["Enums"]["impl_health_simple"]

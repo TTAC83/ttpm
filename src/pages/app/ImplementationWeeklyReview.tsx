@@ -499,12 +499,13 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   }, [reviewQ.data]);
 
   const autoSaveMutation = useMutation({
-    mutationFn: (params: { projectStatus: "on_track"|"off_track"|null, customerHealth: "green"|"red"|null, notes: string, reasonCode: string, weeklySummary: string, plannedGoLiveDate: string | null, currentStatus: string }) => 
+    mutationFn: (params: { projectStatus: "on_track"|"off_track"|null, customerHealth: "green"|"red"|null, churnRisk: "Low"|"Medium"|"High"|"Certain"|null, notes: string, reasonCode: string, weeklySummary: string, plannedGoLiveDate: string | null, currentStatus: string }) => 
       saveReview({
         companyId,
         weekStartISO: weekStart,
         projectStatus: params.projectStatus,
         customerHealth: params.customerHealth,
+        churnRisk: params.churnRisk,
         notes: params.notes,
         reasonCode: params.reasonCode,
         weeklySummary: params.weeklySummary,
@@ -526,7 +527,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
 
   // Auto-save functionality
   const autoSave = useCallback(
-    async (projectStatusValue: "on_track"|"off_track"|null, customerHealthValue: "green"|"red"|null, notesValue: string, reasonCodeValue: string, weeklySummaryValue: string, plannedGoLiveDateValue: Date | undefined, currentStatusValue: string) => {
+    async (projectStatusValue: "on_track"|"off_track"|null, customerHealthValue: "green"|"red"|null, churnRiskValue: "Low"|"Medium"|"High"|"Certain"|null, notesValue: string, reasonCodeValue: string, weeklySummaryValue: string, plannedGoLiveDateValue: Date | undefined, currentStatusValue: string) => {
       // Don't auto-save if another save is already in progress
       if (autoSaveMutation.isPending) return;
       
@@ -541,6 +542,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
         await autoSaveMutation.mutateAsync({
           projectStatus: projectStatusValue,
           customerHealth: customerHealthValue,
+          churnRisk: churnRiskValue,
           notes: notesValue,
           reasonCode: reasonCodeValue,
           weeklySummary: weeklySummaryValue,
@@ -557,12 +559,12 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   // Debounced auto-save for text fields
   const debouncedAutoSave = useRef<NodeJS.Timeout>();
   const triggerAutoSave = useCallback(
-    (projectStatusValue: "on_track"|"off_track"|null, customerHealthValue: "green"|"red"|null, notesValue: string, reasonCodeValue: string, weeklySummaryValue: string, plannedGoLiveDateValue: Date | undefined, currentStatusValue: string) => {
+    (projectStatusValue: "on_track"|"off_track"|null, customerHealthValue: "green"|"red"|null, churnRiskValue: "Low"|"Medium"|"High"|"Certain"|null, notesValue: string, reasonCodeValue: string, weeklySummaryValue: string, plannedGoLiveDateValue: Date | undefined, currentStatusValue: string) => {
       if (debouncedAutoSave.current) {
         clearTimeout(debouncedAutoSave.current);
       }
       debouncedAutoSave.current = setTimeout(() => {
-        autoSave(projectStatusValue, customerHealthValue, notesValue, reasonCodeValue, weeklySummaryValue, plannedGoLiveDateValue, currentStatusValue);
+        autoSave(projectStatusValue, customerHealthValue, churnRiskValue, notesValue, reasonCodeValue, weeklySummaryValue, plannedGoLiveDateValue, currentStatusValue);
       }, 1500); // 1.5 second delay to allow for faster typing
     },
     [autoSave]
@@ -571,42 +573,49 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   // Auto-save when project status changes (immediate)
   useEffect(() => {
     if (projectStatus && customerHealth) {
-      autoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary, plannedGoLiveDate, currentStatus);
+      autoSave(projectStatus, customerHealth, churnRisk, notes, reasonCode, weeklySummary, plannedGoLiveDate, currentStatus);
     }
   }, [projectStatus]);
 
   // Auto-save when customer health changes (immediate)
   useEffect(() => {
     if (projectStatus && customerHealth) {
-      autoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary, plannedGoLiveDate, currentStatus);
+      autoSave(projectStatus, customerHealth, churnRisk, notes, reasonCode, weeklySummary, plannedGoLiveDate, currentStatus);
     }
   }, [customerHealth]);
+
+  // Auto-save when churn risk changes (immediate)
+  useEffect(() => {
+    if (projectStatus && customerHealth) {
+      autoSave(projectStatus, customerHealth, churnRisk, notes, reasonCode, weeklySummary, plannedGoLiveDate, currentStatus);
+    }
+  }, [churnRisk]);
 
   // Auto-save when reason code changes (immediate, since it's a select)
   useEffect(() => {
     if (projectStatus && customerHealth && reasonCode) {
-      autoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary, plannedGoLiveDate, currentStatus);
+      autoSave(projectStatus, customerHealth, churnRisk, notes, reasonCode, weeklySummary, plannedGoLiveDate, currentStatus);
     }
   }, [reasonCode]);
 
   // Auto-save when notes change (debounced)
   useEffect(() => {
     if (projectStatus && customerHealth) {
-      triggerAutoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary, plannedGoLiveDate, currentStatus);
+      triggerAutoSave(projectStatus, customerHealth, churnRisk, notes, reasonCode, weeklySummary, plannedGoLiveDate, currentStatus);
     }
   }, [notes]);
 
   // Auto-save when weekly summary changes (debounced)
   useEffect(() => {
     if (projectStatus && customerHealth) {
-      triggerAutoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary, plannedGoLiveDate, currentStatus);
+      triggerAutoSave(projectStatus, customerHealth, churnRisk, notes, reasonCode, weeklySummary, plannedGoLiveDate, currentStatus);
     }
   }, [weeklySummary]);
 
   // Auto-save when planned go live date changes (debounced)
   useEffect(() => {
     if (projectStatus && customerHealth) {
-      triggerAutoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary, plannedGoLiveDate, currentStatus);
+      triggerAutoSave(projectStatus, customerHealth, churnRisk, notes, reasonCode, weeklySummary, plannedGoLiveDate, currentStatus);
     }
   }, [plannedGoLiveDate]);
 
@@ -616,7 +625,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     currentStatusRef.current = currentStatus;
     
     if (projectStatus && customerHealth) {
-      triggerAutoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary, plannedGoLiveDate, currentStatus);
+      triggerAutoSave(projectStatus, customerHealth, churnRisk, notes, reasonCode, weeklySummary, plannedGoLiveDate, currentStatus);
     }
   }, [currentStatus]);
 
@@ -1146,7 +1155,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
       {/* Weekly Review Controls */}
       <Card className="p-4 space-y-4">
         <h2 className="font-semibold">Weekly Review</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
             <div className="text-sm mb-1">Project Status</div>
             <div className="flex gap-2">
@@ -1190,6 +1199,49 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
                 onClick={() => { setCustomerHealth("red"); setHealthTouched(true); }}
               >
                 Red
+              </Button>
+            </div>
+          </div>
+          
+          {/* Churn Risk */}
+          <div>
+            <div className="text-sm mb-1">Churn Risk</div>
+            <div className="flex gap-2 flex-wrap">
+              <Button 
+                variant={churnRisk === "Low" ? "default" : "outline"} 
+                className={
+                  churnRisk === "Low" ? "bg-green-600 hover:bg-green-700 text-white" : ""
+                }
+                onClick={() => setChurnRisk("Low")}
+              >
+                Low
+              </Button>
+              <Button 
+                variant={churnRisk === "Medium" ? "default" : "outline"} 
+                className={
+                  churnRisk === "Medium" ? "bg-yellow-600 hover:bg-yellow-700 text-white" : ""
+                }
+                onClick={() => setChurnRisk("Medium")}
+              >
+                Medium
+              </Button>
+              <Button 
+                variant={churnRisk === "High" ? "default" : "outline"} 
+                className={
+                  churnRisk === "High" ? "bg-orange-600 hover:bg-orange-700 text-white" : ""
+                }
+                onClick={() => setChurnRisk("High")}
+              >
+                High
+              </Button>
+              <Button 
+                variant={churnRisk === "Certain" ? "default" : "outline"} 
+                className={
+                  churnRisk === "Certain" ? "bg-red-600 hover:bg-red-700 text-white" : ""
+                }
+                onClick={() => setChurnRisk("Certain")}
+              >
+                Certain
               </Button>
             </div>
           </div>

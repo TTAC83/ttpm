@@ -36,6 +36,8 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
     site_name: project.site_name || '',
     site_address: project.site_address || '',
     domain: project.domain || '',
+    segment: project.segment || '',
+    expansion_opportunity: project.expansion_opportunity || '',
     contract_signed_date: project.contract_signed_date || '',
     contract_start_date: project.contract_start_date || '',
     contract_end_date: project.contract_end_date || '',
@@ -301,6 +303,8 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
           site_name: formData.site_name || null,
           site_address: formData.site_address || null,
           domain: formData.domain,
+          segment: formData.segment || null,
+          expansion_opportunity: formData.expansion_opportunity || null,
           contract_signed_date: formData.contract_signed_date,
           contract_start_date: formData.contract_start_date || null,
           contract_end_date: formData.contract_end_date || null,
@@ -364,6 +368,8 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
       site_name: project.site_name || '',
       site_address: project.site_address || '',
       domain: project.domain || '',
+      segment: project.segment || '',
+      expansion_opportunity: project.expansion_opportunity || '',
       contract_signed_date: project.contract_signed_date || '',
       contract_start_date: project.contract_start_date || '',
       contract_end_date: project.contract_end_date || '',
@@ -468,6 +474,36 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                       <SelectItem value="IoT">IoT</SelectItem>
                       <SelectItem value="Vision">Vision</SelectItem>
                       <SelectItem value="Hybrid">Hybrid</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="segment">Segment</Label>
+                  <Select 
+                    value={formData.segment} 
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, segment: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select segment" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="SMB">SMB</SelectItem>
+                      <SelectItem value="Enterprise">Enterprise</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="expansion_opportunity">Expansion Opportunity</Label>
+                  <Select 
+                    value={formData.expansion_opportunity} 
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, expansion_opportunity: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select option" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Yes">Yes</SelectItem>
+                      <SelectItem value="No">No</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1074,6 +1110,14 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                 <div>
                   <p className="text-sm font-medium">Site Name</p>
                   <p className="text-sm text-muted-foreground">{project.site_name || 'Not specified'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Segment</p>
+                  <p className="text-sm text-muted-foreground">{project.segment || 'Not specified'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Expansion Opportunity</p>
+                  <p className="text-sm text-muted-foreground">{project.expansion_opportunity || 'Not specified'}</p>
                 </div>
               </div>
 

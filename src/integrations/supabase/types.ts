@@ -2292,6 +2292,7 @@ export type Database = {
           customer_project_lead: string | null
           deviation_of_terms: string | null
           domain: Database["public"]["Enums"]["work_domain"]
+          expansion_opportunity: string | null
           hardware_fee: number | null
           id: string
           implementation_lead: string | null
@@ -2307,6 +2308,7 @@ export type Database = {
           reference_call: boolean | null
           s3_bucket_required: boolean | null
           sales_lead: string | null
+          segment: string | null
           services_fee: number | null
           site_address: string | null
           site_name: string | null
@@ -2342,6 +2344,7 @@ export type Database = {
           customer_project_lead?: string | null
           deviation_of_terms?: string | null
           domain: Database["public"]["Enums"]["work_domain"]
+          expansion_opportunity?: string | null
           hardware_fee?: number | null
           id?: string
           implementation_lead?: string | null
@@ -2357,6 +2360,7 @@ export type Database = {
           reference_call?: boolean | null
           s3_bucket_required?: boolean | null
           sales_lead?: string | null
+          segment?: string | null
           services_fee?: number | null
           site_address?: string | null
           site_name?: string | null
@@ -2392,6 +2396,7 @@ export type Database = {
           customer_project_lead?: string | null
           deviation_of_terms?: string | null
           domain?: Database["public"]["Enums"]["work_domain"]
+          expansion_opportunity?: string | null
           hardware_fee?: number | null
           id?: string
           implementation_lead?: string | null
@@ -2407,6 +2412,7 @@ export type Database = {
           reference_call?: boolean | null
           s3_bucket_required?: boolean | null
           sales_lead?: string | null
+          segment?: string | null
           services_fee?: number | null
           site_address?: string | null
           site_name?: string | null

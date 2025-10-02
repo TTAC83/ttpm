@@ -24,6 +24,8 @@ import CreateEventDialog from "@/components/CreateEventDialog";
 import { VisionModelDialog } from "@/components/VisionModelDialog";
 import { BlockerDrawer } from "@/components/BlockerDrawer";
 import { blockersService } from "@/lib/blockersService";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format } from "date-fns";
 
 type Company = { company_id: string; company_name: string };
 type CompanyWithHealth = { company_id: string; company_name: string; customer_health?: "green" | "red" | null; project_status?: "on_track" | "off_track" | null };
@@ -453,6 +455,8 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   const [reasonCode, setReasonCode] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [weeklySummary, setWeeklySummary] = useState<string>("");
+  const [plannedGoLiveDate, setPlannedGoLiveDate] = useState<Date | undefined>(undefined);
+  const [currentStatus, setCurrentStatus] = useState<string>("");
   const [statusTouched, setStatusTouched] = useState(false);
   const [healthTouched, setHealthTouched] = useState(false);
 
@@ -463,6 +467,8 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     setNotes("");
     setReasonCode("");
     setWeeklySummary("");
+    setPlannedGoLiveDate(undefined);
+    setCurrentStatus("");
     setStatusTouched(false);
     setHealthTouched(false);
   }, [companyId, weekStart]);
@@ -475,11 +481,13 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
       setNotes(reviewQ.data.notes ?? "");
       setReasonCode(reviewQ.data.reason_code ?? "");
       setWeeklySummary(reviewQ.data.weekly_summary ?? "");
+      setPlannedGoLiveDate(reviewQ.data.planned_go_live_date ? new Date(reviewQ.data.planned_go_live_date) : undefined);
+      setCurrentStatus(reviewQ.data.current_status ?? "");
     }
   }, [reviewQ.data]);
 
   const autoSaveMutation = useMutation({
-    mutationFn: (params: { projectStatus: "on_track"|"off_track"|null, customerHealth: "green"|"red"|null, notes: string, reasonCode: string, weeklySummary: string }) => 
+    mutationFn: (params: { projectStatus: "on_track"|"off_track"|null, customerHealth: "green"|"red"|null, notes: string, reasonCode: string, weeklySummary: string, plannedGoLiveDate: string | null, currentStatus: string }) => 
       saveReview({
         companyId,
         weekStartISO: weekStart,
@@ -488,6 +496,8 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
         notes: params.notes,
         reasonCode: params.reasonCode,
         weeklySummary: params.weeklySummary,
+        plannedGoLiveDate: params.plannedGoLiveDate,
+        currentStatus: params.currentStatus,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["impl-review", companyId, weekStart] });
@@ -504,7 +514,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
 
   // Auto-save functionality
   const autoSave = useCallback(
-    async (projectStatusValue: "on_track"|"off_track"|null, customerHealthValue: "green"|"red"|null, notesValue: string, reasonCodeValue: string, weeklySummaryValue: string) => {
+    async (projectStatusValue: "on_track"|"off_track"|null, customerHealthValue: "green"|"red"|null, notesValue: string, reasonCodeValue: string, weeklySummaryValue: string, plannedGoLiveDateValue: Date | undefined, currentStatusValue: string) => {
       // Don't auto-save if another save is already in progress
       if (autoSaveMutation.isPending) return;
       
@@ -522,6 +532,8 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
           notes: notesValue,
           reasonCode: reasonCodeValue,
           weeklySummary: weeklySummaryValue,
+          plannedGoLiveDate: plannedGoLiveDateValue ? plannedGoLiveDateValue.toISOString().split('T')[0] : null,
+          currentStatus: currentStatusValue,
         });
       } catch (error) {
         console.error('Auto-save failed:', error);
@@ -533,12 +545,12 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   // Debounced auto-save for text fields
   const debouncedAutoSave = useRef<NodeJS.Timeout>();
   const triggerAutoSave = useCallback(
-    (projectStatusValue: "on_track"|"off_track"|null, customerHealthValue: "green"|"red"|null, notesValue: string, reasonCodeValue: string, weeklySummaryValue: string) => {
+    (projectStatusValue: "on_track"|"off_track"|null, customerHealthValue: "green"|"red"|null, notesValue: string, reasonCodeValue: string, weeklySummaryValue: string, plannedGoLiveDateValue: Date | undefined, currentStatusValue: string) => {
       if (debouncedAutoSave.current) {
         clearTimeout(debouncedAutoSave.current);
       }
       debouncedAutoSave.current = setTimeout(() => {
-        autoSave(projectStatusValue, customerHealthValue, notesValue, reasonCodeValue, weeklySummaryValue);
+        autoSave(projectStatusValue, customerHealthValue, notesValue, reasonCodeValue, weeklySummaryValue, plannedGoLiveDateValue, currentStatusValue);
       }, 500); // 500ms delay for text fields
     },
     [autoSave]
@@ -547,37 +559,51 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   // Auto-save when project status changes (immediate)
   useEffect(() => {
     if (projectStatus && customerHealth) {
-      autoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary);
+      autoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary, plannedGoLiveDate, currentStatus);
     }
   }, [projectStatus]);
 
   // Auto-save when customer health changes (immediate)
   useEffect(() => {
     if (projectStatus && customerHealth) {
-      autoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary);
+      autoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary, plannedGoLiveDate, currentStatus);
     }
   }, [customerHealth]);
 
   // Auto-save when reason code changes (immediate, since it's a select)
   useEffect(() => {
     if (projectStatus && customerHealth && reasonCode) {
-      autoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary);
+      autoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary, plannedGoLiveDate, currentStatus);
     }
   }, [reasonCode]);
 
   // Auto-save when notes change (debounced)
   useEffect(() => {
     if (projectStatus && customerHealth) {
-      triggerAutoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary);
+      triggerAutoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary, plannedGoLiveDate, currentStatus);
     }
   }, [notes]);
 
   // Auto-save when weekly summary changes (debounced)
   useEffect(() => {
     if (projectStatus && customerHealth) {
-      triggerAutoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary);
+      triggerAutoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary, plannedGoLiveDate, currentStatus);
     }
   }, [weeklySummary]);
+
+  // Auto-save when planned go live date changes (debounced)
+  useEffect(() => {
+    if (projectStatus && customerHealth) {
+      triggerAutoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary, plannedGoLiveDate, currentStatus);
+    }
+  }, [plannedGoLiveDate]);
+
+  // Auto-save when current status changes (debounced)
+  useEffect(() => {
+    if (projectStatus && customerHealth) {
+      triggerAutoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary, plannedGoLiveDate, currentStatus);
+    }
+  }, [currentStatus]);
 
   const handleEditTask = (task: TaskRow) => {
     setEditingTask(task);
@@ -1184,6 +1210,29 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
               value={notes} 
               onChange={(e)=>setNotes(e.target.value)} 
             />
+          </div>
+
+          {/* Go Live Planning Section */}
+          <div className="md:col-span-3 space-y-4 p-4 border rounded-md bg-muted/30">
+            <div className="text-base font-semibold">Go Live Planning</div>
+            <div className="space-y-2">
+              <Label htmlFor="planned-go-live">Planned Go Live Date</Label>
+              <DatePicker
+                value={plannedGoLiveDate}
+                onChange={(date) => setPlannedGoLiveDate(date)}
+                placeholder="Select planned go live date"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="current-status">Current Status</Label>
+              <Textarea
+                id="current-status"
+                placeholder="Enter current status..."
+                value={currentStatus}
+                onChange={(e) => setCurrentStatus(e.target.value)}
+                className="min-h-[80px]"
+              />
+            </div>
           </div>
 
           <div className="md:col-span-3">

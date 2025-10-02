@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Smile, Frown, Bug, TrendingUp, TrendingDown, CheckCircle, Clock, Star, Minus } from "lucide-react";
 import { useState } from "react";
+import { format } from "date-fns";
 
 export default function ExecutiveSummary() {
   const navigate = useNavigate();
@@ -177,12 +178,24 @@ export default function ExecutiveSummary() {
               >
                 Reference {sortColumn === 'reference_status' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => handleSort('planned_go_live_date')}
+              >
+                Planned Go Live {sortColumn === 'planned_go_live_date' && (sortDirection === 'asc' ? '↑' : '↓')}
+              </TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => handleSort('current_status')}
+              >
+                Current Status {sortColumn === 'current_status' && (sortDirection === 'asc' ? '↑' : '↓')}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                   No implementation projects found.
                 </TableCell>
               </TableRow>
@@ -208,6 +221,12 @@ export default function ExecutiveSummary() {
                   <TableCell>{row.expansion_opportunity || '-'}</TableCell>
                   <TableCell className="text-center">
                     {row.reference_status || '-'}
+                  </TableCell>
+                  <TableCell>
+                    {row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : ''}
+                  </TableCell>
+                  <TableCell>
+                    {row.current_status || ''}
                   </TableCell>
                 </TableRow>
               ))

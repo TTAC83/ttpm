@@ -11,6 +11,8 @@ export interface ExecutiveSummaryRow {
   segment: string | null;
   expansion_opportunity: string | null;
   reference_status: 'Active' | 'Promised' | 'Priority' | 'N/A' | null;
+  planned_go_live_date: string | null;
+  current_status: string | null;
 }
 
 export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]> {
@@ -35,7 +37,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
   // Fetch weekly reviews for current week
   const { data: reviews, error: reviewsError } = await supabase
     .from('impl_weekly_reviews')
-    .select('company_id, customer_health, project_status, week_start')
+    .select('company_id, customer_health, project_status, week_start, planned_go_live_date, current_status')
     .eq('week_start', mondayISO);
 
   if (reviewsError) throw reviewsError;
@@ -56,7 +58,9 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       r.company_id,
       {
         health: r.customer_health,
-        status: r.project_status
+        status: r.project_status,
+        planned_go_live_date: r.planned_go_live_date,
+        current_status: r.current_status
       }
     ])
   );
@@ -95,7 +99,9 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       product_gaps_status,
       segment: project.segment,
       expansion_opportunity: project.expansion_opportunity,
-      reference_status: project.reference_status || null
+      reference_status: project.reference_status || null,
+      planned_go_live_date: review?.planned_go_live_date || null,
+      current_status: review?.current_status || null
     };
   });
 }

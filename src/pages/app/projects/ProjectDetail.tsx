@@ -13,7 +13,7 @@ import { ArrowLeft, Building, Calendar, MapPin, Users, Smile, Frown, CheckCircle
 
 // Tab components
 import ProjectOverview from './tabs/ProjectOverview';
-import { ProjectFactory } from './tabs/ProjectFactory';
+import { FactoryConfigurationTab } from '@/components/shared/FactoryConfigurationTab';
 import { HardwareTab } from '@/components/shared/HardwareTab';
 import { ProjectLines } from './tabs/ProjectLines';
 import ProjectTasks from './tabs/ProjectTasks';
@@ -411,7 +411,7 @@ export const ProjectDetail = () => {
         </TabsContent>
 
         <TabsContent value="factory" className="space-y-4">
-          <ProjectFactory projectId={project.id} projectDomain={project.domain} />
+          <FactoryConfigurationTab projectId={project.id} type="project" projectDomain={project.domain} onUpdate={fetchProject} />
           <HardwareTab projectId={project.id} type="project" onUpdate={fetchProject} />
         </TabsContent>
 

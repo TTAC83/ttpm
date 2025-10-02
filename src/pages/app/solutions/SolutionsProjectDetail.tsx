@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { SolutionsLines } from './tabs/SolutionsLines';
 import { OverviewTab } from '@/components/shared/OverviewTab';
 import { HardwareTab } from '@/components/shared/HardwareTab';
+import { FactoryConfigurationTab } from '@/components/shared/FactoryConfigurationTab';
 
 interface SolutionsProject {
   id: string;
@@ -185,7 +186,7 @@ export const SolutionsProjectDetail = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid grid-cols-3 lg:w-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="factory">Hardware</TabsTrigger>
+          <TabsTrigger value="factory">Factory</TabsTrigger>
           <TabsTrigger value="lines">Lines</TabsTrigger>
         </TabsList>
 
@@ -194,6 +195,7 @@ export const SolutionsProjectDetail = () => {
         </TabsContent>
 
         <TabsContent value="factory" className="space-y-4">
+          <FactoryConfigurationTab projectId={project.id} type="solutions" projectDomain={project.domain} onUpdate={fetchProject} />
           <HardwareTab projectId={project.id} type="solutions" onUpdate={fetchProject} />
         </TabsContent>
 

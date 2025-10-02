@@ -355,11 +355,15 @@ export type Database = {
           go_live_date: string | null
           health: Database["public"]["Enums"]["bau_health_enum"]
           id: string
+          job_scheduling: string | null
+          job_scheduling_notes: string | null
           lines_required: number | null
+          modules_and_features: string | null
           name: string
           notes: string | null
           primary_contact: string | null
           receivers_required: number | null
+          s3_bucket_required: boolean | null
           salesperson: string | null
           servers_required: number | null
           site_name: string | null
@@ -367,7 +371,12 @@ export type Database = {
           sla_response_mins: number | null
           solutions_consultant: string | null
           subscription_plan: string | null
+          tablet_use_cases: string | null
+          teams_id: string | null
+          teams_integration: boolean | null
+          teams_webhook_url: string | null
           tv_display_devices_required: number | null
+          website_url: string | null
         }
         Insert: {
           company_id: string
@@ -379,11 +388,15 @@ export type Database = {
           go_live_date?: string | null
           health?: Database["public"]["Enums"]["bau_health_enum"]
           id?: string
+          job_scheduling?: string | null
+          job_scheduling_notes?: string | null
           lines_required?: number | null
+          modules_and_features?: string | null
           name: string
           notes?: string | null
           primary_contact?: string | null
           receivers_required?: number | null
+          s3_bucket_required?: boolean | null
           salesperson?: string | null
           servers_required?: number | null
           site_name?: string | null
@@ -391,7 +404,12 @@ export type Database = {
           sla_response_mins?: number | null
           solutions_consultant?: string | null
           subscription_plan?: string | null
+          tablet_use_cases?: string | null
+          teams_id?: string | null
+          teams_integration?: boolean | null
+          teams_webhook_url?: string | null
           tv_display_devices_required?: number | null
+          website_url?: string | null
         }
         Update: {
           company_id?: string
@@ -403,11 +421,15 @@ export type Database = {
           go_live_date?: string | null
           health?: Database["public"]["Enums"]["bau_health_enum"]
           id?: string
+          job_scheduling?: string | null
+          job_scheduling_notes?: string | null
           lines_required?: number | null
+          modules_and_features?: string | null
           name?: string
           notes?: string | null
           primary_contact?: string | null
           receivers_required?: number | null
+          s3_bucket_required?: boolean | null
           salesperson?: string | null
           servers_required?: number | null
           site_name?: string | null
@@ -415,7 +437,12 @@ export type Database = {
           sla_response_mins?: number | null
           solutions_consultant?: string | null
           subscription_plan?: string | null
+          tablet_use_cases?: string | null
+          teams_id?: string | null
+          teams_integration?: boolean | null
+          teams_webhook_url?: string | null
           tv_display_devices_required?: number | null
+          website_url?: string | null
         }
         Relationships: [
           {
@@ -2888,8 +2915,11 @@ export type Database = {
           hardware_fee: number | null
           id: string
           implementation_lead: string | null
+          job_scheduling: string | null
+          job_scheduling_notes: string | null
           line_description: string | null
           lines_required: number | null
+          modules_and_features: string | null
           mrr: number | null
           payment_terms_days: number | null
           product_description: string | null
@@ -2897,6 +2927,7 @@ export type Database = {
           receivers_required: number | null
           reference_call: boolean | null
           reference_status: string | null
+          s3_bucket_required: boolean | null
           sales_lead: string | null
           salesperson: string | null
           segment: string | null
@@ -2907,11 +2938,16 @@ export type Database = {
           site_visit: boolean | null
           solutions_consultant: string | null
           standard_terms: boolean | null
+          tablet_use_cases: string | null
+          teams_id: string | null
+          teams_integration: boolean | null
+          teams_webhook_url: string | null
           technical_project_lead: string | null
           testimonial: boolean | null
           tv_display_devices_required: number | null
           updated_at: string
           useful_links: Json | null
+          website_url: string | null
         }
         Insert: {
           account_manager?: string | null
@@ -2942,8 +2978,11 @@ export type Database = {
           hardware_fee?: number | null
           id?: string
           implementation_lead?: string | null
+          job_scheduling?: string | null
+          job_scheduling_notes?: string | null
           line_description?: string | null
           lines_required?: number | null
+          modules_and_features?: string | null
           mrr?: number | null
           payment_terms_days?: number | null
           product_description?: string | null
@@ -2951,6 +2990,7 @@ export type Database = {
           receivers_required?: number | null
           reference_call?: boolean | null
           reference_status?: string | null
+          s3_bucket_required?: boolean | null
           sales_lead?: string | null
           salesperson?: string | null
           segment?: string | null
@@ -2961,11 +3001,16 @@ export type Database = {
           site_visit?: boolean | null
           solutions_consultant?: string | null
           standard_terms?: boolean | null
+          tablet_use_cases?: string | null
+          teams_id?: string | null
+          teams_integration?: boolean | null
+          teams_webhook_url?: string | null
           technical_project_lead?: string | null
           testimonial?: boolean | null
           tv_display_devices_required?: number | null
           updated_at?: string
           useful_links?: Json | null
+          website_url?: string | null
         }
         Update: {
           account_manager?: string | null
@@ -2996,8 +3041,11 @@ export type Database = {
           hardware_fee?: number | null
           id?: string
           implementation_lead?: string | null
+          job_scheduling?: string | null
+          job_scheduling_notes?: string | null
           line_description?: string | null
           lines_required?: number | null
+          modules_and_features?: string | null
           mrr?: number | null
           payment_terms_days?: number | null
           product_description?: string | null
@@ -3005,6 +3053,7 @@ export type Database = {
           receivers_required?: number | null
           reference_call?: boolean | null
           reference_status?: string | null
+          s3_bucket_required?: boolean | null
           sales_lead?: string | null
           salesperson?: string | null
           segment?: string | null
@@ -3015,11 +3064,16 @@ export type Database = {
           site_visit?: boolean | null
           solutions_consultant?: string | null
           standard_terms?: boolean | null
+          tablet_use_cases?: string | null
+          teams_id?: string | null
+          teams_integration?: boolean | null
+          teams_webhook_url?: string | null
           technical_project_lead?: string | null
           testimonial?: boolean | null
           tv_display_devices_required?: number | null
           updated_at?: string
           useful_links?: Json | null
+          website_url?: string | null
         }
         Relationships: []
       }

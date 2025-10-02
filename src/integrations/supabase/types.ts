@@ -819,6 +819,7 @@ export type Database = {
           reason_code: string | null
           reviewed_at: string
           reviewed_by: string
+          status: string | null
         }
         Insert: {
           bau_customer_id: string
@@ -831,6 +832,7 @@ export type Database = {
           reason_code?: string | null
           reviewed_at?: string
           reviewed_by: string
+          status?: string | null
         }
         Update: {
           bau_customer_id?: string
@@ -843,6 +845,7 @@ export type Database = {
           reason_code?: string | null
           reviewed_at?: string
           reviewed_by?: string
+          status?: string | null
         }
         Relationships: [
           {
@@ -3997,6 +4000,16 @@ export type Database = {
               p_escalation?: string
               p_health: Database["public"]["Enums"]["bau_health_simple"]
               p_reason_code?: string
+            }
+          | {
+              p_bau_customer_id: string
+              p_churn_risk?: Database["public"]["Enums"]["churn_risk_level"]
+              p_date_from: string
+              p_date_to: string
+              p_escalation?: string
+              p_health: Database["public"]["Enums"]["bau_health_simple"]
+              p_reason_code?: string
+              p_status?: string
             }
           | {
               p_bau_customer_id: string

@@ -43,6 +43,8 @@ export default function FeatureRequests() {
     page: 0,
     pageSize: 20
   });
+  const [sortColumn, setSortColumn] = useState<string>('product_gaps_critical');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const statusOptions: FeatureRequestStatus[] = ['Requested', 'Rejected', 'In Design', 'In Dev', 'Complete'];
 
@@ -102,6 +104,40 @@ export default function FeatureRequests() {
       pageSize: 20
     });
   };
+
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('desc');
+    }
+  };
+
+  const sortedRequests = [...featureRequests].sort((a, b) => {
+    let aVal: any = a[sortColumn as keyof FeatureRequestWithProfile];
+    let bVal: any = b[sortColumn as keyof FeatureRequestWithProfile];
+
+    // Handle null/undefined values
+    if (aVal == null) return 1;
+    if (bVal == null) return -1;
+
+    // Handle dates
+    if (sortColumn === 'complete_date' && aVal && bVal) {
+      aVal = new Date(aVal).getTime();
+      bVal = new Date(bVal).getTime();
+    }
+
+    // Handle strings
+    if (typeof aVal === 'string' && typeof bVal === 'string') {
+      aVal = aVal.toLowerCase();
+      bVal = bVal.toLowerCase();
+    }
+
+    if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+    if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
+  });
 
   return (
     <div className="space-y-6">
@@ -205,14 +241,34 @@ export default function FeatureRequests() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Product Gaps</TableHead>
-                  <TableHead>Release Date</TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleSort('title')}
+                  >
+                    Title {sortColumn === 'title' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleSort('status')}
+                  >
+                    Status {sortColumn === 'status' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleSort('product_gaps_critical')}
+                  >
+                    Product Gaps {sortColumn === 'product_gaps_critical' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleSort('complete_date')}
+                  >
+                    Release Date {sortColumn === 'complete_date' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {featureRequests.map((request) => (
+                {sortedRequests.map((request) => (
                   <TableRow
                     key={request.id}
                     className="cursor-pointer hover:bg-muted/50"

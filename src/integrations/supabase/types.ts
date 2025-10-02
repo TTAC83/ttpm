@@ -357,9 +357,11 @@ export type Database = {
           name: string
           notes: string | null
           primary_contact: string | null
+          salesperson: string | null
           site_name: string | null
           sla_resolution_hours: number | null
           sla_response_mins: number | null
+          solutions_consultant: string | null
           subscription_plan: string | null
         }
         Insert: {
@@ -374,9 +376,11 @@ export type Database = {
           name: string
           notes?: string | null
           primary_contact?: string | null
+          salesperson?: string | null
           site_name?: string | null
           sla_resolution_hours?: number | null
           sla_response_mins?: number | null
+          solutions_consultant?: string | null
           subscription_plan?: string | null
         }
         Update: {
@@ -391,9 +395,11 @@ export type Database = {
           name?: string
           notes?: string | null
           primary_contact?: string | null
+          salesperson?: string | null
           site_name?: string | null
           sla_resolution_hours?: number | null
           sla_response_mins?: number | null
+          solutions_consultant?: string | null
           subscription_plan?: string | null
         }
         Relationships: [
@@ -2311,12 +2317,14 @@ export type Database = {
             | null
           s3_bucket_required: boolean | null
           sales_lead: string | null
+          salesperson: string | null
           segment: string | null
           services_fee: number | null
           site_address: string | null
           site_name: string | null
           site_visit: boolean | null
           solution_consultant: string | null
+          solutions_consultant: string | null
           standard_terms: boolean | null
           tablet_use_cases: string | null
           teams_id: string | null
@@ -2366,12 +2374,14 @@ export type Database = {
             | null
           s3_bucket_required?: boolean | null
           sales_lead?: string | null
+          salesperson?: string | null
           segment?: string | null
           services_fee?: number | null
           site_address?: string | null
           site_name?: string | null
           site_visit?: boolean | null
           solution_consultant?: string | null
+          solutions_consultant?: string | null
           standard_terms?: boolean | null
           tablet_use_cases?: string | null
           teams_id?: string | null
@@ -2421,12 +2431,14 @@ export type Database = {
             | null
           s3_bucket_required?: boolean | null
           sales_lead?: string | null
+          salesperson?: string | null
           segment?: string | null
           services_fee?: number | null
           site_address?: string | null
           site_name?: string | null
           site_visit?: boolean | null
           solution_consultant?: string | null
+          solutions_consultant?: string | null
           standard_terms?: boolean | null
           tablet_use_cases?: string | null
           teams_id?: string | null
@@ -2818,67 +2830,166 @@ export type Database = {
       }
       solutions_projects: {
         Row: {
+          account_manager: string | null
+          ai_iot_engineer: string | null
+          arr: number | null
+          auto_renewal: boolean | null
+          billing_terms: string | null
+          break_clause_enabled: boolean | null
+          break_clause_key_points_md: string | null
+          break_clause_project_date: string | null
+          case_study: boolean | null
           company_name: string
+          contract_end_date: string | null
+          contract_signed_date: string | null
+          contract_start_date: string | null
+          contracted_days: number | null
+          contracted_lines: number | null
           created_at: string
           created_by: string
           customer_email: string | null
           customer_job_title: string | null
-          customer_lead: string | null
           customer_phone: string | null
+          customer_project_lead: string | null
+          deviation_of_terms: string | null
           domain: Database["public"]["Enums"]["work_domain"]
+          expansion_opportunity: string | null
           gateways_required: number | null
+          hardware_fee: number | null
           id: string
+          implementation_lead: string | null
+          line_description: string | null
           lines_required: number | null
+          mrr: number | null
+          payment_terms_days: number | null
+          product_description: string | null
+          project_coordinator: string | null
           receivers_required: number | null
+          reference_call: boolean | null
+          reference_status: string | null
+          sales_lead: string | null
           salesperson: string | null
+          segment: string | null
           servers_required: number | null
+          services_fee: number | null
           site_address: string | null
           site_name: string
+          site_visit: boolean | null
           solutions_consultant: string | null
+          standard_terms: boolean | null
+          technical_project_lead: string | null
+          testimonial: boolean | null
           tv_display_devices_required: number | null
           updated_at: string
+          useful_links: Json | null
         }
         Insert: {
+          account_manager?: string | null
+          ai_iot_engineer?: string | null
+          arr?: number | null
+          auto_renewal?: boolean | null
+          billing_terms?: string | null
+          break_clause_enabled?: boolean | null
+          break_clause_key_points_md?: string | null
+          break_clause_project_date?: string | null
+          case_study?: boolean | null
           company_name: string
+          contract_end_date?: string | null
+          contract_signed_date?: string | null
+          contract_start_date?: string | null
+          contracted_days?: number | null
+          contracted_lines?: number | null
           created_at?: string
           created_by: string
           customer_email?: string | null
           customer_job_title?: string | null
-          customer_lead?: string | null
           customer_phone?: string | null
+          customer_project_lead?: string | null
+          deviation_of_terms?: string | null
           domain: Database["public"]["Enums"]["work_domain"]
+          expansion_opportunity?: string | null
           gateways_required?: number | null
+          hardware_fee?: number | null
           id?: string
+          implementation_lead?: string | null
+          line_description?: string | null
           lines_required?: number | null
+          mrr?: number | null
+          payment_terms_days?: number | null
+          product_description?: string | null
+          project_coordinator?: string | null
           receivers_required?: number | null
+          reference_call?: boolean | null
+          reference_status?: string | null
+          sales_lead?: string | null
           salesperson?: string | null
+          segment?: string | null
           servers_required?: number | null
+          services_fee?: number | null
           site_address?: string | null
           site_name: string
+          site_visit?: boolean | null
           solutions_consultant?: string | null
+          standard_terms?: boolean | null
+          technical_project_lead?: string | null
+          testimonial?: boolean | null
           tv_display_devices_required?: number | null
           updated_at?: string
+          useful_links?: Json | null
         }
         Update: {
+          account_manager?: string | null
+          ai_iot_engineer?: string | null
+          arr?: number | null
+          auto_renewal?: boolean | null
+          billing_terms?: string | null
+          break_clause_enabled?: boolean | null
+          break_clause_key_points_md?: string | null
+          break_clause_project_date?: string | null
+          case_study?: boolean | null
           company_name?: string
+          contract_end_date?: string | null
+          contract_signed_date?: string | null
+          contract_start_date?: string | null
+          contracted_days?: number | null
+          contracted_lines?: number | null
           created_at?: string
           created_by?: string
           customer_email?: string | null
           customer_job_title?: string | null
-          customer_lead?: string | null
           customer_phone?: string | null
+          customer_project_lead?: string | null
+          deviation_of_terms?: string | null
           domain?: Database["public"]["Enums"]["work_domain"]
+          expansion_opportunity?: string | null
           gateways_required?: number | null
+          hardware_fee?: number | null
           id?: string
+          implementation_lead?: string | null
+          line_description?: string | null
           lines_required?: number | null
+          mrr?: number | null
+          payment_terms_days?: number | null
+          product_description?: string | null
+          project_coordinator?: string | null
           receivers_required?: number | null
+          reference_call?: boolean | null
+          reference_status?: string | null
+          sales_lead?: string | null
           salesperson?: string | null
+          segment?: string | null
           servers_required?: number | null
+          services_fee?: number | null
           site_address?: string | null
           site_name?: string
+          site_visit?: boolean | null
           solutions_consultant?: string | null
+          standard_terms?: boolean | null
+          technical_project_lead?: string | null
+          testimonial?: boolean | null
           tv_display_devices_required?: number | null
           updated_at?: string
+          useful_links?: Json | null
         }
         Relationships: []
       }

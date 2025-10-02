@@ -17,7 +17,7 @@ import { LinkManager, type Link } from '@/components/LinkManager';
 interface OverviewTabProps {
   data: any;
   onUpdate: () => void;
-  type: 'project' | 'bau';
+  type: 'project' | 'bau' | 'solutions';
 }
 
 interface Profile {
@@ -51,7 +51,8 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
     technical_project_lead: data.technical_project_lead || 'unassigned',
     project_coordinator: data.project_coordinator || 'unassigned',
     sales_lead: data.sales_lead || 'unassigned',
-    solution_consultant: data.solution_consultant || 'unassigned',
+    salesperson: data.salesperson || 'unassigned',
+    solution_consultant: data.solution_consultant || data.solutions_consultant || 'unassigned',
     account_manager: data.account_manager || 'unassigned',
     line_description: data.line_description || '',
     product_description: data.product_description || '',
@@ -283,7 +284,7 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
     
     setLoading(true);
     try {
-      const tableName = type === 'project' ? 'projects' : 'bau_customers';
+      const tableName = type === 'project' ? 'projects' : type === 'solutions' ? 'solutions_projects' : 'bau_customers';
       const updateData: any = {
         name: formData.name,
         site_name: formData.site_name || null,
@@ -300,6 +301,7 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
         technical_project_lead: formData.technical_project_lead === 'unassigned' ? null : formData.technical_project_lead,
         project_coordinator: formData.project_coordinator === 'unassigned' ? null : formData.project_coordinator,
         sales_lead: formData.sales_lead === 'unassigned' ? null : formData.sales_lead,
+        salesperson: formData.salesperson === 'unassigned' ? null : formData.salesperson,
         solution_consultant: formData.solution_consultant === 'unassigned' ? null : formData.solution_consultant,
         account_manager: formData.account_manager === 'unassigned' ? null : formData.account_manager,
         line_description: formData.line_description || null,
@@ -323,7 +325,7 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
       };
 
       // Add type-specific fields
-      if (type === 'project') {
+      if (type === 'project' || type === 'solutions') {
         updateData.contract_signed_date = formData.contract_signed_date;
         updateData.contract_start_date = formData.contract_start_date || null;
         updateData.contract_end_date = formData.contract_end_date || null;
@@ -341,7 +343,7 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
       if (error) throw error;
 
       toast({
-        title: `${type === 'project' ? 'Project' : 'Customer'} Updated`,
+        title: `${type === 'project' ? 'Project' : type === 'solutions' ? 'Solutions Project' : 'Customer'} Updated`,
         description: `Details have been updated successfully`,
       });
 
@@ -351,7 +353,7 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || `Failed to update ${type === 'project' ? 'project' : 'customer'}`,
+        description: error.message || `Failed to update ${type === 'project' ? 'project' : type === 'solutions' ? 'solutions project' : 'customer'}`,
         variant: "destructive",
       });
     } finally {
@@ -379,7 +381,8 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
       technical_project_lead: data.technical_project_lead || 'unassigned',
       project_coordinator: data.project_coordinator || 'unassigned',
       sales_lead: data.sales_lead || 'unassigned',
-      solution_consultant: data.solution_consultant || 'unassigned',
+      salesperson: data.salesperson || 'unassigned',
+      solution_consultant: data.solution_consultant || data.solutions_consultant || 'unassigned',
       account_manager: data.account_manager || 'unassigned',
       line_description: data.line_description || '',
       product_description: data.product_description || '',
@@ -435,7 +438,7 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>{type === 'project' ? 'Project' : 'Customer'} Information</CardTitle>
+              <CardTitle>{type === 'project' ? 'Project' : type === 'solutions' ? 'Solutions Project' : 'Customer'} Information</CardTitle>
               <CardDescription>
                 Basic details and configuration
               </CardDescription>
@@ -453,7 +456,7 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
             <form onSubmit={handleSave} className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="name">{type === 'project' ? 'Project' : 'Customer'} Name *</Label>
+                  <Label htmlFor="name">{type === 'project' ? 'Project' : type === 'solutions' ? 'Solutions Project' : 'Customer'} Name *</Label>
                   <Input
                     id="name"
                     value={formData.name}
@@ -555,7 +558,7 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                 <div className="grid gap-4 md:grid-cols-3">
                   <div className="space-y-2">
                     <Label htmlFor="contract_signed_date">
-                      {type === 'project' ? 'Contract Signed Date' : 'Go Live Date'} *
+                      {type === 'bau' ? 'Go Live Date' : 'Contract Signed Date'} *
                     </Label>
                     <Input
                       id="contract_signed_date"
@@ -564,7 +567,7 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                       onChange={(e) => setFormData(prev => ({ ...prev, contract_signed_date: e.target.value }))}
                     />
                   </div>
-                  {type === 'project' && (
+                  {(type === 'project' || type === 'solutions') && (
                     <>
                       <div className="space-y-2">
                         <Label htmlFor="contract_start_date">Contract Start Date</Label>
@@ -613,7 +616,7 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                 
                 <div className="space-y-2">
                   <Label htmlFor="billing_terms">
-                    {type === 'project' ? 'Billing Terms' : 'Subscription Plan'}
+                    {type === 'bau' ? 'Subscription Plan' : 'Billing Terms'}
                   </Label>
                   <Textarea
                     id="billing_terms"
@@ -795,6 +798,46 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="salesperson">Salesperson</Label>
+                    <Select 
+                      value={formData.salesperson} 
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, salesperson: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unassigned">Not assigned</SelectItem>
+                        {internalProfiles.map(p => (
+                          <SelectItem key={p.user_id} value={p.user_id}>
+                            {p.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="solution_consultant">Solutions Consultant</Label>
+                    <Select 
+                      value={formData.solution_consultant} 
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, solution_consultant: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unassigned">Not assigned</SelectItem>
+                        {internalProfiles.map(p => (
+                          <SelectItem key={p.user_id} value={p.user_id}>
+                            {p.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 
@@ -855,17 +898,17 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                 <h4 className="font-medium mb-4">Contract</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground">
-                      {type === 'project' ? 'Contract Signed Date' : 'Go Live Date'}
-                    </p>
-                    <p className="font-medium">
-                      {(type === 'project' ? data.contract_signed_date : data.go_live_date) 
-                        ? formatDateUK(type === 'project' ? data.contract_signed_date : data.go_live_date)
-                        : '-'
-                      }
-                    </p>
-                  </div>
-                  {type === 'project' && (
+                  <p className="text-sm text-muted-foreground">
+                    {type === 'bau' ? 'Go Live Date' : 'Contract Signed Date'}
+                  </p>
+                  <p className="font-medium">
+                    {(type === 'bau' ? data.go_live_date : data.contract_signed_date) 
+                      ? formatDateUK(type === 'bau' ? data.go_live_date : data.contract_signed_date)
+                      : '-'
+                    }
+                  </p>
+                </div>
+                {(type === 'project' || type === 'solutions') && (
                     <>
                       <div>
                         <p className="text-sm text-muted-foreground">Contract Start Date</p>
@@ -893,11 +936,11 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                 <h4 className="font-medium mb-4">Billing Info</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
-                    <p className="text-sm text-muted-foreground">
-                      {type === 'project' ? 'Billing Terms' : 'Subscription Plan'}
-                    </p>
+                  <p className="text-sm text-muted-foreground">
+                    {type === 'bau' ? 'Subscription Plan' : 'Billing Terms'}
+                  </p>
                     <p className="font-medium whitespace-pre-wrap">
-                      {(type === 'project' ? data.billing_terms : data.subscription_plan) || '-'}
+                      {(type === 'bau' ? data.subscription_plan : data.billing_terms) || '-'}
                     </p>
                   </div>
                   <div>
@@ -946,6 +989,14 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                   <div>
                     <p className="text-sm text-muted-foreground">Sales Lead</p>
                     <p className="font-medium">{getProfileName(data.sales_lead)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Salesperson</p>
+                    <p className="font-medium">{getProfileName(data.salesperson)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Solutions Consultant</p>
+                    <p className="font-medium">{getProfileName(data.solution_consultant || data.solutions_consultant)}</p>
                   </div>
                 </div>
               </div>

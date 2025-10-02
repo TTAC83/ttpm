@@ -194,7 +194,7 @@ export const BAUDetail = () => {
         </TabsList>
 
         <TabsContent value="overview">
-          <BAUOverviewTab customer={customer} />
+          <BAUOverviewTab customer={customer} onUpdate={loadCustomer} />
         </TabsContent>
 
         <TabsContent value="tickets">

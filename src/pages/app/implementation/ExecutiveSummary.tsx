@@ -207,7 +207,7 @@ export default function ExecutiveSummary() {
                   <TableCell>{row.segment || '-'}</TableCell>
                   <TableCell>{row.expansion_opportunity || '-'}</TableCell>
                   <TableCell className="text-center">
-                    {renderReferenceIcon(row.reference_status)}
+                    {row.reference_status || '-'}
                   </TableCell>
                 </TableRow>
               ))

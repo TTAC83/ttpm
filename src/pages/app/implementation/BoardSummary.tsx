@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Smile, Frown, Bug, TrendingUp, TrendingDown } from "lucide-react";
+import { Bug } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
 
@@ -67,26 +67,6 @@ export default function BoardSummary() {
     navigate(`/app/projects/${projectId}`);
   };
 
-  const renderHealthIcon = (health: 'green' | 'red' | null) => {
-    if (health === 'green') {
-      return <Smile className="h-6 w-6 text-green-600" />;
-    }
-    if (health === 'red') {
-      return <Frown className="h-6 w-6 text-red-600" />;
-    }
-    return null;
-  };
-
-  const renderOnTrackIcon = (status: 'on_track' | 'off_track' | null) => {
-    if (status === 'on_track') {
-      return <TrendingUp className="h-6 w-6 text-green-600" />;
-    }
-    if (status === 'off_track') {
-      return <TrendingDown className="h-6 w-6 text-red-600" />;
-    }
-    return null;
-  };
-
   const renderProductGapsIcon = (status: 'none' | 'non_critical' | 'critical') => {
     if (status === 'none') return null;
     if (status === 'critical') {
@@ -136,31 +116,11 @@ export default function BoardSummary() {
               >
                 Project {sortColumn === 'project_name' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
-              <TableHead className="text-center">Customer Health</TableHead>
-              <TableHead className="text-center">Project On Track</TableHead>
               <TableHead 
                 className="text-center cursor-pointer hover:bg-muted/50"
                 onClick={() => handleSort('product_gaps_status')}
               >
                 Product Gaps {sortColumn === 'product_gaps_status' && (sortDirection === 'asc' ? '↑' : '↓')}
-              </TableHead>
-              <TableHead 
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort('segment')}
-              >
-                Segment {sortColumn === 'segment' && (sortDirection === 'asc' ? '↑' : '↓')}
-              </TableHead>
-              <TableHead 
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort('expansion_opportunity')}
-              >
-                Expansion {sortColumn === 'expansion_opportunity' && (sortDirection === 'asc' ? '↑' : '↓')}
-              </TableHead>
-              <TableHead 
-                className="text-center cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort('reference_status')}
-              >
-                Reference {sortColumn === 'reference_status' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
               <TableHead 
                 className="cursor-pointer hover:bg-muted/50"
@@ -179,7 +139,7 @@ export default function BoardSummary() {
           <TableBody>
             {sortedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                   No implementation projects found.
                 </TableCell>
               </TableRow>
@@ -193,18 +153,7 @@ export default function BoardSummary() {
                   <TableCell className="font-medium">{row.customer_name}</TableCell>
                   <TableCell>{row.project_name}</TableCell>
                   <TableCell className="text-center">
-                    {renderHealthIcon(row.customer_health)}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {renderOnTrackIcon(row.project_on_track)}
-                  </TableCell>
-                  <TableCell className="text-center">
                     {renderProductGapsIcon(row.product_gaps_status)}
-                  </TableCell>
-                  <TableCell>{row.segment || '-'}</TableCell>
-                  <TableCell>{row.expansion_opportunity || '-'}</TableCell>
-                  <TableCell className="text-center">
-                    {row.reference_status || '-'}
                   </TableCell>
                   <TableCell>
                     {row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : ''}

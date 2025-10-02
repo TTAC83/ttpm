@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Bug, FileDown, FileSpreadsheet } from "lucide-react";
+import { Package, FileDown, FileSpreadsheet } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
 import jsPDF from "jspdf";
@@ -73,9 +73,9 @@ export default function BoardSummary() {
   const renderProductGapsIcon = (status: 'none' | 'non_critical' | 'critical') => {
     if (status === 'none') return null;
     if (status === 'critical') {
-      return <Bug className="h-6 w-6 text-red-600" />;
+      return <Package className="h-6 w-6 text-red-600" />;
     }
-    return <Bug className="h-6 w-6 text-green-600" />;
+    return <Package className="h-6 w-6 text-green-600" />;
   };
 
   const exportToPDF = () => {

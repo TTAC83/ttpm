@@ -47,6 +47,11 @@ export const NAV: NavItem[] = [
     roles: ["internal_admin", "internal_user", "external_admin", "external_user"],
     children: [
       {
+        label: "Board Summary",
+        to: "/app/bau/board-summary",
+        matchPaths: ["/app/bau/board-summary"],
+      },
+      {
         label: "Projects",
         to: "/app/bau",
         matchPaths: ["/app/bau"],

@@ -57,6 +57,7 @@ import { NewBAUCustomer } from "./pages/app/NewBAUCustomer";
 import { BAUDetail } from "./pages/app/BAUDetail";
 import { WeeklyReview } from "./pages/app/bau/WeeklyReview";
 import WeeklyReviewPage from "./pages/app/bau/WeeklyReviewPage";
+import { BoardSummary as BAUBoardSummary } from "./pages/app/bau/BoardSummary";
 import ImplementationWeeklyReview from "./pages/app/ImplementationWeeklyReview";
 import WBS from "./pages/app/implementation/WBS";
 import ImplementationEscalations from "./pages/app/ImplementationBlockers";
@@ -243,6 +244,7 @@ const App = () => (
               <Route path="models" element={<GlobalModels />} />
               <Route path="expenses" element={<Expenses />} />
               <Route path="bau" element={<BAU />} />
+              <Route path="bau/board-summary" element={<BAUBoardSummary />} />
               <Route 
                 path="bau/new" 
                 element={

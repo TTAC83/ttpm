@@ -253,3 +253,68 @@ export const createOrOpenWeeklyMeeting = async (weekFrom: string, weekTo: string
     description: `Weekly review meeting for BAU customers for the week of ${weekFrom} to ${weekTo}`
   };
 };
+
+// Get board summary data for the most recent week
+export interface BoardSummaryRow {
+  id: string;
+  customer_name: string;
+  site_name: string | null;
+  health: 'green' | 'red' | null;
+  churn_risk: 'Low' | 'Medium' | 'High' | 'Certain' | null;
+  status: string | null;
+  company_name: string;
+}
+
+export const getBauBoardSummary = async (): Promise<BoardSummaryRow[]> => {
+  // First, get the most recent week
+  const { data: weeks } = await supabase
+    .from('bau_weekly_metrics')
+    .select('date_from, date_to')
+    .order('date_to', { ascending: false })
+    .limit(1);
+
+  if (!weeks || weeks.length === 0) {
+    return [];
+  }
+
+  const mostRecentWeek = weeks[0];
+
+  // Get all BAU customers with their reviews for the most recent week
+  const { data, error } = await supabase
+    .from('bau_customers')
+    .select(`
+      id,
+      name,
+      site_name,
+      companies!inner(name),
+      bau_weekly_reviews!left(
+        health,
+        churn_risk,
+        status,
+        date_from,
+        date_to
+      )
+    `)
+    .eq('customer_type', 'bau')
+    .order('name');
+
+  if (error) throw error;
+
+  // Transform the data to match the board summary structure
+  return data.map(customer => {
+    // Find the review for the most recent week
+    const review = customer.bau_weekly_reviews?.find(
+      r => r.date_from === mostRecentWeek.date_from && r.date_to === mostRecentWeek.date_to
+    );
+
+    return {
+      id: customer.id,
+      customer_name: customer.name,
+      site_name: customer.site_name,
+      health: review?.health || null,
+      churn_risk: review?.churn_risk || null,
+      status: review?.status || null,
+      company_name: customer.companies?.name || ''
+    };
+  });
+};

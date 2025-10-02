@@ -69,6 +69,7 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
     reference_call: project.reference_call || false,
     site_visit: project.site_visit || false,
     case_study: project.case_study || false,
+    reference_status: project.reference_status || '',
   });
 
   const [contractedLinesError, setContractedLinesError] = useState<string>('');
@@ -337,6 +338,7 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
           reference_call: formData.reference_call,
           site_visit: formData.site_visit,
           case_study: formData.case_study,
+          reference_status: formData.reference_status || null,
         })
         .eq('id', project.id);
 
@@ -401,6 +403,7 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
       reference_call: project.reference_call || false,
       site_visit: project.site_visit || false,
       case_study: project.case_study || false,
+      reference_status: project.reference_status || '',
     });
     setContractedLinesError('');
     setBillingTermsError('');
@@ -563,6 +566,23 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                       onCheckedChange={(checked) => setFormData(prev => ({ ...prev, case_study: checked }))}
                     />
                     <Label htmlFor="case_study">Case Study</Label>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="reference_status">Reference Status</Label>
+                    <Select
+                      value={formData.reference_status}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, reference_status: value }))}
+                    >
+                      <SelectTrigger id="reference_status">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="Promised">Promised</SelectItem>
+                        <SelectItem value="Priority">Priority</SelectItem>
+                        <SelectItem value="N/A">N/A</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </div>
@@ -1129,7 +1149,7 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
               )}
               
               {/* Project Features */}
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 border-t pt-4">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 border-t pt-4">
                 <div>
                   <p className="text-sm font-medium">Testimonial</p>
                   <p className="text-sm text-muted-foreground">{project.testimonial ? 'Yes' : 'No'}</p>
@@ -1145,6 +1165,10 @@ const ProjectOverview = ({ project, onUpdate }: ProjectOverviewProps) => {
                 <div>
                   <p className="text-sm font-medium">Case Study</p>
                   <p className="text-sm text-muted-foreground">{project.case_study ? 'Yes' : 'No'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Reference Status</p>
+                  <p className="text-sm text-muted-foreground">{project.reference_status || '-'}</p>
                 </div>
               </div>
 

@@ -2306,6 +2306,9 @@ export type Database = {
           product_description: string | null
           project_coordinator: string | null
           reference_call: boolean | null
+          reference_status:
+            | Database["public"]["Enums"]["reference_status_enum"]
+            | null
           s3_bucket_required: boolean | null
           sales_lead: string | null
           segment: string | null
@@ -2358,6 +2361,9 @@ export type Database = {
           product_description?: string | null
           project_coordinator?: string | null
           reference_call?: boolean | null
+          reference_status?:
+            | Database["public"]["Enums"]["reference_status_enum"]
+            | null
           s3_bucket_required?: boolean | null
           sales_lead?: string | null
           segment?: string | null
@@ -2410,6 +2416,9 @@ export type Database = {
           product_description?: string | null
           project_coordinator?: string | null
           reference_call?: boolean | null
+          reference_status?:
+            | Database["public"]["Enums"]["reference_status_enum"]
+            | null
           s3_bucket_required?: boolean | null
           sales_lead?: string | null
           segment?: string | null
@@ -3857,6 +3866,7 @@ export type Database = {
       impl_health_simple: "green" | "red"
       impl_week_status: "on_track" | "off_track"
       implementation_blocker_status_enum: "Live" | "Closed"
+      reference_status_enum: "Active" | "Promised" | "Priority" | "N/A"
       task_status: "Planned" | "In Progress" | "Blocked" | "Done"
       ticket_status_enum:
         | "Open"
@@ -4033,6 +4043,7 @@ export const Constants = {
       impl_health_simple: ["green", "red"],
       impl_week_status: ["on_track", "off_track"],
       implementation_blocker_status_enum: ["Live", "Closed"],
+      reference_status_enum: ["Active", "Promised", "Priority", "N/A"],
       task_status: ["Planned", "In Progress", "Blocked", "Done"],
       ticket_status_enum: [
         "Open",

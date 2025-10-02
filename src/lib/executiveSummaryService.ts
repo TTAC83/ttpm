@@ -10,6 +10,7 @@ export interface ExecutiveSummaryRow {
   product_gaps_status: 'none' | 'non_critical' | 'critical';
   segment: string | null;
   expansion_opportunity: string | null;
+  reference_status: 'Active' | 'Promised' | 'Priority' | 'N/A' | null;
 }
 
 export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]> {
@@ -22,7 +23,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
   // Fetch all implementation projects with company info
   const { data: projects, error: projectsError } = await supabase
     .from('projects')
-    .select('id, name, company_id, segment, expansion_opportunity, domain, companies(name)')
+    .select('id, name, company_id, segment, expansion_opportunity, reference_status, domain, companies(name)')
     .in('domain', ['IoT', 'Vision', 'Hybrid'])
     .order('name');
 
@@ -93,7 +94,8 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       project_on_track: review?.status || null,
       product_gaps_status,
       segment: project.segment,
-      expansion_opportunity: project.expansion_opportunity
+      expansion_opportunity: project.expansion_opportunity,
+      reference_status: project.reference_status || null
     };
   });
 }

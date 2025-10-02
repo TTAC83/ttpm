@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Smile, Frown, Bug, TrendingUp, TrendingDown } from "lucide-react";
+import { Smile, Frown, Bug, TrendingUp, TrendingDown, CheckCircle, Clock, Star, Minus } from "lucide-react";
 import { useState } from "react";
 
 export default function ExecutiveSummary() {
@@ -94,6 +94,22 @@ export default function ExecutiveSummary() {
     return <Bug className="h-6 w-6 text-green-600" />;
   };
 
+  const renderReferenceIcon = (status: 'Active' | 'Promised' | 'Priority' | 'N/A' | null) => {
+    if (!status || status === 'N/A') {
+      return <Minus className="h-6 w-6 text-muted-foreground" />;
+    }
+    if (status === 'Active') {
+      return <CheckCircle className="h-6 w-6 text-green-600" />;
+    }
+    if (status === 'Promised') {
+      return <Clock className="h-6 w-6 text-amber-600" />;
+    }
+    if (status === 'Priority') {
+      return <Star className="h-6 w-6 text-blue-600" />;
+    }
+    return null;
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto p-6">
@@ -155,12 +171,18 @@ export default function ExecutiveSummary() {
               >
                 Expansion {sortColumn === 'expansion_opportunity' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
+              <TableHead 
+                className="text-center cursor-pointer hover:bg-muted/50"
+                onClick={() => handleSort('reference_status')}
+              >
+                Reference {sortColumn === 'reference_status' && (sortDirection === 'asc' ? '↑' : '↓')}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   No implementation projects found.
                 </TableCell>
               </TableRow>
@@ -184,6 +206,9 @@ export default function ExecutiveSummary() {
                   </TableCell>
                   <TableCell>{row.segment || '-'}</TableCell>
                   <TableCell>{row.expansion_opportunity || '-'}</TableCell>
+                  <TableCell className="text-center">
+                    {renderReferenceIcon(row.reference_status)}
+                  </TableCell>
                 </TableRow>
               ))
             )}

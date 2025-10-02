@@ -77,6 +77,13 @@ export const NAV: NavItem[] = [
         matchPaths: ["/app/implementation/executive-summary"],
         roles: ["internal_admin", "internal_user"]
       },
+      { 
+        label: "Board Summary", 
+        to: "/app/implementation/board-summary", 
+        iconName: "PieChart",
+        matchPaths: ["/app/implementation/board-summary"],
+        roles: ["internal_admin", "internal_user"]
+      },
       {
         label: "Projects",
         to: "/app/projects",

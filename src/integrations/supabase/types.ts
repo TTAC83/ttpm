@@ -3722,15 +3722,6 @@ export type Database = {
               p_customer_health: Database["public"]["Enums"]["impl_health_simple"]
               p_notes?: string
               p_project_status: Database["public"]["Enums"]["impl_week_status"]
-              p_reason_code?: string
-              p_week_start: string
-              p_weekly_summary?: string
-            }
-          | {
-              p_company_id: string
-              p_customer_health: Database["public"]["Enums"]["impl_health_simple"]
-              p_notes?: string
-              p_project_status: Database["public"]["Enums"]["impl_week_status"]
               p_week_start: string
             }
         Returns: undefined

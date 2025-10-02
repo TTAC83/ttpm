@@ -162,7 +162,7 @@ export const SolutionsProjectDetail = () => {
       <CardHeader>
         <div className="flex items-center gap-2">
           <Factory className="h-5 w-5" />
-          <CardTitle>Factory Requirements</CardTitle>
+          <CardTitle>Hardware Requirements</CardTitle>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -297,7 +297,7 @@ export const SolutionsProjectDetail = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid grid-cols-4 lg:w-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="factory">Factory</TabsTrigger>
+          <TabsTrigger value="factory">Hardware</TabsTrigger>
           <TabsTrigger value="lines">Lines</TabsTrigger>
           <TabsTrigger value="hardware">Hardware</TabsTrigger>
         </TabsList>

@@ -35,8 +35,7 @@ export const BoardSummary = () => {
 
   // Filter data based on search
   const filteredData = summaryData?.filter(row =>
-    row.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    row.site_name?.toLowerCase().includes(searchQuery.toLowerCase())
+    row.customer_name.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
 
   // Sort data
@@ -104,7 +103,6 @@ export const BoardSummary = () => {
 
     const tableData = sortedData.map(row => [
       row.customer_name,
-      row.site_name || '-',
       row.health || 'Not Set',
       row.churn_risk || 'Not Set',
       row.status || 'Not Set'
@@ -112,7 +110,7 @@ export const BoardSummary = () => {
 
     (doc as any).autoTable({
       startY: 28,
-      head: [['Customer', 'Site', 'Health', 'Churn Risk', 'Status']],
+      head: [['Customer', 'Health', 'Churn Risk', 'Status']],
       body: tableData,
       theme: 'grid',
       styles: { fontSize: 8 },
@@ -125,7 +123,6 @@ export const BoardSummary = () => {
   const exportToExcel = () => {
     const worksheetData = sortedData.map(row => ({
       'Customer': row.customer_name,
-      'Site': row.site_name || '-',
       'Health': row.health || 'Not Set',
       'Churn Risk': row.churn_risk || 'Not Set',
       'Status': row.status || 'Not Set'
@@ -138,7 +135,6 @@ export const BoardSummary = () => {
     // Set column widths
     worksheet['!cols'] = [
       { wch: 30 }, // Customer
-      { wch: 20 }, // Site
       { wch: 15 }, // Health
       { wch: 15 }, // Churn Risk
       { wch: 20 }  // Status
@@ -209,7 +205,6 @@ export const BoardSummary = () => {
                       <ArrowUpDown className="h-3 w-3" />
                     </Button>
                   </TableHead>
-                  <TableHead>Site</TableHead>
                   <TableHead>
                     <Button
                       variant="ghost"
@@ -248,7 +243,7 @@ export const BoardSummary = () => {
               <TableBody>
                 {sortedData.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground">
+                    <TableCell colSpan={4} className="text-center text-muted-foreground">
                       No customers found
                     </TableCell>
                   </TableRow>
@@ -260,7 +255,6 @@ export const BoardSummary = () => {
                       onClick={() => handleRowClick(row.id)}
                     >
                       <TableCell className="font-medium">{row.customer_name}</TableCell>
-                      <TableCell>{row.site_name || '-'}</TableCell>
                       <TableCell>{getHealthBadge(row.health)}</TableCell>
                       <TableCell>{getChurnRiskBadge(row.churn_risk)}</TableCell>
                       <TableCell>{row.status || '-'}</TableCell>

@@ -258,7 +258,6 @@ export const createOrOpenWeeklyMeeting = async (weekFrom: string, weekTo: string
 export interface BoardSummaryRow {
   id: string;
   customer_name: string;
-  site_name: string | null;
   health: 'green' | 'red' | null;
   churn_risk: 'Low' | 'Medium' | 'High' | 'Certain' | null;
   status: string | null;
@@ -285,7 +284,6 @@ export const getBauBoardSummary = async (): Promise<BoardSummaryRow[]> => {
     .select(`
       id,
       name,
-      site_name,
       companies!inner(name),
       bau_weekly_reviews!left(
         health,
@@ -310,7 +308,6 @@ export const getBauBoardSummary = async (): Promise<BoardSummaryRow[]> => {
     return {
       id: customer.id,
       customer_name: customer.name,
-      site_name: customer.site_name,
       health: review?.health || null,
       churn_risk: review?.churn_risk || null,
       status: review?.status || null,

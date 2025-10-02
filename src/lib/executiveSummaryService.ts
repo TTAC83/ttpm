@@ -16,6 +16,8 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
   // Calculate current week's Monday
   const currentMonday = startOfWeek(new Date(), { weekStartsOn: 1 });
   const mondayISO = currentMonday.toISOString().split('T')[0];
+  
+  console.log('🔍 Fetching executive summary for week:', mondayISO);
 
   // Fetch all implementation projects with company info
   const { data: projects, error: projectsError } = await supabase
@@ -26,14 +28,18 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
 
   if (projectsError) throw projectsError;
   if (!projects) return [];
+  
+  console.log('🔍 Found projects:', projects.length);
 
   // Fetch weekly reviews for current week
   const { data: reviews, error: reviewsError } = await supabase
     .from('impl_weekly_reviews')
-    .select('company_id, customer_health, project_status')
+    .select('company_id, customer_health, project_status, week_start')
     .eq('week_start', mondayISO);
 
   if (reviewsError) throw reviewsError;
+  
+  console.log('🔍 Found reviews for', mondayISO, ':', reviews?.length || 0, reviews);
 
   // Fetch product gaps grouped by project
   const { data: productGaps, error: gapsError } = await supabase
@@ -69,6 +75,10 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
     // Get project's company review by company_id
     const review = reviewMap.get(project.company_id);
     const gaps = gapsMap.get(project.id);
+    
+    if (review) {
+      console.log('✅ Found review for project', project.name, 'company_id:', project.company_id, review);
+    }
 
     let product_gaps_status: 'none' | 'non_critical' | 'critical' = 'none';
     if (gaps?.hasAny) {

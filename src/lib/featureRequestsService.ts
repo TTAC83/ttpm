@@ -27,6 +27,8 @@ export interface FeatureRequestWithProfile extends FeatureRequest {
     name?: string;
     email?: string;
   };
+  product_gaps_total?: number;
+  product_gaps_critical?: number;
 }
 
 export interface CreateFeatureRequestInput {
@@ -100,12 +102,42 @@ export const featureRequestsService = {
 
     if (error) throw error;
 
+    // Fetch product gaps counts for all feature requests
+    const featureRequestIds = (data || []).map(fr => fr.id);
+    let productGapsCounts: Record<string, { total: number; critical: number }> = {};
+
+    if (featureRequestIds.length > 0) {
+      const { data: productGapsData, error: pgError } = await supabase
+        .from('product_gaps')
+        .select('feature_request_id, is_critical')
+        .in('feature_request_id', featureRequestIds)
+        .neq('status', 'Closed');
+
+      if (!pgError && productGapsData) {
+        productGapsCounts = productGapsData.reduce((acc, pg) => {
+          const frId = pg.feature_request_id;
+          if (!frId) return acc;
+          
+          if (!acc[frId]) {
+            acc[frId] = { total: 0, critical: 0 };
+          }
+          acc[frId].total += 1;
+          if (pg.is_critical) {
+            acc[frId].critical += 1;
+          }
+          return acc;
+        }, {} as Record<string, { total: number; critical: number }>);
+      }
+    }
+
     return (data || []).map(item => ({
       ...item,
       creator: {
         name: (item.profiles as any)?.name,
         email: undefined // Email not available in profiles table
-      }
+      },
+      product_gaps_total: productGapsCounts[item.id]?.total || 0,
+      product_gaps_critical: productGapsCounts[item.id]?.critical || 0
     })) as FeatureRequestWithProfile[];
   },
 

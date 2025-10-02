@@ -207,6 +207,7 @@ export default function FeatureRequests() {
                 <TableRow>
                   <TableHead>Title</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Product Gaps</TableHead>
                   <TableHead>Release Date</TableHead>
                 </TableRow>
               </TableHeader>
@@ -231,6 +232,22 @@ export default function FeatureRequests() {
                       <Badge variant={featureRequestsService.getStatusBadgeVariant(request.status)}>
                         {request.status}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {request.product_gaps_total ? (
+                        <div className="flex gap-2 items-center">
+                          <Badge variant="outline">
+                            {request.product_gaps_total} total
+                          </Badge>
+                          {request.product_gaps_critical ? (
+                            <Badge variant="destructive">
+                              {request.product_gaps_critical} critical
+                            </Badge>
+                          ) : null}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">-</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {request.complete_date ? (

@@ -459,6 +459,9 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   const [currentStatus, setCurrentStatus] = useState<string>("");
   const [statusTouched, setStatusTouched] = useState(false);
   const [healthTouched, setHealthTouched] = useState(false);
+  
+  // Ref to track the latest currentStatus value to prevent race conditions
+  const currentStatusRef = useRef<string>("");
 
   // Reset states immediately when companyId or weekStart changes
   useEffect(() => {
@@ -482,7 +485,13 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
       setReasonCode(reviewQ.data.reason_code ?? "");
       setWeeklySummary(reviewQ.data.weekly_summary ?? "");
       setPlannedGoLiveDate(reviewQ.data.planned_go_live_date ? new Date(reviewQ.data.planned_go_live_date) : undefined);
-      setCurrentStatus(reviewQ.data.current_status ?? "");
+      
+      // Only update currentStatus from server if it's different from what user is typing
+      const serverCurrentStatus = reviewQ.data.current_status ?? "";
+      if (serverCurrentStatus !== currentStatusRef.current) {
+        setCurrentStatus(serverCurrentStatus);
+        currentStatusRef.current = serverCurrentStatus;
+      }
     }
   }, [reviewQ.data]);
 
@@ -500,7 +509,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
         currentStatus: params.currentStatus,
       }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["impl-review", companyId, weekStart] });
+      // Only invalidate stats and health queries, not the review query to prevent re-renders
       qc.invalidateQueries({ queryKey: ["impl-stats", weekStart] });
       qc.invalidateQueries({ queryKey: ["impl-companies-health", weekStart] });
     },
@@ -551,7 +560,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
       }
       debouncedAutoSave.current = setTimeout(() => {
         autoSave(projectStatusValue, customerHealthValue, notesValue, reasonCodeValue, weeklySummaryValue, plannedGoLiveDateValue, currentStatusValue);
-      }, 500); // 500ms delay for text fields
+      }, 1500); // 1.5 second delay to allow for faster typing
     },
     [autoSave]
   );
@@ -600,6 +609,9 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
 
   // Auto-save when current status changes (debounced)
   useEffect(() => {
+    // Update the ref to track the latest value
+    currentStatusRef.current = currentStatus;
+    
     if (projectStatus && customerHealth) {
       triggerAutoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary, plannedGoLiveDate, currentStatus);
     }

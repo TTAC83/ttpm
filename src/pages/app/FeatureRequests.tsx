@@ -20,9 +20,11 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Search, Filter } from "lucide-react";
+import { Plus, Search, Filter, FileDown, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
+import jsPDF from "jspdf";
+import * as XLSX from "xlsx";
 import { 
   FeatureRequestWithProfile, 
   FeatureRequestStatus, 
@@ -139,6 +141,84 @@ export default function FeatureRequests() {
     return 0;
   });
 
+  const exportToPDF = () => {
+    const doc = new jsPDF('l', 'mm', 'a4');
+    
+    doc.setFontSize(16);
+    doc.text('Feature Requests', 14, 15);
+    
+    doc.setFontSize(10);
+    doc.text(`Exported: ${format(new Date(), 'dd MMM yyyy HH:mm')}`, 14, 22);
+    
+    const headers = ['Title', 'Status', 'Product Gaps', 'Release Date'];
+    
+    const data = sortedRequests.map(request => [
+      request.title,
+      request.status,
+      request.product_gaps_total 
+        ? `${request.product_gaps_total} total${request.product_gaps_critical ? `, ${request.product_gaps_critical} critical` : ''}`
+        : '-',
+      request.complete_date ? format(new Date(request.complete_date), 'dd MMM yyyy') : '-'
+    ]);
+    
+    let y = 30;
+    const lineHeight = 7;
+    const colWidths = [80, 30, 40, 30];
+    
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'bold');
+    let x = 14;
+    headers.forEach((header, i) => {
+      doc.text(header, x, y);
+      x += colWidths[i];
+    });
+    
+    y += lineHeight;
+    doc.setFont(undefined, 'normal');
+    
+    data.forEach((row) => {
+      x = 14;
+      row.forEach((cell, i) => {
+        const text = String(cell || '');
+        doc.text(text.substring(0, 40), x, y);
+        x += colWidths[i];
+      });
+      y += lineHeight;
+      
+      if (y > 190) {
+        doc.addPage();
+        y = 15;
+      }
+    });
+    
+    doc.save(`feature-requests-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  };
+
+  const exportToExcel = () => {
+    const data = sortedRequests.map(request => ({
+      'Title': request.title,
+      'Status': request.status,
+      'Product Gaps Total': request.product_gaps_total || 0,
+      'Product Gaps Critical': request.product_gaps_critical || 0,
+      'Release Date': request.complete_date ? format(new Date(request.complete_date), 'dd MMM yyyy') : ''
+    }));
+    
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Feature Requests');
+    
+    const colWidths = [
+      { wch: 50 },
+      { wch: 20 },
+      { wch: 20 },
+      { wch: 20 },
+      { wch: 20 }
+    ];
+    worksheet['!cols'] = colWidths;
+    
+    XLSX.writeFile(workbook, `feature-requests-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -148,10 +228,20 @@ export default function FeatureRequests() {
             Suggest new features and improvements for the platform
           </p>
         </div>
-        <Button onClick={handleNewRequest}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Request
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={exportToPDF} variant="outline" size="sm">
+            <FileDown className="mr-2 h-4 w-4" />
+            Export PDF
+          </Button>
+          <Button onClick={exportToExcel} variant="outline" size="sm">
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            Export Excel
+          </Button>
+          <Button onClick={handleNewRequest}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Request
+          </Button>
+        </div>
       </div>
 
       <Card>

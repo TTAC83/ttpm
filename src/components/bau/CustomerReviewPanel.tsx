@@ -98,24 +98,25 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
 
   // Update form state when customer or existing review changes
   useEffect(() => {
+    // Always reset state when customer changes
+    if (customer?.id !== previousCustomerId.current) {
+      setHealth('');
+      setChurnRisk('');
+      setStatus('');
+      setReasonCode('');
+      setEscalation('');
+    }
+    
+    // Then populate from existing review if available
     if (existingReview) {
       setHealth(existingReview.health);
       setChurnRisk(existingReview.churn_risk || '');
       setStatus(existingReview.status || '');
-      // Only update reason code if it exists in the review, otherwise preserve current state
+      // Only update reason code if it exists in the review
       if (existingReview.reason_code) {
         setReasonCode(existingReview.reason_code);
       }
       setEscalation(existingReview.escalation || '');
-    } else {
-      // Only reset when switching to a different customer
-      if (customer?.id !== previousCustomerId.current) {
-        setHealth('');
-        setChurnRisk('');
-        setStatus('');
-        setReasonCode('');
-        setEscalation('');
-      }
     }
   }, [existingReview, customer?.id]);
 

@@ -452,6 +452,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   const [customerHealth, setCustomerHealth] = useState<"green"|"red"|null>(null);
   const [reasonCode, setReasonCode] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
+  const [weeklySummary, setWeeklySummary] = useState<string>("");
   const [statusTouched, setStatusTouched] = useState(false);
   const [healthTouched, setHealthTouched] = useState(false);
 
@@ -461,6 +462,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     setCustomerHealth(null);
     setNotes("");
     setReasonCode("");
+    setWeeklySummary("");
     setStatusTouched(false);
     setHealthTouched(false);
   }, [companyId, weekStart]);
@@ -472,11 +474,12 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
       setCustomerHealth(reviewQ.data.customer_health ?? null);
       setNotes(reviewQ.data.notes ?? "");
       setReasonCode(reviewQ.data.reason_code ?? "");
+      setWeeklySummary(reviewQ.data.weekly_summary ?? "");
     }
   }, [reviewQ.data]);
 
   const autoSaveMutation = useMutation({
-    mutationFn: (params: { projectStatus: "on_track"|"off_track"|null, customerHealth: "green"|"red"|null, notes: string, reasonCode: string }) => 
+    mutationFn: (params: { projectStatus: "on_track"|"off_track"|null, customerHealth: "green"|"red"|null, notes: string, reasonCode: string, weeklySummary: string }) => 
       saveReview({
         companyId,
         weekStartISO: weekStart,
@@ -484,6 +487,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
         customerHealth: params.customerHealth,
         notes: params.notes,
         reasonCode: params.reasonCode,
+        weeklySummary: params.weeklySummary,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["impl-review", companyId, weekStart] });
@@ -500,7 +504,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
 
   // Auto-save functionality
   const autoSave = useCallback(
-    async (projectStatusValue: "on_track"|"off_track"|null, customerHealthValue: "green"|"red"|null, notesValue: string, reasonCodeValue: string) => {
+    async (projectStatusValue: "on_track"|"off_track"|null, customerHealthValue: "green"|"red"|null, notesValue: string, reasonCodeValue: string, weeklySummaryValue: string) => {
       // Don't auto-save if another save is already in progress
       if (autoSaveMutation.isPending) return;
       
@@ -517,6 +521,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
           customerHealth: customerHealthValue,
           notes: notesValue,
           reasonCode: reasonCodeValue,
+          weeklySummary: weeklySummaryValue,
         });
       } catch (error) {
         console.error('Auto-save failed:', error);
@@ -528,13 +533,13 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   // Debounced auto-save for text fields
   const debouncedAutoSave = useRef<NodeJS.Timeout>();
   const triggerAutoSave = useCallback(
-    (projectStatusValue: "on_track"|"off_track"|null, customerHealthValue: "green"|"red"|null, notesValue: string, reasonCodeValue: string) => {
+    (projectStatusValue: "on_track"|"off_track"|null, customerHealthValue: "green"|"red"|null, notesValue: string, reasonCodeValue: string, weeklySummaryValue: string) => {
       if (debouncedAutoSave.current) {
         clearTimeout(debouncedAutoSave.current);
       }
       debouncedAutoSave.current = setTimeout(() => {
-        autoSave(projectStatusValue, customerHealthValue, notesValue, reasonCodeValue);
-      }, 1000); // 1 second delay for text fields
+        autoSave(projectStatusValue, customerHealthValue, notesValue, reasonCodeValue, weeklySummaryValue);
+      }, 500); // 500ms delay for text fields
     },
     [autoSave]
   );
@@ -542,30 +547,37 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   // Auto-save when project status changes (immediate)
   useEffect(() => {
     if (projectStatus && customerHealth) {
-      autoSave(projectStatus, customerHealth, notes, reasonCode);
+      autoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary);
     }
   }, [projectStatus]);
 
   // Auto-save when customer health changes (immediate)
   useEffect(() => {
     if (projectStatus && customerHealth) {
-      autoSave(projectStatus, customerHealth, notes, reasonCode);
+      autoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary);
     }
   }, [customerHealth]);
 
   // Auto-save when reason code changes (immediate, since it's a select)
   useEffect(() => {
     if (projectStatus && customerHealth && reasonCode) {
-      autoSave(projectStatus, customerHealth, notes, reasonCode);
+      autoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary);
     }
   }, [reasonCode]);
 
   // Auto-save when notes change (debounced)
   useEffect(() => {
     if (projectStatus && customerHealth) {
-      triggerAutoSave(projectStatus, customerHealth, notes, reasonCode);
+      triggerAutoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary);
     }
   }, [notes]);
+
+  // Auto-save when weekly summary changes (debounced)
+  useEffect(() => {
+    if (projectStatus && customerHealth) {
+      triggerAutoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary);
+    }
+  }, [weeklySummary]);
 
   const handleEditTask = (task: TaskRow) => {
     setEditingTask(task);
@@ -1167,17 +1179,45 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
           
           <div className="md:col-span-3">
             <div className="text-sm mb-1">Notes / Escalation (optional)</div>
-            <textarea className="w-full border rounded px-2 py-1 min-h-[90px]" value={notes} onChange={(e)=>setNotes(e.target.value)} />
+            <Textarea 
+              className="w-full min-h-[90px] resize-none" 
+              value={notes} 
+              onChange={(e)=>setNotes(e.target.value)} 
+            />
+          </div>
+
+          <div className="md:col-span-3">
+            <div className="text-sm mb-1 font-medium">Weekly Summary</div>
+            <Textarea 
+              className="w-full min-h-[120px] resize-none" 
+              placeholder="Write a short summary of this week's progress, issues, or notes…"
+              value={weeklySummary} 
+              onChange={(e)=>setWeeklySummary(e.target.value)} 
+            />
           </div>
         </div>
 
         {/* Auto-save indicator */}
-        {autoSaveMutation.isPending && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <div className="animate-spin h-3 w-3 border border-primary rounded-full border-t-transparent"></div>
-            Auto-saving...
-          </div>
-        )}
+        <div className="flex items-center gap-2 text-sm">
+          {autoSaveMutation.isPending && (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="animate-spin h-3 w-3 border border-primary rounded-full border-t-transparent"></div>
+              Saving...
+            </div>
+          )}
+          {!autoSaveMutation.isPending && (projectStatus && customerHealth) && (
+            <div className="flex items-center gap-2 text-green-600">
+              <CheckCircle className="h-3 w-3" />
+              Saved
+            </div>
+          )}
+          {autoSaveMutation.isError && (
+            <div className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-3 w-3" />
+              Save failed
+            </div>
+          )}
+        </div>
       </Card>
 
     {/* Edit Task Dialog */}

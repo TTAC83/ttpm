@@ -178,13 +178,14 @@ export type ImplWeeklyReview = {
   customer_health: "green" | "red" | null;
   notes: string | null;
   reason_code: string | null;
+  weekly_summary: string | null;
 };
 
 export async function loadReview(companyId: string, weekStartISO: string): Promise<ImplWeeklyReview | null> {
   console.log('Loading weekly review for:', { companyId, weekStartISO });
   const { data, error } = await supabase
     .from("impl_weekly_reviews")
-    .select("project_status,customer_health,notes,reason_code")
+    .select("project_status,customer_health,notes,reason_code,weekly_summary")
     .eq("company_id", companyId)
     .eq("week_start", weekStartISO)
     .maybeSingle();
@@ -204,6 +205,7 @@ export async function saveReview(params: {
   customerHealth: "green" | "red" | null;
   notes?: string | null;
   reasonCode?: string | null;
+  weeklySummary?: string | null;
 }): Promise<void> {
   console.log('Saving weekly review:', params);
   const { data, error } = await supabase.rpc("impl_set_weekly_review", {
@@ -213,6 +215,7 @@ export async function saveReview(params: {
     p_customer_health: params.customerHealth,
     p_notes: params.notes ?? null,
     p_reason_code: params.reasonCode ?? null,
+    p_weekly_summary: params.weeklySummary ?? null,
   });
   console.log('Save result:', { data, error });
   if (error) {

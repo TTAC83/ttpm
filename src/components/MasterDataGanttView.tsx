@@ -289,8 +289,8 @@ export const MasterDataGanttView = ({
               </div>
             ) : (
               <div className="relative">
-                {/* Header with frozen task column and scrollable timeline */}
-                <div className="flex border-b-2 border-border bg-background">
+                {/* Header with frozen task column and scrollable timeline - STICKY */}
+                <div className="flex border-b-2 border-border bg-background sticky top-0 z-10">
                   <div className="w-96 flex-shrink-0 bg-muted/50 border-r border-border">
                     <div className="p-3 font-semibold text-sm">
                       Tasks & Timeline

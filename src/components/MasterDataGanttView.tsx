@@ -290,14 +290,14 @@ export const MasterDataGanttView = ({
             ) : (
               <div className="relative">
                 {/* Header with frozen task column and scrollable timeline */}
-                <div className="flex border-b-2 border-border bg-background">
+                <div className="flex border-b-2 border-border bg-background min-w-0">
                   <div className="w-96 flex-shrink-0 bg-muted/50 border-r border-border sticky left-0 z-20">
                     <div className="p-3 font-semibold text-sm">
                       Tasks & Timeline
                     </div>
                   </div>
                   <div 
-                    className="flex-1 overflow-x-auto"
+                    className="flex-1 min-w-0 overflow-x-auto"
                     ref={(el) => {
                       if (el) timelineRefs.current[0] = el;
                     }}
@@ -321,7 +321,7 @@ export const MasterDataGanttView = ({
                 </div>
                 
                 {/* Task rows with coordinated horizontal scroll */}
-                <div className="flex">
+                <div className="flex min-w-0">
                   <div className="w-96 flex-shrink-0 bg-background border-r border-border sticky left-0 z-10">
                     {step.tasks.map(task => {
                       const level = (task as any).level || 0;
@@ -395,7 +395,7 @@ export const MasterDataGanttView = ({
                   
                   {/* Scrollable timeline bars */}
                   <div 
-                    className="flex-1 overflow-x-auto"
+                    className="flex-1 min-w-0 overflow-x-auto"
                     ref={(el) => {
                       if (el) timelineRefs.current[ganttData.steps.findIndex(s => s.id === step.id) + 1] = el;
                     }}

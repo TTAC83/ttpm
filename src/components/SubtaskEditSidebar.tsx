@@ -351,6 +351,14 @@ export function SubtaskEditSidebar({
               Cancel
             </Button>
           </div>
+          
+          {/* Debug Info */}
+          <div className="text-xs text-muted-foreground mt-2 p-2 bg-muted/50 rounded border">
+            <div>Task ID: {subtask.task_id}</div>
+            <div>Subtask ID: {subtask.id}</div>
+            <div>Start Offset: {editData.planned_start_offset_days} → {editData.planned_start_offset_days !== subtask.planned_start_offset_days ? '(modified)' : '(unchanged)'}</div>
+            <div>End Offset: {editData.planned_end_offset_days} → {editData.planned_end_offset_days !== subtask.planned_end_offset_days ? '(modified)' : '(unchanged)'}</div>
+          </div>
         </div>
       </SheetContent>
     </Sheet>

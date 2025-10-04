@@ -258,7 +258,7 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
         console.error('❌ Subtask update error:', error);
         toast({
           title: "Save Failed",
-          description: `Database error: ${error.message || "Failed to update subtask"}`,
+          description: `Database error: ${error.message}. ${error.details ? `Details: ${error.details}` : ''}${error.hint ? ` Hint: ${error.hint}` : ''}`,
           variant: "destructive",
         });
         return;
@@ -268,7 +268,7 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
         console.error('❌ No data returned from update');
         toast({
           title: "Save Failed",
-          description: "No data returned - check RLS policies",
+          description: "Update succeeded but no data returned. Check RLS policies - you may not have permission to read this subtask after updating.",
           variant: "destructive",
         });
         return;

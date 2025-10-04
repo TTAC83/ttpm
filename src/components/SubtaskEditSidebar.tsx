@@ -57,6 +57,7 @@ export function SubtaskEditSidebar({
   onSave 
 }: SubtaskEditSidebarProps) {
   const [editData, setEditData] = useState<Partial<Subtask & { planned_start_date: Date | null; planned_end_date: Date | null }>>({});
+  const [isSaving, setIsSaving] = useState(false);
 
   const technologyScopeOptions = [
     { value: "both", label: "Both IoT & Vision" },
@@ -82,30 +83,35 @@ export function SubtaskEditSidebar({
     }
   }, [subtask, open]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!subtask || !editData.title) {
       toast.error("Subtask title is required");
       return;
     }
 
-    const updatedSubtask: Subtask = {
-      ...subtask,
-      title: editData.title || "",
-      details: editData.details || null,
-      planned_start: editData.planned_start_date?.toISOString().split('T')[0] || null,
-      planned_end: editData.planned_end_date?.toISOString().split('T')[0] || null,
-      planned_start_offset_days: editData.planned_start_offset_days || 0,
-      planned_end_offset_days: editData.planned_end_offset_days || 1,
-      position: editData.position || 1,
-      technology_scope: editData.technology_scope || "both",
-      assigned_role: editData.assigned_role || "implementation_lead",
-      status: editData.status || "Planned",
-      assignee: editData.assignee === 'unassigned' ? null : (editData.assignee || null),
-    };
+    setIsSaving(true);
+    try {
+      const updatedSubtask: Subtask = {
+        ...subtask,
+        title: editData.title || "",
+        details: editData.details || null,
+        planned_start: editData.planned_start_date?.toISOString().split('T')[0] || null,
+        planned_end: editData.planned_end_date?.toISOString().split('T')[0] || null,
+        planned_start_offset_days: editData.planned_start_offset_days || 0,
+        planned_end_offset_days: editData.planned_end_offset_days || 1,
+        position: editData.position || 1,
+        technology_scope: editData.technology_scope || "both",
+        assigned_role: editData.assigned_role || "implementation_lead",
+        status: editData.status || "Planned",
+        assignee: editData.assignee === 'unassigned' ? null : (editData.assignee || null),
+      };
 
-    onSave(updatedSubtask);
-    onOpenChange(false);
-    // Toast is now shown in the parent after successful DB save
+      console.log('💾 Sidebar submitting subtask:', updatedSubtask);
+      await onSave(updatedSubtask);
+      onOpenChange(false);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCancel = () => {
@@ -342,11 +348,11 @@ export function SubtaskEditSidebar({
 
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4">
-            <Button onClick={handleSave} className="flex-1" disabled={!editData.title}>
+            <Button onClick={handleSave} className="flex-1" disabled={!editData.title || isSaving}>
               <Save className="h-4 w-4 mr-2" />
-              Save Changes
+              {isSaving ? 'Saving...' : 'Save Changes'}
             </Button>
-            <Button variant="outline" onClick={handleCancel} className="flex-1">
+            <Button variant="outline" onClick={handleCancel} className="flex-1" disabled={isSaving}>
               <X className="h-4 w-4 mr-2" />
               Cancel
             </Button>

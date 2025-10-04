@@ -251,7 +251,7 @@ export const MasterDataGanttView = ({
       <div 
         ref={verticalRef}
         onScroll={onVerticalContainerScroll}
-        className="h-full overflow-y-auto pl-6"
+        className="h-full overflow-y-auto overflow-x-hidden pl-6"
         style={{ direction: 'rtl', scrollbarGutter: 'stable both-edges' }}
       >
         <div className="space-y-6" style={{ direction: 'ltr' }}>

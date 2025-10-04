@@ -117,17 +117,29 @@ export const MasterDataGanttView = ({
     }
   };
 
-  // Update max scroll when data changes
+  // Update max scroll when data or container size changes
   useEffect(() => {
-    if (timelineRefs.current[0]) {
-      const maxScroll = timelineRefs.current[0].scrollWidth - timelineRefs.current[0].clientWidth;
-      setMaxScrollLeft(Math.max(0, maxScroll));
-    }
-    if (verticalRef.current) {
-      const maxV = verticalRef.current.scrollHeight - verticalRef.current.clientHeight;
-      setVMaxScrollTop(Math.max(0, maxV));
-    }
-  }, [ganttData]);
+    const calc = () => {
+      const totalWidth = verticalRef.current?.clientWidth || 0;
+      const frozenWidth = 384; // left frozen task column width (w-96)
+      const timelineClientWidth = Math.max(0, totalWidth - frozenWidth);
+      const dayWidth = 32;
+      const contentWidth = (ganttData.maxDays + 1) * dayWidth;
+      const max = Math.max(0, contentWidth - timelineClientWidth);
+      setMaxScrollLeft(max);
+    };
+
+    // run now and on next frame to ensure layout is ready
+    calc();
+    const raf = requestAnimationFrame(calc);
+
+    const onResize = () => calc();
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      cancelAnimationFrame(raf);
+    };
+  }, [ganttData.maxDays]);
 
 
 

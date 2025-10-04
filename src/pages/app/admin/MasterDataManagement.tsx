@@ -680,15 +680,20 @@ const DetailSidebar = ({ node, onClose, onUpdate }: DetailSidebarProps) => {
       const [type, id] = node.id.split('-');
 
       if (type === 'step') {
-        await supabase
+        const { error } = await supabase
           .from('master_steps')
           .update({
             name: formData.name,
             position: formData.position
           })
-          .eq('id', parseInt(id));
+          .eq('id', parseInt(id))
+          .select();
+
+        if (error) {
+          throw error;
+        }
       } else {
-        await supabase
+        const { data, error } = await supabase
           .from('master_tasks')
           .update({
             title: formData.title,
@@ -699,7 +704,16 @@ const DetailSidebar = ({ node, onClose, onUpdate }: DetailSidebarProps) => {
             technology_scope: formData.technology_scope,
             assigned_role: formData.assigned_role || null
           })
-          .eq('id', parseInt(id));
+          .eq('id', parseInt(id))
+          .select();
+
+        console.log('💾 master_tasks update result:', { data, error });
+        if (error) {
+          throw error;
+        }
+        if (!data || data.length === 0) {
+          throw new Error('Update returned no rows. You may not have SELECT permission after update (RLS).');
+        }
       }
 
       toast({
@@ -709,9 +723,10 @@ const DetailSidebar = ({ node, onClose, onUpdate }: DetailSidebarProps) => {
 
       onUpdate();
     } catch (error: any) {
+      console.error('❌ Save failed:', error);
       toast({
         title: "Error",
-        description: "Failed to save changes",
+        description: error?.message || "Failed to save changes",
         variant: "destructive",
       });
     } finally {

@@ -43,6 +43,7 @@ export const MasterDataGanttView = ({
   onDeleteTask
 }: MasterDataGanttViewProps) => {
   const timelineRefs = useRef<HTMLDivElement[]>([]);
+  const bottomScrollbarRef = useRef<HTMLDivElement>(null);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [maxScrollLeft, setMaxScrollLeft] = useState(0);
 
@@ -103,7 +104,7 @@ export const MasterDataGanttView = ({
     }
   };
 
-  // Sync scroll across all timeline elements
+  // Sync scroll across all timeline elements and bottom scrollbar
   const handleTimelineScroll = (scrollLeft: number) => {
     setScrollLeft(scrollLeft);
     timelineRefs.current.forEach(ref => {
@@ -111,6 +112,9 @@ export const MasterDataGanttView = ({
         ref.scrollLeft = scrollLeft;
       }
     });
+    if (bottomScrollbarRef.current && bottomScrollbarRef.current.scrollLeft !== scrollLeft) {
+      bottomScrollbarRef.current.scrollLeft = scrollLeft;
+    }
   };
 
   // Update max scroll when data changes
@@ -245,8 +249,25 @@ export const MasterDataGanttView = ({
       verticalRef.current.scrollTop = newTop;
     }
   };
+
+  // Bottom scrollbar component for horizontal timeline control
+  const BottomScrollbar = () => {
+    if (maxScrollLeft <= 0) return null;
+
+    return (
+      <div 
+        ref={bottomScrollbarRef}
+        className="sticky bottom-0 w-full h-4 overflow-x-auto overflow-y-hidden bg-muted/30 border-t border-border z-30"
+        onScroll={(e) => handleTimelineScroll(e.currentTarget.scrollLeft)}
+        aria-label="Timeline scroll"
+      >
+        <div style={{ width: `${(ganttData.maxDays + 1) * 32 + 384}px`, height: '1px' }} />
+      </div>
+    );
+  };
+
   return (
-    <div className="relative" style={{ height: 'calc(100vh - 24rem)' }}>
+    <div className="relative overflow-hidden" style={{ height: 'calc(100vh - 24rem)' }}>
       {/* Main scrollable content */}
       <div 
         ref={verticalRef}
@@ -256,7 +277,7 @@ export const MasterDataGanttView = ({
       >
         <div className="space-y-6" style={{ direction: 'ltr' }}>
           {ganttData.steps.map(step => (
-            <Card key={step.id} className="overflow-visible">
+            <Card key={step.id} className="overflow-hidden">
           <CardHeader className="pb-3 bg-muted/20">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-semibold text-primary">
@@ -449,7 +470,10 @@ export const MasterDataGanttView = ({
       ))}
         </div>
       </div>
+      {/* Custom scrollbars */}
+      <BottomScrollbar />
       <HorizontalScrollbar />
+      <LeftScrollbar />
     </div>
   );
 };

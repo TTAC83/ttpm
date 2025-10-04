@@ -258,7 +258,7 @@ export const AppLayout = () => {
           </SidebarFooter>
         </Sidebar>
         
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden">
           <div className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex h-14 items-center justify-between px-4">
               <SidebarTrigger />

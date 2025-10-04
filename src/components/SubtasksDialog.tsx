@@ -95,6 +95,28 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
     if (open) {
       fetchSubtasks();
       fetchProfiles();
+
+      // Setup realtime subscription for subtasks
+      const channel = supabase
+        .channel(`subtasks-${taskId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'subtasks',
+            filter: `task_id=eq.${taskId}`
+          },
+          (payload) => {
+            console.log('Subtask changed:', payload);
+            fetchSubtasks();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [open, taskId]);
 
@@ -222,12 +244,26 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
         })
         .eq('id', updatedSubtask.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Subtask update error:', error);
+        toast({
+          title: "Save Failed",
+          description: error.message || "Failed to update subtask",
+          variant: "destructive",
+        });
+        return;
+      }
 
+      toast({
+        title: "Changes Saved",
+        description: "Subtask updated successfully",
+      });
+      
       fetchSubtasks();
     } catch (error: any) {
+      console.error('Subtask update exception:', error);
       toast({
-        title: "Error",
+        title: "Save Failed",
         description: error.message || "Failed to update subtask",
         variant: "destructive",
       });

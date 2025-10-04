@@ -105,7 +105,7 @@ export function SubtaskEditSidebar({
 
     onSave(updatedSubtask);
     onOpenChange(false);
-    toast.success("Subtask updated successfully");
+    // Toast is now shown in the parent after successful DB save
   };
 
   const handleCancel = () => {

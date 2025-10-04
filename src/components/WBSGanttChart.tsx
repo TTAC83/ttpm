@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { BarChart } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { supabase } from '@/integrations/supabase/client';
 
 interface WBSGanttChartProps {
   projectId?: string;
@@ -59,6 +60,39 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
 
   useEffect(() => {
     loadWBSData();
+
+    // Setup realtime subscription for subtasks changes
+    const channel = supabase
+      .channel(`wbs-gantt-${projectId || 'master'}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'subtasks'
+        },
+        (payload) => {
+          console.log('Subtask changed in Gantt, reloading:', payload);
+          loadWBSData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'project_tasks'
+        },
+        (payload) => {
+          console.log('Project task changed in Gantt, reloading:', payload);
+          loadWBSData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [projectId]);
 
   const loadWBSData = async () => {

@@ -150,7 +150,7 @@ export const MasterDataGanttView = ({
     return (
       <div 
         ref={bottomScrollbarRef}
-        className="absolute bottom-0 left-0 right-0 h-4 overflow-x-auto overflow-y-hidden bg-muted/30 border-t border-border z-30"
+        className="absolute bottom-0 left-0 right-0 h-3 overflow-x-scroll overflow-y-hidden bg-muted/30 border-t border-border z-30"
         onScroll={(e) => handleTimelineScroll(e.currentTarget.scrollLeft)}
         aria-label="Timeline scroll"
       >
@@ -160,12 +160,12 @@ export const MasterDataGanttView = ({
   };
 
   return (
-    <div className="relative overflow-hidden" style={{ height: 'calc(100vh - 24rem)' }}>
+    <div className="relative" style={{ height: 'calc(100vh - 24rem)' }}>
       {/* Main scrollable content */}
       <div 
         ref={verticalRef}
-        className="overflow-y-auto overflow-x-hidden"
-        style={{ height: 'calc(100% - 16px)' }}
+        className="overflow-y-scroll overflow-x-hidden"
+        style={{ height: 'calc(100% - 12px)' }}
       >
         <div className="space-y-6">
           {ganttData.steps.map(step => (
@@ -210,7 +210,7 @@ export const MasterDataGanttView = ({
                     </div>
                   </div>
                   <div 
-                    className="flex-1 min-w-0 overflow-x-auto"
+                    className="flex-1 min-w-0 overflow-x-scroll"
                     ref={(el) => {
                       if (el) timelineRefs.current[0] = el;
                     }}
@@ -308,7 +308,7 @@ export const MasterDataGanttView = ({
                   
                   {/* Scrollable timeline bars */}
                   <div 
-                    className="flex-1 min-w-0 overflow-x-auto"
+                    className="flex-1 min-w-0 overflow-x-scroll"
                     ref={(el) => {
                       if (el) timelineRefs.current[ganttData.steps.findIndex(s => s.id === step.id) + 1] = el;
                     }}

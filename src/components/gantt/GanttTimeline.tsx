@@ -39,7 +39,7 @@ export const GanttTimeline = ({ tasks, maxDays, dayWidth }: GanttTimelineProps) 
   return (
     <div 
       ref={timelineRef}
-      className="flex-1 min-w-0 overflow-x-scroll"
+      className="flex-1 min-w-0 overflow-x-scroll force-scrollbars"
       onScroll={(e) => handleScroll(e.currentTarget.scrollLeft)}
     >
       <div style={{ minWidth: `${(maxDays + 1) * dayWidth}px` }}>

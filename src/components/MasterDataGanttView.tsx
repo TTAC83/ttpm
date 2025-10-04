@@ -87,8 +87,8 @@ export const MasterDataGanttView = ({
     <GanttScrollProvider>
       <div className="relative" style={{ height: 'calc(100vh - 24rem)' }}>
         <div 
-          className="overflow-y-auto scrollbar-gutter-stable h-full"
-          style={{ paddingBottom: '12px' }}
+          className="overflow-y-scroll force-scrollbars h-full pr-2"
+          style={{ paddingBottom: '16px' }}
         >
           <div className="space-y-6">
             {ganttData.steps.map(step => (

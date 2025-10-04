@@ -30,8 +30,9 @@ export const GanttHeader = ({ maxDays, dayWidth }: GanttHeaderProps) => {
       </div>
       <div 
         ref={timelineRef}
-        className="flex-1 min-w-0 overflow-x-scroll"
+        className="flex-1 min-w-0 overflow-x-scroll force-scrollbars"
         onScroll={(e) => handleScroll(e.currentTarget.scrollLeft)}
+        style={{ maxHeight: '60px' }}
       >
         <div 
           className="flex border-b bg-muted/30"

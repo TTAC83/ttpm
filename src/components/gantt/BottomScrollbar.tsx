@@ -27,11 +27,11 @@ export const BottomScrollbar = ({ maxDays, dayWidth, frozenWidth }: BottomScroll
   return (
     <div 
       ref={scrollbarRef}
-      className="absolute bottom-0 left-0 right-0 h-3 overflow-x-scroll overflow-y-hidden bg-muted/30 border-t border-border z-30"
+      className="absolute bottom-0 left-0 right-0 h-4 overflow-x-scroll overflow-y-hidden force-scrollbars bg-muted/20 border-t border-border z-30"
       onScroll={(e) => handleScroll(e.currentTarget.scrollLeft)}
       aria-label="Timeline horizontal scroll"
     >
-      <div style={{ width: `${totalWidth}px`, height: '1px' }} />
+      <div style={{ width: `${totalWidth}px`, height: '12px' }} />
     </div>
   );
 };

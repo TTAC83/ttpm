@@ -3828,6 +3828,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      can_access_subtask: {
+        Args: { subtask_task_id: string }
+        Returns: boolean
+      }
       copy_wbs_layout_for_project: {
         Args: { p_project_id: string }
         Returns: undefined

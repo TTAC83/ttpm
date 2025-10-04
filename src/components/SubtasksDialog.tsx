@@ -227,7 +227,14 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
 
   const handleSidebarSave = async (updatedSubtask: Subtask) => {
     try {
-      const { error } = await supabase
+      console.log('🔄 Attempting to save subtask:', {
+        id: updatedSubtask.id,
+        title: updatedSubtask.title,
+        planned_start_offset_days: updatedSubtask.planned_start_offset_days,
+        planned_end_offset_days: updatedSubtask.planned_end_offset_days,
+      });
+
+      const { data, error } = await supabase
         .from('subtasks')
         .update({
           title: updatedSubtask.title,
@@ -245,15 +252,29 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
         .eq('id', updatedSubtask.id)
         .select();
 
+      console.log('💾 Supabase update result:', { data, error });
+
       if (error) {
-        console.error('Subtask update error:', error);
+        console.error('❌ Subtask update error:', error);
         toast({
           title: "Save Failed",
-          description: error.message || "Failed to update subtask",
+          description: `Database error: ${error.message || "Failed to update subtask"}`,
           variant: "destructive",
         });
         return;
       }
+
+      if (!data || data.length === 0) {
+        console.error('❌ No data returned from update');
+        toast({
+          title: "Save Failed",
+          description: "No data returned - check RLS policies",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('✅ Subtask saved successfully:', data[0]);
 
       toast({
         title: "Changes Saved",
@@ -267,10 +288,10 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
       
       fetchSubtasks();
     } catch (error: any) {
-      console.error('Subtask update exception:', error);
+      console.error('❌ Subtask update exception:', error);
       toast({
         title: "Save Failed",
-        description: error.message || "Failed to update subtask",
+        description: `Exception: ${error.message || "Failed to update subtask"}`,
         variant: "destructive",
       });
     }

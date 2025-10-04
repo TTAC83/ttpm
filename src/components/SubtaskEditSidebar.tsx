@@ -342,7 +342,7 @@ export function SubtaskEditSidebar({
 
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4">
-            <Button onClick={handleSave} className="flex-1">
+            <Button onClick={handleSave} className="flex-1" disabled={!editData.title}>
               <Save className="h-4 w-4 mr-2" />
               Save Changes
             </Button>

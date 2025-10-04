@@ -242,7 +242,8 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
           status: updatedSubtask.status as any,
           assignee: updatedSubtask.assignee,
         })
-        .eq('id', updatedSubtask.id);
+        .eq('id', updatedSubtask.id)
+        .select();
 
       if (error) {
         console.error('Subtask update error:', error);
@@ -258,6 +259,11 @@ const SubtasksDialog = ({ open, onOpenChange, taskId, taskTitle, projectId }: Su
         title: "Changes Saved",
         description: "Subtask updated successfully",
       });
+
+      // Emit custom event to trigger Gantt and other view refreshes
+      window.dispatchEvent(new CustomEvent('subtask-updated', { 
+        detail: { taskId, projectId } 
+      }));
       
       fetchSubtasks();
     } catch (error: any) {

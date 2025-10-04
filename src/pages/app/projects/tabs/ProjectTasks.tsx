@@ -72,6 +72,21 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
     fetchTasks();
     fetchProfiles();
     checkProjectMembership();
+
+    // Listen for subtask updates to refresh task list
+    const handleSubtaskUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      console.log('Subtask update event received in ProjectTasks:', customEvent.detail);
+      if (!customEvent.detail.projectId || customEvent.detail.projectId === projectId) {
+        fetchTasks();
+      }
+    };
+
+    window.addEventListener('subtask-updated', handleSubtaskUpdate);
+
+    return () => {
+      window.removeEventListener('subtask-updated', handleSubtaskUpdate);
+    };
   }, [projectId, user]);
 
   // Handle URL parameter to automatically open edit dialog for specific task

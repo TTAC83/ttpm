@@ -90,8 +90,18 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
       )
       .subscribe();
 
+    // Also listen for custom subtask-updated events
+    const handleSubtaskUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      console.log('Subtask update event received in Gantt:', customEvent.detail);
+      loadWBSData();
+    };
+
+    window.addEventListener('subtask-updated', handleSubtaskUpdate);
+
     return () => {
       supabase.removeChannel(channel);
+      window.removeEventListener('subtask-updated', handleSubtaskUpdate);
     };
   }, [projectId]);
 

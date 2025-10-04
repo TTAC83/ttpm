@@ -330,7 +330,7 @@ export const MasterDataGanttView = ({
                       return (
                         <div key={task.id} className="border-b border-border/30 hover:bg-muted/20 group">
                           <div 
-                            className="flex items-center gap-2 p-3 h-12"
+                            className={`flex items-center gap-2 p-3 ${task.assigned_role ? 'h-16' : 'h-12'}`}
                             style={{ paddingLeft: `${level * 24 + 12}px` }}
                           >
                             {/* Hierarchy indicator */}
@@ -342,21 +342,23 @@ export const MasterDataGanttView = ({
                             )}
                             
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className={`font-medium text-sm truncate ${isSubtask ? 'text-muted-foreground' : ''}`}>
+                              <div className="flex items-center gap-2">
+                                <span className={`font-medium text-sm truncate flex-1 ${isSubtask ? 'text-muted-foreground' : ''}`}>
                                   {task.title}
                                 </span>
                                 <Badge 
                                   variant="outline" 
-                                  className={`text-xs px-1.5 py-0 border-0 text-white ${getTechScopeColor(task.technology_scope)}`}
+                                  className={`text-xs px-1.5 py-0 border-0 text-white flex-shrink-0 ${getTechScopeColor(task.technology_scope)}`}
                                 >
                                   {getTechScopeLabel(task.technology_scope)}
                                 </Badge>
                               </div>
                               {task.assigned_role && (
-                                <Badge variant="secondary" className="text-xs">
-                                  {task.assigned_role.replace('_', ' ')}
-                                </Badge>
+                                <div className="mt-1">
+                                  <Badge variant="secondary" className="text-xs">
+                                    {task.assigned_role.replace(/_/g, ' ')}
+                                  </Badge>
+                                </div>
                               )}
                             </div>
                           
@@ -414,7 +416,7 @@ export const MasterDataGanttView = ({
                         const barWidth = Math.max(duration * dayWidth, dayWidth * 0.5);
 
                         return (
-                          <div key={task.id} className="relative h-12 border-b border-border/30 hover:bg-muted/20">
+                          <div key={task.id} className={`relative border-b border-border/30 hover:bg-muted/20 ${task.assigned_role ? 'h-16' : 'h-12'}`}>
                             {/* Vertical day lines */}
                             {Array.from({ length: ganttData.maxDays + 1 }, (_, i) => (
                               <div

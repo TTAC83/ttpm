@@ -291,7 +291,7 @@ export const MasterDataGanttView = ({
               <div className="relative">
                 {/* Header with frozen task column and scrollable timeline */}
                 <div className="flex border-b-2 border-border bg-background">
-                  <div className="w-80 flex-shrink-0 bg-muted/50 border-r border-border">
+                  <div className="w-96 flex-shrink-0 bg-muted/50 border-r border-border">
                     <div className="p-3 font-semibold text-sm">
                       Tasks & Timeline
                     </div>
@@ -305,15 +305,15 @@ export const MasterDataGanttView = ({
                   >
                     <div 
                       className="flex border-b bg-muted/30"
-                      style={{ minWidth: `${(ganttData.maxDays + 1) * 40}px` }}
+                      style={{ minWidth: `${(ganttData.maxDays + 1) * 32}px` }}
                     >
                       {Array.from({ length: ganttData.maxDays + 1 }, (_, i) => (
                         <div
                           key={i}
                           className="flex-shrink-0 text-center text-xs font-medium py-2 border-r border-border/50"
-                          style={{ width: '40px' }}
+                          style={{ width: '32px' }}
                         >
-                          Day {i}
+                          {i}
                         </div>
                       ))}
                     </div>
@@ -322,7 +322,7 @@ export const MasterDataGanttView = ({
                 
                 {/* Task rows with coordinated horizontal scroll */}
                 <div className="flex">
-                  <div className="w-80 flex-shrink-0 bg-background border-r border-border">
+                  <div className="w-96 flex-shrink-0 bg-background border-r border-border">
                     {step.tasks.map(task => {
                       const level = (task as any).level || 0;
                       const isSubtask = level > 0;
@@ -330,7 +330,7 @@ export const MasterDataGanttView = ({
                       return (
                         <div key={task.id} className="border-b border-border/30 hover:bg-muted/20 group">
                           <div 
-                            className={`flex items-center gap-2 p-3 ${task.assigned_role ? 'h-16' : 'h-12'}`}
+                            className="flex items-center gap-2 p-3 h-12"
                             style={{ paddingLeft: `${level * 24 + 12}px` }}
                           >
                             {/* Hierarchy indicator */}
@@ -343,7 +343,7 @@ export const MasterDataGanttView = ({
                             
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
-                                <span className={`font-medium text-sm truncate flex-1 ${isSubtask ? 'text-muted-foreground' : ''}`}>
+                                <span className={`font-medium text-sm flex-1 ${isSubtask ? 'text-muted-foreground' : ''}`}>
                                   {task.title}
                                 </span>
                                 <Badge 
@@ -353,13 +353,6 @@ export const MasterDataGanttView = ({
                                   {getTechScopeLabel(task.technology_scope)}
                                 </Badge>
                               </div>
-                              {task.assigned_role && (
-                                <div className="mt-1">
-                                  <Badge variant="secondary" className="text-xs">
-                                    {task.assigned_role.replace(/_/g, ' ')}
-                                  </Badge>
-                                </div>
-                              )}
                             </div>
                           
                           {/* Action Buttons */}
@@ -408,15 +401,15 @@ export const MasterDataGanttView = ({
                     }}
                     onScroll={(e) => handleTimelineScroll(e.currentTarget.scrollLeft)}
                   >
-                    <div style={{ minWidth: `${(ganttData.maxDays + 1) * 40}px` }}>
+                    <div style={{ minWidth: `${(ganttData.maxDays + 1) * 32}px` }}>
                       {step.tasks.map(task => {
                         const duration = task.planned_end_offset_days - task.planned_start_offset_days;
-                        const dayWidth = 40;
+                        const dayWidth = 32;
                         const leftOffset = task.planned_start_offset_days * dayWidth;
                         const barWidth = Math.max(duration * dayWidth, dayWidth * 0.5);
 
                         return (
-                          <div key={task.id} className={`relative border-b border-border/30 hover:bg-muted/20 ${task.assigned_role ? 'h-16' : 'h-12'}`}>
+                          <div key={task.id} className="relative border-b border-border/30 hover:bg-muted/20 h-12">
                             {/* Vertical day lines */}
                             {Array.from({ length: ganttData.maxDays + 1 }, (_, i) => (
                               <div

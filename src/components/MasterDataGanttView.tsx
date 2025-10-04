@@ -129,126 +129,7 @@ export const MasterDataGanttView = ({
     }
   }, [ganttData]);
 
-  // Custom scrollbar for horizontal timeline (vertical slider)
-  const HorizontalScrollbar = () => {
-    const scrollbarRef = useRef<HTMLDivElement>(null);
-    
-    const handleScrollbarDrag = (e: React.MouseEvent) => {
-      if (!scrollbarRef.current) return;
-      
-      const startY = e.clientY;
-      const startScrollLeft = scrollLeft;
-      
-      const handleMouseMove = (e: MouseEvent) => {
-        const deltaY = e.clientY - startY;
-        const trackHeight = scrollbarRef.current?.clientHeight || 1;
-        const scrollRatio = deltaY / trackHeight;
-        const newScrollLeft = Math.max(0, Math.min(maxScrollLeft, startScrollLeft + scrollRatio * maxScrollLeft));
-        handleTimelineScroll(newScrollLeft);
-      };
-      
-      const handleMouseUp = () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-      
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    };
 
-    if (maxScrollLeft <= 0) return null;
-
-    const trackHeight = 320;
-    const thumbHeight = Math.max(24, (trackHeight * (timelineRefs.current[0]?.clientWidth || 0)) / (timelineRefs.current[0]?.scrollWidth || 1));
-    const thumbTop = (scrollLeft / (maxScrollLeft || 1)) * (trackHeight - thumbHeight);
-
-    return (
-      <div className="fixed right-12 top-1/2 -translate-y-1/2 w-4 h-[320px] bg-muted/50 rounded-full border border-border z-[9998] shadow-lg backdrop-blur-sm">
-        <div className="relative h-full p-0.5" ref={scrollbarRef}>
-          <div
-            className="absolute left-0.5 right-0.5 bg-primary/80 hover:bg-primary rounded-full cursor-pointer transition-colors shadow-sm"
-            style={{ height: `${thumbHeight}px`, top: `${thumbTop}px` }}
-            onMouseDown={handleScrollbarDrag}
-            title={`Horizontal: ${Math.round((scrollLeft / (maxScrollLeft || 1)) * 100)}%`}
-          />
-        </div>
-      </div>
-    );
-  };
-
-  // Left-side native-like vertical scrollbar controlling the main container
-  const LeftScrollbar = () => {
-    const trackRef = useRef<HTMLDivElement>(null);
-
-    const onDrag = (e: React.MouseEvent) => {
-      e.preventDefault();
-      const track = trackRef.current;
-      const container = verticalRef.current;
-      if (!track || !container) return;
-      const startY = e.clientY;
-      const startScrollTop = container.scrollTop;
-
-      const move = (me: MouseEvent) => {
-        const trackHeight = track.clientHeight;
-        const visible = container.clientHeight;
-        const content = container.scrollHeight;
-        const maxScroll = Math.max(0, content - visible);
-        const thumbH = Math.max(24, (visible / content) * trackHeight);
-        const startThumbTopPx = (startScrollTop / (maxScroll || 1)) * (trackHeight - thumbH);
-        const delta = me.clientY - startY;
-        const newThumbTopPx = Math.max(0, Math.min(trackHeight - thumbH, startThumbTopPx + delta));
-        const newScrollTop = (newThumbTopPx / (trackHeight - thumbH)) * (maxScroll || 1);
-        container.scrollTop = newScrollTop;
-        setVScrollTop(newScrollTop);
-        setVMaxScrollTop(maxScroll);
-      };
-
-      const up = () => {
-        document.removeEventListener('mousemove', move);
-        document.removeEventListener('mouseup', up);
-      };
-
-      document.addEventListener('mousemove', move);
-      document.addEventListener('mouseup', up);
-    };
-
-    const container = verticalRef.current;
-    const visible = container?.clientHeight || 0;
-    const content = container?.scrollHeight || 0;
-    const overflow = content > visible && visible > 0;
-    if (!overflow) return null;
-
-    const trackHeight = visible; // match container height
-    const maxScroll = Math.max(0, content - visible);
-    const thumbHeight = Math.max(24, (visible / content) * trackHeight);
-    const thumbTop = (vScrollTop / (maxScroll || 1)) * (trackHeight - thumbHeight);
-
-    return (
-      <div className="absolute left-0 top-0 bottom-0 w-3 z-[60] select-none">
-        <div ref={trackRef} className="relative h-full bg-muted/40 border-r border-border">
-          <div
-            className="absolute left-0 right-0 bg-foreground/70 hover:bg-foreground rounded-r cursor-pointer"
-            style={{ height: `${thumbHeight}px`, top: `${thumbTop}px` }}
-            onMouseDown={onDrag}
-            title={`Vertical: ${Math.round((vScrollTop / (maxScroll || 1)) * 100)}%`}
-          />
-        </div>
-      </div>
-    );
-  };
-
-  const onVerticalContainerScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const el = e.currentTarget;
-    setVScrollTop(el.scrollTop);
-    setVMaxScrollTop(Math.max(0, el.scrollHeight - el.clientHeight));
-  };
-
-  const handleVerticalScroll = (newTop: number) => {
-    setVScrollTop(newTop);
-    if (verticalRef.current && verticalRef.current.scrollTop !== newTop) {
-      verticalRef.current.scrollTop = newTop;
-    }
-  };
 
   // Bottom scrollbar component for horizontal timeline control
   const BottomScrollbar = () => {
@@ -257,7 +138,7 @@ export const MasterDataGanttView = ({
     return (
       <div 
         ref={bottomScrollbarRef}
-        className="sticky bottom-0 w-full h-4 overflow-x-auto overflow-y-hidden bg-muted/30 border-t border-border z-30"
+        className="absolute bottom-0 left-0 right-0 h-4 overflow-x-auto overflow-y-hidden bg-muted/30 border-t border-border z-30"
         onScroll={(e) => handleTimelineScroll(e.currentTarget.scrollLeft)}
         aria-label="Timeline scroll"
       >
@@ -271,11 +152,10 @@ export const MasterDataGanttView = ({
       {/* Main scrollable content */}
       <div 
         ref={verticalRef}
-        onScroll={onVerticalContainerScroll}
-        className="h-full overflow-y-auto overflow-x-hidden pl-6"
-        style={{ direction: 'rtl', scrollbarGutter: 'stable both-edges' }}
+        className="overflow-y-auto overflow-x-hidden"
+        style={{ height: 'calc(100% - 16px)' }}
       >
-        <div className="space-y-6" style={{ direction: 'ltr' }}>
+        <div className="space-y-6">
           {ganttData.steps.map(step => (
             <Card key={step.id} className="overflow-hidden">
           <CardHeader className="pb-3 bg-muted/20">
@@ -470,10 +350,8 @@ export const MasterDataGanttView = ({
       ))}
         </div>
       </div>
-      {/* Custom scrollbars */}
+      {/* Bottom horizontal scrollbar */}
       <BottomScrollbar />
-      <HorizontalScrollbar />
-      <LeftScrollbar />
     </div>
   );
 };

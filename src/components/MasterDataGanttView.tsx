@@ -291,7 +291,7 @@ export const MasterDataGanttView = ({
               <div className="relative">
                 {/* Header with frozen task column and scrollable timeline */}
                 <div className="flex border-b-2 border-border bg-background">
-                  <div className="w-96 flex-shrink-0 bg-muted/50 border-r border-border">
+                  <div className="w-96 flex-shrink-0 bg-muted/50 border-r border-border sticky left-0 z-20">
                     <div className="p-3 font-semibold text-sm">
                       Tasks & Timeline
                     </div>
@@ -322,7 +322,7 @@ export const MasterDataGanttView = ({
                 
                 {/* Task rows with coordinated horizontal scroll */}
                 <div className="flex">
-                  <div className="w-96 flex-shrink-0 bg-background border-r border-border">
+                  <div className="w-96 flex-shrink-0 bg-background border-r border-border sticky left-0 z-10">
                     {step.tasks.map(task => {
                       const level = (task as any).level || 0;
                       const isSubtask = level > 0;

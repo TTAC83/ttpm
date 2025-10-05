@@ -19,8 +19,9 @@ export async function fetchExpansionReport(): Promise<ExpansionReportItem[]> {
     .select(`
       id,
       name,
+      site_name,
       expansion_opportunity,
-      planned_go_live,
+      contract_signed_date,
       company_id,
       companies (
         name
@@ -35,10 +36,10 @@ export async function fetchExpansionReport(): Promise<ExpansionReportItem[]> {
       results.push({
         id: project.id,
         customerName: project.companies?.name || 'Unknown',
-        projectName: project.name,
+        projectName: project.site_name || project.name,
         projectType: 'Implementation',
         expansionOpportunity: project.expansion_opportunity,
-        goLiveDate: project.planned_go_live,
+        goLiveDate: project.contract_signed_date,
         health: null
       });
     });
@@ -84,25 +85,31 @@ export async function fetchExpansionReport(): Promise<ExpansionReportItem[]> {
       id,
       name,
       expansion_opportunity,
-      planned_go_live,
-      company_id,
-      companies (
-        name
-      )
+      contract_signed_date,
+      company_id
     `)
     .eq('expansion_opportunity', 'Yes');
 
   if (solError) {
     console.error('Error fetching solutions projects:', solError);
   } else if (solutionsProjects) {
+    // Fetch company names separately for solutions projects
+    const companyIds = [...new Set(solutionsProjects.map((p: any) => p.company_id).filter(Boolean))];
+    const { data: companies } = await supabase
+      .from('companies')
+      .select('id, name')
+      .in('id', companyIds);
+    
+    const companyMap = new Map(companies?.map((c: any) => [c.id, c.name]) || []);
+    
     solutionsProjects.forEach((project: any) => {
       results.push({
         id: project.id,
-        customerName: project.companies?.name || 'Unknown',
+        customerName: companyMap.get(project.company_id) || 'Unknown',
         projectName: project.name,
         projectType: 'Solutions Consulting',
         expansionOpportunity: project.expansion_opportunity,
-        goLiveDate: project.planned_go_live,
+        goLiveDate: project.contract_signed_date,
         health: null
       });
     });

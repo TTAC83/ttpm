@@ -40,7 +40,21 @@ export const NAV: NavItem[] = [
     matchPaths: ["/app/my-work"]
   },
 
-  // 2) BAU
+  // 2) Global Dashboards
+  {
+    label: "Global Dashboards",
+    iconName: "BarChart3",
+    roles: ["internal_admin", "internal_user", "external_admin", "external_user"],
+    children: [
+      {
+        label: "Expansion Report",
+        to: "/app/global-dashboards/expansion-report",
+        matchPaths: ["/app/global-dashboards/expansion-report"],
+      }
+    ]
+  },
+
+  // 3) BAU
   {
     label: "BAU",
     iconName: "Headphones",
@@ -64,7 +78,7 @@ export const NAV: NavItem[] = [
     ]
   },
 
-  // 3) Project Implementation
+  // 4) Project Implementation
   {
     label: "Project Implementation",
     iconName: "Settings",
@@ -146,7 +160,7 @@ export const NAV: NavItem[] = [
     ]
   },
 
-  // 4) Solutions Consulting
+  // 5) Solutions Consulting
   {
     label: "Solutions Consulting",
     iconName: "Briefcase",
@@ -160,7 +174,7 @@ export const NAV: NavItem[] = [
     ]
   },
 
-  // 5) Expenses
+  // 6) Expenses
   {
     label: "Expenses",
     iconName: "Receipt",
@@ -169,7 +183,7 @@ export const NAV: NavItem[] = [
     matchPaths: ["/app/expenses"]
   },
 
-  // 6) Master Data (consolidate prior Master Data + Hardware MasterData children)
+  // 7) Master Data (consolidate prior Master Data + Hardware MasterData children)
   {
     label: "Master Data",
     iconName: "Database",
@@ -231,7 +245,7 @@ export const NAV: NavItem[] = [
     ]
   },
 
-  // 7) User Management
+  // 8) User Management
   {
     label: "User Management",
     iconName: "UserCog",
@@ -240,7 +254,7 @@ export const NAV: NavItem[] = [
     matchPaths: ["/app/admin/users"]
   },
 
-  // 8) Feature Requests
+  // 9) Feature Requests
   {
     label: "Feature Requests",
     iconName: "Lightbulb",

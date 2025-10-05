@@ -65,6 +65,7 @@ import ProductGaps from "./pages/app/ProductGaps";
 import ExecutiveSummary from "./pages/app/implementation/ExecutiveSummary";
 import BoardSummary from "./pages/app/implementation/BoardSummary";
 import { InternalRoute } from "@/components/auth/InternalRoute";
+import ExpansionReport from "./pages/app/global-dashboards/ExpansionReport";
 
 const queryClient = new QueryClient();
 
@@ -114,6 +115,9 @@ const App = () => (
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="my-work" element={<MyWork />} />
               <Route path="profile" element={<Profile />} />
+              
+              {/* Global Dashboards */}
+              <Route path="global-dashboards/expansion-report" element={<ExpansionReport />} />
               <Route path="projects" element={<ProjectsList />} />
               <Route 
                 path="projects/new" 

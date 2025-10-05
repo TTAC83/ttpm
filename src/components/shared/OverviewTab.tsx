@@ -72,6 +72,10 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
     site_visit: data.site_visit || false,
     case_study: data.case_study || false,
     reference_status: data.reference_status || '',
+    total_sites: data.total_sites?.toString() || '',
+    estimated_lines: data.estimated_lines?.toString() || '',
+    arr_potential_min: data.arr_potential_min?.toString() || '',
+    arr_potential_max: data.arr_potential_max?.toString() || '',
   });
 
   const [contractedLinesError, setContractedLinesError] = useState<string>('');
@@ -322,6 +326,10 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
         site_visit: formData.site_visit,
         case_study: formData.case_study,
         reference_status: formData.reference_status || null,
+        total_sites: formData.total_sites ? parseInt(formData.total_sites) : null,
+        estimated_lines: formData.estimated_lines ? parseInt(formData.estimated_lines) : null,
+        arr_potential_min: formData.arr_potential_min ? parseFloat(formData.arr_potential_min) : null,
+        arr_potential_max: formData.arr_potential_max ? parseFloat(formData.arr_potential_max) : null,
       };
 
       // Add type-specific fields
@@ -402,6 +410,10 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
       site_visit: data.site_visit || false,
       case_study: data.case_study || false,
       reference_status: data.reference_status || '',
+      total_sites: data.total_sites?.toString() || '',
+      estimated_lines: data.estimated_lines?.toString() || '',
+      arr_potential_min: data.arr_potential_min?.toString() || '',
+      arr_potential_max: data.arr_potential_max?.toString() || '',
     });
     setContractedLinesError('');
     setBillingTermsError('');
@@ -491,21 +503,6 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                     <SelectContent>
                       <SelectItem value="SMB">SMB</SelectItem>
                       <SelectItem value="Enterprise">Enterprise</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="expansion_opportunity">Expansion Opportunity</Label>
-                  <Select 
-                    value={formData.expansion_opportunity} 
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, expansion_opportunity: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select option" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Yes">Yes</SelectItem>
-                      <SelectItem value="No">No</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1065,6 +1062,76 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                 </div>
               </div>
 
+              {/* Expansion */}
+              <div className="space-y-4 border-t pt-6">
+                <h3 className="text-2xl font-semibold leading-none tracking-tight">Expansion</h3>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="expansion_opportunity">Expansion Opportunity</Label>
+                  <Textarea
+                    id="expansion_opportunity"
+                    value={formData.expansion_opportunity}
+                    onChange={(e) => setFormData(prev => ({ ...prev, expansion_opportunity: e.target.value }))}
+                    rows={3}
+                    placeholder="Describe expansion opportunities..."
+                  />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="total_sites">Total Sites</Label>
+                    <Input
+                      id="total_sites"
+                      type="number"
+                      min="0"
+                      value={formData.total_sites}
+                      onChange={(e) => setFormData(prev => ({ ...prev, total_sites: e.target.value }))}
+                      placeholder="Enter number of sites"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="estimated_lines">Estimated Lines</Label>
+                    <Input
+                      id="estimated_lines"
+                      type="number"
+                      min="0"
+                      value={formData.estimated_lines}
+                      onChange={(e) => setFormData(prev => ({ ...prev, estimated_lines: e.target.value }))}
+                      placeholder="Enter estimated lines"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="arr_potential_min">ARR Potential Min (£)</Label>
+                    <Input
+                      id="arr_potential_min"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.arr_potential_min}
+                      onChange={(e) => setFormData(prev => ({ ...prev, arr_potential_min: e.target.value }))}
+                      placeholder="Minimum ARR"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="arr_potential_max">ARR Potential Max (£)</Label>
+                    <Input
+                      id="arr_potential_max"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.arr_potential_max}
+                      onChange={(e) => setFormData(prev => ({ ...prev, arr_potential_max: e.target.value }))}
+                      placeholder="Maximum ARR"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div className="flex gap-2 pt-4">
                 <Button type="submit" disabled={loading}>
                   <Save className="h-4 w-4 mr-2" />
@@ -1102,10 +1169,6 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                 <div className="md:col-span-2">
                   <p className="text-sm text-muted-foreground">Site Address</p>
                   <p className="font-medium whitespace-pre-wrap">{data.site_address || '-'}</p>
-                </div>
-                <div className="md:col-span-2">
-                  <p className="text-sm text-muted-foreground">Expansion Opportunity</p>
-                  <p className="font-medium">{data.expansion_opportunity || '-'}</p>
                 </div>
                 <div className="md:col-span-2">
                   <p className="text-sm text-muted-foreground">Line Description</p>
@@ -1322,6 +1385,47 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                     <div className="md:col-span-2">
                       <p className="text-sm text-muted-foreground">Reference Status</p>
                       <p className="font-medium whitespace-pre-wrap">{data.reference_status}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Expansion */}
+              <div className="border-t pt-6">
+                <h3 className="text-2xl font-semibold leading-none tracking-tight mb-4">Expansion</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {data.expansion_opportunity && (
+                    <div className="md:col-span-2">
+                      <p className="text-sm text-muted-foreground">Expansion Opportunity</p>
+                      <p className="font-medium whitespace-pre-wrap">{data.expansion_opportunity}</p>
+                    </div>
+                  )}
+                  {data.total_sites && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Sites</p>
+                      <p className="font-medium">{data.total_sites}</p>
+                    </div>
+                  )}
+                  {data.estimated_lines && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Estimated Lines</p>
+                      <p className="font-medium">{data.estimated_lines}</p>
+                    </div>
+                  )}
+                  {data.arr_potential_min && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">ARR Potential Min</p>
+                      <p className="font-medium">
+                        £{parseFloat(data.arr_potential_min).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  )}
+                  {data.arr_potential_max && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">ARR Potential Max</p>
+                      <p className="font-medium">
+                        £{parseFloat(data.arr_potential_max).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
                     </div>
                   )}
                 </div>

@@ -346,11 +346,14 @@ export type Database = {
       }
       bau_customers: {
         Row: {
+          arr_potential_max: number | null
+          arr_potential_min: number | null
           company_id: string
           created_at: string
           created_by: string
           customer_type: string
           devices_deployed: number | null
+          estimated_lines: number | null
           expansion_opportunity: string | null
           gateways_required: number | null
           go_live_date: string | null
@@ -376,15 +379,19 @@ export type Database = {
           teams_id: string | null
           teams_integration: boolean | null
           teams_webhook_url: string | null
+          total_sites: number | null
           tv_display_devices_required: number | null
           website_url: string | null
         }
         Insert: {
+          arr_potential_max?: number | null
+          arr_potential_min?: number | null
           company_id: string
           created_at?: string
           created_by: string
           customer_type?: string
           devices_deployed?: number | null
+          estimated_lines?: number | null
           expansion_opportunity?: string | null
           gateways_required?: number | null
           go_live_date?: string | null
@@ -410,15 +417,19 @@ export type Database = {
           teams_id?: string | null
           teams_integration?: boolean | null
           teams_webhook_url?: string | null
+          total_sites?: number | null
           tv_display_devices_required?: number | null
           website_url?: string | null
         }
         Update: {
+          arr_potential_max?: number | null
+          arr_potential_min?: number | null
           company_id?: string
           created_at?: string
           created_by?: string
           customer_type?: string
           devices_deployed?: number | null
+          estimated_lines?: number | null
           expansion_opportunity?: string | null
           gateways_required?: number | null
           go_live_date?: string | null
@@ -444,6 +455,7 @@ export type Database = {
           teams_id?: string | null
           teams_integration?: boolean | null
           teams_webhook_url?: string | null
+          total_sites?: number | null
           tv_display_devices_required?: number | null
           website_url?: string | null
         }
@@ -2333,6 +2345,8 @@ export type Database = {
           account_manager: string | null
           ai_iot_engineer: string | null
           arr: number | null
+          arr_potential_max: number | null
+          arr_potential_min: number | null
           auto_renewal: boolean | null
           billing_terms: string | null
           break_clause_enabled: boolean | null
@@ -2349,6 +2363,7 @@ export type Database = {
           customer_project_lead: string | null
           deviation_of_terms: string | null
           domain: Database["public"]["Enums"]["work_domain"]
+          estimated_lines: number | null
           expansion_opportunity: string | null
           gateways_required: number | null
           hardware_fee: number | null
@@ -2387,6 +2402,7 @@ export type Database = {
           teams_webhook_url: string | null
           technical_project_lead: string | null
           testimonial: boolean | null
+          total_sites: number | null
           tv_display_devices_required: number | null
           useful_links: Json | null
           website_url: string | null
@@ -2395,6 +2411,8 @@ export type Database = {
           account_manager?: string | null
           ai_iot_engineer?: string | null
           arr?: number | null
+          arr_potential_max?: number | null
+          arr_potential_min?: number | null
           auto_renewal?: boolean | null
           billing_terms?: string | null
           break_clause_enabled?: boolean | null
@@ -2411,6 +2429,7 @@ export type Database = {
           customer_project_lead?: string | null
           deviation_of_terms?: string | null
           domain: Database["public"]["Enums"]["work_domain"]
+          estimated_lines?: number | null
           expansion_opportunity?: string | null
           gateways_required?: number | null
           hardware_fee?: number | null
@@ -2449,6 +2468,7 @@ export type Database = {
           teams_webhook_url?: string | null
           technical_project_lead?: string | null
           testimonial?: boolean | null
+          total_sites?: number | null
           tv_display_devices_required?: number | null
           useful_links?: Json | null
           website_url?: string | null
@@ -2457,6 +2477,8 @@ export type Database = {
           account_manager?: string | null
           ai_iot_engineer?: string | null
           arr?: number | null
+          arr_potential_max?: number | null
+          arr_potential_min?: number | null
           auto_renewal?: boolean | null
           billing_terms?: string | null
           break_clause_enabled?: boolean | null
@@ -2473,6 +2495,7 @@ export type Database = {
           customer_project_lead?: string | null
           deviation_of_terms?: string | null
           domain?: Database["public"]["Enums"]["work_domain"]
+          estimated_lines?: number | null
           expansion_opportunity?: string | null
           gateways_required?: number | null
           hardware_fee?: number | null
@@ -2511,6 +2534,7 @@ export type Database = {
           teams_webhook_url?: string | null
           technical_project_lead?: string | null
           testimonial?: boolean | null
+          total_sites?: number | null
           tv_display_devices_required?: number | null
           useful_links?: Json | null
           website_url?: string | null

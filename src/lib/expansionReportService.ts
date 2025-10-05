@@ -129,15 +129,15 @@ export async function fetchExpansionReport(): Promise<ExpansionReportItem[]> {
     .map(r => r.companyId!);
 
   if (implCompanyIds.length > 0) {
-    // Get the latest week
+    // Get the current week (most recent available)
     const { data: weeks } = await supabase
       .from('impl_weekly_weeks')
       .select('week_start')
       .order('week_start', { ascending: false })
-      .limit(2);
+      .limit(1);
 
-    if (weeks && weeks.length >= 2) {
-      const currentWeek = weeks[1].week_start;
+    if (weeks && weeks.length > 0) {
+      const currentWeek = weeks[0].week_start;
       
       const { data: reviews } = await supabase
         .from('impl_weekly_reviews')

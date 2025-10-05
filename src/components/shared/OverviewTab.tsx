@@ -552,8 +552,8 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
               </div>
 
               {/* Contract Information */}
-              <div className="space-y-4 border-t pt-4">
-                <h4 className="font-medium">Contract Information</h4>
+              <div className="space-y-4 border-t pt-6">
+                <h3 className="text-2xl font-semibold leading-none tracking-tight">Contract Information</h3>
                 
                 <div className="grid gap-4 md:grid-cols-3">
                   <div className="space-y-2">
@@ -826,8 +826,8 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
               </div>
 
               {/* Team */}
-              <div className="space-y-4 border-t pt-4">
-                <h4 className="font-medium">Team</h4>
+              <div className="space-y-4 border-t pt-6">
+                <h3 className="text-2xl font-semibold leading-none tracking-tight">Team</h3>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="customer_project_lead">Customer Project Lead</Label>
@@ -1012,8 +1012,8 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
               </div>
 
               {/* Reference & Marketing */}
-              <div className="space-y-4 border-t pt-4">
-                <h4 className="font-medium">Reference & Marketing</h4>
+              <div className="space-y-4 border-t pt-6">
+                <h3 className="text-2xl font-semibold leading-none tracking-tight">Reference & Marketing</h3>
                 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="flex items-center gap-2">
@@ -1118,8 +1118,8 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
               </div>
 
               {/* Contract Information */}
-              <div className="border-t pt-4">
-                <h4 className="font-medium mb-4">Contract Information</h4>
+              <div className="border-t pt-6">
+                <h3 className="text-2xl font-semibold leading-none tracking-tight mb-4">Contract Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">
@@ -1240,8 +1240,8 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
               </div>
 
               {/* Team */}
-              <div className="border-t pt-4">
-                <h4 className="font-medium mb-4">Team</h4>
+              <div className="border-t pt-6">
+                <h3 className="text-2xl font-semibold leading-none tracking-tight mb-4">Team</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">Customer Project Lead</p>
@@ -1283,8 +1283,8 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
               </div>
 
               {/* Reference & Marketing */}
-              <div className="border-t pt-4">
-                <h4 className="font-medium mb-4">Reference & Marketing</h4>
+              <div className="border-t pt-6">
+                <h3 className="text-2xl font-semibold leading-none tracking-tight mb-4">Reference & Marketing</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">Testimonial</p>

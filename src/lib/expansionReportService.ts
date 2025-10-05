@@ -8,6 +8,8 @@ export interface ExpansionReportItem {
   expansionOpportunity: string;
   goLiveDate?: string | null;
   health?: string | null;
+  projectStatus?: "on_track" | "off_track" | null;
+  companyId?: string;
 }
 
 export async function fetchExpansionReport(): Promise<ExpansionReportItem[]> {
@@ -40,7 +42,9 @@ export async function fetchExpansionReport(): Promise<ExpansionReportItem[]> {
         projectType: 'Implementation',
         expansionOpportunity: project.expansion_opportunity,
         goLiveDate: project.contract_signed_date,
-        health: null
+        health: null,
+        projectStatus: null,
+        companyId: project.company_id
       });
     });
   }
@@ -73,7 +77,9 @@ export async function fetchExpansionReport(): Promise<ExpansionReportItem[]> {
         projectType: 'BAU',
         expansionOpportunity: customer.expansion_opportunity,
         goLiveDate: customer.go_live_date,
-        health: customer.health
+        health: customer.health,
+        projectStatus: null,
+        companyId: customer.company_id
       });
     });
   }
@@ -110,10 +116,53 @@ export async function fetchExpansionReport(): Promise<ExpansionReportItem[]> {
         projectType: 'Solutions Consulting',
         expansionOpportunity: project.expansion_opportunity,
         goLiveDate: project.contract_signed_date,
-        health: null
+        health: null,
+        projectStatus: null,
+        companyId: project.company_id
       });
     });
   }
 
+  // Fetch health and project status for Implementation projects from weekly reviews
+  const implCompanyIds = results
+    .filter(r => r.projectType === 'Implementation' && r.companyId)
+    .map(r => r.companyId!);
+
+  if (implCompanyIds.length > 0) {
+    // Get the latest week
+    const { data: weeks } = await supabase
+      .from('impl_weekly_weeks')
+      .select('week_start')
+      .order('week_start', { ascending: false })
+      .limit(2);
+
+    if (weeks && weeks.length >= 2) {
+      const currentWeek = weeks[1].week_start;
+      
+      const { data: reviews } = await supabase
+        .from('impl_weekly_reviews')
+        .select('company_id, customer_health, project_status')
+        .eq('week_start', currentWeek)
+        .in('company_id', implCompanyIds);
+
+      if (reviews) {
+        const reviewMap = new Map(
+          reviews.map((r: any) => [r.company_id, { health: r.customer_health, status: r.project_status }])
+        );
+
+        results.forEach(item => {
+          if (item.projectType === 'Implementation' && item.companyId) {
+            const review = reviewMap.get(item.companyId);
+            if (review) {
+              item.health = review.health;
+              item.projectStatus = review.status;
+            }
+          }
+        });
+      }
+    }
+  }
+
   return results;
 }
+

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Smile, Frown, CheckCircle, AlertCircle, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type SortField = 'customerName' | 'projectName' | 'projectType' | 'goLiveDate';
@@ -62,6 +62,46 @@ const ExpansionReport = () => {
       'Solutions Consulting': 'outline'
     };
     return <Badge variant={variants[type] || 'default'}>{type}</Badge>;
+  };
+
+  const renderHealthIcon = (health: string | null | undefined) => {
+    if (!health) return <span className="text-muted-foreground text-sm">-</span>;
+    
+    if (health === 'Good' || health === 'green') {
+      return (
+        <div className="flex items-center gap-1">
+          <Smile className="h-4 w-4 text-green-600" />
+          <span className="text-sm text-green-600">Healthy</span>
+        </div>
+      );
+    } else {
+      return (
+        <div className="flex items-center gap-1">
+          <Frown className="h-4 w-4 text-red-600" />
+          <span className="text-sm text-red-600">At Risk</span>
+        </div>
+      );
+    }
+  };
+
+  const renderProjectStatusIcon = (status: string | null | undefined) => {
+    if (!status) return <span className="text-muted-foreground text-sm">-</span>;
+    
+    if (status === 'on_track') {
+      return (
+        <div className="flex items-center gap-1">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <span className="text-sm text-green-600">On Track</span>
+        </div>
+      );
+    } else {
+      return (
+        <div className="flex items-center gap-1">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <span className="text-sm text-red-600">Off Track</span>
+        </div>
+      );
+    }
   };
 
   return (
@@ -140,6 +180,11 @@ const ExpansionReport = () => {
                     </Button>
                   </TableHead>
                   <TableHead>Health</TableHead>
+                  <TableHead>Project Status</TableHead>
+                  <TableHead className="flex items-center gap-1">
+                    <Package className="h-4 w-4" />
+                    Expansion
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -157,17 +202,22 @@ const ExpansionReport = () => {
                         {item.goLiveDate ? new Date(item.goLiveDate).toLocaleDateString() : '-'}
                       </TableCell>
                       <TableCell>
-                        {item.health ? (
-                          <Badge variant="outline">{item.health}</Badge>
-                        ) : (
-                          '-'
-                        )}
+                        {renderHealthIcon(item.health)}
+                      </TableCell>
+                      <TableCell>
+                        {renderProjectStatusIcon(item.projectStatus)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Package className="h-4 w-4 text-primary" />
+                          <span className="text-sm">{item.expansionOpportunity}</span>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                       No expansion opportunities found
                     </TableCell>
                   </TableRow>

@@ -551,9 +551,9 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                 </div>
               </div>
 
-              {/* Contract Section */}
+              {/* Contract Information */}
               <div className="space-y-4 border-t pt-4">
-                <h4 className="font-medium">Contract</h4>
+                <h4 className="font-medium">Contract Information</h4>
                 
                 <div className="grid gap-4 md:grid-cols-3">
                   <div className="space-y-2">
@@ -591,29 +591,71 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="contracted_lines">Contracted Lines</Label>
-                  <Input
-                    id="contracted_lines"
-                    type="number"
-                    min="0"
-                    value={formData.contracted_lines}
-                    onChange={(e) => {
-                      setFormData(prev => ({ ...prev, contracted_lines: e.target.value }));
-                      if (contractedLinesError) setContractedLinesError("");
-                    }}
-                    className={contractedLinesError ? "border-destructive" : ""}
-                  />
-                  {contractedLinesError && (
-                    <p className="text-sm text-destructive">{contractedLinesError}</p>
-                  )}
-                </div>
-              </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="contracted_lines">Contracted Lines</Label>
+                    <Input
+                      id="contracted_lines"
+                      type="number"
+                      min="0"
+                      value={formData.contracted_lines}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, contracted_lines: e.target.value }));
+                        if (contractedLinesError) setContractedLinesError("");
+                      }}
+                      className={contractedLinesError ? "border-destructive" : ""}
+                    />
+                    {contractedLinesError && (
+                      <p className="text-sm text-destructive">{contractedLinesError}</p>
+                    )}
+                  </div>
 
-              {/* Billing Info */}
-              <div className="space-y-4 border-t pt-4">
-                <h4 className="font-medium">Billing Info</h4>
-                
+                  <div className="space-y-2">
+                    <Label htmlFor="payment_terms_days">Payment Terms (Days)</Label>
+                    <Input
+                      id="payment_terms_days"
+                      type="number"
+                      min="0"
+                      value={formData.payment_terms_days}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, payment_terms_days: e.target.value }));
+                        if (paymentTermsDaysError) setPaymentTermsDaysError("");
+                      }}
+                      className={paymentTermsDaysError ? "border-destructive" : ""}
+                    />
+                    {paymentTermsDaysError && (
+                      <p className="text-sm text-destructive">{paymentTermsDaysError}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="contracted_days">Contracted Days</Label>
+                    <Input
+                      id="contracted_days"
+                      type="number"
+                      min="0"
+                      value={formData.contracted_days}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, contracted_days: e.target.value }));
+                        if (contractedDaysError) setContractedDaysError("");
+                      }}
+                      className={contractedDaysError ? "border-destructive" : ""}
+                    />
+                    {contractedDaysError && (
+                      <p className="text-sm text-destructive">{contractedDaysError}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2 flex items-center gap-2 pt-8">
+                    <Switch
+                      id="auto_renewal"
+                      checked={formData.auto_renewal}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, auto_renewal: checked }))}
+                    />
+                    <Label htmlFor="auto_renewal" className="cursor-pointer">Auto Renewal</Label>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="billing_terms">
                     {type === 'bau' ? 'Subscription Plan' : 'Billing Terms'}
@@ -713,11 +755,79 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                     )}
                   </div>
                 </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="standard_terms"
+                      checked={formData.standard_terms}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, standard_terms: checked }))}
+                    />
+                    <Label htmlFor="standard_terms" className="cursor-pointer">Standard Terms</Label>
+                  </div>
+                  
+                  {!formData.standard_terms && (
+                    <div className="space-y-2">
+                      <Label htmlFor="deviation_of_terms">Deviation of Terms *</Label>
+                      <Textarea
+                        id="deviation_of_terms"
+                        value={formData.deviation_of_terms}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value.length <= 2000) {
+                            setFormData(prev => ({ ...prev, deviation_of_terms: value }));
+                            if (deviationOfTermsError) setDeviationOfTermsError("");
+                          }
+                        }}
+                        rows={3}
+                        className={deviationOfTermsError ? "border-destructive" : ""}
+                      />
+                      {deviationOfTermsError && (
+                        <p className="text-sm text-destructive">{deviationOfTermsError}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="break_clause_enabled"
+                      checked={formData.break_clause_enabled}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, break_clause_enabled: checked }))}
+                    />
+                    <Label htmlFor="break_clause_enabled" className="cursor-pointer">Break Clause Enabled</Label>
+                  </div>
+                  
+                  {formData.break_clause_enabled && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="break_clause_project_date">Break Clause / Project Date *</Label>
+                        <Input
+                          id="break_clause_project_date"
+                          type="date"
+                          value={formData.break_clause_project_date}
+                          onChange={(e) => setFormData(prev => ({ ...prev, break_clause_project_date: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="break_clause_key_points_md">Break Clause Key Points *</Label>
+                        <Textarea
+                          id="break_clause_key_points_md"
+                          value={formData.break_clause_key_points_md}
+                          onChange={(e) => setFormData(prev => ({ ...prev, break_clause_key_points_md: e.target.value }))}
+                          rows={4}
+                          placeholder="Enter key points about the break clause..."
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
 
-              {/* Team Assignment */}
+              {/* Team */}
               <div className="space-y-4 border-t pt-4">
-                <h4 className="font-medium">Team Assignment</h4>
+                <h4 className="font-medium">Team</h4>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="customer_project_lead">Customer Project Lead</Label>
@@ -838,6 +948,120 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="ai_iot_engineer">AI/IoT Engineer</Label>
+                    <Select 
+                      value={formData.ai_iot_engineer} 
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, ai_iot_engineer: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unassigned">Not assigned</SelectItem>
+                        {internalProfiles.map(p => (
+                          <SelectItem key={p.user_id} value={p.user_id}>
+                            {p.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="technical_project_lead">Technical Project Lead</Label>
+                    <Select 
+                      value={formData.technical_project_lead} 
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, technical_project_lead: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unassigned">Not assigned</SelectItem>
+                        {internalProfiles.map(p => (
+                          <SelectItem key={p.user_id} value={p.user_id}>
+                            {p.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="project_coordinator">Project Coordinator</Label>
+                    <Select 
+                      value={formData.project_coordinator} 
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, project_coordinator: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unassigned">Not assigned</SelectItem>
+                        {internalProfiles.map(p => (
+                          <SelectItem key={p.user_id} value={p.user_id}>
+                            {p.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Reference & Marketing */}
+              <div className="space-y-4 border-t pt-4">
+                <h4 className="font-medium">Reference & Marketing</h4>
+                
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="testimonial"
+                      checked={formData.testimonial}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, testimonial: checked }))}
+                    />
+                    <Label htmlFor="testimonial" className="cursor-pointer">Testimonial</Label>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="reference_call"
+                      checked={formData.reference_call}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, reference_call: checked }))}
+                    />
+                    <Label htmlFor="reference_call" className="cursor-pointer">Reference Call</Label>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="site_visit"
+                      checked={formData.site_visit}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, site_visit: checked }))}
+                    />
+                    <Label htmlFor="site_visit" className="cursor-pointer">Site Visit</Label>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="case_study"
+                      checked={formData.case_study}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, case_study: checked }))}
+                    />
+                    <Label htmlFor="case_study" className="cursor-pointer">Case Study</Label>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="reference_status">Reference Status</Label>
+                  <Textarea
+                    id="reference_status"
+                    value={formData.reference_status}
+                    onChange={(e) => setFormData(prev => ({ ...prev, reference_status: e.target.value }))}
+                    rows={3}
+                    placeholder="Enter reference status notes..."
+                  />
                 </div>
               </div>
 
@@ -893,22 +1117,22 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                 </div>
               </div>
 
-              {/* Contract Details */}
+              {/* Contract Information */}
               <div className="border-t pt-4">
-                <h4 className="font-medium mb-4">Contract</h4>
+                <h4 className="font-medium mb-4">Contract Information</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                  <p className="text-sm text-muted-foreground">
-                    {type === 'bau' ? 'Go Live Date' : 'Contract Signed Date'}
-                  </p>
-                  <p className="font-medium">
-                    {(type === 'bau' ? data.go_live_date : data.contract_signed_date) 
-                      ? formatDateUK(type === 'bau' ? data.go_live_date : data.contract_signed_date)
-                      : '-'
-                    }
-                  </p>
-                </div>
-                {(type === 'project' || type === 'solutions') && (
+                    <p className="text-sm text-muted-foreground">
+                      {type === 'bau' ? 'Go Live Date' : 'Contract Signed Date'}
+                    </p>
+                    <p className="font-medium">
+                      {(type === 'bau' ? data.go_live_date : data.contract_signed_date) 
+                        ? formatDateUK(type === 'bau' ? data.go_live_date : data.contract_signed_date)
+                        : '-'
+                      }
+                    </p>
+                  </div>
+                  {(type === 'project' || type === 'solutions') && (
                     <>
                       <div>
                         <p className="text-sm text-muted-foreground">Contract Start Date</p>
@@ -928,17 +1152,26 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                     <p className="text-sm text-muted-foreground">Contracted Lines</p>
                     <p className="font-medium">{data.contracted_lines || '-'}</p>
                   </div>
-                </div>
-              </div>
-
-              {/* Billing Info */}
-              <div className="border-t pt-4">
-                <h4 className="font-medium mb-4">Billing Info</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Payment Terms</p>
+                    <p className="font-medium">{data.payment_terms_days ? `${data.payment_terms_days} days` : '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Contracted Days</p>
+                    <p className="font-medium">{data.contracted_days || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Auto Renewal</p>
+                    <p className="font-medium">
+                      <Badge variant={data.auto_renewal ? "default" : "outline"}>
+                        {data.auto_renewal ? 'Yes' : 'No'}
+                      </Badge>
+                    </p>
+                  </div>
                   <div className="md:col-span-2">
-                  <p className="text-sm text-muted-foreground">
-                    {type === 'bau' ? 'Subscription Plan' : 'Billing Terms'}
-                  </p>
+                    <p className="text-sm text-muted-foreground">
+                      {type === 'bau' ? 'Subscription Plan' : 'Billing Terms'}
+                    </p>
                     <p className="font-medium whitespace-pre-wrap">
                       {(type === 'bau' ? data.subscription_plan : data.billing_terms) || '-'}
                     </p>
@@ -967,12 +1200,48 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                       {data.mrr ? `£${parseFloat(data.mrr).toFixed(2)}` : '-'}
                     </p>
                   </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Standard Terms</p>
+                    <p className="font-medium">
+                      <Badge variant={data.standard_terms ? "default" : "outline"}>
+                        {data.standard_terms ? 'Yes' : 'No'}
+                      </Badge>
+                    </p>
+                  </div>
+                  {!data.standard_terms && data.deviation_of_terms && (
+                    <div className="md:col-span-2">
+                      <p className="text-sm text-muted-foreground">Deviation of Terms</p>
+                      <p className="font-medium whitespace-pre-wrap">{data.deviation_of_terms}</p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm text-muted-foreground">Break Clause Enabled</p>
+                    <p className="font-medium">
+                      <Badge variant={data.break_clause_enabled ? "default" : "outline"}>
+                        {data.break_clause_enabled ? 'Yes' : 'No'}
+                      </Badge>
+                    </p>
+                  </div>
+                  {data.break_clause_enabled && (
+                    <>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Break Clause / Project Date</p>
+                        <p className="font-medium">
+                          {data.break_clause_project_date ? formatDateUK(data.break_clause_project_date) : '-'}
+                        </p>
+                      </div>
+                      <div className="md:col-span-2">
+                        <p className="text-sm text-muted-foreground">Break Clause Key Points</p>
+                        <p className="font-medium whitespace-pre-wrap">{data.break_clause_key_points_md || '-'}</p>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
-              {/* Team Assignment */}
+              {/* Team */}
               <div className="border-t pt-4">
-                <h4 className="font-medium mb-4">Team Assignment</h4>
+                <h4 className="font-medium mb-4">Team</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">Customer Project Lead</p>
@@ -998,6 +1267,63 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                     <p className="text-sm text-muted-foreground">Solutions Consultant</p>
                     <p className="font-medium">{getProfileName(data.solution_consultant || data.solutions_consultant)}</p>
                   </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">AI/IoT Engineer</p>
+                    <p className="font-medium">{getProfileName(data.ai_iot_engineer)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Technical Project Lead</p>
+                    <p className="font-medium">{getProfileName(data.technical_project_lead)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Project Coordinator</p>
+                    <p className="font-medium">{getProfileName(data.project_coordinator)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Reference & Marketing */}
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-4">Reference & Marketing</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Testimonial</p>
+                    <p className="font-medium">
+                      <Badge variant={data.testimonial ? "default" : "outline"}>
+                        {data.testimonial ? 'Yes' : 'No'}
+                      </Badge>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Reference Call</p>
+                    <p className="font-medium">
+                      <Badge variant={data.reference_call ? "default" : "outline"}>
+                        {data.reference_call ? 'Yes' : 'No'}
+                      </Badge>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Site Visit</p>
+                    <p className="font-medium">
+                      <Badge variant={data.site_visit ? "default" : "outline"}>
+                        {data.site_visit ? 'Yes' : 'No'}
+                      </Badge>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Case Study</p>
+                    <p className="font-medium">
+                      <Badge variant={data.case_study ? "default" : "outline"}>
+                        {data.case_study ? 'Yes' : 'No'}
+                      </Badge>
+                    </p>
+                  </div>
+                  {data.reference_status && (
+                    <div className="md:col-span-2">
+                      <p className="text-sm text-muted-foreground">Reference Status</p>
+                      <p className="font-medium whitespace-pre-wrap">{data.reference_status}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

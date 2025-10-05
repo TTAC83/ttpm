@@ -370,6 +370,10 @@ export type Database = {
           s3_bucket_required: boolean | null
           salesperson: string | null
           servers_required: number | null
+          short_term_arr_max: number | null
+          short_term_arr_min: number | null
+          short_term_estimated_lines: number | null
+          short_term_estimated_sites: number | null
           site_name: string | null
           sla_resolution_hours: number | null
           sla_response_mins: number | null
@@ -408,6 +412,10 @@ export type Database = {
           s3_bucket_required?: boolean | null
           salesperson?: string | null
           servers_required?: number | null
+          short_term_arr_max?: number | null
+          short_term_arr_min?: number | null
+          short_term_estimated_lines?: number | null
+          short_term_estimated_sites?: number | null
           site_name?: string | null
           sla_resolution_hours?: number | null
           sla_response_mins?: number | null
@@ -446,6 +454,10 @@ export type Database = {
           s3_bucket_required?: boolean | null
           salesperson?: string | null
           servers_required?: number | null
+          short_term_arr_max?: number | null
+          short_term_arr_min?: number | null
+          short_term_estimated_lines?: number | null
+          short_term_estimated_sites?: number | null
           site_name?: string | null
           sla_resolution_hours?: number | null
           sla_response_mins?: number | null
@@ -2390,6 +2402,10 @@ export type Database = {
           segment: string | null
           servers_required: number | null
           services_fee: number | null
+          short_term_arr_max: number | null
+          short_term_arr_min: number | null
+          short_term_estimated_lines: number | null
+          short_term_estimated_sites: number | null
           site_address: string | null
           site_name: string | null
           site_visit: boolean | null
@@ -2456,6 +2472,10 @@ export type Database = {
           segment?: string | null
           servers_required?: number | null
           services_fee?: number | null
+          short_term_arr_max?: number | null
+          short_term_arr_min?: number | null
+          short_term_estimated_lines?: number | null
+          short_term_estimated_sites?: number | null
           site_address?: string | null
           site_name?: string | null
           site_visit?: boolean | null
@@ -2522,6 +2542,10 @@ export type Database = {
           segment?: string | null
           servers_required?: number | null
           services_fee?: number | null
+          short_term_arr_max?: number | null
+          short_term_arr_min?: number | null
+          short_term_estimated_lines?: number | null
+          short_term_estimated_sites?: number | null
           site_address?: string | null
           site_name?: string | null
           site_visit?: boolean | null

@@ -76,6 +76,10 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
     estimated_lines: data.estimated_lines?.toString() || '',
     arr_potential_min: data.arr_potential_min?.toString() || '',
     arr_potential_max: data.arr_potential_max?.toString() || '',
+    short_term_estimated_sites: data.short_term_estimated_sites?.toString() || '',
+    short_term_estimated_lines: data.short_term_estimated_lines?.toString() || '',
+    short_term_arr_min: data.short_term_arr_min?.toString() || '',
+    short_term_arr_max: data.short_term_arr_max?.toString() || '',
   });
 
   const [contractedLinesError, setContractedLinesError] = useState<string>('');
@@ -330,6 +334,10 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
         estimated_lines: formData.estimated_lines ? parseInt(formData.estimated_lines) : null,
         arr_potential_min: formData.arr_potential_min ? parseFloat(formData.arr_potential_min) : null,
         arr_potential_max: formData.arr_potential_max ? parseFloat(formData.arr_potential_max) : null,
+        short_term_estimated_sites: formData.short_term_estimated_sites ? parseInt(formData.short_term_estimated_sites) : null,
+        short_term_estimated_lines: formData.short_term_estimated_lines ? parseInt(formData.short_term_estimated_lines) : null,
+        short_term_arr_min: formData.short_term_arr_min ? parseFloat(formData.short_term_arr_min) : null,
+        short_term_arr_max: formData.short_term_arr_max ? parseFloat(formData.short_term_arr_max) : null,
       };
 
       // Add type-specific fields
@@ -414,6 +422,10 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
       estimated_lines: data.estimated_lines?.toString() || '',
       arr_potential_min: data.arr_potential_min?.toString() || '',
       arr_potential_max: data.arr_potential_max?.toString() || '',
+      short_term_estimated_sites: data.short_term_estimated_sites?.toString() || '',
+      short_term_estimated_lines: data.short_term_estimated_lines?.toString() || '',
+      short_term_arr_min: data.short_term_arr_min?.toString() || '',
+      short_term_arr_max: data.short_term_arr_max?.toString() || '',
     });
     setContractedLinesError('');
     setBillingTermsError('');
@@ -1077,57 +1089,117 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                   />
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="total_sites">Total Sites</Label>
-                    <Input
-                      id="total_sites"
-                      type="number"
-                      min="0"
-                      value={formData.total_sites}
-                      onChange={(e) => setFormData(prev => ({ ...prev, total_sites: e.target.value }))}
-                      placeholder="Enter number of sites"
-                    />
+                <div className="space-y-4">
+                  <h4 className="font-medium text-lg">Total / Long Term</h4>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="total_sites">Total Sites</Label>
+                      <Input
+                        id="total_sites"
+                        type="number"
+                        min="0"
+                        value={formData.total_sites}
+                        onChange={(e) => setFormData(prev => ({ ...prev, total_sites: e.target.value }))}
+                        placeholder="Enter number of sites"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="estimated_lines">Estimated Lines</Label>
+                      <Input
+                        id="estimated_lines"
+                        type="number"
+                        min="0"
+                        value={formData.estimated_lines}
+                        onChange={(e) => setFormData(prev => ({ ...prev, estimated_lines: e.target.value }))}
+                        placeholder="Enter estimated lines"
+                      />
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="estimated_lines">Estimated Lines</Label>
-                    <Input
-                      id="estimated_lines"
-                      type="number"
-                      min="0"
-                      value={formData.estimated_lines}
-                      onChange={(e) => setFormData(prev => ({ ...prev, estimated_lines: e.target.value }))}
-                      placeholder="Enter estimated lines"
-                    />
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="arr_potential_min">ARR Potential Min (£)</Label>
+                      <Input
+                        id="arr_potential_min"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.arr_potential_min}
+                        onChange={(e) => setFormData(prev => ({ ...prev, arr_potential_min: e.target.value }))}
+                        placeholder="Minimum ARR"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="arr_potential_max">ARR Potential Max (£)</Label>
+                      <Input
+                        id="arr_potential_max"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.arr_potential_max}
+                        onChange={(e) => setFormData(prev => ({ ...prev, arr_potential_max: e.target.value }))}
+                        placeholder="Maximum ARR"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="arr_potential_min">ARR Potential Min (£)</Label>
-                    <Input
-                      id="arr_potential_min"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.arr_potential_min}
-                      onChange={(e) => setFormData(prev => ({ ...prev, arr_potential_min: e.target.value }))}
-                      placeholder="Minimum ARR"
-                    />
+                <div className="space-y-4">
+                  <h4 className="font-medium text-lg">Short Term</h4>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="short_term_estimated_sites">Short Term Estimated Sites</Label>
+                      <Input
+                        id="short_term_estimated_sites"
+                        type="number"
+                        min="0"
+                        value={formData.short_term_estimated_sites}
+                        onChange={(e) => setFormData(prev => ({ ...prev, short_term_estimated_sites: e.target.value }))}
+                        placeholder="Enter number of sites"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="short_term_estimated_lines">Short Term Estimated Lines</Label>
+                      <Input
+                        id="short_term_estimated_lines"
+                        type="number"
+                        min="0"
+                        value={formData.short_term_estimated_lines}
+                        onChange={(e) => setFormData(prev => ({ ...prev, short_term_estimated_lines: e.target.value }))}
+                        placeholder="Enter estimated lines"
+                      />
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="arr_potential_max">ARR Potential Max (£)</Label>
-                    <Input
-                      id="arr_potential_max"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.arr_potential_max}
-                      onChange={(e) => setFormData(prev => ({ ...prev, arr_potential_max: e.target.value }))}
-                      placeholder="Maximum ARR"
-                    />
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="short_term_arr_min">Short Term ARR Min (£)</Label>
+                      <Input
+                        id="short_term_arr_min"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.short_term_arr_min}
+                        onChange={(e) => setFormData(prev => ({ ...prev, short_term_arr_min: e.target.value }))}
+                        placeholder="Minimum ARR"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="short_term_arr_max">Short Term ARR Max (£)</Label>
+                      <Input
+                        id="short_term_arr_max"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.short_term_arr_max}
+                        onChange={(e) => setFormData(prev => ({ ...prev, short_term_arr_max: e.target.value }))}
+                        placeholder="Maximum ARR"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1393,42 +1465,85 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
               {/* Expansion */}
               <div className="border-t pt-6">
                 <h3 className="text-2xl font-semibold leading-none tracking-tight mb-4">Expansion</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {data.expansion_opportunity && (
-                    <div className="md:col-span-2">
-                      <p className="text-sm text-muted-foreground">Expansion Opportunity</p>
-                      <p className="font-medium whitespace-pre-wrap">{data.expansion_opportunity}</p>
+                
+                {data.expansion_opportunity && (
+                  <div className="mb-4">
+                    <p className="text-sm text-muted-foreground">Expansion Opportunity</p>
+                    <p className="font-medium whitespace-pre-wrap">{data.expansion_opportunity}</p>
+                  </div>
+                )}
+
+                {(data.total_sites || data.estimated_lines || data.arr_potential_min || data.arr_potential_max) && (
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-base">Total / Long Term</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {data.total_sites && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Total Sites</p>
+                          <p className="font-medium">{data.total_sites}</p>
+                        </div>
+                      )}
+                      {data.estimated_lines && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Estimated Lines</p>
+                          <p className="font-medium">{data.estimated_lines}</p>
+                        </div>
+                      )}
+                      {data.arr_potential_min && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">ARR Potential Min</p>
+                          <p className="font-medium">
+                            £{parseFloat(data.arr_potential_min).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </p>
+                        </div>
+                      )}
+                      {data.arr_potential_max && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">ARR Potential Max</p>
+                          <p className="font-medium">
+                            £{parseFloat(data.arr_potential_max).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {data.total_sites && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">Total Sites</p>
-                      <p className="font-medium">{data.total_sites}</p>
+                  </div>
+                )}
+
+                {(data.short_term_estimated_sites || data.short_term_estimated_lines || data.short_term_arr_min || data.short_term_arr_max) && (
+                  <div className="space-y-2 mt-4">
+                    <h4 className="font-medium text-base">Short Term</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {data.short_term_estimated_sites && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Short Term Estimated Sites</p>
+                          <p className="font-medium">{data.short_term_estimated_sites}</p>
+                        </div>
+                      )}
+                      {data.short_term_estimated_lines && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Short Term Estimated Lines</p>
+                          <p className="font-medium">{data.short_term_estimated_lines}</p>
+                        </div>
+                      )}
+                      {data.short_term_arr_min && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Short Term ARR Min</p>
+                          <p className="font-medium">
+                            £{parseFloat(data.short_term_arr_min).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </p>
+                        </div>
+                      )}
+                      {data.short_term_arr_max && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Short Term ARR Max</p>
+                          <p className="font-medium">
+                            £{parseFloat(data.short_term_arr_max).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {data.estimated_lines && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">Estimated Lines</p>
-                      <p className="font-medium">{data.estimated_lines}</p>
-                    </div>
-                  )}
-                  {data.arr_potential_min && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">ARR Potential Min</p>
-                      <p className="font-medium">
-                        £{parseFloat(data.arr_potential_min).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                    </div>
-                  )}
-                  {data.arr_potential_max && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">ARR Potential Max</p>
-                      <p className="font-medium">
-                        £{parseFloat(data.arr_potential_max).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                    </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

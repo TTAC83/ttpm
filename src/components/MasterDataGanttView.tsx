@@ -8,6 +8,8 @@ interface MasterStep {
   id: number;
   name: string;
   position: number;
+  planned_start_offset_days?: number | null;
+  planned_end_offset_days?: number | null;
 }
 
 interface MasterTask {
@@ -259,9 +261,24 @@ export const MasterDataGanttView = ({
             <Card key={step.id} className="overflow-visible">
           <CardHeader className="pb-3 bg-muted/20">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-semibold text-primary">
-                {step.name}
-              </CardTitle>
+              <div className="flex items-center gap-3">
+                <CardTitle className="text-lg font-semibold text-primary">
+                  {step.name}
+                </CardTitle>
+                {step.planned_start_offset_days !== null && step.planned_end_offset_days !== null && (
+                  <Badge variant="secondary" className="text-xs font-normal">
+                    Days {step.planned_start_offset_days}-{step.planned_end_offset_days}
+                    <span className="ml-1 text-muted-foreground">
+                      ({step.planned_end_offset_days - step.planned_start_offset_days + 1} days)
+                    </span>
+                  </Badge>
+                )}
+                {(step.planned_start_offset_days === null || step.planned_end_offset_days === null) && (
+                  <Badge variant="outline" className="text-xs font-normal text-muted-foreground">
+                    No dates calculated
+                  </Badge>
+                )}
+              </div>
               <Button
                 variant="outline"
                 size="sm"

@@ -23,15 +23,19 @@ import {
   FileText,
   Layers,
   List,
-  BarChart3
+  BarChart3,
+  RefreshCw
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { MasterDataGanttView } from '@/components/MasterDataGanttView';
+import { wbsService } from '@/lib/wbsService';
 
 interface MasterStep {
   id: number;
   name: string;
   position: number;
+  planned_start_offset_days?: number | null;
+  planned_end_offset_days?: number | null;
 }
 
 interface MasterTask {
@@ -293,6 +297,10 @@ export const MasterDataManagement = () => {
       if (error) throw error;
       await fetchMasterData();
       
+      // Auto-recalculate step dates
+      await wbsService.updateStepDatesFromTasks(stepId);
+      await fetchMasterData();
+      
       toast({
         title: parentTaskId ? "Subtask Added" : "Task Added",
         description: `New ${parentTaskId ? 'subtask' : 'task'} created successfully`,
@@ -315,13 +323,25 @@ export const MasterDataManagement = () => {
     }
 
     try {
+      let stepIdToRecalc: number | null = null;
+      
       if (type === 'step') {
         await supabase.from('master_steps').delete().eq('id', parseInt(id));
       } else {
+        // Get step_id before deleting for recalculation
+        const task = tasks.find(t => t.id === parseInt(id));
+        stepIdToRecalc = task?.step_id || null;
         await supabase.from('master_tasks').delete().eq('id', parseInt(id));
       }
 
       await fetchMasterData();
+      
+      // Recalculate step dates if we deleted a task
+      if (stepIdToRecalc) {
+        await wbsService.updateStepDatesFromTasks(stepIdToRecalc);
+        await fetchMasterData();
+      }
+      
       setSidebarOpen(false);
       
       toast({
@@ -334,6 +354,27 @@ export const MasterDataManagement = () => {
         description: `Failed to delete ${itemName}`,
         variant: "destructive",
       });
+    }
+  };
+
+  const recalculateAllSteps = async () => {
+    try {
+      setLoading(true);
+      await wbsService.recalculateAllStepDates();
+      await fetchMasterData();
+      
+      toast({
+        title: "Recalculated",
+        description: "All step dates have been recalculated from tasks",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to recalculate step dates",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -427,6 +468,15 @@ export const MasterDataManagement = () => {
                     ? (node.data as MasterStep).name 
                     : (node.data as MasterTask).title}
                 </span>
+                
+                {/* Show calculated step date range */}
+                {node.type === 'step' && (node.data as MasterStep).planned_start_offset_days !== undefined && (
+                  <Badge variant="secondary" className="text-xs">
+                    {(node.data as MasterStep).planned_start_offset_days !== null && (node.data as MasterStep).planned_end_offset_days !== null
+                      ? `Days ${(node.data as MasterStep).planned_start_offset_days}-${(node.data as MasterStep).planned_end_offset_days}`
+                      : 'No dates'}
+                  </Badge>
+                )}
 
                 {/* Technology Scope Badge for Tasks */}
                 {node.type !== 'step' && (
@@ -548,6 +598,15 @@ export const MasterDataManagement = () => {
                 {viewMode === 'tree' ? 'Tree View' : 'Gantt View'}
               </span>
             </div>
+            <Button 
+              variant="outline" 
+              onClick={recalculateAllSteps}
+              className="flex items-center gap-2"
+              disabled={loading}
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              Recalculate Step Dates
+            </Button>
             <Button onClick={addNewStep} className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
               Add Step
@@ -678,6 +737,7 @@ const DetailSidebar = ({ node, onClose, onUpdate }: DetailSidebarProps) => {
     try {
       setLoading(true);
       const [type, id] = node.id.split('-');
+      let stepIdToRecalc: number | null = null;
 
       if (type === 'step') {
         const { error } = await supabase
@@ -693,6 +753,9 @@ const DetailSidebar = ({ node, onClose, onUpdate }: DetailSidebarProps) => {
           throw error;
         }
       } else {
+        const task = node.data as MasterTask;
+        stepIdToRecalc = task.step_id;
+        
         const { data, error } = await supabase
           .from('master_tasks')
           .update({
@@ -721,6 +784,11 @@ const DetailSidebar = ({ node, onClose, onUpdate }: DetailSidebarProps) => {
         description: "Changes saved successfully",
       });
 
+      // Recalculate step dates if we updated a task's dates
+      if (stepIdToRecalc) {
+        await wbsService.updateStepDatesFromTasks(stepIdToRecalc);
+      }
+      
       onUpdate();
     } catch (error: any) {
       console.error('❌ Save failed:', error);
@@ -767,6 +835,27 @@ const DetailSidebar = ({ node, onClose, onUpdate }: DetailSidebarProps) => {
                 value={formData.position || 0}
                 onChange={(e) => setFormData(prev => ({ ...prev, position: parseInt(e.target.value) }))}
               />
+            </div>
+            
+            <div className="p-4 bg-muted/30 rounded-md border border-border">
+              <div className="text-sm font-medium mb-2">Calculated Dates</div>
+              <div className="text-xs text-muted-foreground">
+                {(node.data as MasterStep).planned_start_offset_days !== null && 
+                 (node.data as MasterStep).planned_end_offset_days !== null ? (
+                  <>
+                    <div>Start: Day {(node.data as MasterStep).planned_start_offset_days}</div>
+                    <div>End: Day {(node.data as MasterStep).planned_end_offset_days}</div>
+                    <div className="mt-1 font-medium">
+                      Duration: {((node.data as MasterStep).planned_end_offset_days! - (node.data as MasterStep).planned_start_offset_days! + 1)} days
+                    </div>
+                  </>
+                ) : (
+                  <div>No dates - add tasks to this step</div>
+                )}
+              </div>
+              <div className="mt-2 text-xs text-muted-foreground italic">
+                These dates are automatically calculated from associated tasks.
+              </div>
             </div>
           </>
         ) : (

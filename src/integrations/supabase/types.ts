@@ -1847,16 +1847,22 @@ export type Database = {
         Row: {
           id: number
           name: string
+          planned_end_offset_days: number | null
+          planned_start_offset_days: number | null
           position: number
         }
         Insert: {
           id?: number
           name: string
+          planned_end_offset_days?: number | null
+          planned_start_offset_days?: number | null
           position?: number
         }
         Update: {
           id?: number
           name?: string
+          planned_end_offset_days?: number | null
+          planned_start_offset_days?: number | null
           position?: number
         }
         Relationships: []

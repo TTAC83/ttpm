@@ -17,6 +17,8 @@ export interface MasterStep {
   step_name: string;
   position: number;
   task_count: number;
+  planned_start_offset_days?: number | null;
+  planned_end_offset_days?: number | null;
 }
 
 export interface MasterTask {
@@ -304,6 +306,67 @@ class WBSService {
     }
 
     return masterSteps;
+  }
+
+  // Calculate and update step dates from associated tasks
+  async updateStepDatesFromTasks(stepId: number): Promise<void> {
+    // Get all tasks for this step
+    const { data: tasks, error: tasksError } = await supabase
+      .from('master_tasks')
+      .select('planned_start_offset_days, planned_end_offset_days')
+      .eq('step_id', stepId);
+
+    if (tasksError) throw tasksError;
+
+    if (!tasks || tasks.length === 0) {
+      // No tasks - set dates to null
+      const { error: updateError } = await supabase
+        .from('master_steps')
+        .update({
+          planned_start_offset_days: null,
+          planned_end_offset_days: null
+        })
+        .eq('id', stepId);
+
+      if (updateError) throw updateError;
+      return;
+    }
+
+    // Calculate min start and max end across all tasks
+    const startOffsets = tasks
+      .map(t => t.planned_start_offset_days)
+      .filter((d): d is number => d !== null && d !== undefined);
+    
+    const endOffsets = tasks
+      .map(t => t.planned_end_offset_days)
+      .filter((d): d is number => d !== null && d !== undefined);
+
+    const minStart = startOffsets.length > 0 ? Math.min(...startOffsets) : null;
+    const maxEnd = endOffsets.length > 0 ? Math.max(...endOffsets) : null;
+
+    // Update the step with calculated dates
+    const { error: updateError } = await supabase
+      .from('master_steps')
+      .update({
+        planned_start_offset_days: minStart,
+        planned_end_offset_days: maxEnd
+      })
+      .eq('id', stepId);
+
+    if (updateError) throw updateError;
+  }
+
+  // Recalculate all step dates
+  async recalculateAllStepDates(): Promise<void> {
+    const { data: steps, error } = await supabase
+      .from('master_steps')
+      .select('id');
+
+    if (error) throw error;
+
+    await Promise.all(
+      (steps || []).map(step => this.updateStepDatesFromTasks(step.id))
+    );
   }
 }
 

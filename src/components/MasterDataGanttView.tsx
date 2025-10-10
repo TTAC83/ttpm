@@ -2,8 +2,13 @@ import { useMemo, useRef, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Edit, Plus, Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Edit, Plus, Trash2, Link2 } from 'lucide-react';
 import { wbsService } from '@/lib/wbsService';
+import { toast } from 'sonner';
 
 interface MasterStep {
   id: number;
@@ -58,6 +63,34 @@ export const MasterDataGanttView = ({
   
   // Dependencies
   const [dependencies, setDependencies] = useState<any[]>([]);
+
+  // Drag states
+  const [dragState, setDragState] = useState<{
+    type: 'none' | 'task' | 'dependency';
+    taskId?: number;
+    taskType?: 'task' | 'subtask';
+    stepId?: number;
+    startX: number;
+    currentX: number;
+    currentY: number;
+    originalStartDays?: number;
+    originalEndDays?: number;
+    dependencyFrom?: { type: 'task' | 'subtask'; id: number; edge: 'left' | 'right'; name: string };
+  }>({
+    type: 'none',
+    startX: 0,
+    currentX: 0,
+    currentY: 0,
+  });
+
+  // Dependency creation dialog
+  const [dependencyDialog, setDependencyDialog] = useState<{
+    open: boolean;
+    from?: { type: 'task' | 'subtask'; id: number; name: string };
+    to?: { type: 'task' | 'subtask'; id: number; name: string };
+  }>({ open: false });
+  const [dependencyType, setDependencyType] = useState<'FS' | 'SS' | 'FF' | 'SF'>('FS');
+  const [lagDays, setLagDays] = useState(0);
 
   useEffect(() => {
     loadDependencies();
@@ -266,6 +299,174 @@ export const MasterDataGanttView = ({
       verticalRef.current.scrollTop = newTop;
     }
   };
+
+  // Handle task drag to adjust dates
+  const handleTaskBarMouseDown = (
+    e: React.MouseEvent,
+    task: MasterTask,
+    stepId: number
+  ) => {
+    e.stopPropagation();
+    const dayWidth = 32;
+    setDragState({
+      type: 'task',
+      taskId: task.id,
+      taskType: task.parent_task_id ? 'subtask' : 'task',
+      stepId,
+      startX: e.clientX,
+      currentX: e.clientX,
+      currentY: e.clientY,
+      originalStartDays: task.planned_start_offset_days,
+      originalEndDays: task.planned_end_offset_days,
+    });
+  };
+
+  // Handle dependency drag handle mousedown
+  const handleDependencyHandleMouseDown = (
+    e: React.MouseEvent,
+    task: MasterTask,
+    edge: 'left' | 'right'
+  ) => {
+    e.stopPropagation();
+    const itemType = task.parent_task_id ? 'subtask' : 'task';
+    setDragState({
+      type: 'dependency',
+      startX: e.clientX,
+      currentX: e.clientX,
+      currentY: e.clientY,
+      dependencyFrom: { type: itemType, id: task.id, edge, name: task.title },
+    });
+  };
+
+  // Global mouse move handler
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (dragState.type === 'none') return;
+      
+      setDragState(prev => ({
+        ...prev,
+        currentX: e.clientX,
+        currentY: e.clientY,
+      }));
+    };
+
+    const handleMouseUp = async (e: MouseEvent) => {
+      if (dragState.type === 'task' && dragState.taskId !== undefined) {
+        // Finalize task date adjustment
+        const dayWidth = 32;
+        const deltaX = e.clientX - dragState.startX;
+        const offsetDays = Math.round(deltaX / dayWidth);
+        
+        if (offsetDays !== 0) {
+          const newStart = (dragState.originalStartDays ?? 0) + offsetDays;
+          const newEnd = (dragState.originalEndDays ?? 0) + offsetDays;
+          
+          if (newStart >= 0) {
+            try {
+              await wbsService.updateMasterTask(dragState.taskId, {
+                planned_start_offset_days: newStart,
+                planned_end_offset_days: newEnd,
+              });
+              toast.success(`Task dates updated: Day ${newStart} to ${newEnd}`);
+              // Reload dependencies to show updated arrows
+              await loadDependencies();
+            } catch (error: any) {
+              toast.error(`Failed to update task: ${error.message}`);
+            }
+          } else {
+            toast.error('Cannot move task before day 0');
+          }
+        }
+      } else if (dragState.type === 'dependency' && dragState.dependencyFrom) {
+        // Check if we're over a valid task bar (drop target)
+        const targetElement = document.elementFromPoint(e.clientX, e.clientY);
+        if (targetElement) {
+          const barElement = targetElement.closest('[data-task-id]');
+          if (barElement) {
+            const targetTaskId = parseInt(barElement.getAttribute('data-task-id') || '0');
+            const targetTaskType = barElement.getAttribute('data-task-type') as 'task' | 'subtask' | null;
+            
+            if (targetTaskId && targetTaskType && targetTaskId !== dragState.dependencyFrom.id) {
+              // Find task name
+              const targetTask = tasks.find(t => t.id === targetTaskId);
+              if (targetTask) {
+                setDependencyDialog({
+                  open: true,
+                  from: dragState.dependencyFrom,
+                  to: { type: targetTaskType, id: targetTaskId, name: targetTask.title },
+                });
+              }
+            }
+          }
+        }
+      }
+      
+      setDragState({
+        type: 'none',
+        startX: 0,
+        currentX: 0,
+        currentY: 0,
+      });
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && dragState.type !== 'none') {
+        setDragState({
+          type: 'none',
+          startX: 0,
+          currentX: 0,
+          currentY: 0,
+        });
+      }
+    };
+
+    if (dragState.type !== 'none') {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('keydown', handleKeyDown);
+      document.body.style.cursor = dragState.type === 'task' ? 'grabbing' : 'crosshair';
+      document.body.style.userSelect = 'none';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [dragState, tasks]);
+
+  // Create dependency from dialog
+  const handleCreateDependency = async () => {
+    if (!dependencyDialog.from || !dependencyDialog.to) return;
+    
+    const { from, to } = dependencyDialog;
+    
+    // Determine predecessor/successor based on edge clicked
+    let predecessorType = from.type;
+    let predecessorId = from.id;
+    let successorType = to.type;
+    let successorId = to.id;
+    
+    try {
+      await wbsService.createDependency(
+        predecessorType,
+        predecessorId,
+        successorType,
+        successorId,
+        dependencyType,
+        lagDays
+      );
+      toast.success(`Dependency created: ${from.name} → ${to.name}`);
+      await loadDependencies();
+      setDependencyDialog({ open: false });
+      setDependencyType('FS');
+      setLagDays(0);
+    } catch (error: any) {
+      toast.error(`Failed to create dependency: ${error.message}`);
+    }
+  };
   return (
     <div className="relative" style={{ height: 'calc(100vh - 24rem)' }}>
       {/* Main scrollable content */}
@@ -464,20 +665,47 @@ export const MasterDataGanttView = ({
                             {/* Task bar */}
                             <div
                               id={`gantt-bar-${task.parent_task_id ? 'subtask' : 'task'}-${task.id}`}
-                              className={`absolute top-2 bottom-2 rounded transition-all cursor-pointer ${
+                              data-task-id={task.id}
+                              data-task-type={task.parent_task_id ? 'subtask' : 'task'}
+                              className={`absolute top-2 bottom-2 rounded transition-all group/bar ${
                                 task.parent_task_id 
                                   ? 'bg-orange-400 hover:bg-orange-500' 
                                   : 'bg-primary hover:bg-primary/80'
-                              }`}
+                              } ${dragState.type === 'task' && dragState.taskId === task.id ? 'opacity-70 shadow-lg' : ''}`}
                               style={{
-                                left: `${leftOffset}px`,
-                                width: `${barWidth}px`
+                                left: dragState.type === 'task' && dragState.taskId === task.id
+                                  ? `${(dragState.originalStartDays ?? 0) * 32 + Math.round((dragState.currentX - dragState.startX) / 32) * 32}px`
+                                  : `${leftOffset}px`,
+                                width: `${barWidth}px`,
+                                cursor: dragState.type === 'none' ? 'grab' : dragState.type === 'task' && dragState.taskId === task.id ? 'grabbing' : 'default',
+                                transition: dragState.type === 'task' && dragState.taskId === task.id ? 'none' : 'all 150ms ease',
                               }}
-                              title={`${task.title}: Days ${task.planned_start_offset_days}-${task.planned_end_offset_days} (${duration} days)\nClick to manage dependencies`}
-                              onClick={() => onOpenDependencies?.(itemType, task.id, task.title)}
+                              title={`${task.title}: Days ${task.planned_start_offset_days}-${task.planned_end_offset_days} (${duration} days)\nDrag to move • Drag handles to link`}
+                              onMouseDown={(e) => handleTaskBarMouseDown(e, task, step.id)}
                             >
-                              <div className="px-2 py-1 text-xs font-medium text-white truncate">
+                              {/* Dependency handles */}
+                              <div
+                                className="absolute left-0 top-0 bottom-0 w-2 bg-white/20 rounded-l cursor-pointer opacity-0 group-hover/bar:opacity-100 hover:bg-white/40 transition-all"
+                                onMouseDown={(e) => handleDependencyHandleMouseDown(e, task, 'left')}
+                                title="Drag to create dependency (predecessor)"
+                              >
+                                <Link2 className="w-3 h-3 absolute left-0 top-1/2 -translate-y-1/2 text-white" />
+                              </div>
+                              <div
+                                className="absolute right-0 top-0 bottom-0 w-2 bg-white/20 rounded-r cursor-pointer opacity-0 group-hover/bar:opacity-100 hover:bg-white/40 transition-all"
+                                onMouseDown={(e) => handleDependencyHandleMouseDown(e, task, 'right')}
+                                title="Drag to create dependency (successor)"
+                              >
+                                <Link2 className="w-3 h-3 absolute right-0 top-1/2 -translate-y-1/2 text-white" />
+                              </div>
+                              
+                              <div className="px-2 py-1 text-xs font-medium text-white truncate pointer-events-none">
                                 {duration}d
+                                {dragState.type === 'task' && dragState.taskId === task.id && (
+                                  <span className="ml-1">
+                                    → Day {(dragState.originalStartDays ?? 0) + Math.round((dragState.currentX - dragState.startX) / 32)}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -574,6 +802,117 @@ export const MasterDataGanttView = ({
           </svg>
         </div>
       )}
+      
+      {/* Dependency drag line overlay */}
+      {dragState.type === 'dependency' && dragState.dependencyFrom && verticalRef.current && (
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-50">
+          <svg className="w-full h-full">
+            <defs>
+              <marker
+                id="dependency-drag-arrowhead"
+                markerWidth="10"
+                markerHeight="7"
+                refX="9"
+                refY="3.5"
+                orient="auto"
+              >
+                <polygon points="0 0, 10 3.5, 0 7" fill="hsl(var(--primary))" fillOpacity="0.8" />
+              </marker>
+            </defs>
+            {(() => {
+              const sourceEl = document.getElementById(`gantt-bar-${dragState.dependencyFrom.type}-${dragState.dependencyFrom.id}`);
+              if (!sourceEl) return null;
+              
+              const sourceRect = sourceEl.getBoundingClientRect();
+              const containerRect = verticalRef.current?.getBoundingClientRect();
+              if (!containerRect) return null;
+              
+              const x1 = dragState.dependencyFrom.edge === 'right'
+                ? sourceRect.right - containerRect.left
+                : sourceRect.left - containerRect.left;
+              const y1 = sourceRect.top + sourceRect.height / 2 - containerRect.top;
+              const x2 = dragState.currentX - containerRect.left;
+              const y2 = dragState.currentY - containerRect.top;
+              
+              return (
+                <line
+                  x1={x1}
+                  y1={y1}
+                  x2={x2}
+                  y2={y2}
+                  stroke="hsl(var(--primary))"
+                  strokeWidth="3"
+                  strokeOpacity="0.8"
+                  strokeDasharray="5,5"
+                  markerEnd="url(#dependency-drag-arrowhead)"
+                />
+              );
+            })()}
+          </svg>
+        </div>
+      )}
+
+      {/* Dependency creation dialog */}
+      <Dialog open={dependencyDialog.open} onOpenChange={(open) => {
+        if (!open) {
+          setDependencyDialog({ open: false });
+          setDependencyType('FS');
+          setLagDays(0);
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Dependency</DialogTitle>
+          </DialogHeader>
+          {dependencyDialog.from && dependencyDialog.to && (
+            <div className="space-y-4">
+              <div className="p-3 bg-muted rounded-lg">
+                <div className="text-sm font-medium mb-1">From (Predecessor):</div>
+                <div className="text-sm text-muted-foreground">{dependencyDialog.from.name}</div>
+              </div>
+              <div className="p-3 bg-muted rounded-lg">
+                <div className="text-sm font-medium mb-1">To (Successor):</div>
+                <div className="text-sm text-muted-foreground">{dependencyDialog.to.name}</div>
+              </div>
+              <div className="space-y-2">
+                <Label>Dependency Type</Label>
+                <Select value={dependencyType} onValueChange={(v) => setDependencyType(v as any)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="FS">Finish-to-Start (FS)</SelectItem>
+                    <SelectItem value="SS">Start-to-Start (SS)</SelectItem>
+                    <SelectItem value="FF">Finish-to-Finish (FF)</SelectItem>
+                    <SelectItem value="SF">Start-to-Finish (SF)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Lag Days</Label>
+                <Input
+                  type="number"
+                  value={lagDays}
+                  onChange={(e) => setLagDays(parseInt(e.target.value) || 0)}
+                  placeholder="0"
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setDependencyDialog({ open: false });
+              setDependencyType('FS');
+              setLagDays(0);
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateDependency}>
+              Create Dependency
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

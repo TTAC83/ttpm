@@ -543,6 +543,11 @@ class WBSService {
       
       await this.updateItemDates(itemType, itemId, newStartDate, newEndDate, offsetDays);
       
+      // If this is a task (not subtask), shift all subsequent tasks in the same step
+      if (itemType === 'task' && offsetDays !== 0) {
+        await this.shiftSubsequentTasks(itemId, offsetDays);
+      }
+      
       for (const succ of deps.successors) {
         await this.recalculateDatesWithDependencies(succ.successor_type, succ.successor_id);
       }
@@ -621,6 +626,44 @@ class WBSService {
     );
 
     await Promise.all(subtasks.map((sub: any) => this.shiftSubtasksRecursive(sub.id, offsetDays)));
+  }
+  
+  // Shift all subsequent tasks (higher position) in the same step
+  private async shiftSubsequentTasks(taskId: number, offsetDays: number): Promise<void> {
+    // Get the task's step_id and position
+    const { data: task, error: taskError } = await supabase
+      .from('master_tasks')
+      .select('step_id, position')
+      .eq('id', taskId)
+      .single();
+    
+    if (taskError) throw taskError;
+    if (!task) return;
+
+    // Get all tasks in the same step with higher position
+    const { data: subsequentTasks, error: tasksError } = await supabase
+      .from('master_tasks')
+      .select('id, planned_start_offset_days, planned_end_offset_days')
+      .eq('step_id', task.step_id)
+      .gt('position', task.position)
+      .is('parent_task_id', null); // Only root tasks, not subtasks
+    
+    if (tasksError) throw tasksError;
+    if (!subsequentTasks || subsequentTasks.length === 0) return;
+
+    // Shift each subsequent task and its subtasks
+    for (const subTask of subsequentTasks) {
+      await supabase
+        .from('master_tasks')
+        .update({
+          planned_start_offset_days: (subTask.planned_start_offset_days ?? 0) + offsetDays,
+          planned_end_offset_days: (subTask.planned_end_offset_days ?? 0) + offsetDays,
+        })
+        .eq('id', subTask.id);
+      
+      // Recursively shift all subtasks of this task
+      await this.shiftSubtasksRecursive(subTask.id, offsetDays);
+    }
   }
   
   private async checkCircularDependency(

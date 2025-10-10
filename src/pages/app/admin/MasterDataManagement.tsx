@@ -728,6 +728,7 @@ export const MasterDataManagement = () => {
                 setSelectedForDependency({ type, id, name });
                 setDependencyPanelOpen(true);
               }}
+              onRefresh={fetchMasterData}
             />
           </div>
         )}

@@ -42,6 +42,7 @@ interface MasterDataGanttViewProps {
   onAddTask: (stepId: number, parentTaskId?: number) => void;
   onDeleteTask: (taskId: number) => void;
   onOpenDependencies?: (type: 'step' | 'task' | 'subtask', id: number, name: string) => void;
+  onRefresh?: () => void;
 }
 
 export const MasterDataGanttView = ({
@@ -50,7 +51,8 @@ export const MasterDataGanttView = ({
   onEditTask,
   onAddTask,
   onDeleteTask,
-  onOpenDependencies
+  onOpenDependencies,
+  onRefresh
 }: MasterDataGanttViewProps) => {
   const timelineRefs = useRef<HTMLDivElement[]>([]);
   const [scrollLeft, setScrollLeft] = useState(0);
@@ -368,7 +370,8 @@ export const MasterDataGanttView = ({
                 planned_end_offset_days: newEnd,
               });
               toast.success(`Task dates updated: Day ${newStart} to ${newEnd}`);
-              // Reload dependencies to show updated arrows
+              // Refresh data to reflect changes
+              onRefresh?.();
               await loadDependencies();
             } catch (error: any) {
               toast.error(`Failed to update task: ${error.message}`);

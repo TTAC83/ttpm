@@ -801,8 +801,8 @@ export const MasterDataGanttView = ({
       
       {/* Dependency Arrows SVG Overlay */}
       {dependencies.length > 0 && (
-        <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
-          <svg className="w-full h-full">
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-40" style={{ pointerEvents: 'none' }}>
+          <svg className="w-full h-full" style={{ pointerEvents: 'auto' }}>
             <defs>
               <marker
                 id="dependency-arrowhead"
@@ -813,6 +813,16 @@ export const MasterDataGanttView = ({
                 orient="auto"
               >
                 <polygon points="0 0, 10 3.5, 0 7" fill="hsl(var(--primary))" fillOpacity="0.6" />
+              </marker>
+              <marker
+                id="dependency-arrowhead-hover"
+                markerWidth="10"
+                markerHeight="7"
+                refX="9"
+                refY="3.5"
+                orient="auto"
+              >
+                <polygon points="0 0, 10 3.5, 0 7" fill="hsl(var(--destructive))" fillOpacity="0.9" />
               </marker>
             </defs>
             {dependencies.map((dep) => {
@@ -860,18 +870,95 @@ export const MasterDataGanttView = ({
                   return null;
               }
               
+              const midX = (x1 + x2) / 2;
+              
+              // Find task names for tooltip
+              const predTask = findTaskById(dep.predecessor_id);
+              const succTask = findTaskById(dep.successor_id);
+              const isHovered = hoveredDependency === dep.id;
+
               return (
                 <g key={dep.id}>
-                  <line
-                    x1={x1}
-                    y1={y1}
-                    x2={x2}
-                    y2={y2}
-                    stroke="hsl(var(--primary))"
-                    strokeWidth="2"
-                    strokeOpacity="0.6"
-                    markerEnd="url(#dependency-arrowhead)"
+                  {/* Invisible wider path for easier clicking */}
+                  <path
+                    d={`M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`}
+                    stroke="transparent"
+                    strokeWidth="12"
+                    fill="none"
+                    style={{ 
+                      pointerEvents: 'stroke',
+                      cursor: 'pointer'
+                    }}
+                    onMouseEnter={() => setHoveredDependency(dep.id)}
+                    onMouseLeave={() => setHoveredDependency(null)}
+                    onClick={() => {
+                      if (predTask && succTask) {
+                        setSelectedDependencyForDelete({
+                          id: dep.id,
+                          fromName: predTask.title,
+                          toName: succTask.title,
+                          type: dep.dependency_type
+                        });
+                      }
+                    }}
                   />
+                  
+                  {/* Visible dependency line */}
+                  <path
+                    d={`M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`}
+                    stroke={isHovered ? "hsl(var(--destructive))" : "hsl(var(--primary))"}
+                    strokeWidth={isHovered ? "3" : "2"}
+                    fill="none"
+                    strokeOpacity={isHovered ? "0.9" : "0.6"}
+                    markerEnd={isHovered ? "url(#dependency-arrowhead-hover)" : "url(#dependency-arrowhead)"}
+                    style={{ 
+                      pointerEvents: 'none',
+                      transition: 'all 150ms ease'
+                    }}
+                  >
+                    <title>
+                      {predTask?.title} → {succTask?.title}
+                      {'\n'}Type: {dep.dependency_type}
+                      {dep.lag_days ? `\nLag: ${dep.lag_days} days` : ''}
+                      {'\n\nClick to delete'}
+                    </title>
+                  </path>
+                  
+                  {/* Delete button on hover */}
+                  {isHovered && (
+                    <g
+                      style={{ cursor: 'pointer', pointerEvents: 'auto' }}
+                      onClick={() => {
+                        if (predTask && succTask) {
+                          setSelectedDependencyForDelete({
+                            id: dep.id,
+                            fromName: predTask.title,
+                            toName: succTask.title,
+                            type: dep.dependency_type
+                          });
+                        }
+                      }}
+                    >
+                      <circle
+                        cx={midX}
+                        cy={(y1 + y2) / 2}
+                        r="14"
+                        fill="hsl(var(--destructive))"
+                      />
+                      <text
+                        x={midX}
+                        y={(y1 + y2) / 2}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        fill="white"
+                        fontSize="18"
+                        fontWeight="bold"
+                        style={{ pointerEvents: 'none' }}
+                      >
+                        ×
+                      </text>
+                    </g>
+                  )}
                 </g>
               );
             })}

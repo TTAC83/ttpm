@@ -36,6 +36,7 @@ interface MasterDataGanttViewProps {
   onEditTask: (task: MasterTask) => void;
   onAddTask: (stepId: number, parentTaskId?: number) => void;
   onDeleteTask: (taskId: number) => void;
+  onOpenDependencies?: (type: 'step' | 'task' | 'subtask', id: number, name: string) => void;
 }
 
 export const MasterDataGanttView = ({
@@ -43,7 +44,8 @@ export const MasterDataGanttView = ({
   tasks,
   onEditTask,
   onAddTask,
-  onDeleteTask
+  onDeleteTask,
+  onOpenDependencies
 }: MasterDataGanttViewProps) => {
   const timelineRefs = useRef<HTMLDivElement[]>([]);
   const [scrollLeft, setScrollLeft] = useState(0);
@@ -441,9 +443,10 @@ export const MasterDataGanttView = ({
                     onScroll={(e) => handleTimelineScroll(e.currentTarget.scrollLeft)}
                   >
                     <div style={{ minWidth: `${(ganttData.maxDays + 1) * 32}px` }}>
-                      {step.tasks.map(task => {
+                        {step.tasks.map(task => {
                         const duration = task.planned_end_offset_days - task.planned_start_offset_days;
                         const dayWidth = 32;
+                        const itemType = task.parent_task_id ? 'subtask' : 'task';
                         const leftOffset = task.planned_start_offset_days * dayWidth;
                         const barWidth = Math.max(duration * dayWidth, dayWidth * 0.5);
 
@@ -470,7 +473,8 @@ export const MasterDataGanttView = ({
                                 left: `${leftOffset}px`,
                                 width: `${barWidth}px`
                               }}
-                              title={`${task.title}: Days ${task.planned_start_offset_days}-${task.planned_end_offset_days} (${duration} days)`}
+                              title={`${task.title}: Days ${task.planned_start_offset_days}-${task.planned_end_offset_days} (${duration} days)\nClick to manage dependencies`}
+                              onClick={() => onOpenDependencies?.(itemType, task.id, task.title)}
                             >
                               <div className="px-2 py-1 text-xs font-medium text-white truncate">
                                 {duration}d

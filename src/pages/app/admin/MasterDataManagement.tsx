@@ -724,6 +724,10 @@ export const MasterDataManagement = () => {
               }}
               onAddTask={addNewTask}
               onDeleteTask={(taskId) => deleteItem(`task-${taskId}`)}
+              onOpenDependencies={(type, id, name) => {
+                setSelectedForDependency({ type, id, name });
+                setDependencyPanelOpen(true);
+              }}
             />
           </div>
         )}

@@ -141,6 +141,21 @@ export const MasterDataGanttView = ({
     };
   }, [steps, tasks]);
 
+  // Helper function to find any task by ID (including nested subtasks)
+  const findTaskById = (taskId: number): MasterTask | null => {
+    const searchInTasks = (taskList: MasterTask[]): MasterTask | null => {
+      for (const task of taskList) {
+        if (task.id === taskId) return task;
+        if (task.subtasks) {
+          const found = searchInTasks(task.subtasks);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    return searchInTasks(tasks);
+  };
+
   const getTechScopeColor = (scope: string) => {
     switch (scope) {
       case 'iot': return 'bg-blue-500';
@@ -390,16 +405,30 @@ export const MasterDataGanttView = ({
             const targetTaskType = barElement.getAttribute('data-task-type') as 'task' | 'subtask' | null;
             
             if (targetTaskId && targetTaskType && targetTaskId !== dragState.dependencyFrom.id) {
-              // Find task name
-              const targetTask = tasks.find(t => t.id === targetTaskId);
+              // Find task name using the helper function
+              const targetTask = findTaskById(targetTaskId);
               if (targetTask) {
+                console.log('Dependency dialog opening:', {
+                  from: dragState.dependencyFrom,
+                  to: { type: targetTaskType, id: targetTaskId, name: targetTask.title }
+                });
                 setDependencyDialog({
                   open: true,
-                  from: dragState.dependencyFrom,
+                  from: { 
+                    type: dragState.dependencyFrom.type, 
+                    id: dragState.dependencyFrom.id, 
+                    name: dragState.dependencyFrom.name 
+                  },
                   to: { type: targetTaskType, id: targetTaskId, name: targetTask.title },
                 });
+              } else {
+                toast.error(`Could not find target task with ID ${targetTaskId}`);
               }
+            } else if (targetTaskId === dragState.dependencyFrom.id) {
+              toast.error('Cannot create dependency to the same task');
             }
+          } else {
+            toast.error('Please drop on a task bar to create a dependency');
           }
         }
       }
@@ -442,7 +471,10 @@ export const MasterDataGanttView = ({
 
   // Create dependency from dialog
   const handleCreateDependency = async () => {
-    if (!dependencyDialog.from || !dependencyDialog.to) return;
+    if (!dependencyDialog.from || !dependencyDialog.to) {
+      toast.error('Missing dependency information');
+      return;
+    }
     
     const { from, to } = dependencyDialog;
     
@@ -453,6 +485,15 @@ export const MasterDataGanttView = ({
     let successorId = to.id;
     
     try {
+      console.log('Creating dependency:', {
+        predecessorType,
+        predecessorId,
+        successorType,
+        successorId,
+        dependencyType,
+        lagDays
+      });
+      
       await wbsService.createDependency(
         predecessorType,
         predecessorId,
@@ -462,11 +503,16 @@ export const MasterDataGanttView = ({
         lagDays
       );
       toast.success(`Dependency created: ${from.name} → ${to.name}`);
+      
+      // Refresh data to show new dependency
+      onRefresh?.();
       await loadDependencies();
+      
       setDependencyDialog({ open: false });
       setDependencyType('FS');
       setLagDays(0);
     } catch (error: any) {
+      console.error('Failed to create dependency:', error);
       toast.error(`Failed to create dependency: ${error.message}`);
     }
   };
@@ -688,18 +734,18 @@ export const MasterDataGanttView = ({
                             >
                               {/* Dependency handles */}
                               <div
-                                className="absolute left-0 top-0 bottom-0 w-2 bg-white/20 rounded-l cursor-pointer opacity-0 group-hover/bar:opacity-100 hover:bg-white/40 transition-all"
+                                className="absolute left-0 top-0 bottom-0 w-3 bg-white/30 rounded-l cursor-pointer opacity-0 group-hover/bar:opacity-100 hover:bg-white/60 transition-all z-10 flex items-center justify-center"
                                 onMouseDown={(e) => handleDependencyHandleMouseDown(e, task, 'left')}
-                                title="Drag to create dependency (predecessor)"
+                                title="Drag from here to create dependency (this task as predecessor)"
                               >
-                                <Link2 className="w-3 h-3 absolute left-0 top-1/2 -translate-y-1/2 text-white" />
+                                <Link2 className="w-3 h-3 text-white" />
                               </div>
                               <div
-                                className="absolute right-0 top-0 bottom-0 w-2 bg-white/20 rounded-r cursor-pointer opacity-0 group-hover/bar:opacity-100 hover:bg-white/40 transition-all"
+                                className="absolute right-0 top-0 bottom-0 w-3 bg-white/30 rounded-r cursor-pointer opacity-0 group-hover/bar:opacity-100 hover:bg-white/60 transition-all z-10 flex items-center justify-center"
                                 onMouseDown={(e) => handleDependencyHandleMouseDown(e, task, 'right')}
-                                title="Drag to create dependency (successor)"
+                                title="Drag from here to create dependency (this task as successor)"
                               >
-                                <Link2 className="w-3 h-3 absolute right-0 top-1/2 -translate-y-1/2 text-white" />
+                                <Link2 className="w-3 h-3 text-white" />
                               </div>
                               
                               <div className="px-2 py-1 text-xs font-medium text-white truncate pointer-events-none">

@@ -801,8 +801,8 @@ export const MasterDataGanttView = ({
       
       {/* Dependency Arrows SVG Overlay */}
       {dependencies.length > 0 && (
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-40" style={{ pointerEvents: 'none' }}>
-          <svg className="w-full h-full" style={{ pointerEvents: 'auto' }}>
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-40 pointer-events-none">
+          <svg className="w-full h-full">
             <defs>
               <marker
                 id="dependency-arrowhead"
@@ -879,29 +879,31 @@ export const MasterDataGanttView = ({
 
               return (
                 <g key={dep.id}>
-                  {/* Invisible wider path for easier clicking */}
-                  <path
-                    d={`M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`}
-                    stroke="transparent"
-                    strokeWidth="12"
-                    fill="none"
-                    style={{ 
-                      pointerEvents: 'stroke',
-                      cursor: 'pointer'
-                    }}
-                    onMouseEnter={() => setHoveredDependency(dep.id)}
-                    onMouseLeave={() => setHoveredDependency(null)}
-                    onClick={() => {
-                      if (predTask && succTask) {
-                        setSelectedDependencyForDelete({
-                          id: dep.id,
-                          fromName: predTask.title,
-                          toName: succTask.title,
-                          type: dep.dependency_type
-                        });
-                      }
-                    }}
-                  />
+                  {/* Invisible wider path for easier clicking - only when not dragging */}
+                  {dragState.type !== 'dependency' && (
+                    <path
+                      d={`M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`}
+                      stroke="transparent"
+                      strokeWidth="12"
+                      fill="none"
+                      className="pointer-events-auto"
+                      style={{ 
+                        cursor: 'pointer'
+                      }}
+                      onMouseEnter={() => setHoveredDependency(dep.id)}
+                      onMouseLeave={() => setHoveredDependency(null)}
+                      onClick={() => {
+                        if (predTask && succTask) {
+                          setSelectedDependencyForDelete({
+                            id: dep.id,
+                            fromName: predTask.title,
+                            toName: succTask.title,
+                            type: dep.dependency_type
+                          });
+                        }
+                      }}
+                    />
+                  )}
                   
                   {/* Visible dependency line */}
                   <path
@@ -911,8 +913,8 @@ export const MasterDataGanttView = ({
                     fill="none"
                     strokeOpacity={isHovered ? "0.9" : "0.6"}
                     markerEnd={isHovered ? "url(#dependency-arrowhead-hover)" : "url(#dependency-arrowhead)"}
+                    className="pointer-events-none"
                     style={{ 
-                      pointerEvents: 'none',
                       transition: 'all 150ms ease'
                     }}
                   >
@@ -924,10 +926,11 @@ export const MasterDataGanttView = ({
                     </title>
                   </path>
                   
-                  {/* Delete button on hover */}
-                  {isHovered && (
+                  {/* Delete button on hover - only when not dragging */}
+                  {isHovered && dragState.type !== 'dependency' && (
                     <g
-                      style={{ cursor: 'pointer', pointerEvents: 'auto' }}
+                      className="pointer-events-auto"
+                      style={{ cursor: 'pointer' }}
                       onClick={() => {
                         if (predTask && succTask) {
                           setSelectedDependencyForDelete({

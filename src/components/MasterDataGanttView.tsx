@@ -387,11 +387,36 @@ export const MasterDataGanttView = ({
           
           if (newStart >= 0) {
             try {
+              // Find the task being moved
+              const movedTask = findTaskById(dragState.taskId);
+              
+              // Update the parent task first
               await wbsService.updateMasterTask(dragState.taskId, {
                 planned_start_offset_days: newStart,
                 planned_end_offset_days: newEnd,
               });
-              toast.success(`Task dates updated: Day ${newStart} to ${newEnd}`);
+              
+              // If this is a parent task (not a subtask), also move all its subtasks
+              if (movedTask && !movedTask.parent_task_id && movedTask.subtasks && movedTask.subtasks.length > 0) {
+                // Move each subtask by the same offset
+                for (const subtask of movedTask.subtasks) {
+                  const subtaskNewStart = subtask.planned_start_offset_days + offsetDays;
+                  const subtaskNewEnd = subtask.planned_end_offset_days + offsetDays;
+                  
+                  // Ensure subtask stays within parent task's new range
+                  const constrainedStart = Math.max(newStart, subtaskNewStart);
+                  const constrainedEnd = Math.min(newEnd, subtaskNewEnd);
+                  
+                  await wbsService.updateMasterTask(subtask.id, {
+                    planned_start_offset_days: constrainedStart,
+                    planned_end_offset_days: constrainedEnd,
+                  });
+                }
+                toast.success(`Task and ${movedTask.subtasks.length} subtask(s) moved: Day ${newStart} to ${newEnd}`);
+              } else {
+                toast.success(`Task dates updated: Day ${newStart} to ${newEnd}`);
+              }
+              
               // Refresh data to reflect changes
               onRefresh?.();
               await loadDependencies();

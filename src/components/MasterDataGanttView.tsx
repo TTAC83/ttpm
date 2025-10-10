@@ -65,6 +65,13 @@ export const MasterDataGanttView = ({
   
   // Dependencies
   const [dependencies, setDependencies] = useState<any[]>([]);
+  const [hoveredDependency, setHoveredDependency] = useState<string | null>(null);
+  const [selectedDependencyForDelete, setSelectedDependencyForDelete] = useState<{
+    id: string;
+    fromName: string;
+    toName: string;
+    type: string;
+  } | null>(null);
 
   // Drag states
   const [dragState, setDragState] = useState<{
@@ -516,6 +523,26 @@ export const MasterDataGanttView = ({
       toast.error(`Failed to create dependency: ${error.message}`);
     }
   };
+
+  // Delete dependency
+  const handleDeleteDependency = async () => {
+    if (!selectedDependencyForDelete) return;
+    
+    try {
+      await wbsService.deleteDependency(selectedDependencyForDelete.id);
+      toast.success(`Dependency deleted: ${selectedDependencyForDelete.fromName} → ${selectedDependencyForDelete.toName}`);
+      
+      // Refresh data
+      onRefresh?.();
+      await loadDependencies();
+      
+      setSelectedDependencyForDelete(null);
+    } catch (error: any) {
+      console.error('Failed to delete dependency:', error);
+      toast.error(`Failed to delete dependency: ${error.message}`);
+    }
+  };
+
   return (
     <div className="relative" style={{ height: 'calc(100vh - 24rem)' }}>
       {/* Main scrollable content */}
@@ -958,6 +985,43 @@ export const MasterDataGanttView = ({
             </Button>
             <Button onClick={handleCreateDependency}>
               Create Dependency
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete dependency confirmation dialog */}
+      <Dialog open={!!selectedDependencyForDelete} onOpenChange={(open) => {
+        if (!open) setSelectedDependencyForDelete(null);
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Dependency</DialogTitle>
+          </DialogHeader>
+          {selectedDependencyForDelete && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Are you sure you want to delete this dependency?
+              </p>
+              <div className="p-3 bg-muted rounded-lg space-y-2">
+                <div className="text-sm">
+                  <span className="font-medium">From:</span> {selectedDependencyForDelete.fromName}
+                </div>
+                <div className="text-sm">
+                  <span className="font-medium">To:</span> {selectedDependencyForDelete.toName}
+                </div>
+                <div className="text-sm">
+                  <span className="font-medium">Type:</span> {selectedDependencyForDelete.type}
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedDependencyForDelete(null)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteDependency}>
+              Delete Dependency
             </Button>
           </DialogFooter>
         </DialogContent>

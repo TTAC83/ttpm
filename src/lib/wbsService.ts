@@ -368,6 +368,54 @@ class WBSService {
       (steps || []).map(step => this.updateStepDatesFromTasks(step.id))
     );
   }
+
+  // Calculate and update parent task dates from sub-tasks
+  async updateParentTaskDatesFromSubTasks(parentTaskId: number): Promise<void> {
+    // Get all sub-tasks for this parent task (only direct children)
+    const { data: subTasks, error: subTasksError } = await supabase
+      .from('master_tasks')
+      .select('planned_start_offset_days, planned_end_offset_days')
+      .eq('parent_task_id', parentTaskId);
+
+    if (subTasksError) throw subTasksError;
+
+    if (!subTasks || subTasks.length === 0) {
+      // No sub-tasks - leave parent dates as they are (manual dates)
+      return;
+    }
+
+    // Calculate min start and max end across all sub-tasks
+    const startOffsets = subTasks
+      .map(t => t.planned_start_offset_days)
+      .filter((d): d is number => d !== null && d !== undefined);
+    
+    const endOffsets = subTasks
+      .map(t => t.planned_end_offset_days)
+      .filter((d): d is number => d !== null && d !== undefined);
+
+    const minStart = startOffsets.length > 0 ? Math.min(...startOffsets) : null;
+    const maxEnd = endOffsets.length > 0 ? Math.max(...endOffsets) : null;
+
+    // Update the parent task with calculated dates
+    const { error: updateError } = await supabase
+      .from('master_tasks')
+      .update({
+        planned_start_offset_days: minStart,
+        planned_end_offset_days: maxEnd
+      })
+      .eq('id', parentTaskId);
+
+    if (updateError) throw updateError;
+  }
+
+  // Recalculate task and step dates after sub-task changes (cascading recalculation)
+  async recalculateTaskAndStepDates(taskId: number, stepId: number): Promise<void> {
+    // First update the parent task dates from its sub-tasks
+    await this.updateParentTaskDatesFromSubTasks(taskId);
+    
+    // Then update the step dates from all tasks in the step
+    await this.updateStepDatesFromTasks(stepId);
+  }
 }
 
 export const wbsService = new WBSService();

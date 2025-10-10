@@ -122,6 +122,8 @@ export function WBSTaskDialog({ isOpen, onClose, step, tasks, onSave }: WBSTaskD
   const handleSubTaskCreate = async (parentTaskId: number, subTask: Omit<MasterTask, "id" | "parent_task_id" | "subtasks">) => {
     try {
       await wbsService.createSubTask(parentTaskId, subTask);
+      // Recalculate parent task and step dates
+      await wbsService.recalculateTaskAndStepDates(parentTaskId, step.id);
       // Reload tasks to get updated hierarchy
       const updatedTasks = await wbsService.getStepTasks(step.id);
       onSave(updatedTasks);
@@ -134,7 +136,17 @@ export function WBSTaskDialog({ isOpen, onClose, step, tasks, onSave }: WBSTaskD
 
   const handleSubTaskUpdate = async (taskId: number, updates: Partial<MasterTask>) => {
     try {
+      // Check if dates changed
+      const task = tasks.find(t => t.subtasks?.some(st => st.id === taskId));
+      const parentTaskId = task?.id;
+      
       await wbsService.updateMasterTask(taskId, updates);
+      
+      // Recalculate parent task and step dates if dates were updated
+      if (parentTaskId && (updates.planned_start_offset_days !== undefined || updates.planned_end_offset_days !== undefined)) {
+        await wbsService.recalculateTaskAndStepDates(parentTaskId, step.id);
+      }
+      
       // Reload tasks to get updated hierarchy
       const updatedTasks = await wbsService.getStepTasks(step.id);
       onSave(updatedTasks);
@@ -147,7 +159,17 @@ export function WBSTaskDialog({ isOpen, onClose, step, tasks, onSave }: WBSTaskD
 
   const handleSubTaskDelete = async (taskId: number) => {
     try {
+      // Find parent task before deleting
+      const task = tasks.find(t => t.subtasks?.some(st => st.id === taskId));
+      const parentTaskId = task?.id;
+      
       await wbsService.deleteMasterTask(taskId);
+      
+      // Recalculate parent task and step dates
+      if (parentTaskId) {
+        await wbsService.recalculateTaskAndStepDates(parentTaskId, step.id);
+      }
+      
       // Reload tasks to get updated hierarchy
       const updatedTasks = await wbsService.getStepTasks(step.id);
       onSave(updatedTasks);
@@ -263,6 +285,7 @@ export function WBSTaskDialog({ isOpen, onClose, step, tasks, onSave }: WBSTaskD
                           {task.technology_scope === "both" ? "B" : task.technology_scope === "iot" ? "I" : "V"}
                         </Badge>
                         <Badge variant="outline" className="text-xs">
+                          {task.subtasks && task.subtasks.length > 0 ? "🔄 " : ""}
                           {task.planned_start_offset_days}-{task.planned_end_offset_days}d
                         </Badge>
                         <div className="flex gap-1">

@@ -50,13 +50,13 @@ export function SubTaskManager({
     { value: "customer_project_lead", label: "Customer Project Lead" }
   ];
 
-  const handleCreateSubTask = () => {
+  const handleCreateSubTask = async () => {
     if (!newSubTask.title) {
       toast.error("Sub-task title is required");
       return;
     }
 
-    onSubTaskCreate({
+    await onSubTaskCreate({
       ...newSubTask,
       step_id: parentTask.step_id
     });
@@ -71,30 +71,36 @@ export function SubTaskManager({
       assigned_role: "implementation_lead"
     });
     setIsCreating(false);
-    toast.success("Sub-task created successfully");
   };
 
-  const handleUpdateSubTask = (taskId: number, updates: Partial<MasterTask>) => {
-    onSubTaskUpdate(taskId, updates);
+  const handleUpdateSubTask = async (taskId: number, updates: Partial<MasterTask>) => {
+    await onSubTaskUpdate(taskId, updates);
     setEditingSidebar(null);
-    toast.success("Sub-task updated successfully");
   };
 
   const handleEditSubTask = (subTask: MasterTask) => {
     setEditingSidebar(subTask);
   };
 
-  const handleDeleteSubTask = (subTaskId: number) => {
+  const handleDeleteSubTask = async (subTaskId: number) => {
     if (window.confirm("Are you sure you want to delete this sub-task?")) {
-      onSubTaskDelete(subTaskId);
-      toast.success("Sub-task deleted successfully");
+      await onSubTaskDelete(subTaskId);
     }
   };
+
+  const hasSubTasks = parentTask.subtasks && parentTask.subtasks.length > 0;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-medium">Sub-tasks for: {parentTask.title}</h4>
+        <div className="flex items-center gap-2">
+          <h4 className="text-sm font-medium">Sub-tasks for: {parentTask.title}</h4>
+          {hasSubTasks && (
+            <Badge variant="secondary" className="text-xs">
+              🔄 Auto: Days {parentTask.planned_start_offset_days}-{parentTask.planned_end_offset_days}
+            </Badge>
+          )}
+        </div>
         <Button 
           variant="outline" 
           size="sm" 

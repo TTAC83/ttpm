@@ -363,6 +363,11 @@ export const MasterDataGanttView = ({
                                 <span className={`font-medium text-sm flex-1 ${isSubtask ? 'text-muted-foreground' : ''}`}>
                                   {task.title}
                                 </span>
+                                {!isSubtask && task.subtasks && task.subtasks.length > 0 && (
+                                  <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                                    🔄 Auto
+                                  </Badge>
+                                )}
                                 <Badge 
                                   variant="outline" 
                                   className={`text-xs px-1.5 py-0 border-0 text-white flex-shrink-0 ${getTechScopeColor(task.technology_scope)}`}

@@ -297,8 +297,12 @@ export const MasterDataManagement = () => {
       if (error) throw error;
       await fetchMasterData();
       
-      // Auto-recalculate step dates
-      await wbsService.updateStepDatesFromTasks(stepId);
+      // Auto-recalculate dates (parent task if subtask, step if main task)
+      if (parentTaskId) {
+        await wbsService.recalculateTaskAndStepDates(parentTaskId, stepId);
+      } else {
+        await wbsService.updateStepDatesFromTasks(stepId);
+      }
       await fetchMasterData();
       
       toast({
@@ -324,21 +328,29 @@ export const MasterDataManagement = () => {
 
     try {
       let stepIdToRecalc: number | null = null;
+      let parentTaskIdToRecalc: number | null = null;
       
       if (type === 'step') {
         await supabase.from('master_steps').delete().eq('id', parseInt(id));
       } else {
-        // Get step_id before deleting for recalculation
+        // Get step_id and parent_task_id before deleting for recalculation
         const task = tasks.find(t => t.id === parseInt(id));
         stepIdToRecalc = task?.step_id || null;
+        parentTaskIdToRecalc = task?.parent_task_id || null;
         await supabase.from('master_tasks').delete().eq('id', parseInt(id));
       }
 
       await fetchMasterData();
       
-      // Recalculate step dates if we deleted a task
+      // Recalculate dates if we deleted a task
       if (stepIdToRecalc) {
-        await wbsService.updateStepDatesFromTasks(stepIdToRecalc);
+        if (parentTaskIdToRecalc) {
+          // If it's a subtask, recalculate parent task and step dates
+          await wbsService.recalculateTaskAndStepDates(parentTaskIdToRecalc, stepIdToRecalc);
+        } else {
+          // If it's a main task, just recalculate step dates
+          await wbsService.updateStepDatesFromTasks(stepIdToRecalc);
+        }
         await fetchMasterData();
       }
       
@@ -738,6 +750,7 @@ const DetailSidebar = ({ node, onClose, onUpdate }: DetailSidebarProps) => {
       setLoading(true);
       const [type, id] = node.id.split('-');
       let stepIdToRecalc: number | null = null;
+      let parentTaskIdToRecalc: number | null = null;
 
       if (type === 'step') {
         const { error } = await supabase
@@ -755,6 +768,7 @@ const DetailSidebar = ({ node, onClose, onUpdate }: DetailSidebarProps) => {
       } else {
         const task = node.data as MasterTask;
         stepIdToRecalc = task.step_id;
+        parentTaskIdToRecalc = task.parent_task_id || null;
         
         const { data, error } = await supabase
           .from('master_tasks')
@@ -784,9 +798,15 @@ const DetailSidebar = ({ node, onClose, onUpdate }: DetailSidebarProps) => {
         description: "Changes saved successfully",
       });
 
-      // Recalculate step dates if we updated a task's dates
+      // Recalculate dates based on what was updated
       if (stepIdToRecalc) {
-        await wbsService.updateStepDatesFromTasks(stepIdToRecalc);
+        if (parentTaskIdToRecalc) {
+          // If it's a subtask, recalculate parent task and step dates
+          await wbsService.recalculateTaskAndStepDates(parentTaskIdToRecalc, stepIdToRecalc);
+        } else {
+          // If it's a main task, recalculate step dates
+          await wbsService.updateStepDatesFromTasks(stepIdToRecalc);
+        }
       }
       
       onUpdate();

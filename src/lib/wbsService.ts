@@ -537,7 +537,11 @@ class WBSService {
     
     if (newStartDate !== itemDates.planned_start_offset_days || 
         newEndDate !== itemDates.planned_end_offset_days) {
-      await this.updateItemDates(itemType, itemId, newStartDate, newEndDate);
+      
+      // Calculate the offset to shift subtasks
+      const offsetDays = newStartDate - itemDates.planned_start_offset_days;
+      
+      await this.updateItemDates(itemType, itemId, newStartDate, newEndDate, offsetDays);
       
       for (const succ of deps.successors) {
         await this.recalculateDatesWithDependencies(succ.successor_type, succ.successor_id);
@@ -575,7 +579,8 @@ class WBSService {
     itemType: 'step' | 'task' | 'subtask',
     itemId: number,
     startDays: number,
-    endDays: number
+    endDays: number,
+    offsetDays: number = 0
   ): Promise<void> {
     const table = itemType === 'step' ? 'master_steps' : 'master_tasks';
     const { error } = await supabase
@@ -587,6 +592,26 @@ class WBSService {
       .eq('id', itemId);
     
     if (error) throw error;
+
+    // If this is a task (not subtask) and there's an offset, shift all child subtasks
+    if (itemType === 'task' && offsetDays !== 0) {
+      const { data: subtasks } = await supabase
+        .from('master_tasks')
+        .select('id, planned_start_offset_days, planned_end_offset_days')
+        .eq('parent_task_id', itemId);
+      
+      if (subtasks && subtasks.length > 0) {
+        for (const subtask of subtasks) {
+          await supabase
+            .from('master_tasks')
+            .update({
+              planned_start_offset_days: subtask.planned_start_offset_days + offsetDays,
+              planned_end_offset_days: subtask.planned_end_offset_days + offsetDays
+            })
+            .eq('id', subtask.id);
+        }
+      }
+    }
   }
 
   private async checkCircularDependency(

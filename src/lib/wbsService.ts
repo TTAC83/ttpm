@@ -593,27 +593,36 @@ class WBSService {
     
     if (error) throw error;
 
-    // If this is a task (not subtask) and there's an offset, shift all child subtasks
+    // If this is a task (not subtask) and there's an offset, shift all descendant subtasks
     if (itemType === 'task' && offsetDays !== 0) {
-      const { data: subtasks } = await supabase
-        .from('master_tasks')
-        .select('id, planned_start_offset_days, planned_end_offset_days')
-        .eq('parent_task_id', itemId);
-      
-      if (subtasks && subtasks.length > 0) {
-        for (const subtask of subtasks) {
-          await supabase
-            .from('master_tasks')
-            .update({
-              planned_start_offset_days: subtask.planned_start_offset_days + offsetDays,
-              planned_end_offset_days: subtask.planned_end_offset_days + offsetDays
-            })
-            .eq('id', subtask.id);
-        }
-      }
+      await this.shiftSubtasksRecursive(itemId, offsetDays);
     }
   }
+  
+  // Recursively shift all descendant subtasks by offsetDays
+  private async shiftSubtasksRecursive(parentId: number, offsetDays: number): Promise<void> {
+    const { data: subtasks, error } = await supabase
+      .from('master_tasks')
+      .select('id, planned_start_offset_days, planned_end_offset_days')
+      .eq('parent_task_id', parentId);
+    if (error) throw error;
+    if (!subtasks || subtasks.length === 0) return;
 
+    await Promise.all(
+      subtasks.map((sub: any) =>
+        supabase
+          .from('master_tasks')
+          .update({
+            planned_start_offset_days: (sub.planned_start_offset_days ?? 0) + offsetDays,
+            planned_end_offset_days: (sub.planned_end_offset_days ?? 0) + offsetDays,
+          })
+          .eq('id', sub.id)
+      )
+    );
+
+    await Promise.all(subtasks.map((sub: any) => this.shiftSubtasksRecursive(sub.id, offsetDays)));
+  }
+  
   private async checkCircularDependency(
     predecessorType: string,
     predecessorId: number,

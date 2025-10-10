@@ -49,6 +49,23 @@ export interface ProjectTask {
   subtasks?: ProjectTask[];
 }
 
+export interface TaskDependency {
+  dependency_id: string;
+  predecessor_type: string;
+  predecessor_id: number;
+  successor_type: string;
+  successor_id: number;
+  dependency_type: string;
+  lag_days: number;
+}
+
+export interface ItemWithDependencies {
+  item_type: 'step' | 'task' | 'subtask';
+  item_id: number;
+  predecessors: any[];
+  successors: any[];
+}
+
 class WBSService {
   async getMasterSteps(): Promise<MasterStep[]> {
     const { data, error } = await supabase
@@ -119,6 +136,24 @@ class WBSService {
       .eq("id", taskId);
 
     if (error) throw error;
+
+    // If dates changed, cascade to successors
+    if (updates.planned_start_offset_days !== undefined || 
+        updates.planned_end_offset_days !== undefined) {
+      
+      const { data: task } = await supabase
+        .from("master_tasks")
+        .select("parent_task_id")
+        .eq("id", taskId)
+        .single();
+      
+      const itemType = task?.parent_task_id ? 'subtask' : 'task';
+      
+      const deps = await this.getDependenciesForItem(itemType, taskId);
+      for (const succ of deps.successors) {
+        await this.recalculateDatesWithDependencies(succ.successor_type, succ.successor_id);
+      }
+    }
   }
 
   // Delete a master task (and its subtasks due to CASCADE)
@@ -367,6 +402,230 @@ class WBSService {
     await Promise.all(
       (steps || []).map(step => this.updateStepDatesFromTasks(step.id))
     );
+  }
+
+  // ===== DEPENDENCY MANAGEMENT =====
+  
+  async getDependenciesForItem(
+    itemType: 'step' | 'task' | 'subtask',
+    itemId: number
+  ): Promise<ItemWithDependencies> {
+    const [predecessorsResult, successorsResult] = await Promise.all([
+      supabase.rpc('get_item_predecessors', {
+        p_item_type: itemType,
+        p_item_id: itemId
+      }),
+      supabase.rpc('get_item_successors', {
+        p_item_type: itemType,
+        p_item_id: itemId
+      })
+    ]);
+
+    if (predecessorsResult.error) throw predecessorsResult.error;
+    if (successorsResult.error) throw successorsResult.error;
+
+    return {
+      item_type: itemType,
+      item_id: itemId,
+      predecessors: predecessorsResult.data || [],
+      successors: successorsResult.data || []
+    };
+  }
+
+  async createDependency(
+    predecessorType: 'step' | 'task' | 'subtask',
+    predecessorId: number,
+    successorType: 'step' | 'task' | 'subtask',
+    successorId: number,
+    dependencyType: 'FS' | 'SS' | 'FF' | 'SF' = 'FS',
+    lagDays: number = 0
+  ): Promise<void> {
+    // Prevent circular dependencies
+    const isCircular = await this.checkCircularDependency(
+      predecessorType,
+      predecessorId,
+      successorType,
+      successorId
+    );
+    
+    if (isCircular) {
+      throw new Error('Cannot create dependency: would create circular dependency');
+    }
+
+    const { error } = await supabase
+      .from('master_task_dependencies')
+      .insert({
+        predecessor_type: predecessorType,
+        predecessor_id: predecessorId,
+        successor_type: successorType,
+        successor_id: successorId,
+        dependency_type: dependencyType,
+        lag_days: lagDays
+      });
+
+    if (error) throw error;
+
+    // Recalculate dates for successor item
+    await this.recalculateDatesWithDependencies(successorType, successorId);
+  }
+
+  async deleteDependency(dependencyId: string): Promise<void> {
+    const { error } = await supabase
+      .from('master_task_dependencies')
+      .delete()
+      .eq('id', dependencyId);
+
+    if (error) throw error;
+  }
+
+  async getAllDependencies(): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('master_task_dependencies')
+      .select('*');
+    
+    if (error) throw error;
+    return data || [];
+  }
+
+  // ===== DATE CASCADING WITH DEPENDENCIES =====
+
+  async recalculateDatesWithDependencies(
+    itemType: 'step' | 'task' | 'subtask',
+    itemId: number
+  ): Promise<void> {
+    const deps = await this.getDependenciesForItem(itemType, itemId);
+    const itemDates = await this.getItemDates(itemType, itemId);
+    
+    let newStartDate = itemDates.planned_start_offset_days;
+    let newEndDate = itemDates.planned_end_offset_days;
+    
+    for (const pred of deps.predecessors) {
+      const predDates = await this.getItemDates(pred.predecessor_type, pred.predecessor_id);
+      
+      switch (pred.dependency_type) {
+        case 'FS':
+          const requiredStart = predDates.planned_end_offset_days + pred.lag_days;
+          if (requiredStart > newStartDate) {
+            newStartDate = requiredStart;
+            newEndDate = newStartDate + (itemDates.planned_end_offset_days - itemDates.planned_start_offset_days);
+          }
+          break;
+        
+        case 'SS':
+          const requiredStartSS = predDates.planned_start_offset_days + pred.lag_days;
+          if (requiredStartSS > newStartDate) {
+            newStartDate = requiredStartSS;
+            newEndDate = newStartDate + (itemDates.planned_end_offset_days - itemDates.planned_start_offset_days);
+          }
+          break;
+        
+        case 'FF':
+          const requiredEndFF = predDates.planned_end_offset_days + pred.lag_days;
+          if (requiredEndFF > newEndDate) {
+            newEndDate = requiredEndFF;
+          }
+          break;
+        
+        case 'SF':
+          const requiredEndSF = predDates.planned_start_offset_days + pred.lag_days;
+          if (requiredEndSF > newEndDate) {
+            newEndDate = requiredEndSF;
+          }
+          break;
+      }
+    }
+    
+    if (newStartDate !== itemDates.planned_start_offset_days || 
+        newEndDate !== itemDates.planned_end_offset_days) {
+      await this.updateItemDates(itemType, itemId, newStartDate, newEndDate);
+      
+      for (const succ of deps.successors) {
+        await this.recalculateDatesWithDependencies(succ.successor_type, succ.successor_id);
+      }
+    }
+  }
+
+  private async getItemDates(
+    itemType: 'step' | 'task' | 'subtask',
+    itemId: number
+  ): Promise<{ planned_start_offset_days: number; planned_end_offset_days: number }> {
+    if (itemType === 'step') {
+      const { data, error } = await supabase
+        .from('master_steps')
+        .select('planned_start_offset_days, planned_end_offset_days')
+        .eq('id', itemId)
+        .single();
+      if (error) throw error;
+      return {
+        planned_start_offset_days: data.planned_start_offset_days || 0,
+        planned_end_offset_days: data.planned_end_offset_days || 0
+      };
+    } else {
+      const { data, error } = await supabase
+        .from('master_tasks')
+        .select('planned_start_offset_days, planned_end_offset_days')
+        .eq('id', itemId)
+        .single();
+      if (error) throw error;
+      return data;
+    }
+  }
+
+  private async updateItemDates(
+    itemType: 'step' | 'task' | 'subtask',
+    itemId: number,
+    startDays: number,
+    endDays: number
+  ): Promise<void> {
+    const table = itemType === 'step' ? 'master_steps' : 'master_tasks';
+    const { error } = await supabase
+      .from(table)
+      .update({
+        planned_start_offset_days: startDays,
+        planned_end_offset_days: endDays
+      })
+      .eq('id', itemId);
+    
+    if (error) throw error;
+  }
+
+  private async checkCircularDependency(
+    predecessorType: string,
+    predecessorId: number,
+    successorType: string,
+    successorId: number
+  ): Promise<boolean> {
+    if (predecessorType === successorType && predecessorId === successorId) {
+      return true;
+    }
+
+    const visited = new Set<string>();
+    const stack: Array<{type: string, id: number}> = [{type: successorType, id: successorId}];
+
+    while (stack.length > 0) {
+      const current = stack.pop()!;
+      const key = `${current.type}-${current.id}`;
+      
+      if (visited.has(key)) continue;
+      visited.add(key);
+
+      if (current.type === predecessorType && current.id === predecessorId) {
+        return true;
+      }
+
+      const { data } = await supabase.rpc('get_item_predecessors', {
+        p_item_type: current.type,
+        p_item_id: current.id
+      });
+
+      if (data) {
+        for (const dep of data) {
+          stack.push({type: dep.predecessor_type, id: dep.predecessor_id});
+        }
+      }
+    }
+
+    return false;
   }
 
   // Calculate and update parent task dates from sub-tasks

@@ -1867,6 +1867,42 @@ export type Database = {
         }
         Relationships: []
       }
+      master_task_dependencies: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          dependency_type: string
+          id: string
+          lag_days: number | null
+          predecessor_id: number
+          predecessor_type: string
+          successor_id: number
+          successor_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          dependency_type?: string
+          id?: string
+          lag_days?: number | null
+          predecessor_id: number
+          predecessor_type: string
+          successor_id: number
+          successor_type: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          dependency_type?: string
+          id?: string
+          lag_days?: number | null
+          predecessor_id?: number
+          predecessor_type?: string
+          successor_id?: number
+          successor_type?: string
+        }
+        Relationships: []
+      }
       master_tasks: {
         Row: {
           assigned_role: string | null
@@ -3938,6 +3974,26 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_item_predecessors: {
+        Args: { p_item_id: number; p_item_type: string }
+        Returns: {
+          dependency_id: string
+          dependency_type: string
+          lag_days: number
+          predecessor_id: number
+          predecessor_type: string
+        }[]
+      }
+      get_item_successors: {
+        Args: { p_item_id: number; p_item_type: string }
+        Returns: {
+          dependency_id: string
+          dependency_type: string
+          lag_days: number
+          successor_id: number
+          successor_type: string
+        }[]
       }
       get_safe_profile_info: {
         Args: { target_user_id: string }

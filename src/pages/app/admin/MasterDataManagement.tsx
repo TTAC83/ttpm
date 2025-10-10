@@ -29,6 +29,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { MasterDataGanttView } from '@/components/MasterDataGanttView';
 import { wbsService } from '@/lib/wbsService';
+import { DependencyPanel } from '@/components/DependencyPanel';
+import { Link as LinkIcon } from 'lucide-react';
 
 interface MasterStep {
   id: number;
@@ -77,6 +79,12 @@ export const MasterDataManagement = () => {
   const [editingInline, setEditingInline] = useState<string | null>(null);
   const [inlineValue, setInlineValue] = useState('');
   const [viewMode, setViewMode] = useState<'tree' | 'gantt'>('tree');
+  const [dependencyPanelOpen, setDependencyPanelOpen] = useState(false);
+  const [selectedForDependency, setSelectedForDependency] = useState<{
+    type: 'step' | 'task' | 'subtask';
+    id: number;
+    name: string;
+  } | null>(null);
 
   useEffect(() => {
     if (isInternalAdmin()) {
@@ -539,6 +547,27 @@ export const MasterDataManagement = () => {
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => {
+                const type = node.type as 'step' | 'task' | 'subtask';
+                const id = node.type === 'step' 
+                  ? (node.data as MasterStep).id 
+                  : (node.data as MasterTask).id;
+                const name = node.type === 'step'
+                  ? (node.data as MasterStep).name
+                  : (node.data as MasterTask).title;
+                  
+                setSelectedForDependency({ type, id, name });
+                setDependencyPanelOpen(true);
+              }}
+              className="h-6 w-6 p-0"
+              title="Manage Dependencies"
+            >
+              <LinkIcon className="h-3.5 w-3.5" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
               className="h-6 w-6 p-0"
               onClick={() => {
                 const name = node.type === 'step' 
@@ -706,6 +735,22 @@ export const MasterDataManagement = () => {
           node={selectedNode}
           onClose={() => setSidebarOpen(false)}
           onUpdate={fetchMasterData}
+        />
+      )}
+
+      {/* Dependency Panel */}
+      {selectedForDependency && (
+        <DependencyPanel
+          open={dependencyPanelOpen}
+          onOpenChange={setDependencyPanelOpen}
+          itemType={selectedForDependency.type}
+          itemId={selectedForDependency.id}
+          itemName={selectedForDependency.name}
+          allSteps={steps.map(s => ({ id: s.id, name: s.name }))}
+          allTasks={tasks.map(t => ({ id: t.id, title: t.title, step_id: t.step_id }))}
+          onDependencyChange={() => {
+            fetchMasterData();
+          }}
         />
       )}
     </div>

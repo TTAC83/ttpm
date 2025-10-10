@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Edit, Plus, Trash2 } from 'lucide-react';
+import { wbsService } from '@/lib/wbsService';
 
 interface MasterStep {
   id: number;
@@ -52,6 +53,22 @@ export const MasterDataGanttView = ({
   const verticalRef = useRef<HTMLDivElement | null>(null);
   const [vScrollTop, setVScrollTop] = useState(0);
   const [vMaxScrollTop, setVMaxScrollTop] = useState(0);
+  
+  // Dependencies
+  const [dependencies, setDependencies] = useState<any[]>([]);
+
+  useEffect(() => {
+    loadDependencies();
+  }, [steps, tasks]);
+
+  const loadDependencies = async () => {
+    try {
+      const deps = await wbsService.getAllDependencies();
+      setDependencies(deps);
+    } catch (error) {
+      console.error('Error loading dependencies:', error);
+    }
+  };
   
   const ganttData = useMemo(() => {
     const maxDays = Math.max(
@@ -443,6 +460,7 @@ export const MasterDataGanttView = ({
                             
                             {/* Task bar */}
                             <div
+                              id={`gantt-bar-${task.parent_task_id ? 'subtask' : 'task'}-${task.id}`}
                               className={`absolute top-2 bottom-2 rounded transition-all cursor-pointer ${
                                 task.parent_task_id 
                                   ? 'bg-orange-400 hover:bg-orange-500' 
@@ -472,6 +490,86 @@ export const MasterDataGanttView = ({
         </div>
       </div>
       <HorizontalScrollbar />
+      
+      {/* Dependency Arrows SVG Overlay */}
+      {dependencies.length > 0 && (
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
+          <svg className="w-full h-full">
+            <defs>
+              <marker
+                id="dependency-arrowhead"
+                markerWidth="10"
+                markerHeight="7"
+                refX="9"
+                refY="3.5"
+                orient="auto"
+              >
+                <polygon points="0 0, 10 3.5, 0 7" fill="hsl(var(--primary))" fillOpacity="0.6" />
+              </marker>
+            </defs>
+            {dependencies.map((dep) => {
+              // Find predecessor and successor bars
+              const predEl = document.getElementById(`gantt-bar-${dep.predecessor_type}-${dep.predecessor_id}`);
+              const succEl = document.getElementById(`gantt-bar-${dep.successor_type}-${dep.successor_id}`);
+              
+              if (!predEl || !succEl) return null;
+              
+              const predRect = predEl.getBoundingClientRect();
+              const succRect = succEl.getBoundingClientRect();
+              const containerRect = verticalRef.current?.getBoundingClientRect();
+              
+              if (!containerRect) return null;
+              
+              // Calculate positions relative to container
+              let x1, y1, x2, y2;
+              
+              switch (dep.dependency_type) {
+                case 'FS': // Finish-to-Start
+                  x1 = predRect.right - containerRect.left;
+                  y1 = predRect.top + predRect.height / 2 - containerRect.top;
+                  x2 = succRect.left - containerRect.left;
+                  y2 = succRect.top + succRect.height / 2 - containerRect.top;
+                  break;
+                case 'SS': // Start-to-Start
+                  x1 = predRect.left - containerRect.left;
+                  y1 = predRect.top + predRect.height / 2 - containerRect.top;
+                  x2 = succRect.left - containerRect.left;
+                  y2 = succRect.top + succRect.height / 2 - containerRect.top;
+                  break;
+                case 'FF': // Finish-to-Finish
+                  x1 = predRect.right - containerRect.left;
+                  y1 = predRect.top + predRect.height / 2 - containerRect.top;
+                  x2 = succRect.right - containerRect.left;
+                  y2 = succRect.top + succRect.height / 2 - containerRect.top;
+                  break;
+                case 'SF': // Start-to-Finish
+                  x1 = predRect.left - containerRect.left;
+                  y1 = predRect.top + predRect.height / 2 - containerRect.top;
+                  x2 = succRect.right - containerRect.left;
+                  y2 = succRect.top + succRect.height / 2 - containerRect.top;
+                  break;
+                default:
+                  return null;
+              }
+              
+              return (
+                <g key={dep.id}>
+                  <line
+                    x1={x1}
+                    y1={y1}
+                    x2={x2}
+                    y2={y2}
+                    stroke="hsl(var(--primary))"
+                    strokeWidth="2"
+                    strokeOpacity="0.6"
+                    markerEnd="url(#dependency-arrowhead)"
+                  />
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+      )}
     </div>
   );
 };

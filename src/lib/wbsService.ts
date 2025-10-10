@@ -604,28 +604,48 @@ class WBSService {
     }
   }
   
-  // Recursively shift all descendant subtasks by offsetDays
+  // Recursively shift all descendant subtasks by offsetDays, clamping to parent boundaries
   private async shiftSubtasksRecursive(parentId: number, offsetDays: number): Promise<void> {
+    // Get parent task dates to use as boundaries
+    const { data: parent, error: parentError } = await supabase
+      .from('master_tasks')
+      .select('planned_start_offset_days, planned_end_offset_days')
+      .eq('id', parentId)
+      .single();
+    
+    if (parentError) throw parentError;
+    if (!parent) return;
+
+    const parentStart = parent.planned_start_offset_days ?? 0;
+    const parentEnd = parent.planned_end_offset_days ?? 0;
+
     const { data: subtasks, error } = await supabase
       .from('master_tasks')
       .select('id, planned_start_offset_days, planned_end_offset_days')
       .eq('parent_task_id', parentId);
+    
     if (error) throw error;
     if (!subtasks || subtasks.length === 0) return;
 
-    await Promise.all(
-      subtasks.map((sub: any) =>
-        supabase
-          .from('master_tasks')
-          .update({
-            planned_start_offset_days: (sub.planned_start_offset_days ?? 0) + offsetDays,
-            planned_end_offset_days: (sub.planned_end_offset_days ?? 0) + offsetDays,
-          })
-          .eq('id', sub.id)
-      )
-    );
-
-    await Promise.all(subtasks.map((sub: any) => this.shiftSubtasksRecursive(sub.id, offsetDays)));
+    for (const sub of subtasks) {
+      const newStart = (sub.planned_start_offset_days ?? 0) + offsetDays;
+      const newEnd = (sub.planned_end_offset_days ?? 0) + offsetDays;
+      
+      // Clamp to parent boundaries
+      const clampedStart = Math.max(parentStart, Math.min(newStart, parentEnd));
+      const clampedEnd = Math.max(parentStart, Math.min(newEnd, parentEnd));
+      
+      await supabase
+        .from('master_tasks')
+        .update({
+          planned_start_offset_days: clampedStart,
+          planned_end_offset_days: clampedEnd,
+        })
+        .eq('id', sub.id);
+      
+      // Recursively shift this subtask's children
+      await this.shiftSubtasksRecursive(sub.id, offsetDays);
+    }
   }
   
   // Shift all subsequent tasks (higher position) in the same step

@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Edit, Plus, Trash2, Link2 } from 'lucide-react';
 import { wbsService } from '@/lib/wbsService';
 import { toast } from 'sonner';
+import { TaskEditSidebar } from './TaskEditSidebar';
 
 interface MasterStep {
   id: number;
@@ -98,6 +99,13 @@ export const MasterDataGanttView = ({
     from?: { type: 'task' | 'subtask'; id: number; name: string };
     to?: { type: 'task' | 'subtask'; id: number; name: string };
   }>({ open: false });
+
+  // Edit sidebar state
+  const [editSidebar, setEditSidebar] = useState<{
+    open: boolean;
+    task: MasterTask | null;
+    type: 'task' | 'subtask';
+  }>({ open: false, task: null, type: 'task' });
   const [dependencyType, setDependencyType] = useState<'FS' | 'SS' | 'FF' | 'SF'>('FS');
   const [lagDays, setLagDays] = useState(0);
 
@@ -781,8 +789,9 @@ export const MasterDataGanttView = ({
                                 cursor: dragState.type === 'none' ? 'grab' : dragState.type === 'task' && dragState.taskId === task.id ? 'grabbing' : 'default',
                                 transition: dragState.type === 'task' && dragState.taskId === task.id ? 'none' : 'all 150ms ease',
                               }}
-                              title={`${task.title}: Days ${task.planned_start_offset_days}-${task.planned_end_offset_days} (${duration} days)\nDrag to move • Drag handles to link`}
+                              title={`${task.title}: Days ${task.planned_start_offset_days}-${task.planned_end_offset_days} (${duration} days)\nDrag to move • Drag handles to link • Double-click to edit`}
                               onMouseDown={(e) => handleTaskBarMouseDown(e, task, step.id)}
+                              onDoubleClick={() => setEditSidebar({ open: true, task, type: itemType })}
                             >
                               {/* Dependency handles */}
                               <div
@@ -1141,6 +1150,25 @@ export const MasterDataGanttView = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Sidebar */}
+      <TaskEditSidebar
+        open={editSidebar.open}
+        onOpenChange={(open) => setEditSidebar({ ...editSidebar, open })}
+        task={editSidebar.task}
+        type={editSidebar.type}
+        onSave={async (taskId, updates) => {
+          try {
+            await wbsService.updateMasterTask(taskId, updates);
+            toast.success(`${editSidebar.type === 'task' ? 'Task' : 'Subtask'} updated successfully`);
+            onRefresh?.();
+            await loadDependencies();
+          } catch (error) {
+            console.error('Failed to update task:', error);
+            toast.error(`Failed to update ${editSidebar.type}`);
+          }
+        }}
+      />
     </div>
   );
 };

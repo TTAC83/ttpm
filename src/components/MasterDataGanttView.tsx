@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Edit, Plus, Trash2, Link2 } from 'lucide-react';
+import { Edit, Plus, Trash2, Link2, ChevronRight, ChevronDown, ChevronsRight, ChevronsDown } from 'lucide-react';
 import { wbsService } from '@/lib/wbsService';
 import { toast } from 'sonner';
 import { TaskEditSidebar } from './TaskEditSidebar';
@@ -109,6 +109,17 @@ export const MasterDataGanttView = ({
   const [dependencyType, setDependencyType] = useState<'FS' | 'SS' | 'FF' | 'SF'>('FS');
   const [lagDays, setLagDays] = useState(0);
 
+  // Collapse state management
+  const [collapseState, setCollapseState] = useState<{
+    steps: Set<number>;      // collapsed step IDs
+    tasks: Set<number>;      // collapsed task IDs
+    globalLevel: 'all' | 'steps-tasks' | 'steps-only';
+  }>({
+    steps: new Set(),
+    tasks: new Set(),
+    globalLevel: 'all'
+  });
+
   useEffect(() => {
     loadDependencies();
   }, [steps, tasks]);
@@ -120,6 +131,45 @@ export const MasterDataGanttView = ({
     } catch (error) {
       console.error('Error loading dependencies:', error);
     }
+  };
+
+  // Collapse helper functions
+  const isStepExpanded = (stepId: number): boolean => {
+    if (collapseState.globalLevel === 'steps-only') return false;
+    return !collapseState.steps.has(stepId);
+  };
+
+  const isTaskExpanded = (taskId: number): boolean => {
+    if (collapseState.globalLevel !== 'all') return false;
+    return !collapseState.tasks.has(taskId);
+  };
+
+  const toggleStep = (stepId: number) => {
+    setCollapseState(prev => {
+      const newSteps = new Set(prev.steps);
+      if (newSteps.has(stepId)) {
+        newSteps.delete(stepId);
+      } else {
+        newSteps.add(stepId);
+      }
+      return { ...prev, steps: newSteps, globalLevel: 'all' };
+    });
+  };
+
+  const toggleTask = (taskId: number) => {
+    setCollapseState(prev => {
+      const newTasks = new Set(prev.tasks);
+      if (newTasks.has(taskId)) {
+        newTasks.delete(taskId);
+      } else {
+        newTasks.add(taskId);
+      }
+      return { ...prev, tasks: newTasks, globalLevel: 'all' };
+    });
+  };
+
+  const setGlobalLevel = (level: 'all' | 'steps-tasks' | 'steps-only') => {
+    setCollapseState(prev => ({ ...prev, globalLevel: level }));
   };
   
   const ganttData = useMemo(() => {
@@ -578,11 +628,43 @@ export const MasterDataGanttView = ({
 
   return (
     <div className="relative" style={{ height: 'calc(100vh - 24rem)' }}>
+      {/* Collapse Controls Bar */}
+      <div className="absolute top-0 left-0 right-0 z-10 bg-background border-b border-border p-2 flex items-center gap-2">
+        <span className="text-sm font-medium text-muted-foreground mr-2">View:</span>
+        <Button
+          variant={collapseState.globalLevel === 'all' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setGlobalLevel('all')}
+          className="gap-2"
+        >
+          <ChevronsDown className="h-4 w-4" />
+          All Details
+        </Button>
+        <Button
+          variant={collapseState.globalLevel === 'steps-tasks' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setGlobalLevel('steps-tasks')}
+          className="gap-2"
+        >
+          <ChevronDown className="h-4 w-4" />
+          Steps + Tasks
+        </Button>
+        <Button
+          variant={collapseState.globalLevel === 'steps-only' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setGlobalLevel('steps-only')}
+          className="gap-2"
+        >
+          <ChevronRight className="h-4 w-4" />
+          Steps Only
+        </Button>
+      </div>
+
       {/* Main scrollable content */}
       <div 
         ref={verticalRef}
         onScroll={onVerticalContainerScroll}
-        className="h-full overflow-y-auto pl-6"
+        className="h-full overflow-y-auto pl-6 pt-14"
         style={{ direction: 'rtl', scrollbarGutter: 'stable both-edges' }}
       >
         <div className="space-y-6" style={{ direction: 'ltr' }}>
@@ -591,6 +673,20 @@ export const MasterDataGanttView = ({
           <CardHeader className="pb-3 bg-muted/20">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
+                {/* Step collapse toggle */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => toggleStep(step.id)}
+                  className="h-6 w-6 p-0"
+                  disabled={collapseState.globalLevel === 'steps-only'}
+                >
+                  {isStepExpanded(step.id) ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                </Button>
                 <CardTitle className="text-lg font-semibold text-primary">
                   {step.name}
                 </CardTitle>
@@ -620,7 +716,7 @@ export const MasterDataGanttView = ({
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            {step.tasks.length === 0 ? (
+            {!isStepExpanded(step.id) ? null : step.tasks.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <div className="mb-2">No tasks in this step</div>
                 <Button
@@ -672,6 +768,11 @@ export const MasterDataGanttView = ({
                     {step.tasks.map(task => {
                       const level = (task as any).level || 0;
                       const isSubtask = level > 0;
+                      const isParentTask = !isSubtask && task.subtasks && task.subtasks.length > 0;
+                      
+                      // Skip rendering if hidden by collapse state
+                      if (isSubtask && collapseState.globalLevel !== 'all') return null;
+                      if (isSubtask && task.parent_task_id && !isTaskExpanded(task.parent_task_id)) return null;
                       
                       return (
                         <div key={task.id} className="border-b border-border/30 hover:bg-muted/20 group">
@@ -687,17 +788,34 @@ export const MasterDataGanttView = ({
                               </div>
                             )}
                             
+                            {/* Task collapse toggle for parent tasks */}
+                            {isParentTask && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleTask(task.id)}
+                                className="h-5 w-5 p-0 mr-1"
+                                disabled={collapseState.globalLevel !== 'all'}
+                              >
+                                {isTaskExpanded(task.id) ? (
+                                  <ChevronDown className="h-3 w-3" />
+                                ) : (
+                                  <ChevronRight className="h-3 w-3" />
+                                )}
+                              </Button>
+                            )}
+                            
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
                                 <span className={`font-medium text-sm flex-1 ${isSubtask ? 'text-muted-foreground' : ''}`}>
                                   {task.title}
                                 </span>
-                                {!isSubtask && task.subtasks && task.subtasks.length > 0 && (
+                                {isParentTask && (
                                   <Badge variant="secondary" className="text-xs px-1.5 py-0">
                                     🔄 Auto
                                   </Badge>
                                 )}
-                                <Badge 
+                                <Badge
                                   variant="outline" 
                                   className={`text-xs px-1.5 py-0 border-0 text-white flex-shrink-0 ${getTechScopeColor(task.technology_scope)}`}
                                 >
@@ -754,6 +872,13 @@ export const MasterDataGanttView = ({
                   >
                     <div style={{ minWidth: `${(ganttData.maxDays + 1) * 32}px` }}>
                         {step.tasks.map(task => {
+                        const level = (task as any).level || 0;
+                        const isSubtask = level > 0;
+                        
+                        // Skip rendering if hidden by collapse state
+                        if (isSubtask && collapseState.globalLevel !== 'all') return null;
+                        if (isSubtask && task.parent_task_id && !isTaskExpanded(task.parent_task_id)) return null;
+                        
                         const duration = task.planned_end_offset_days - task.planned_start_offset_days;
                         const dayWidth = 32;
                         const itemType = task.parent_task_id ? 'subtask' : 'task';
@@ -860,6 +985,27 @@ export const MasterDataGanttView = ({
               </marker>
             </defs>
             {dependencies.map((dep) => {
+              // Check if both source and target tasks are visible based on collapse state
+              const predTask = findTaskById(dep.predecessor_id);
+              const succTask = findTaskById(dep.successor_id);
+              
+              if (!predTask || !succTask) return null;
+              
+              // Check collapse visibility
+              const isPredSubtask = predTask.parent_task_id !== null;
+              const isSuccSubtask = succTask.parent_task_id !== null;
+              
+              // Hide if subtasks are collapsed globally
+              if (isPredSubtask && collapseState.globalLevel !== 'all') return null;
+              if (isSuccSubtask && collapseState.globalLevel !== 'all') return null;
+              
+              // Hide if parent task is collapsed
+              if (isPredSubtask && predTask.parent_task_id && !isTaskExpanded(predTask.parent_task_id)) return null;
+              if (isSuccSubtask && succTask.parent_task_id && !isTaskExpanded(succTask.parent_task_id)) return null;
+              
+              // Hide if step is collapsed
+              if (!isStepExpanded(predTask.step_id) || !isStepExpanded(succTask.step_id)) return null;
+              
               // Find predecessor and successor bars
               const predEl = document.getElementById(`gantt-bar-${dep.predecessor_type}-${dep.predecessor_id}`);
               const succEl = document.getElementById(`gantt-bar-${dep.successor_type}-${dep.successor_id}`);
@@ -905,10 +1051,6 @@ export const MasterDataGanttView = ({
               }
               
               const midX = (x1 + x2) / 2;
-              
-              // Find task names for tooltip
-              const predTask = findTaskById(dep.predecessor_id);
-              const succTask = findTaskById(dep.successor_id);
               const isHovered = hoveredDependency === dep.id;
 
               return (

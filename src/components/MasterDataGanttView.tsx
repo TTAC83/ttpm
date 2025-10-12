@@ -1035,39 +1035,39 @@ export const MasterDataGanttView = ({
               
               const predRect = predEl.getBoundingClientRect();
               const succRect = succEl.getBoundingClientRect();
-              const svgContainer = verticalRef.current?.parentElement;
               
-              if (!svgContainer) return null;
+              // Use the main container (verticalRef's parent) as reference
+              const containerRect = verticalRef.current?.parentElement?.getBoundingClientRect();
               
-              const svgRect = svgContainer.getBoundingClientRect();
+              if (!containerRect) return null;
               
-              // Calculate positions relative to SVG container (accounting for scroll)
+              // Calculate positions relative to the container
               let x1, y1, x2, y2;
               
               switch (dep.dependency_type) {
                 case 'FS': // Finish-to-Start
-                  x1 = predRect.right - svgRect.left;
-                  y1 = predRect.top + predRect.height / 2 - svgRect.top;
-                  x2 = succRect.left - svgRect.left;
-                  y2 = succRect.top + succRect.height / 2 - svgRect.top;
+                  x1 = predRect.right - containerRect.left;
+                  y1 = predRect.top + predRect.height / 2 - containerRect.top;
+                  x2 = succRect.left - containerRect.left;
+                  y2 = succRect.top + succRect.height / 2 - containerRect.top;
                   break;
                 case 'SS': // Start-to-Start
-                  x1 = predRect.left - svgRect.left;
-                  y1 = predRect.top + predRect.height / 2 - svgRect.top;
-                  x2 = succRect.left - svgRect.left;
-                  y2 = succRect.top + succRect.height / 2 - svgRect.top;
+                  x1 = predRect.left - containerRect.left;
+                  y1 = predRect.top + predRect.height / 2 - containerRect.top;
+                  x2 = succRect.left - containerRect.left;
+                  y2 = succRect.top + succRect.height / 2 - containerRect.top;
                   break;
                 case 'FF': // Finish-to-Finish
-                  x1 = predRect.right - svgRect.left;
-                  y1 = predRect.top + predRect.height / 2 - svgRect.top;
-                  x2 = succRect.right - svgRect.left;
-                  y2 = succRect.top + succRect.height / 2 - svgRect.top;
+                  x1 = predRect.right - containerRect.left;
+                  y1 = predRect.top + predRect.height / 2 - containerRect.top;
+                  x2 = succRect.right - containerRect.left;
+                  y2 = succRect.top + succRect.height / 2 - containerRect.top;
                   break;
                 case 'SF': // Start-to-Finish
-                  x1 = predRect.left - svgRect.left;
-                  y1 = predRect.top + predRect.height / 2 - svgRect.top;
-                  x2 = succRect.right - svgRect.left;
-                  y2 = succRect.top + succRect.height / 2 - svgRect.top;
+                  x1 = predRect.left - containerRect.left;
+                  y1 = predRect.top + predRect.height / 2 - containerRect.top;
+                  x2 = succRect.right - containerRect.left;
+                  y2 = succRect.top + succRect.height / 2 - containerRect.top;
                   break;
                 default:
                   return null;

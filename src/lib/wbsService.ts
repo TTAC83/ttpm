@@ -442,13 +442,15 @@ class WBSService {
       // Get all dependencies
       const dependencies = await this.getAllDependencies();
 
-      // Note: Circular dependency checking is done per-task during processing
-
-      // Process tasks in dependency order (tasks without predecessors first)
+      // Build dependency graph to process tasks in correct order
       const processedTasks = new Set<number>();
       const tasksToProcess = [...allTasks];
+      let maxIterations = allTasks.length * 3; // Prevent infinite loops
+      let iteration = 0;
 
-      while (tasksToProcess.length > 0) {
+      while (tasksToProcess.length > 0 && iteration < maxIterations) {
+        iteration++;
+        const initialLength = tasksToProcess.length;
         const task = tasksToProcess.shift();
         if (!task) break;
 
@@ -461,30 +463,47 @@ class WBSService {
           processedTasks.has(dep.predecessor_id)
         );
 
+        // If has unprocessed predecessors, put back in queue
         if (!allPredecessorsProcessed && taskDeps.length > 0) {
-          // Put back at end of queue
           tasksToProcess.push(task);
           continue;
         }
 
         try {
-          // Recalculate dates based on dependencies
-          if (taskDeps.length > 0) {
-            await this.recalculateDatesWithDependencies('task', task.id);
-            tasksUpdated++;
-          }
+          // Recalculate dates based on dependencies (for all tasks, not just those with deps)
+          await this.recalculateDatesWithDependencies('task', task.id);
+          tasksUpdated++;
 
           // If this is a parent task, update dates from subtasks
           const subtasks = allTasks.filter(t => t.parent_task_id === task.id);
           if (subtasks.length > 0) {
+            // Process all subtasks first
+            for (const subtask of subtasks) {
+              if (!processedTasks.has(subtask.id)) {
+                await this.recalculateDatesWithDependencies('task', subtask.id);
+                processedTasks.add(subtask.id);
+              }
+            }
+            // Then update parent from subtasks
             await this.updateParentTaskDatesFromSubTasks(task.id);
-            tasksUpdated++;
           }
 
           processedTasks.add(task.id);
         } catch (error: any) {
           errors.push(`Task ${task.id} (${task.title}): ${error.message}`);
+          processedTasks.add(task.id); // Mark as processed to avoid infinite loop
         }
+
+        // Check if we're making progress
+        if (tasksToProcess.length === initialLength) {
+          // No progress made, might be circular dependency
+          errors.push(`Circular dependency or processing issue detected. ${tasksToProcess.length} tasks remaining.`);
+          break;
+        }
+      }
+
+      if (iteration >= maxIterations) {
+        errors.push('Maximum iterations reached. Possible circular dependency.');
       }
 
       // Update all step dates from their tasks

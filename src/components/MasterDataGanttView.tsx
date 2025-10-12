@@ -64,9 +64,6 @@ export const MasterDataGanttView = ({
   const [vScrollTop, setVScrollTop] = useState(0);
   const [vMaxScrollTop, setVMaxScrollTop] = useState(0);
   
-  // Force dependency re-render on scroll
-  const [depRenderKey, setDepRenderKey] = useState(0);
-  
   // Dependencies
   const [dependencies, setDependencies] = useState<any[]>([]);
   const [hoveredDependency, setHoveredDependency] = useState<string | null>(null);
@@ -224,28 +221,6 @@ export const MasterDataGanttView = ({
     return searchInTasks(tasks);
   };
 
-  // Get effective task bar element for dependency rendering
-  // If a subtask is hidden (parent collapsed or global view), use parent's bar instead
-  const getEffectiveTaskElement = (taskId: number, taskType: 'task' | 'subtask'): HTMLElement | null => {
-    const task = findTaskById(taskId);
-    if (!task) return null;
-
-    // If it's a subtask and subtasks are hidden, use parent task bar
-    if (taskType === 'subtask' && task.parent_task_id) {
-      // Check if subtasks are hidden globally
-      if (collapseState.globalLevel !== 'all') {
-        return document.getElementById(`gantt-bar-task-${task.parent_task_id}`);
-      }
-      // Check if parent task is collapsed
-      if (!isTaskExpanded(task.parent_task_id)) {
-        return document.getElementById(`gantt-bar-task-${task.parent_task_id}`);
-      }
-    }
-
-    // Return the actual element
-    return document.getElementById(`gantt-bar-${taskType}-${taskId}`);
-  };
-
   const getTechScopeColor = (scope: string) => {
     switch (scope) {
       case 'iot': return 'bg-blue-500';
@@ -272,8 +247,6 @@ export const MasterDataGanttView = ({
         ref.scrollLeft = scrollLeft;
       }
     });
-    // Trigger dependency re-render
-    setDepRenderKey(prev => prev + 1);
   };
 
   // Update max scroll when data changes
@@ -400,8 +373,6 @@ export const MasterDataGanttView = ({
     const el = e.currentTarget;
     setVScrollTop(el.scrollTop);
     setVMaxScrollTop(Math.max(0, el.scrollHeight - el.clientHeight));
-    // Trigger dependency re-render
-    setDepRenderKey(prev => prev + 1);
   };
 
   const handleVerticalScroll = (newTop: number) => {
@@ -989,142 +960,189 @@ export const MasterDataGanttView = ({
       
       {/* Dependency Arrows SVG Overlay */}
       {dependencies.length > 0 && (
-        <svg 
-          key={depRenderKey}
-          className="absolute top-14 left-6 right-0 bottom-0 pointer-events-none z-40"
-          style={{ overflow: 'visible' }}
-        >
-          <defs>
-            <marker
-              id="dependency-arrowhead"
-              markerWidth="10"
-              markerHeight="7"
-              refX="9"
-              refY="3.5"
-              orient="auto"
-            >
-              <polygon points="0 0, 10 3.5, 0 7" fill="hsl(var(--primary))" fillOpacity="0.6" />
-            </marker>
-            <marker
-              id="dependency-arrowhead-hover"
-              markerWidth="10"
-              markerHeight="7"
-              refX="9"
-              refY="3.5"
-              orient="auto"
-            >
-              <polygon points="0 0, 10 3.5, 0 7" fill="hsl(var(--destructive))" fillOpacity="0.9" />
-            </marker>
-          </defs>
-          {dependencies.map((dep) => {
-            // Check if both source and target tasks exist
-            const predTask = findTaskById(dep.predecessor_id);
-            const succTask = findTaskById(dep.successor_id);
-            
-            if (!predTask || !succTask) return null;
-            
-            // Hide if step is collapsed
-            if (!isStepExpanded(predTask.step_id) || !isStepExpanded(succTask.step_id)) return null;
-            
-            // Get effective task bar elements (handles collapsed states)
-            const predEl = getEffectiveTaskElement(dep.predecessor_id, dep.predecessor_type);
-            const succEl = getEffectiveTaskElement(dep.successor_id, dep.successor_type);
-            
-            if (!predEl || !succEl) return null;
-            
-            // Get bounding rectangles
-            const predRect = predEl.getBoundingClientRect();
-            const succRect = succEl.getBoundingClientRect();
-            
-            // Get SVG's bounding rectangle as reference
-            const svgElement = document.querySelector('svg');
-            if (!svgElement) return null;
-            const svgRect = svgElement.getBoundingClientRect();
-            
-            // Calculate positions relative to SVG container
-            let x1, y1, x2, y2;
-            
-            switch (dep.dependency_type) {
-              case 'FS': // Finish-to-Start
-                x1 = predRect.right - svgRect.left;
-                y1 = predRect.top + predRect.height / 2 - svgRect.top;
-                x2 = succRect.left - svgRect.left;
-                y2 = succRect.top + succRect.height / 2 - svgRect.top;
-                break;
-              case 'SS': // Start-to-Start
-                x1 = predRect.left - svgRect.left;
-                y1 = predRect.top + predRect.height / 2 - svgRect.top;
-                x2 = succRect.left - svgRect.left;
-                y2 = succRect.top + succRect.height / 2 - svgRect.top;
-                break;
-              case 'FF': // Finish-to-Finish
-                x1 = predRect.right - svgRect.left;
-                y1 = predRect.top + predRect.height / 2 - svgRect.top;
-                x2 = succRect.right - svgRect.left;
-                y2 = succRect.top + succRect.height / 2 - svgRect.top;
-                break;
-              case 'SF': // Start-to-Finish
-                x1 = predRect.left - svgRect.left;
-                y1 = predRect.top + predRect.height / 2 - svgRect.top;
-                x2 = succRect.right - svgRect.left;
-                y2 = succRect.top + succRect.height / 2 - svgRect.top;
-                break;
-              default:
-                return null;
-            }
-            
-            // Create path with right-angle connector
-            const midX = (x1 + x2) / 2;
-            const isHovered = hoveredDependency === dep.id;
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-40 pointer-events-none">
+          <svg className="w-full h-full">
+            <defs>
+              <marker
+                id="dependency-arrowhead"
+                markerWidth="10"
+                markerHeight="7"
+                refX="9"
+                refY="3.5"
+                orient="auto"
+              >
+                <polygon points="0 0, 10 3.5, 0 7" fill="hsl(var(--primary))" fillOpacity="0.6" />
+              </marker>
+              <marker
+                id="dependency-arrowhead-hover"
+                markerWidth="10"
+                markerHeight="7"
+                refX="9"
+                refY="3.5"
+                orient="auto"
+              >
+                <polygon points="0 0, 10 3.5, 0 7" fill="hsl(var(--destructive))" fillOpacity="0.9" />
+              </marker>
+            </defs>
+            {dependencies.map((dep) => {
+              // Check if both source and target tasks are visible based on collapse state
+              const predTask = findTaskById(dep.predecessor_id);
+              const succTask = findTaskById(dep.successor_id);
+              
+              if (!predTask || !succTask) return null;
+              
+              // Check collapse visibility
+              const isPredSubtask = predTask.parent_task_id !== null;
+              const isSuccSubtask = succTask.parent_task_id !== null;
+              
+              // Hide if subtasks are collapsed globally
+              if (isPredSubtask && collapseState.globalLevel !== 'all') return null;
+              if (isSuccSubtask && collapseState.globalLevel !== 'all') return null;
+              
+              // Hide if parent task is collapsed
+              if (isPredSubtask && predTask.parent_task_id && !isTaskExpanded(predTask.parent_task_id)) return null;
+              if (isSuccSubtask && succTask.parent_task_id && !isTaskExpanded(succTask.parent_task_id)) return null;
+              
+              // Hide if step is collapsed
+              if (!isStepExpanded(predTask.step_id) || !isStepExpanded(succTask.step_id)) return null;
+              
+              // Find predecessor and successor bars
+              const predEl = document.getElementById(`gantt-bar-${dep.predecessor_type}-${dep.predecessor_id}`);
+              const succEl = document.getElementById(`gantt-bar-${dep.successor_type}-${dep.successor_id}`);
+              
+              if (!predEl || !succEl) return null;
+              
+              const predRect = predEl.getBoundingClientRect();
+              const succRect = succEl.getBoundingClientRect();
+              const containerRect = verticalRef.current?.getBoundingClientRect();
+              
+              if (!containerRect) return null;
+              
+              // Calculate positions relative to container
+              let x1, y1, x2, y2;
+              
+              switch (dep.dependency_type) {
+                case 'FS': // Finish-to-Start
+                  x1 = predRect.right - containerRect.left;
+                  y1 = predRect.top + predRect.height / 2 - containerRect.top;
+                  x2 = succRect.left - containerRect.left;
+                  y2 = succRect.top + succRect.height / 2 - containerRect.top;
+                  break;
+                case 'SS': // Start-to-Start
+                  x1 = predRect.left - containerRect.left;
+                  y1 = predRect.top + predRect.height / 2 - containerRect.top;
+                  x2 = succRect.left - containerRect.left;
+                  y2 = succRect.top + succRect.height / 2 - containerRect.top;
+                  break;
+                case 'FF': // Finish-to-Finish
+                  x1 = predRect.right - containerRect.left;
+                  y1 = predRect.top + predRect.height / 2 - containerRect.top;
+                  x2 = succRect.right - containerRect.left;
+                  y2 = succRect.top + succRect.height / 2 - containerRect.top;
+                  break;
+                case 'SF': // Start-to-Finish
+                  x1 = predRect.left - containerRect.left;
+                  y1 = predRect.top + predRect.height / 2 - containerRect.top;
+                  x2 = succRect.right - containerRect.left;
+                  y2 = succRect.top + succRect.height / 2 - containerRect.top;
+                  break;
+                default:
+                  return null;
+              }
+              
+              const midX = (x1 + x2) / 2;
+              const isHovered = hoveredDependency === dep.id;
 
-            return (
-              <g key={dep.id}>
-                {/* Invisible wider path for easier clicking */}
-                {dragState.type !== 'dependency' && (
+              return (
+                <g key={dep.id}>
+                  {/* Invisible wider path for easier clicking - only when not dragging */}
+                  {dragState.type !== 'dependency' && (
+                    <path
+                      d={`M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`}
+                      stroke="transparent"
+                      strokeWidth="12"
+                      fill="none"
+                      className="pointer-events-auto"
+                      style={{ 
+                        cursor: 'pointer'
+                      }}
+                      onMouseEnter={() => setHoveredDependency(dep.id)}
+                      onMouseLeave={() => setHoveredDependency(null)}
+                      onClick={() => {
+                        if (predTask && succTask) {
+                          setSelectedDependencyForDelete({
+                            id: dep.id,
+                            fromName: predTask.title,
+                            toName: succTask.title,
+                            type: dep.dependency_type
+                          });
+                        }
+                      }}
+                    />
+                  )}
+                  
+                  {/* Visible dependency line */}
                   <path
                     d={`M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`}
-                    stroke="transparent"
-                    strokeWidth="12"
+                    stroke={isHovered ? "hsl(var(--destructive))" : "hsl(var(--primary))"}
+                    strokeWidth={isHovered ? "3" : "2"}
                     fill="none"
-                    className="pointer-events-auto"
-                    style={{ cursor: 'pointer' }}
-                    onMouseEnter={() => setHoveredDependency(dep.id)}
-                    onMouseLeave={() => setHoveredDependency(null)}
-                    onClick={() => {
-                      if (predTask && succTask) {
-                        setSelectedDependencyForDelete({
-                          id: dep.id,
-                          fromName: predTask.title,
-                          toName: succTask.title,
-                          type: dep.dependency_type
-                        });
-                      }
+                    strokeOpacity={isHovered ? "0.9" : "0.6"}
+                    markerEnd={isHovered ? "url(#dependency-arrowhead-hover)" : "url(#dependency-arrowhead)"}
+                    className="pointer-events-none"
+                    style={{ 
+                      transition: 'all 150ms ease'
                     }}
-                  />
-                )}
-                
-                {/* Visible dependency line */}
-                <path
-                  d={`M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`}
-                  stroke={isHovered ? "hsl(var(--destructive))" : "hsl(var(--primary))"}
-                  strokeWidth={isHovered ? "3" : "2"}
-                  fill="none"
-                  strokeOpacity={isHovered ? "0.9" : "0.6"}
-                  markerEnd={isHovered ? "url(#dependency-arrowhead-hover)" : "url(#dependency-arrowhead)"}
-                  className="pointer-events-none"
-                  style={{ transition: 'all 150ms ease' }}
-                >
-                  <title>
-                    {predTask?.title} → {succTask?.title}
-                    {'\n'}Type: {dep.dependency_type}
-                    {dep.lag_days ? `\nLag: ${dep.lag_days} days` : ''}
-                    {'\n'}Click to delete
-                  </title>
-                </path>
-              </g>
-            );
-          })}
-        </svg>
+                  >
+                    <title>
+                      {predTask?.title} → {succTask?.title}
+                      {'\n'}Type: {dep.dependency_type}
+                      {dep.lag_days ? `\nLag: ${dep.lag_days} days` : ''}
+                      {'\n\nClick to delete'}
+                    </title>
+                  </path>
+                  
+                  {/* Delete button on hover - only when not dragging */}
+                  {isHovered && dragState.type !== 'dependency' && (
+                    <g
+                      className="pointer-events-auto"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => {
+                        if (predTask && succTask) {
+                          setSelectedDependencyForDelete({
+                            id: dep.id,
+                            fromName: predTask.title,
+                            toName: succTask.title,
+                            type: dep.dependency_type
+                          });
+                        }
+                      }}
+                    >
+                      <circle
+                        cx={midX}
+                        cy={(y1 + y2) / 2}
+                        r="14"
+                        fill="hsl(var(--destructive))"
+                      />
+                      <text
+                        x={midX}
+                        y={(y1 + y2) / 2}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        fill="white"
+                        fontSize="18"
+                        fontWeight="bold"
+                        style={{ pointerEvents: 'none' }}
+                      >
+                        ×
+                      </text>
+                    </g>
+                  )}
+                </g>
+              );
+            })}
+          </svg>
+        </div>
       )}
       
       {/* Dependency drag line overlay */}

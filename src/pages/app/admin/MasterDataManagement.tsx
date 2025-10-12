@@ -400,6 +400,46 @@ export const MasterDataManagement = () => {
     }
   };
 
+  const recalculateAllMasterData = async () => {
+    if (!confirm(
+      "This will recalculate all task and step dates to ensure:\n" +
+      "1. Parent tasks span their subtasks correctly\n" +
+      "2. Dependencies are properly enforced\n" +
+      "3. All step dates are updated\n\n" +
+      "Continue?"
+    )) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const result = await wbsService.recalculateAllMasterData();
+      await fetchMasterData();
+      
+      if (result.errors.length > 0) {
+        toast({
+          title: "Recalculation Completed with Errors",
+          description: `Updated ${result.tasksUpdated} tasks, ${result.stepsUpdated} steps. ${result.errors.length} errors occurred.`,
+          variant: "destructive",
+        });
+        console.error('Recalculation errors:', result.errors);
+      } else {
+        toast({
+          title: "Recalculation Complete",
+          description: `Successfully updated ${result.tasksUpdated} tasks and ${result.stepsUpdated} steps`,
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to recalculate master data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getTechScopeColor = (scope: string) => {
     switch (scope) {
       case 'iot': return 'bg-blue-100 text-blue-800 border-blue-200';
@@ -642,10 +682,21 @@ export const MasterDataManagement = () => {
               </span>
             </div>
             <Button 
+              variant="default"
+              onClick={recalculateAllMasterData}
+              className="flex items-center gap-2"
+              disabled={loading}
+              title="Recalculate all tasks and steps to ensure dependencies and parent-child relationships are correct"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              Recalculate All
+            </Button>
+            <Button 
               variant="outline" 
               onClick={recalculateAllSteps}
               className="flex items-center gap-2"
               disabled={loading}
+              title="Recalculate step dates from their tasks"
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               Recalculate Step Dates

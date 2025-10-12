@@ -414,6 +414,97 @@ class WBSService {
     );
   }
 
+  /**
+   * Recalculate ALL master data to ensure consistency:
+   * 1. Parent tasks span earliest subtask start → latest subtask end
+   * 2. Tasks with dependencies are dated correctly based on dependency type + lag
+   * 3. All step dates are updated from their tasks
+   */
+  async recalculateAllMasterData(): Promise<{
+    tasksUpdated: number;
+    stepsUpdated: number;
+    errors: string[];
+  }> {
+    const errors: string[] = [];
+    let tasksUpdated = 0;
+    let stepsUpdated = 0;
+
+    try {
+      // Get all master tasks and dependencies
+      const { data: allTasks, error: tasksError } = await supabase
+        .from('master_tasks')
+        .select('*')
+        .order('step_id, position');
+
+      if (tasksError) throw tasksError;
+      if (!allTasks) throw new Error('No tasks found');
+
+      // Get all dependencies
+      const dependencies = await this.getAllDependencies();
+
+      // Note: Circular dependency checking is done per-task during processing
+
+      // Process tasks in dependency order (tasks without predecessors first)
+      const processedTasks = new Set<number>();
+      const tasksToProcess = [...allTasks];
+
+      while (tasksToProcess.length > 0) {
+        const task = tasksToProcess.shift();
+        if (!task) break;
+
+        // Check if all predecessors have been processed
+        const taskDeps = dependencies.filter(
+          d => d.successor_type === 'task' && d.successor_id === task.id
+        );
+        
+        const allPredecessorsProcessed = taskDeps.every(dep => 
+          processedTasks.has(dep.predecessor_id)
+        );
+
+        if (!allPredecessorsProcessed && taskDeps.length > 0) {
+          // Put back at end of queue
+          tasksToProcess.push(task);
+          continue;
+        }
+
+        try {
+          // Recalculate dates based on dependencies
+          if (taskDeps.length > 0) {
+            await this.recalculateDatesWithDependencies('task', task.id);
+            tasksUpdated++;
+          }
+
+          // If this is a parent task, update dates from subtasks
+          const subtasks = allTasks.filter(t => t.parent_task_id === task.id);
+          if (subtasks.length > 0) {
+            await this.updateParentTaskDatesFromSubTasks(task.id);
+            tasksUpdated++;
+          }
+
+          processedTasks.add(task.id);
+        } catch (error: any) {
+          errors.push(`Task ${task.id} (${task.title}): ${error.message}`);
+        }
+      }
+
+      // Update all step dates from their tasks
+      const steps = await this.getMasterSteps();
+      for (const step of steps) {
+        try {
+          await this.updateStepDatesFromTasks(step.id);
+          stepsUpdated++;
+        } catch (error: any) {
+          errors.push(`Step ${step.id} (${step.step_name}): ${error.message}`);
+        }
+      }
+
+      return { tasksUpdated, stepsUpdated, errors };
+    } catch (error: any) {
+      errors.push(`Fatal error: ${error.message}`);
+      return { tasksUpdated, stepsUpdated, errors };
+    }
+  }
+
   // ===== DEPENDENCY MANAGEMENT =====
   
   async getDependenciesForItem(

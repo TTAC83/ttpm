@@ -510,7 +510,8 @@ class WBSService {
     const duration = itemDates.duration_days || 1;
     
     let newStartDate = itemDates.planned_start_offset_days;
-    let newEndDate = itemDates.planned_end_offset_days;
+    // Calculate end date from start + duration to ensure duration changes are reflected
+    let newEndDate = newStartDate + duration;
     
     for (const pred of deps.predecessors) {
       const predDates = await this.getItemDates(pred.predecessor_type, pred.predecessor_id);

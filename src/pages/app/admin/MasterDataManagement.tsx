@@ -47,6 +47,7 @@ interface MasterTask {
   details: string | null;
   planned_start_offset_days: number;
   planned_end_offset_days: number;
+  duration_days: number;
   position: number;
   technology_scope: string;
   assigned_role: string | null;
@@ -297,6 +298,7 @@ export const MasterDataManagement = () => {
           details: '',
           planned_start_offset_days: 0,
           planned_end_offset_days: 1,
+          duration_days: 1,
           position: maxPosition + 1,
           technology_scope: 'both',
           parent_task_id: parentTaskId || null
@@ -786,6 +788,7 @@ const DetailSidebar = ({ node, onClose, onUpdate }: DetailSidebarProps) => {
       setFormData({
         title: task.title,
         details: task.details || '',
+        duration_days: task.duration_days,
         planned_start_offset_days: task.planned_start_offset_days,
         planned_end_offset_days: task.planned_end_offset_days,
         position: task.position,
@@ -825,8 +828,7 @@ const DetailSidebar = ({ node, onClose, onUpdate }: DetailSidebarProps) => {
           .update({
             title: formData.title,
             details: formData.details,
-            planned_start_offset_days: formData.planned_start_offset_days,
-            planned_end_offset_days: formData.planned_end_offset_days,
+            duration_days: formData.duration_days,
             position: formData.position,
             technology_scope: formData.technology_scope,
             assigned_role: formData.assigned_role || null
@@ -947,24 +949,42 @@ const DetailSidebar = ({ node, onClose, onUpdate }: DetailSidebarProps) => {
                 rows={3}
               />
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label htmlFor="start-offset">Start Offset (days)</Label>
-                <Input
-                  id="start-offset"
-                  type="number"
-                  value={formData.planned_start_offset_days || 0}
-                  onChange={(e) => setFormData(prev => ({ ...prev, planned_start_offset_days: parseInt(e.target.value) }))}
-                />
+            <div>
+              <Label htmlFor="duration">Duration (days)</Label>
+              <Input
+                id="duration"
+                type="number"
+                min="1"
+                value={formData.duration_days || 1}
+                onChange={(e) => setFormData(prev => ({ ...prev, duration_days: Math.max(1, parseInt(e.target.value) || 1) }))}
+                placeholder="Number of days this task will take"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                How many working days this task will take to complete
+              </p>
+            </div>
+            
+            <div className="p-4 bg-muted/30 rounded-md border border-border">
+              <div className="text-sm font-medium mb-2 flex items-center gap-2">
+                📅 Calculated Timeline
+                <Badge variant="outline" className="text-xs">Auto-calculated</Badge>
               </div>
-              <div>
-                <Label htmlFor="end-offset">End Offset (days)</Label>
-                <Input
-                  id="end-offset"
-                  type="number"
-                  value={formData.planned_end_offset_days || 0}
-                  onChange={(e) => setFormData(prev => ({ ...prev, planned_end_offset_days: parseInt(e.target.value) }))}
-                />
+              <div className="space-y-1 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Start Day:</span>
+                  <span className="font-medium">{formData.planned_start_offset_days || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">End Day:</span>
+                  <span className="font-medium">{formData.planned_end_offset_days || 0}</span>
+                </div>
+                <div className="flex justify-between pt-1 border-t border-border/50">
+                  <span className="text-muted-foreground">Duration:</span>
+                  <span className="font-medium">{formData.duration_days || 1} days</span>
+                </div>
+              </div>
+              <div className="mt-2 text-xs text-muted-foreground italic">
+                Dates are calculated based on dependencies. Use the Dependencies panel to manage task flow.
               </div>
             </div>
             <div>

@@ -78,6 +78,7 @@ export function WBSTaskDialog({ isOpen, onClose, step, tasks, onSave }: WBSTaskD
       details: newTask.details || "",
       planned_start_offset_days: newTask.planned_start_offset_days || 0,
       planned_end_offset_days: newTask.planned_end_offset_days || 1,
+      duration_days: 1,
       position: newTask.position || tasks.length + 1,
       technology_scope: newTask.technology_scope as string,
       assigned_role: newTask.assigned_role as string,

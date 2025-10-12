@@ -26,8 +26,9 @@ export interface MasterTask {
   step_id: number;
   title: string;
   details: string | null;
-  planned_start_offset_days: number;
-  planned_end_offset_days: number;
+  planned_start_offset_days: number; // Auto-calculated from dependencies
+  planned_end_offset_days: number;   // Auto-calculated from dependencies
+  duration_days: number;              // User-defined task duration
   position: number;
   technology_scope: string;
   assigned_role: string;
@@ -137,21 +138,30 @@ class WBSService {
 
     if (error) throw error;
 
-    // If dates changed, cascade to successors
-    if (updates.planned_start_offset_days !== undefined || 
-        updates.planned_end_offset_days !== undefined) {
-      
+    // If duration changed, recalculate this task and cascade
+    if (updates.duration_days !== undefined) {
       const { data: task } = await supabase
         .from("master_tasks")
-        .select("parent_task_id")
+        .select("parent_task_id, step_id")
         .eq("id", taskId)
         .single();
       
       const itemType = task?.parent_task_id ? 'subtask' : 'task';
       
+      // Recalculate this task's dates based on its dependencies and new duration
+      await this.recalculateDatesWithDependencies(itemType, taskId);
+      
+      // Cascade to all successors
       const deps = await this.getDependenciesForItem(itemType, taskId);
       for (const succ of deps.successors) {
         await this.recalculateDatesWithDependencies(succ.successor_type, succ.successor_id);
+      }
+      
+      // Update parent/step dates if needed
+      if (task?.parent_task_id) {
+        await this.recalculateTaskAndStepDates(task.parent_task_id, task.step_id);
+      } else if (task?.step_id) {
+        await this.updateStepDatesFromTasks(task.step_id);
       }
     }
   }
@@ -496,6 +506,9 @@ class WBSService {
     const deps = await this.getDependenciesForItem(itemType, itemId);
     const itemDates = await this.getItemDates(itemType, itemId);
     
+    // Get duration (tasks/subtasks only - steps don't have duration)
+    const duration = itemDates.duration_days || 1;
+    
     let newStartDate = itemDates.planned_start_offset_days;
     let newEndDate = itemDates.planned_end_offset_days;
     
@@ -503,33 +516,35 @@ class WBSService {
       const predDates = await this.getItemDates(pred.predecessor_type, pred.predecessor_id);
       
       switch (pred.dependency_type) {
-        case 'FS':
+        case 'FS': // Finish-to-Start: This task starts after predecessor finishes
           const requiredStart = predDates.planned_end_offset_days + pred.lag_days;
           if (requiredStart > newStartDate) {
             newStartDate = requiredStart;
-            newEndDate = newStartDate + (itemDates.planned_end_offset_days - itemDates.planned_start_offset_days);
+            newEndDate = newStartDate + duration; // Use duration instead of calculating difference
           }
           break;
         
-        case 'SS':
+        case 'SS': // Start-to-Start: This task starts when predecessor starts
           const requiredStartSS = predDates.planned_start_offset_days + pred.lag_days;
           if (requiredStartSS > newStartDate) {
             newStartDate = requiredStartSS;
-            newEndDate = newStartDate + (itemDates.planned_end_offset_days - itemDates.planned_start_offset_days);
+            newEndDate = newStartDate + duration; // Use duration
           }
           break;
         
-        case 'FF':
+        case 'FF': // Finish-to-Finish: This task finishes when predecessor finishes
           const requiredEndFF = predDates.planned_end_offset_days + pred.lag_days;
           if (requiredEndFF > newEndDate) {
             newEndDate = requiredEndFF;
+            newStartDate = newEndDate - duration; // Calculate start from end using duration
           }
           break;
         
-        case 'SF':
+        case 'SF': // Start-to-Finish: This task finishes when predecessor starts
           const requiredEndSF = predDates.planned_start_offset_days + pred.lag_days;
           if (requiredEndSF > newEndDate) {
             newEndDate = requiredEndSF;
+            newStartDate = newEndDate - duration; // Calculate start from end using duration
           }
           break;
       }
@@ -557,7 +572,7 @@ class WBSService {
   private async getItemDates(
     itemType: 'step' | 'task' | 'subtask',
     itemId: number
-  ): Promise<{ planned_start_offset_days: number; planned_end_offset_days: number }> {
+  ): Promise<{ planned_start_offset_days: number; planned_end_offset_days: number; duration_days?: number }> {
     if (itemType === 'step') {
       const { data, error } = await supabase
         .from('master_steps')
@@ -572,7 +587,7 @@ class WBSService {
     } else {
       const { data, error } = await supabase
         .from('master_tasks')
-        .select('planned_start_offset_days, planned_end_offset_days')
+        .select('planned_start_offset_days, planned_end_offset_days, duration_days')
         .eq('id', itemId)
         .single();
       if (error) throw error;

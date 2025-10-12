@@ -26,6 +26,7 @@ interface MasterTask {
   details: string | null;
   planned_start_offset_days: number;
   planned_end_offset_days: number;
+  duration_days: number;
   position: number;
   technology_scope: string;
   assigned_role: string | null;

@@ -1907,6 +1907,7 @@ export type Database = {
         Row: {
           assigned_role: string | null
           details: string | null
+          duration_days: number
           id: number
           parent_task_id: number | null
           planned_end_offset_days: number
@@ -1919,6 +1920,7 @@ export type Database = {
         Insert: {
           assigned_role?: string | null
           details?: string | null
+          duration_days?: number
           id?: number
           parent_task_id?: number | null
           planned_end_offset_days?: number
@@ -1931,6 +1933,7 @@ export type Database = {
         Update: {
           assigned_role?: string | null
           details?: string | null
+          duration_days?: number
           id?: number
           parent_task_id?: number | null
           planned_end_offset_days?: number

@@ -31,6 +31,7 @@ export function SubTaskManager({
     details: "",
     planned_start_offset_days: 0,
     planned_end_offset_days: 1,
+    duration_days: 1,
     position: (parentTask.subtasks?.length || 0) + 1,
     technology_scope: "both",
     assigned_role: "implementation_lead"
@@ -66,6 +67,7 @@ export function SubTaskManager({
       details: "",
       planned_start_offset_days: 0,
       planned_end_offset_days: 1,
+      duration_days: 1,
       position: (parentTask.subtasks?.length || 0) + 1,
       technology_scope: "both",
       assigned_role: "implementation_lead"

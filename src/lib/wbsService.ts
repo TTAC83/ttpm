@@ -619,64 +619,85 @@ class WBSService {
     // Get duration (tasks/subtasks only - steps don't have duration)
     const duration = itemDates.duration_days || 1;
     
-    let newStartDate = itemDates.planned_start_offset_days;
-    // Calculate end date from start + duration to ensure duration changes are reflected
-    let newEndDate = newStartDate + duration;
+    // If no dependencies, keep existing dates - don't recalculate
+    if (deps.predecessors.length === 0) {
+      return;
+    }
+    
+    // Track the latest required start/end dates across all dependencies
+    let requiredStartDate: number | null = null;
+    let requiredEndDate: number | null = null;
     
     for (const pred of deps.predecessors) {
       const predDates = await this.getItemDates(pred.predecessor_type, pred.predecessor_id);
       
       switch (pred.dependency_type) {
         case 'FS': // Finish-to-Start: This task starts after predecessor finishes
-          const requiredStart = predDates.planned_end_offset_days + pred.lag_days;
-          if (requiredStart > newStartDate) {
-            newStartDate = requiredStart;
-            newEndDate = newStartDate + duration; // Use duration instead of calculating difference
+          const fsStart = predDates.planned_end_offset_days + pred.lag_days;
+          if (requiredStartDate === null || fsStart > requiredStartDate) {
+            requiredStartDate = fsStart;
           }
           break;
         
         case 'SS': // Start-to-Start: This task starts when predecessor starts
-          const requiredStartSS = predDates.planned_start_offset_days + pred.lag_days;
-          if (requiredStartSS > newStartDate) {
-            newStartDate = requiredStartSS;
-            newEndDate = newStartDate + duration; // Use duration
+          const ssStart = predDates.planned_start_offset_days + pred.lag_days;
+          if (requiredStartDate === null || ssStart > requiredStartDate) {
+            requiredStartDate = ssStart;
           }
           break;
         
         case 'FF': // Finish-to-Finish: This task finishes when predecessor finishes
-          const requiredEndFF = predDates.planned_end_offset_days + pred.lag_days;
-          if (requiredEndFF > newEndDate) {
-            newEndDate = requiredEndFF;
-            newStartDate = newEndDate - duration; // Calculate start from end using duration
+          const ffEnd = predDates.planned_end_offset_days + pred.lag_days;
+          if (requiredEndDate === null || ffEnd > requiredEndDate) {
+            requiredEndDate = ffEnd;
           }
           break;
         
         case 'SF': // Start-to-Finish: This task finishes when predecessor starts
-          const requiredEndSF = predDates.planned_start_offset_days + pred.lag_days;
-          if (requiredEndSF > newEndDate) {
-            newEndDate = requiredEndSF;
-            newStartDate = newEndDate - duration; // Calculate start from end using duration
+          const sfEnd = predDates.planned_start_offset_days + pred.lag_days;
+          if (requiredEndDate === null || sfEnd > requiredEndDate) {
+            requiredEndDate = sfEnd;
           }
           break;
       }
     }
     
-    if (newStartDate !== itemDates.planned_start_offset_days || 
-        newEndDate !== itemDates.planned_end_offset_days) {
-      
-      // Calculate the offset to shift subtasks
-      const offsetDays = newStartDate - itemDates.planned_start_offset_days;
-      
-      await this.updateItemDates(itemType, itemId, newStartDate, newEndDate, offsetDays);
-      
-      // If this is a task (not subtask), shift all subsequent tasks in the same step
-      if (itemType === 'task' && offsetDays !== 0) {
-        await this.shiftSubsequentTasks(itemId, offsetDays);
-      }
-      
-      for (const succ of deps.successors) {
-        await this.recalculateDatesWithDependencies(succ.successor_type, succ.successor_id);
-      }
+    // Calculate final dates based on dependencies
+    let newStartDate: number;
+    let newEndDate: number;
+    
+    if (requiredStartDate !== null && requiredEndDate !== null) {
+      // Both start and end constraints - use whichever gives later dates
+      newStartDate = requiredStartDate;
+      newEndDate = Math.max(requiredEndDate, requiredStartDate + duration);
+    } else if (requiredStartDate !== null) {
+      // Only start constraint
+      newStartDate = requiredStartDate;
+      newEndDate = requiredStartDate + duration;
+    } else if (requiredEndDate !== null) {
+      // Only end constraint
+      newEndDate = requiredEndDate;
+      newStartDate = requiredEndDate - duration;
+    } else {
+      // No dependencies processed (shouldn't happen due to early return)
+      return;
+    }
+    
+    
+    // Always update dates when dependencies exist (force to calculated position)
+    // Calculate the offset to shift subtasks
+    const offsetDays = newStartDate - itemDates.planned_start_offset_days;
+    
+    await this.updateItemDates(itemType, itemId, newStartDate, newEndDate, offsetDays);
+    
+    // If this is a task (not subtask), shift all subsequent tasks in the same step
+    if (itemType === 'task' && offsetDays !== 0) {
+      await this.shiftSubsequentTasks(itemId, offsetDays);
+    }
+    
+    // Cascade recalculation to successor tasks
+    for (const succ of deps.successors) {
+      await this.recalculateDatesWithDependencies(succ.successor_type, succ.successor_id);
     }
   }
 

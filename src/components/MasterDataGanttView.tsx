@@ -64,6 +64,9 @@ export const MasterDataGanttView = ({
   const [vScrollTop, setVScrollTop] = useState(0);
   const [vMaxScrollTop, setVMaxScrollTop] = useState(0);
   
+  // Force dependency re-render on scroll
+  const [depRenderKey, setDepRenderKey] = useState(0);
+  
   // Dependencies
   const [dependencies, setDependencies] = useState<any[]>([]);
   const [hoveredDependency, setHoveredDependency] = useState<string | null>(null);
@@ -221,6 +224,28 @@ export const MasterDataGanttView = ({
     return searchInTasks(tasks);
   };
 
+  // Get effective task bar element for dependency rendering
+  // If a subtask is hidden (parent collapsed or global view), use parent's bar instead
+  const getEffectiveTaskElement = (taskId: number, taskType: 'task' | 'subtask'): HTMLElement | null => {
+    const task = findTaskById(taskId);
+    if (!task) return null;
+
+    // If it's a subtask and subtasks are hidden, use parent task bar
+    if (taskType === 'subtask' && task.parent_task_id) {
+      // Check if subtasks are hidden globally
+      if (collapseState.globalLevel !== 'all') {
+        return document.getElementById(`gantt-bar-task-${task.parent_task_id}`);
+      }
+      // Check if parent task is collapsed
+      if (!isTaskExpanded(task.parent_task_id)) {
+        return document.getElementById(`gantt-bar-task-${task.parent_task_id}`);
+      }
+    }
+
+    // Return the actual element
+    return document.getElementById(`gantt-bar-${taskType}-${taskId}`);
+  };
+
   const getTechScopeColor = (scope: string) => {
     switch (scope) {
       case 'iot': return 'bg-blue-500';
@@ -247,6 +272,8 @@ export const MasterDataGanttView = ({
         ref.scrollLeft = scrollLeft;
       }
     });
+    // Trigger dependency re-render
+    setDepRenderKey(prev => prev + 1);
   };
 
   // Update max scroll when data changes
@@ -373,6 +400,8 @@ export const MasterDataGanttView = ({
     const el = e.currentTarget;
     setVScrollTop(el.scrollTop);
     setVMaxScrollTop(Math.max(0, el.scrollHeight - el.clientHeight));
+    // Trigger dependency re-render
+    setDepRenderKey(prev => prev + 1);
   };
 
   const handleVerticalScroll = (newTop: number) => {
@@ -960,7 +989,11 @@ export const MasterDataGanttView = ({
       
       {/* Dependency Arrows SVG Overlay */}
       {dependencies.length > 0 && (
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-40 pointer-events-none">
+        <div 
+          key={depRenderKey}
+          className="absolute top-14 left-0 right-0 bottom-0 overflow-hidden z-40 pointer-events-none"
+          style={{ paddingLeft: '24px' }}
+        >
           <svg className="w-full h-full">
             <defs>
               <marker
@@ -991,60 +1024,50 @@ export const MasterDataGanttView = ({
               
               if (!predTask || !succTask) return null;
               
-              // Check collapse visibility
-              const isPredSubtask = predTask.parent_task_id !== null;
-              const isSuccSubtask = succTask.parent_task_id !== null;
-              
-              // Hide if subtasks are collapsed globally
-              if (isPredSubtask && collapseState.globalLevel !== 'all') return null;
-              if (isSuccSubtask && collapseState.globalLevel !== 'all') return null;
-              
-              // Hide if parent task is collapsed
-              if (isPredSubtask && predTask.parent_task_id && !isTaskExpanded(predTask.parent_task_id)) return null;
-              if (isSuccSubtask && succTask.parent_task_id && !isTaskExpanded(succTask.parent_task_id)) return null;
-              
               // Hide if step is collapsed
               if (!isStepExpanded(predTask.step_id) || !isStepExpanded(succTask.step_id)) return null;
               
-              // Find predecessor and successor bars
-              const predEl = document.getElementById(`gantt-bar-${dep.predecessor_type}-${dep.predecessor_id}`);
-              const succEl = document.getElementById(`gantt-bar-${dep.successor_type}-${dep.successor_id}`);
+              // Get effective task bar elements (handles collapsed states)
+              const predEl = getEffectiveTaskElement(dep.predecessor_id, dep.predecessor_type);
+              const succEl = getEffectiveTaskElement(dep.successor_id, dep.successor_type);
               
               if (!predEl || !succEl) return null;
               
               const predRect = predEl.getBoundingClientRect();
               const succRect = succEl.getBoundingClientRect();
-              const containerRect = verticalRef.current?.getBoundingClientRect();
+              const svgContainer = verticalRef.current?.parentElement;
               
-              if (!containerRect) return null;
+              if (!svgContainer) return null;
               
-              // Calculate positions relative to container
+              const svgRect = svgContainer.getBoundingClientRect();
+              
+              // Calculate positions relative to SVG container (accounting for scroll)
               let x1, y1, x2, y2;
               
               switch (dep.dependency_type) {
                 case 'FS': // Finish-to-Start
-                  x1 = predRect.right - containerRect.left;
-                  y1 = predRect.top + predRect.height / 2 - containerRect.top;
-                  x2 = succRect.left - containerRect.left;
-                  y2 = succRect.top + succRect.height / 2 - containerRect.top;
+                  x1 = predRect.right - svgRect.left;
+                  y1 = predRect.top + predRect.height / 2 - svgRect.top;
+                  x2 = succRect.left - svgRect.left;
+                  y2 = succRect.top + succRect.height / 2 - svgRect.top;
                   break;
                 case 'SS': // Start-to-Start
-                  x1 = predRect.left - containerRect.left;
-                  y1 = predRect.top + predRect.height / 2 - containerRect.top;
-                  x2 = succRect.left - containerRect.left;
-                  y2 = succRect.top + succRect.height / 2 - containerRect.top;
+                  x1 = predRect.left - svgRect.left;
+                  y1 = predRect.top + predRect.height / 2 - svgRect.top;
+                  x2 = succRect.left - svgRect.left;
+                  y2 = succRect.top + succRect.height / 2 - svgRect.top;
                   break;
                 case 'FF': // Finish-to-Finish
-                  x1 = predRect.right - containerRect.left;
-                  y1 = predRect.top + predRect.height / 2 - containerRect.top;
-                  x2 = succRect.right - containerRect.left;
-                  y2 = succRect.top + succRect.height / 2 - containerRect.top;
+                  x1 = predRect.right - svgRect.left;
+                  y1 = predRect.top + predRect.height / 2 - svgRect.top;
+                  x2 = succRect.right - svgRect.left;
+                  y2 = succRect.top + succRect.height / 2 - svgRect.top;
                   break;
                 case 'SF': // Start-to-Finish
-                  x1 = predRect.left - containerRect.left;
-                  y1 = predRect.top + predRect.height / 2 - containerRect.top;
-                  x2 = succRect.right - containerRect.left;
-                  y2 = succRect.top + succRect.height / 2 - containerRect.top;
+                  x1 = predRect.left - svgRect.left;
+                  y1 = predRect.top + predRect.height / 2 - svgRect.top;
+                  x2 = succRect.right - svgRect.left;
+                  y2 = succRect.top + succRect.height / 2 - svgRect.top;
                   break;
                 default:
                   return null;

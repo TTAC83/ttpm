@@ -819,47 +819,21 @@ const DetailSidebar = ({ node, onClose, onUpdate }: DetailSidebarProps) => {
           throw error;
         }
       } else {
-        const task = node.data as MasterTask;
-        stepIdToRecalc = task.step_id;
-        parentTaskIdToRecalc = task.parent_task_id || null;
-        
-        const { data, error } = await supabase
-          .from('master_tasks')
-          .update({
-            title: formData.title,
-            details: formData.details,
-            duration_days: formData.duration_days,
-            position: formData.position,
-            technology_scope: formData.technology_scope,
-            assigned_role: formData.assigned_role || null
-          })
-          .eq('id', parseInt(id))
-          .select();
-
-        console.log('💾 master_tasks update result:', { data, error });
-        if (error) {
-          throw error;
-        }
-        if (!data || data.length === 0) {
-          throw new Error('Update returned no rows. You may not have SELECT permission after update (RLS).');
-        }
+        // Use wbsService.updateMasterTask to trigger automatic recalculation
+        await wbsService.updateMasterTask(parseInt(id), {
+          title: formData.title,
+          details: formData.details,
+          duration_days: formData.duration_days,
+          position: formData.position,
+          technology_scope: formData.technology_scope,
+          assigned_role: formData.assigned_role || null
+        });
       }
 
       toast({
         title: "Updated",
         description: "Changes saved successfully",
       });
-
-      // Recalculate dates based on what was updated
-      if (stepIdToRecalc) {
-        if (parentTaskIdToRecalc) {
-          // If it's a subtask, recalculate parent task and step dates
-          await wbsService.recalculateTaskAndStepDates(parentTaskIdToRecalc, stepIdToRecalc);
-        } else {
-          // If it's a main task, recalculate step dates
-          await wbsService.updateStepDatesFromTasks(stepIdToRecalc);
-        }
-      }
       
       onUpdate();
     } catch (error: any) {

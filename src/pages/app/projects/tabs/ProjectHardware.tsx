@@ -19,6 +19,7 @@ interface ProjectHardwareProps {
 interface HardwareRequirement {
   id: string;
   hardware_type: 'gateway' | 'receiver' | 'device';
+  name: string | null;
   quantity: number;
   notes: string | null;
   gateway_id: string | null;
@@ -234,6 +235,9 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
                     <CardContent className="pt-6">
                       <div className="flex items-start justify-between">
                         <div className="space-y-1 flex-1">
+                          {req.name && (
+                            <p className="text-lg font-semibold">{req.name}</p>
+                          )}
                           <p className="font-medium">
                             {req.gateways_master?.manufacturer} - {req.gateways_master?.model_number}
                           </p>
@@ -280,6 +284,9 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
                     <CardContent className="pt-6">
                       <div className="flex items-start justify-between">
                         <div className="space-y-1 flex-1">
+                          {req.name && (
+                            <p className="text-lg font-semibold">{req.name}</p>
+                          )}
                           <p className="font-medium">
                             {req.receivers_master?.manufacturer} - {req.receivers_master?.model_number}
                           </p>

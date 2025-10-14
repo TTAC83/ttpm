@@ -1399,6 +1399,54 @@ export type Database = {
         }
         Relationships: []
       }
+      hardware_master: {
+        Row: {
+          comments: string | null
+          created_at: string | null
+          description: string | null
+          hardware_type: string
+          id: string
+          minimum_quantity: number | null
+          price_gbp: number | null
+          product_name: string
+          required_optional: string | null
+          sku_no: string
+          tags: string | null
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          comments?: string | null
+          created_at?: string | null
+          description?: string | null
+          hardware_type: string
+          id?: string
+          minimum_quantity?: number | null
+          price_gbp?: number | null
+          product_name: string
+          required_optional?: string | null
+          sku_no: string
+          tags?: string | null
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          comments?: string | null
+          created_at?: string | null
+          description?: string | null
+          hardware_type?: string
+          id?: string
+          minimum_quantity?: number | null
+          price_gbp?: number | null
+          product_name?: string
+          required_optional?: string | null
+          sku_no?: string
+          tags?: string | null
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       impl_weekly_reviews: {
         Row: {
           churn_risk: Database["public"]["Enums"]["churn_risk_level"] | null
@@ -2277,6 +2325,85 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_hardware_requirements: {
+        Row: {
+          bau_customer_id: string | null
+          created_at: string | null
+          hardware_master_id: string
+          id: string
+          notes: string | null
+          project_id: string | null
+          quantity: number
+          solutions_project_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          bau_customer_id?: string | null
+          created_at?: string | null
+          hardware_master_id: string
+          id?: string
+          notes?: string | null
+          project_id?: string | null
+          quantity?: number
+          solutions_project_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          bau_customer_id?: string | null
+          created_at?: string | null
+          hardware_master_id?: string
+          id?: string
+          notes?: string | null
+          project_id?: string | null
+          quantity?: number
+          solutions_project_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_hardware_requirements_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "bau_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_hardware_requirements_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_latest_review"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_hardware_requirements_bau_customer_id_fkey"
+            columns: ["bau_customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_bau_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_hardware_requirements_hardware_master_id_fkey"
+            columns: ["hardware_master_id"]
+            isOneToOne: false
+            referencedRelation: "hardware_master"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_hardware_requirements_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_hardware_requirements_solutions_project_id_fkey"
+            columns: ["solutions_project_id"]
+            isOneToOne: false
+            referencedRelation: "solutions_projects"
             referencedColumns: ["id"]
           },
         ]

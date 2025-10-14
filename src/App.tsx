@@ -30,14 +30,7 @@ import { UpdateVillageBakeryDates } from "./pages/app/projects/UpdateVillageBake
 import { UpdateParkCakesDates } from "./pages/app/projects/UpdateParkCakesDates";
 import ProjectDetail from "./pages/app/projects/ProjectDetail";
 import MasterDataManagement from "./pages/app/admin/MasterDataManagement";
-import LightsManagement from "./pages/app/admin/LightsManagement";
-import { CamerasManagement } from "./pages/app/admin/CamerasManagement";
-import { LensManagement } from "./pages/app/admin/LensManagement";
-import { PlcManagement } from "./pages/app/admin/PlcManagement";
-import ServersManagement from "./pages/app/admin/ServersManagement";
-import GatewaysManagement from "./pages/app/admin/GatewaysManagement";
-import ReceiversManagement from "./pages/app/admin/ReceiversManagement";
-import TvDisplaysManagement from "./pages/app/admin/TvDisplaysManagement";
+import HardwareManagement from "./pages/app/admin/HardwareManagement";
 import FeatureRequests from "./pages/app/FeatureRequests";
 import FeatureRequestDetail from "./pages/app/FeatureRequestDetail";
 import FeatureDashboard from "./pages/app/FeatureDashboard";
@@ -299,66 +292,10 @@ const App = () => (
                 } 
               />
               <Route 
-                path="admin/lights" 
+                path="admin/hardware" 
                 element={
                   <AuthGuard requiredRole="internal_admin">
-                    <LightsManagement />
-                  </AuthGuard>
-                } 
-              />
-              <Route 
-                path="admin/cameras" 
-                element={
-                  <AuthGuard requiredRole="internal_admin">
-                    <CamerasManagement />
-                  </AuthGuard>
-                } 
-              />
-              <Route 
-                path="admin/lenses" 
-                element={
-                  <AuthGuard requiredRole="internal_admin">
-                    <LensManagement />
-                  </AuthGuard>
-                } 
-              />
-              <Route 
-                path="admin/plcs" 
-                element={
-                  <AuthGuard requiredRole="internal_admin">
-                    <PlcManagement />
-                  </AuthGuard>
-                } 
-              />
-              <Route 
-                path="admin/servers" 
-                element={
-                  <AuthGuard requiredRole="internal_admin">
-                    <ServersManagement />
-                  </AuthGuard>
-                } 
-              />
-              <Route 
-                path="admin/gateways" 
-                element={
-                  <AuthGuard requiredRole="internal_admin">
-                    <GatewaysManagement />
-                  </AuthGuard>
-                } 
-              />
-              <Route 
-                path="admin/receivers" 
-                element={
-                  <AuthGuard requiredRole="internal_admin">
-                    <ReceiversManagement />
-                  </AuthGuard>
-                } 
-              />
-              <Route 
-                path="admin/tv-displays" 
-                element={
-                  <AuthGuard requiredRole="internal_admin">
-                    <TvDisplaysManagement />
+                    <HardwareManagement />
                   </AuthGuard>
                 } 
               />

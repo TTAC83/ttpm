@@ -195,52 +195,10 @@ export const NAV: NavItem[] = [
         matchPaths: ["/app/admin/masterdata"]
       },
       { 
-        label: "Cameras", 
-        to: "/app/admin/cameras",
-        iconName: "Eye",
-        matchPaths: ["/app/admin/cameras"]
-      },
-      { 
-        label: "Lenses", 
-        to: "/app/admin/lenses",
-        iconName: "Settings",
-        matchPaths: ["/app/admin/lenses"]
-      },
-      { 
-        label: "Lights", 
-        to: "/app/admin/lights",
-        iconName: "Lightbulb",
-        matchPaths: ["/app/admin/lights"]
-      },
-      { 
-        label: "Gateways", 
-        to: "/app/admin/gateways",
-        iconName: "Wifi",
-        matchPaths: ["/app/admin/gateways"]
-      },
-      { 
-        label: "Receivers", 
-        to: "/app/admin/receivers",
-        iconName: "Radio",
-        matchPaths: ["/app/admin/receivers"]
-      },
-      { 
-        label: "Servers", 
-        to: "/app/admin/servers",
-        iconName: "Server",
-        matchPaths: ["/app/admin/servers"]
-      },
-      { 
-        label: "PLCs", 
-        to: "/app/admin/plcs",
-        iconName: "Settings",
-        matchPaths: ["/app/admin/plcs"]
-      },
-      { 
-        label: "TV Displays", 
-        to: "/app/admin/tv-displays",
-        iconName: "Monitor",
-        matchPaths: ["/app/admin/tv-displays"]
+        label: "Hardware Catalog", 
+        to: "/app/admin/hardware",
+        iconName: "Package",
+        matchPaths: ["/app/admin/hardware"]
       },
     ]
   },

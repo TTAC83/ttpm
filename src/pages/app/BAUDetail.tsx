@@ -202,7 +202,6 @@ export const BAUDetail = () => {
 
         <TabsContent value="factory" className="space-y-4">
           <FactoryConfigurationTab projectId={customer.id} type="bau" onUpdate={loadCustomer} />
-          <HardwareTab projectId={customer.id} type="bau" onUpdate={loadCustomer} />
         </TabsContent>
 
         <TabsContent value="tickets">

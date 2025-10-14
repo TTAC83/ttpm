@@ -196,7 +196,6 @@ export const SolutionsProjectDetail = () => {
 
         <TabsContent value="factory" className="space-y-4">
           <FactoryConfigurationTab projectId={project.id} type="solutions" projectDomain={project.domain} onUpdate={fetchProject} />
-          <HardwareTab projectId={project.id} type="solutions" onUpdate={fetchProject} />
         </TabsContent>
 
         <TabsContent value="lines" className="space-y-4">

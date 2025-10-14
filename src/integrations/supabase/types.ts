@@ -2334,6 +2334,7 @@ export type Database = {
           bau_customer_id: string | null
           created_at: string
           gateway_id: string | null
+          hardware_master_id: string | null
           hardware_type: string
           id: string
           notes: string | null
@@ -2347,6 +2348,7 @@ export type Database = {
           bau_customer_id?: string | null
           created_at?: string
           gateway_id?: string | null
+          hardware_master_id?: string | null
           hardware_type: string
           id?: string
           notes?: string | null
@@ -2360,6 +2362,7 @@ export type Database = {
           bau_customer_id?: string | null
           created_at?: string
           gateway_id?: string | null
+          hardware_master_id?: string | null
           hardware_type?: string
           id?: string
           notes?: string | null
@@ -2396,6 +2399,13 @@ export type Database = {
             columns: ["gateway_id"]
             isOneToOne: false
             referencedRelation: "gateways_master"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_iot_requirements_hardware_master_id_fkey"
+            columns: ["hardware_master_id"]
+            isOneToOne: false
+            referencedRelation: "hardware_master"
             referencedColumns: ["id"]
           },
           {

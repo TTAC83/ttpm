@@ -23,6 +23,7 @@ interface HardwareRequirement {
   notes: string | null;
   gateway_id: string | null;
   receiver_id: string | null;
+  hardware_master_id?: string | null;
   gateways_master?: {
     id: string;
     manufacturer: string;
@@ -35,13 +36,20 @@ interface HardwareRequirement {
     model_number: string;
     description: string | null;
   } | null;
+  hardware_master?: {
+    id: string;
+    product_name: string;
+    sku_no: string;
+    description: string | null;
+    hardware_type: string;
+  } | null;
 }
 
 export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedType, setSelectedType] = useState<'gateway' | 'receiver' | null>(null);
+  const [selectedType, setSelectedType] = useState<'gateway' | 'receiver' | 'device' | null>(null);
   const [selectedHardwareId, setSelectedHardwareId] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState('');
@@ -55,7 +63,8 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
         .select(`
           *,
           gateways_master (id, manufacturer, model_number, description),
-          receivers_master (id, manufacturer, model_number, description)
+          receivers_master (id, manufacturer, model_number, description),
+          hardware_master (id, product_name, sku_no, description, hardware_type)
         `);
 
       if (type === 'project') {
@@ -103,6 +112,22 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
     enabled: selectedType === 'receiver',
   });
 
+  // Fetch IoT devices from hardware_master
+  const { data: devices = [] } = useQuery({
+    queryKey: ['hardware-master-iot'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('hardware_master')
+        .select('*')
+        .in('hardware_type', ['Camera', 'Server', 'TV Display', 'PLC', 'Light', 'Lens'])
+        .order('product_name', { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: selectedType === 'device',
+  });
+
   // Add hardware requirement
   const addMutation = useMutation({
     mutationFn: async () => {
@@ -124,6 +149,8 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
         payload.gateway_id = selectedHardwareId;
       } else if (selectedType === 'receiver') {
         payload.receiver_id = selectedHardwareId;
+      } else if (selectedType === 'device') {
+        payload.hardware_master_id = selectedHardwareId;
       }
 
       const { error } = await supabase
@@ -169,7 +196,7 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
     },
   });
 
-  const handleOpenDialog = (hwType: 'gateway' | 'receiver') => {
+  const handleOpenDialog = (hwType: 'gateway' | 'receiver' | 'device') => {
     setSelectedType(hwType);
     setDialogOpen(true);
   };
@@ -196,6 +223,7 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
 
   const gatewayRequirements = requirements.filter(r => r.hardware_type === 'gateway');
   const receiverRequirements = requirements.filter(r => r.hardware_type === 'receiver');
+  const deviceRequirements = requirements.filter(r => r.hardware_type === 'device');
 
   if (isLoading) {
     return (
@@ -305,16 +333,53 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
             )}
           </div>
 
-          {/* IoT Devices (greyed out) */}
-          <div className="space-y-4 opacity-50">
+          {/* IoT Devices */}
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">IoT Devices</h3>
-              <Button size="sm" disabled>
+              <Button size="sm" onClick={() => handleOpenDialog('device')}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Device
               </Button>
             </div>
-            <p className="text-sm text-muted-foreground">Coming soon</p>
+            {deviceRequirements.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No devices added yet</p>
+            ) : (
+              <div className="space-y-2">
+                {deviceRequirements.map((req) => (
+                  <Card key={req.id}>
+                    <CardContent className="pt-6">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1 flex-1">
+                          <p className="font-medium">
+                            {req.hardware_master?.product_name}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {req.hardware_master?.hardware_type} - {req.hardware_master?.sku_no}
+                          </p>
+                          {req.hardware_master?.description && (
+                            <p className="text-sm text-muted-foreground">{req.hardware_master.description}</p>
+                          )}
+                          <p className="text-sm">
+                            <span className="font-medium">Quantity:</span> {req.quantity}
+                          </p>
+                          {req.notes && (
+                            <p className="text-sm text-muted-foreground">{req.notes}</p>
+                          )}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteMutation.mutate(req.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -324,19 +389,19 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              Add {selectedType === 'gateway' ? 'Gateway' : 'Receiver'}
+              Add {selectedType === 'gateway' ? 'Gateway' : selectedType === 'receiver' ? 'Receiver' : 'IoT Device'}
             </DialogTitle>
             <DialogDescription>
-              Select a {selectedType} from the master data catalog
+              Select a {selectedType === 'device' ? 'device' : selectedType} from the master data catalog
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Select {selectedType === 'gateway' ? 'Gateway' : 'Receiver'}</Label>
+              <Label>Select {selectedType === 'gateway' ? 'Gateway' : selectedType === 'receiver' ? 'Receiver' : 'IoT Device'}</Label>
               <Select value={selectedHardwareId} onValueChange={setSelectedHardwareId}>
                 <SelectTrigger>
-                  <SelectValue placeholder={`Select a ${selectedType}`} />
+                  <SelectValue placeholder={`Select a ${selectedType === 'device' ? 'device' : selectedType}`} />
                 </SelectTrigger>
                 <SelectContent>
                   {selectedType === 'gateway' &&
@@ -349,6 +414,12 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
                     receivers.map((receiver) => (
                       <SelectItem key={receiver.id} value={receiver.id}>
                         {receiver.manufacturer} - {receiver.model_number}
+                      </SelectItem>
+                    ))}
+                  {selectedType === 'device' &&
+                    devices.map((device) => (
+                      <SelectItem key={device.id} value={device.id}>
+                        {device.product_name} ({device.hardware_type})
                       </SelectItem>
                     ))}
                 </SelectContent>

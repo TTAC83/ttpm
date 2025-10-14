@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Cpu } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
 interface ProjectHardwareProps {
@@ -72,6 +72,62 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
       
       if (error) throw error;
       return data as HardwareRequirement[];
+    },
+  });
+
+  // Fetch IoT devices from lines/equipment
+  const { data: iotDevicesFromLines = [] } = useQuery({
+    queryKey: ['project-iot-devices-from-lines', projectId],
+    queryFn: async () => {
+      // First get all lines for this project
+      const { data: lines, error: linesError } = await supabase
+        .from('lines')
+        .select('id')
+        .eq('project_id', projectId);
+      
+      if (linesError) throw linesError;
+      if (!lines || lines.length === 0) return [];
+
+      const lineIds = lines.map(l => l.id);
+
+      // Get all equipment for these lines
+      const { data: equipment, error: equipmentError } = await supabase
+        .from('equipment')
+        .select('id, name')
+        .in('line_id', lineIds);
+      
+      if (equipmentError) throw equipmentError;
+      if (!equipment || equipment.length === 0) return [];
+
+      const equipmentIds = equipment.map(e => e.id);
+
+      // Get all IoT devices for this equipment
+      const { data: iotDevices, error: iotError } = await supabase
+        .from('iot_devices')
+        .select(`
+          id,
+          name,
+          mac_address,
+          receiver_mac_address,
+          hardware_master_id,
+          equipment_id,
+          hardware_master (
+            id,
+            sku_no,
+            product_name,
+            hardware_type,
+            description
+          )
+        `)
+        .in('equipment_id', equipmentIds);
+      
+      if (iotError) throw iotError;
+
+      // Add equipment name to each device
+      return (iotDevices || []).map(device => ({
+        ...device,
+        equipment_name: equipment.find(e => e.id === device.equipment_id)?.name || 'Unknown Equipment'
+      }));
     },
   });
 
@@ -315,16 +371,52 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
             )}
           </div>
 
-          {/* IoT Devices (greyed out) */}
-          <div className="space-y-4 opacity-50">
+          {/* IoT Devices */}
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">IoT Devices</h3>
-              <Button size="sm" disabled>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Device
-              </Button>
             </div>
-            <p className="text-sm text-muted-foreground">Coming soon</p>
+            {iotDevicesFromLines.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No IoT devices added in line configuration yet</p>
+            ) : (
+              <div className="space-y-2">
+                {iotDevicesFromLines.map((device: any) => (
+                  <Card key={device.id}>
+                    <CardContent className="pt-6">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1 flex-1">
+                          <div className="flex items-center gap-2">
+                            <Cpu className="h-4 w-4 text-blue-600" />
+                            <p className="text-lg font-semibold">{device.name}</p>
+                          </div>
+                          {device.hardware_master && (
+                            <p className="font-medium">
+                              {device.hardware_master.sku_no} - {device.hardware_master.product_name}
+                            </p>
+                          )}
+                          {device.hardware_master?.description && (
+                            <p className="text-sm text-muted-foreground">{device.hardware_master.description}</p>
+                          )}
+                          <p className="text-sm">
+                            <span className="font-medium">Equipment:</span> {device.equipment_name}
+                          </p>
+                          {device.mac_address && (
+                            <p className="text-sm">
+                              <span className="font-medium">MAC Address:</span> {device.mac_address}
+                            </p>
+                          )}
+                          {device.receiver_mac_address && (
+                            <p className="text-sm">
+                              <span className="font-medium">Receiver MAC:</span> {device.receiver_mac_address}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

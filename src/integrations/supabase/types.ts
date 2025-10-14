@@ -1711,6 +1711,7 @@ export type Database = {
         Row: {
           created_at: string
           equipment_id: string
+          hardware_master_id: string | null
           id: string
           mac_address: string
           name: string
@@ -1720,6 +1721,7 @@ export type Database = {
         Insert: {
           created_at?: string
           equipment_id: string
+          hardware_master_id?: string | null
           id?: string
           mac_address: string
           name?: string
@@ -1729,6 +1731,7 @@ export type Database = {
         Update: {
           created_at?: string
           equipment_id?: string
+          hardware_master_id?: string | null
           id?: string
           mac_address?: string
           name?: string
@@ -1741,6 +1744,13 @@ export type Database = {
             columns: ["equipment_id"]
             isOneToOne: false
             referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "iot_devices_hardware_master_id_fkey"
+            columns: ["hardware_master_id"]
+            isOneToOne: false
+            referencedRelation: "hardware_master"
             referencedColumns: ["id"]
           },
         ]

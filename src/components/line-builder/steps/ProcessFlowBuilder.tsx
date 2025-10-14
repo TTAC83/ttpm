@@ -29,6 +29,7 @@ interface Equipment {
   iot_devices: Array<{
     id: string;
     name: string;
+    hardware_master_id: string;
     mac_address: string;
     receiver_mac_address: string;
   }>;

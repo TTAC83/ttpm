@@ -22,8 +22,8 @@ import { BAUExpensesTab } from './bau/tabs/BAUExpensesTab';
 import { BAUAuditTab } from './bau/tabs/BAUAuditTab';
 import { BAUWeeklyReviewsTab } from './bau/tabs/BAUWeeklyReviewsTab';
 import { useExpenseAccess } from '@/hooks/useExpenseAccess';
-import { HardwareTab } from '@/components/shared/HardwareTab';
 import { FactoryConfigurationTab } from '@/components/shared/FactoryConfigurationTab';
+import { ProjectHardware } from './projects/tabs/ProjectHardware';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
@@ -184,8 +184,9 @@ export const BAUDetail = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className={`grid w-full ${hasExpenseAccess ? 'grid-cols-9' : 'grid-cols-8'}`}>
+        <TabsList className={`grid w-full ${hasExpenseAccess ? 'grid-cols-10' : 'grid-cols-9'}`}>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="hardware">Hardware</TabsTrigger>
           <TabsTrigger value="factory">Factory</TabsTrigger>
           <TabsTrigger value="tickets">Tickets</TabsTrigger>
           <TabsTrigger value="visits">Visits</TabsTrigger>
@@ -198,6 +199,10 @@ export const BAUDetail = () => {
 
         <TabsContent value="overview">
           <BAUOverviewTab customer={customer} onUpdate={loadCustomer} />
+        </TabsContent>
+
+        <TabsContent value="hardware" className="space-y-4">
+          <ProjectHardware projectId={customer.id} type="bau" />
         </TabsContent>
 
         <TabsContent value="factory" className="space-y-4">

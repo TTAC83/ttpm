@@ -25,6 +25,7 @@ import ProjectVisionModels from './tabs/ProjectVisionModels';
 import { ProjectBlockers } from './tabs/ProjectBlockers';
 import { ProjectProductGaps } from './tabs/ProjectProductGaps';
 import WBS from '../implementation/WBS';
+import { ProjectHardware } from './tabs/ProjectHardware';
 
 interface Project {
   id: string;
@@ -123,7 +124,7 @@ export const ProjectDetail = () => {
   useEffect(() => {
     // Handle URL parameters to set active tab
     const tab = searchParams.get('tab');
-    if (tab && ['overview', 'factory', 'lines', 'tasks', 'gantt', 'actions', 'calendar', 'vision-models', 'audit', 'blockers'].includes(tab)) {
+    if (tab && ['overview', 'hardware', 'factory', 'lines', 'tasks', 'gantt', 'actions', 'calendar', 'vision-models', 'audit', 'blockers'].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -375,8 +376,9 @@ export const ProjectDetail = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="space-y-2">
           {/* First row of tabs */}
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="hardware">Hardware</TabsTrigger>
             <TabsTrigger value="factory">Factory</TabsTrigger>
             <TabsTrigger value="lines">Lines</TabsTrigger>
             <TabsTrigger value="tasks">Tasks</TabsTrigger>
@@ -408,6 +410,10 @@ export const ProjectDetail = () => {
 
         <TabsContent value="overview" className="space-y-4">
           <ProjectOverview project={project} onUpdate={fetchProject} />
+        </TabsContent>
+
+        <TabsContent value="hardware" className="space-y-4">
+          <ProjectHardware projectId={project.id} type="project" />
         </TabsContent>
 
         <TabsContent value="factory" className="space-y-4">

@@ -9,8 +9,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { SolutionsLines } from './tabs/SolutionsLines';
 import { OverviewTab } from '@/components/shared/OverviewTab';
-import { HardwareTab } from '@/components/shared/HardwareTab';
 import { FactoryConfigurationTab } from '@/components/shared/FactoryConfigurationTab';
+import { ProjectHardware } from '../projects/tabs/ProjectHardware';
 
 interface SolutionsProject {
   id: string;
@@ -76,7 +76,7 @@ export const SolutionsProjectDetail = () => {
 
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['overview', 'factory', 'lines'].includes(tab)) {
+    if (tab && ['overview', 'hardware', 'factory', 'lines'].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -184,14 +184,19 @@ export const SolutionsProjectDetail = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-3 lg:w-auto">
+        <TabsList className="grid grid-cols-4 lg:w-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="hardware">Hardware</TabsTrigger>
           <TabsTrigger value="factory">Factory</TabsTrigger>
           <TabsTrigger value="lines">Lines</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
           <OverviewTab data={project} onUpdate={fetchProject} type="solutions" />
+        </TabsContent>
+
+        <TabsContent value="hardware" className="space-y-4">
+          <ProjectHardware projectId={project.id} type="solutions" />
         </TabsContent>
 
         <TabsContent value="factory" className="space-y-4">

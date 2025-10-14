@@ -2329,78 +2329,91 @@ export type Database = {
           },
         ]
       }
-      project_hardware_requirements: {
+      project_iot_requirements: {
         Row: {
           bau_customer_id: string | null
-          created_at: string | null
-          hardware_master_id: string
+          created_at: string
+          gateway_id: string | null
+          hardware_type: string
           id: string
           notes: string | null
           project_id: string | null
           quantity: number
+          receiver_id: string | null
           solutions_project_id: string | null
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           bau_customer_id?: string | null
-          created_at?: string | null
-          hardware_master_id: string
+          created_at?: string
+          gateway_id?: string | null
+          hardware_type: string
           id?: string
           notes?: string | null
           project_id?: string | null
           quantity?: number
+          receiver_id?: string | null
           solutions_project_id?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           bau_customer_id?: string | null
-          created_at?: string | null
-          hardware_master_id?: string
+          created_at?: string
+          gateway_id?: string | null
+          hardware_type?: string
           id?: string
           notes?: string | null
           project_id?: string | null
           quantity?: number
+          receiver_id?: string | null
           solutions_project_id?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "project_hardware_requirements_bau_customer_id_fkey"
+            foreignKeyName: "project_iot_requirements_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
             referencedRelation: "bau_customers"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "project_hardware_requirements_bau_customer_id_fkey"
+            foreignKeyName: "project_iot_requirements_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
             referencedRelation: "v_bau_latest_review"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "project_hardware_requirements_bau_customer_id_fkey"
+            foreignKeyName: "project_iot_requirements_bau_customer_id_fkey"
             columns: ["bau_customer_id"]
             isOneToOne: false
             referencedRelation: "v_bau_list"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "project_hardware_requirements_hardware_master_id_fkey"
-            columns: ["hardware_master_id"]
+            foreignKeyName: "project_iot_requirements_gateway_id_fkey"
+            columns: ["gateway_id"]
             isOneToOne: false
-            referencedRelation: "hardware_master"
+            referencedRelation: "gateways_master"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "project_hardware_requirements_project_id_fkey"
+            foreignKeyName: "project_iot_requirements_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "project_hardware_requirements_solutions_project_id_fkey"
+            foreignKeyName: "project_iot_requirements_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "receivers_master"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_iot_requirements_solutions_project_id_fkey"
             columns: ["solutions_project_id"]
             isOneToOne: false
             referencedRelation: "solutions_projects"

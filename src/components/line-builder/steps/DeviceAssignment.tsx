@@ -69,6 +69,14 @@ interface PlcMaster {
   plc_type?: string;
 }
 
+interface HardwareMaster {
+  id: string;
+  sku_no: string;
+  product_name: string;
+  hardware_type: string;
+  description?: string;
+}
+
 interface DeviceAssignmentProps {
   positions: Position[];
   setPositions: (positions: Position[]) => void;
@@ -86,6 +94,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   const [cameras, setCameras] = useState<CameraMaster[]>([]);
   const [lenses, setLenses] = useState<LensMaster[]>([]);
   const [plcs, setPlcs] = useState<PlcMaster[]>([]);
+  const [iotDevices, setIotDevices] = useState<HardwareMaster[]>([]);
 
   // Camera form state
   const [cameraForm, setCameraForm] = useState({
@@ -102,14 +111,15 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   // IoT form state
   const [iotForm, setIotForm] = useState({
     name: "",
+    hardware_master_id: "",
     mac_address: "",
     receiver_mac_address: "",
   });
 
-  // Fetch lights, cameras, lenses, and PLCs for the dropdowns
+  // Fetch lights, cameras, lenses, PLCs, and IoT devices for the dropdowns
   useEffect(() => {
     const fetchData = async () => {
-      const [lightsData, camerasData, lensesData, plcsData] = await Promise.all([
+      const [lightsData, camerasData, lensesData, plcsData, iotDevicesData] = await Promise.all([
         supabase
           .from('lights')
           .select('id, manufacturer, model_number, description')
@@ -125,7 +135,12 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
         supabase
           .from('plc_master')
           .select('id, manufacturer, model_number, plc_type')
-          .order('manufacturer', { ascending: true })
+          .order('manufacturer', { ascending: true }),
+        supabase
+          .from('hardware_master')
+          .select('id, sku_no, product_name, hardware_type, description')
+          .in('hardware_type', ['Camera', 'Server', 'TV Display', 'PLC', 'Light', 'Lens'])
+          .order('product_name', { ascending: true })
       ]);
       
       if (lightsData.data) {
@@ -139,6 +154,9 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       }
       if (plcsData.data) {
         setPlcs(plcsData.data);
+      }
+      if (iotDevicesData.data) {
+        setIotDevices(iotDevicesData.data);
       }
     };
 
@@ -217,7 +235,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       )
     );
 
-    setIotForm({ name: "", mac_address: "", receiver_mac_address: "" });
+    setIotForm({ name: "", hardware_master_id: "", mac_address: "", receiver_mac_address: "" });
     setDeviceDialogOpen(false);
   };
 
@@ -569,6 +587,29 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                   placeholder="Enter device name"
                 />
               </div>
+              
+              <div>
+                <Label htmlFor="iot-device-model">IoT Device Model</Label>
+                <Select
+                  value={iotForm.hardware_master_id}
+                  onValueChange={(value) =>
+                    setIotForm({ ...iotForm, hardware_master_id: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose IoT device from hardware master data" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {iotDevices.map((device) => (
+                      <SelectItem key={device.id} value={device.id}>
+                        {device.sku_no} - {device.product_name}
+                        {device.hardware_type && ` (${device.hardware_type})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
               <div>
                 <Label htmlFor="iot-mac">MAC Address (Optional)</Label>
                 <Input

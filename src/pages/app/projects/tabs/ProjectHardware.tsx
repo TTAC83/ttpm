@@ -43,6 +43,7 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedType, setSelectedType] = useState<'gateway' | 'receiver' | null>(null);
   const [selectedHardwareId, setSelectedHardwareId] = useState<string>('');
+  const [name, setName] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState('');
 
@@ -108,6 +109,7 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
     mutationFn: async () => {
       const payload: any = {
         hardware_type: selectedType,
+        name,
         quantity,
         notes: notes || null,
       };
@@ -178,6 +180,7 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
     setDialogOpen(false);
     setSelectedType(null);
     setSelectedHardwareId('');
+    setName('');
     setQuantity(1);
     setNotes('');
   };
@@ -353,6 +356,16 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
                     ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Name</Label>
+              <Input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter a name for this hardware"
+              />
             </div>
 
             <div className="space-y-2">

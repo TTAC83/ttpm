@@ -47,20 +47,13 @@ interface HardwareRequirement {
     type: string;
     description: string | null;
   } | null;
-  tv_displays_master?: {
-    id: string;
-    manufacturer: string;
-    model_number: string;
-    screen_size_inches: number | null;
-    description: string | null;
-  } | null;
 }
 
 export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedType, setSelectedType] = useState<'gateway' | 'receiver' | 'server' | 'sfp_addon' | 'load_balancer' | 'storage' | 'tv_display' | null>(null);
+  const [selectedType, setSelectedType] = useState<'gateway' | 'receiver' | 'server' | 'sfp_addon' | 'load_balancer' | 'storage' | null>(null);
   const [selectedHardwareId, setSelectedHardwareId] = useState<string>('');
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -76,8 +69,7 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
           *,
           gateways_master (id, manufacturer, model_number, description),
           receivers_master (id, manufacturer, model_number, description),
-          hardware_master (id, sku_no, product_name, hardware_type, type, description),
-          tv_displays_master (id, manufacturer, model_number, screen_size_inches, description)
+          hardware_master (id, sku_no, product_name, hardware_type, type, description)
         `);
 
       if (type === 'project') {
@@ -211,20 +203,6 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
     enabled: selectedType !== null && ['server', 'sfp_addon', 'load_balancer', 'storage'].includes(selectedType),
   });
 
-  // Fetch TV displays
-  const { data: tvDisplays = [] } = useQuery({
-    queryKey: ['tv-displays-master'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tv_displays_master' as any)
-        .select('*')
-        .order('manufacturer', { ascending: true });
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: selectedType === 'tv_display',
-  });
 
   // Add hardware requirement
   const addMutation = useMutation({
@@ -250,8 +228,6 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
         payload.receiver_id = selectedHardwareId;
       } else if (['server', 'sfp_addon', 'load_balancer', 'storage'].includes(selectedType)) {
         payload.hardware_master_id = selectedHardwareId;
-      } else if (selectedType === 'tv_display') {
-        payload.tv_display_id = selectedHardwareId;
       }
 
       const { error } = await supabase
@@ -297,7 +273,7 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
     },
   });
 
-  const handleOpenDialog = (hwType: 'gateway' | 'receiver' | 'server' | 'sfp_addon' | 'load_balancer' | 'storage' | 'tv_display') => {
+  const handleOpenDialog = (hwType: 'gateway' | 'receiver' | 'server' | 'sfp_addon' | 'load_balancer' | 'storage') => {
     setSelectedType(hwType);
     setDialogOpen(true);
   };
@@ -329,7 +305,6 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
   const sfpAddonRequirements = requirements.filter(r => r.hardware_type === 'sfp_addon');
   const loadBalancerRequirements = requirements.filter(r => r.hardware_type === 'load_balancer');
   const storageRequirements = requirements.filter(r => r.hardware_type === 'storage');
-  const tvDisplayRequirements = requirements.filter(r => r.hardware_type === 'tv_display');
 
   if (isLoading) {
     return (
@@ -347,7 +322,6 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
       case 'sfp_addon': return '10G SFP ADDON';
       case 'load_balancer': return 'Load Balancer';
       case 'storage': return 'Storage';
-      case 'tv_display': return 'TV Display';
       default: return '';
     }
   };
@@ -361,7 +335,7 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="iot" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="iot" className="flex items-center gap-2">
                 <Cpu className="h-4 w-4" />
                 IoT ({gatewayRequirements.length + receiverRequirements.length + iotDevicesFromLines.length})
@@ -369,10 +343,6 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
               <TabsTrigger value="vision" className="flex items-center gap-2">
                 <Server className="h-4 w-4" />
                 Vision ({serverRequirements.length + sfpAddonRequirements.length + loadBalancerRequirements.length + storageRequirements.length})
-              </TabsTrigger>
-              <TabsTrigger value="tv" className="flex items-center gap-2">
-                <Monitor className="h-4 w-4" />
-                TV Displays ({tvDisplayRequirements.length})
               </TabsTrigger>
             </TabsList>
 
@@ -724,61 +694,6 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
               </div>
             </TabsContent>
 
-            {/* TV Displays Tab */}
-            <TabsContent value="tv" className="space-y-6 mt-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">TV Display Devices</h3>
-                  <Button size="sm" onClick={() => handleOpenDialog('tv_display')}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add TV Display
-                  </Button>
-                </div>
-                {tvDisplayRequirements.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No TV displays added yet</p>
-                ) : (
-                  <div className="space-y-2">
-                    {tvDisplayRequirements.map((req) => (
-                      <Card key={req.id}>
-                        <CardContent className="pt-6">
-                          <div className="flex items-start justify-between">
-                            <div className="space-y-1 flex-1">
-                              {req.name && (
-                                <p className="text-lg font-semibold">{req.name}</p>
-                              )}
-                              <p className="font-medium">
-                                {req.tv_displays_master?.manufacturer} - {req.tv_displays_master?.model_number}
-                              </p>
-                              {req.tv_displays_master?.screen_size_inches && (
-                                <p className="text-sm text-muted-foreground">
-                                  Screen Size: {req.tv_displays_master.screen_size_inches}"
-                                </p>
-                              )}
-                              {req.tv_displays_master?.description && (
-                                <p className="text-sm text-muted-foreground">{req.tv_displays_master.description}</p>
-                              )}
-                              <p className="text-sm">
-                                <span className="font-medium">Quantity:</span> {req.quantity}
-                              </p>
-                              {req.notes && (
-                                <p className="text-sm text-muted-foreground">{req.notes}</p>
-                              )}
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => deleteMutation.mutate(req.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
@@ -819,12 +734,6 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
                     hardwareMaster.map((hardware: any) => (
                       <SelectItem key={hardware.id} value={hardware.id}>
                         {hardware.sku_no} - {hardware.product_name}
-                      </SelectItem>
-                    ))}
-                  {selectedType === 'tv_display' &&
-                    tvDisplays.map((tv: any) => (
-                      <SelectItem key={tv.id} value={tv.id}>
-                        {tv.manufacturer} - {tv.model_number}
                       </SelectItem>
                     ))}
                 </SelectContent>

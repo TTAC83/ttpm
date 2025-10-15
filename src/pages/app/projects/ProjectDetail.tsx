@@ -16,7 +16,6 @@ import ProjectOverview from './tabs/ProjectOverview';
 import { FactoryConfigurationTab } from '@/components/shared/FactoryConfigurationTab';
 import { ProjectLines } from './tabs/ProjectLines';
 import ProjectTasks from './tabs/ProjectTasks';
-import ProjectGantt from './tabs/ProjectGantt';
 import ProjectActions from './tabs/ProjectActions';
 import ProjectAudit from './tabs/ProjectAudit';
 import ProjectCalendar from './tabs/ProjectCalendar';
@@ -123,7 +122,7 @@ export const ProjectDetail = () => {
   useEffect(() => {
     // Handle URL parameters to set active tab
     const tab = searchParams.get('tab');
-    if (tab && ['overview', 'hardware', 'factory', 'lines', 'tasks', 'gantt', 'actions', 'calendar', 'vision-models', 'audit', 'blockers'].includes(tab)) {
+    if (tab && ['overview', 'hardware', 'factory', 'lines', 'tasks', 'wbs', 'actions', 'calendar', 'vision-models', 'audit', 'blockers'].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -375,13 +374,12 @@ export const ProjectDetail = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="space-y-2">
           {/* First row of tabs */}
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="hardware">Hardware</TabsTrigger>
             <TabsTrigger value="factory">Factory</TabsTrigger>
             <TabsTrigger value="lines">Lines</TabsTrigger>
             <TabsTrigger value="tasks">Tasks</TabsTrigger>
-            <TabsTrigger value="gantt">Gantt</TabsTrigger>
             <TabsTrigger value="wbs">WBS</TabsTrigger>
           </TabsList>
           
@@ -425,10 +423,6 @@ export const ProjectDetail = () => {
 
         <TabsContent value="tasks" className="space-y-4">
           <ProjectTasks projectId={project.id} />
-        </TabsContent>
-
-        <TabsContent value="gantt" className="space-y-4">
-          <ProjectGantt projectId={project.id} />
         </TabsContent>
 
         <TabsContent value="wbs" className="space-y-4">

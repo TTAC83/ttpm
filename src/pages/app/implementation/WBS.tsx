@@ -118,7 +118,7 @@ export default function WBS({ projectId }: WBSProps = {}) {
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
   const [isProjectSpecific, setIsProjectSpecific] = useState(!!currentProjectId);
   const [projectCompletion, setProjectCompletion] = useState<ProjectCompletion | null>(null);
-  const [viewMode, setViewMode] = useState<'grid' | 'gantt'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'gantt'>('gantt');
   
   console.log('WBS: Current viewMode:', viewMode);
   

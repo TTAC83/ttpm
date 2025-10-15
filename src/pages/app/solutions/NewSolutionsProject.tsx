@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -115,158 +115,183 @@ export const NewSolutionsProject = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl">
       <div className="flex items-center gap-4">
         <Button
           variant="ghost"
+          size="sm"
           onClick={() => navigate('/app/solutions')}
-          className="p-2"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Solutions Projects
         </Button>
-        <h1 className="text-3xl font-bold">New Solutions Project</h1>
+        <div>
+          <h1 className="text-3xl font-bold">New Solutions Project</h1>
+          <p className="text-muted-foreground">
+            Create a new solutions project
+          </p>
+        </div>
       </div>
 
-      <Card className="max-w-2xl">
+      <Card>
         <CardHeader>
           <CardTitle>Project Details</CardTitle>
+          <CardDescription>
+            Enter the project information and assign team members
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <Label htmlFor="company_name">Company Name *</Label>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="company_name">Customer Company *</Label>
                 <Input
                   id="company_name"
                   value={formData.company_name}
                   onChange={(e) => handleInputChange('company_name', e.target.value)}
-                  placeholder="Enter company name"
+                  placeholder="Enter customer company name"
                   required
                 />
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="domain">Domain *</Label>
-                <Select onValueChange={(value) => handleInputChange('domain', value)}>
+                <Select 
+                  value={formData.domain} 
+                  onValueChange={(value) => handleInputChange('domain', value)}
+                  required
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select domain" />
+                    <SelectValue placeholder="Select project domain" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Vision">Vision</SelectItem>
                     <SelectItem value="IoT">IoT</SelectItem>
+                    <SelectItem value="Vision">Vision</SelectItem>
                     <SelectItem value="Hybrid">Hybrid</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+            </div>
 
-              <div>
-                <Label htmlFor="site_name">Site Name *</Label>
-                <Input
-                  id="site_name"
-                  value={formData.site_name}
-                  onChange={(e) => handleInputChange('site_name', e.target.value)}
-                  placeholder="Enter site name"
-                  required
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="site_name">Site Name *</Label>
+              <Input
+                id="site_name"
+                value={formData.site_name}
+                onChange={(e) => handleInputChange('site_name', e.target.value)}
+                placeholder="Enter site name"
+                required
+              />
+            </div>
 
-              <div>
-                <Label htmlFor="site_address">Site Address</Label>
-                <Textarea
-                  id="site_address"
-                  value={formData.site_address}
-                  onChange={(e) => handleInputChange('site_address', e.target.value)}
-                  placeholder="Enter site address"
-                  rows={3}
-                />
+            <div className="space-y-2">
+              <Label htmlFor="site_address">Site Address</Label>
+              <Textarea
+                id="site_address"
+                value={formData.site_address}
+                onChange={(e) => handleInputChange('site_address', e.target.value)}
+                placeholder="Enter full site address"
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Team Assignments</h3>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="salesperson">Sales Person</Label>
+                  <Select 
+                    value={formData.salesperson} 
+                    onValueChange={(value) => handleInputChange('salesperson', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select sales person" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {users.map((user) => (
+                        <SelectItem key={user.user_id} value={user.user_id}>
+                          {user.name || user.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="solutions_consultant">Solutions Consultant</Label>
+                  <Select 
+                    value={formData.solutions_consultant} 
+                    onValueChange={(value) => handleInputChange('solutions_consultant', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select solutions consultant" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {users.map((user) => (
+                        <SelectItem key={user.user_id} value={user.user_id}>
+                          {user.name || user.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-lg font-medium">Team Assignments</h3>
-              
-              <div>
-                <Label htmlFor="salesperson">Salesperson</Label>
-                <Select onValueChange={(value) => handleInputChange('salesperson', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select salesperson" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users.map((user) => (
-                      <SelectItem key={user.user_id} value={user.user_id}>
-                        {user.name || user.email}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <h3 className="text-lg font-semibold">Customer Contact Information</h3>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="customer_lead">Customer Lead</Label>
+                  <Input
+                    id="customer_lead"
+                    value={formData.customer_lead}
+                    onChange={(e) => handleInputChange('customer_lead', e.target.value)}
+                    placeholder="Enter customer lead name"
+                  />
+                </div>
 
-              <div>
-                <Label htmlFor="solutions_consultant">Solutions Consultant</Label>
-                <Select onValueChange={(value) => handleInputChange('solutions_consultant', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select solutions consultant" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users.map((user) => (
-                      <SelectItem key={user.user_id} value={user.user_id}>
-                        {user.name || user.email}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="customer_job_title">Job Title</Label>
+                  <Input
+                    id="customer_job_title"
+                    value={formData.customer_job_title}
+                    onChange={(e) => handleInputChange('customer_job_title', e.target.value)}
+                    placeholder="Enter job title"
+                  />
+                </div>
 
-              <div>
-                <Label htmlFor="customer_lead">Customer Lead</Label>
-                <Input
-                  id="customer_lead"
-                  value={formData.customer_lead}
-                  onChange={(e) => handleInputChange('customer_lead', e.target.value)}
-                  placeholder="Enter customer lead name"
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="customer_email">Email</Label>
+                  <Input
+                    id="customer_email"
+                    type="email"
+                    value={formData.customer_email}
+                    onChange={(e) => handleInputChange('customer_email', e.target.value)}
+                    placeholder="Enter email address"
+                  />
+                </div>
 
-              <div>
-                <Label htmlFor="customer_email">Customer Email</Label>
-                <Input
-                  id="customer_email"
-                  type="email"
-                  value={formData.customer_email}
-                  onChange={(e) => handleInputChange('customer_email', e.target.value)}
-                  placeholder="Enter customer email"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="customer_phone">Customer Phone</Label>
-                <Input
-                  id="customer_phone"
-                  type="tel"
-                  value={formData.customer_phone}
-                  onChange={(e) => handleInputChange('customer_phone', e.target.value)}
-                  placeholder="Enter customer phone number"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="customer_job_title">Customer Job Title</Label>
-                <Input
-                  id="customer_job_title"
-                  value={formData.customer_job_title}
-                  onChange={(e) => handleInputChange('customer_job_title', e.target.value)}
-                  placeholder="Enter customer job title"
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="customer_phone">Phone</Label>
+                  <Input
+                    id="customer_phone"
+                    type="tel"
+                    value={formData.customer_phone}
+                    onChange={(e) => handleInputChange('customer_phone', e.target.value)}
+                    placeholder="Enter phone number"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex gap-2 pt-4">
               <Button type="submit" disabled={loading}>
                 {loading ? 'Creating...' : 'Create Project'}
               </Button>
-              <Button
-                type="button"
-                variant="outline"
+              <Button 
+                type="button" 
+                variant="outline" 
                 onClick={() => navigate('/app/solutions')}
               >
                 Cancel

@@ -189,10 +189,20 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
         return [];
       }
 
+      // Map our internal types to the database values
+      const typeMapping: Record<string, string> = {
+        'server': 'Server',
+        'sfp_addon': '10G SFP ADDON',
+        'load_balancer': 'Load Balancer',
+        'storage': 'Storage'
+      };
+
+      const dbHardwareType = typeMapping[selectedType];
+
       const { data, error } = await supabase
         .from('hardware_master')
         .select('*')
-        .eq('hardware_type', selectedType)
+        .eq('hardware_type', dbHardwareType)
         .order('product_name', { ascending: true });
       
       if (error) throw error;

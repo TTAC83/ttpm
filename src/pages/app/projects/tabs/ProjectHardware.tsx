@@ -7,8 +7,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Cpu } from 'lucide-react';
+import { Plus, Trash2, Cpu, Camera, Lightbulb, Monitor } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
 interface ProjectHardwareProps {
@@ -18,12 +19,15 @@ interface ProjectHardwareProps {
 
 interface HardwareRequirement {
   id: string;
-  hardware_type: 'gateway' | 'receiver' | 'device';
+  hardware_type: 'gateway' | 'receiver' | 'device' | 'camera' | 'light' | 'tv_display';
   name: string | null;
   quantity: number;
   notes: string | null;
   gateway_id: string | null;
   receiver_id: string | null;
+  camera_id: string | null;
+  light_id: string | null;
+  tv_display_id: string | null;
   gateways_master?: {
     id: string;
     manufacturer: string;
@@ -36,13 +40,34 @@ interface HardwareRequirement {
     model_number: string;
     description: string | null;
   } | null;
+  cameras_master?: {
+    id: string;
+    manufacturer: string;
+    model_number: string;
+    camera_type: string | null;
+    description: string | null;
+  } | null;
+  lights_master?: {
+    id: string;
+    manufacturer: string;
+    model_number: string;
+    light_type: string | null;
+    description: string | null;
+  } | null;
+  tv_displays_master?: {
+    id: string;
+    manufacturer: string;
+    model_number: string;
+    screen_size_inches: number | null;
+    description: string | null;
+  } | null;
 }
 
 export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedType, setSelectedType] = useState<'gateway' | 'receiver' | null>(null);
+  const [selectedType, setSelectedType] = useState<'gateway' | 'receiver' | 'camera' | 'light' | 'tv_display' | null>(null);
   const [selectedHardwareId, setSelectedHardwareId] = useState<string>('');
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -57,7 +82,10 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
         .select(`
           *,
           gateways_master (id, manufacturer, model_number, description),
-          receivers_master (id, manufacturer, model_number, description)
+          receivers_master (id, manufacturer, model_number, description),
+          cameras_master (id, manufacturer, model_number, camera_type, description),
+          lights_master (id, manufacturer, model_number, light_type, description),
+          tv_displays_master (id, manufacturer, model_number, screen_size_inches, description)
         `);
 
       if (type === 'project') {
@@ -71,7 +99,7 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
       const { data, error } = await query.order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as HardwareRequirement[];
+      return data as any as HardwareRequirement[];
     },
   });
 
@@ -161,6 +189,51 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
     enabled: selectedType === 'receiver',
   });
 
+  // Fetch cameras
+  const { data: cameras = [] } = useQuery({
+    queryKey: ['cameras-master'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('cameras_master')
+        .select('*')
+        .order('manufacturer', { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: selectedType === 'camera',
+  });
+
+  // Fetch lights
+  const { data: lights = [] } = useQuery({
+    queryKey: ['lights-master'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('lights_master' as any)
+        .select('*')
+        .order('manufacturer', { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: selectedType === 'light',
+  });
+
+  // Fetch TV displays
+  const { data: tvDisplays = [] } = useQuery({
+    queryKey: ['tv-displays-master'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tv_displays_master' as any)
+        .select('*')
+        .order('manufacturer', { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: selectedType === 'tv_display',
+  });
+
   // Add hardware requirement
   const addMutation = useMutation({
     mutationFn: async () => {
@@ -183,6 +256,12 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
         payload.gateway_id = selectedHardwareId;
       } else if (selectedType === 'receiver') {
         payload.receiver_id = selectedHardwareId;
+      } else if (selectedType === 'camera') {
+        payload.camera_id = selectedHardwareId;
+      } else if (selectedType === 'light') {
+        payload.light_id = selectedHardwareId;
+      } else if (selectedType === 'tv_display') {
+        payload.tv_display_id = selectedHardwareId;
       }
 
       const { error } = await supabase
@@ -228,7 +307,7 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
     },
   });
 
-  const handleOpenDialog = (hwType: 'gateway' | 'receiver') => {
+  const handleOpenDialog = (hwType: 'gateway' | 'receiver' | 'camera' | 'light' | 'tv_display') => {
     setSelectedType(hwType);
     setDialogOpen(true);
   };
@@ -256,6 +335,9 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
 
   const gatewayRequirements = requirements.filter(r => r.hardware_type === 'gateway');
   const receiverRequirements = requirements.filter(r => r.hardware_type === 'receiver');
+  const cameraRequirements = requirements.filter(r => r.hardware_type === 'camera');
+  const lightRequirements = requirements.filter(r => r.hardware_type === 'light');
+  const tvDisplayRequirements = requirements.filter(r => r.hardware_type === 'tv_display');
 
   if (isLoading) {
     return (
@@ -265,14 +347,43 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
     );
   }
 
+  const getHardwareLabel = () => {
+    switch (selectedType) {
+      case 'gateway': return 'Gateway';
+      case 'receiver': return 'Receiver';
+      case 'camera': return 'Camera';
+      case 'light': return 'Light';
+      case 'tv_display': return 'TV Display';
+      default: return '';
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>IoT Requirements</CardTitle>
-          <CardDescription>Manage IoT hardware requirements for this project</CardDescription>
+          <CardTitle>Hardware Requirements</CardTitle>
+          <CardDescription>Manage all hardware requirements for this project</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent>
+          <Tabs defaultValue="iot" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="iot" className="flex items-center gap-2">
+                <Cpu className="h-4 w-4" />
+                IoT ({gatewayRequirements.length + receiverRequirements.length + iotDevicesFromLines.length})
+              </TabsTrigger>
+              <TabsTrigger value="vision" className="flex items-center gap-2">
+                <Camera className="h-4 w-4" />
+                Vision ({cameraRequirements.length + lightRequirements.length})
+              </TabsTrigger>
+              <TabsTrigger value="tv" className="flex items-center gap-2">
+                <Monitor className="h-4 w-4" />
+                TV Displays ({tvDisplayRequirements.length})
+              </TabsTrigger>
+            </TabsList>
+
+            {/* IoT Requirements Tab */}
+            <TabsContent value="iot" className="space-y-6 mt-6">
           {/* IoT Gateways */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -371,53 +482,218 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
             )}
           </div>
 
-          {/* IoT Devices */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">IoT Devices</h3>
-            </div>
-            {iotDevicesFromLines.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No IoT devices added in line configuration yet</p>
-            ) : (
-              <div className="space-y-2">
-                {iotDevicesFromLines.map((device: any) => (
-                  <Card key={device.id}>
-                    <CardContent className="pt-6">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1 flex-1">
-                          <div className="flex items-center gap-2">
-                            <Cpu className="h-4 w-4 text-blue-600" />
-                            <p className="text-lg font-semibold">{device.name}</p>
+              {/* IoT Devices */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">IoT Devices</h3>
+                </div>
+                {iotDevicesFromLines.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No IoT devices added in line configuration yet</p>
+                ) : (
+                  <div className="space-y-2">
+                    {iotDevicesFromLines.map((device: any) => (
+                      <Card key={device.id}>
+                        <CardContent className="pt-6">
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-1 flex-1">
+                              <div className="flex items-center gap-2">
+                                <Cpu className="h-4 w-4 text-blue-600" />
+                                <p className="text-lg font-semibold">{device.name}</p>
+                              </div>
+                              {device.hardware_master && (
+                                <p className="font-medium">
+                                  {device.hardware_master.sku_no} - {device.hardware_master.product_name}
+                                </p>
+                              )}
+                              {device.hardware_master?.description && (
+                                <p className="text-sm text-muted-foreground">{device.hardware_master.description}</p>
+                              )}
+                              <p className="text-sm">
+                                <span className="font-medium">Equipment:</span> {device.equipment_name}
+                              </p>
+                              {device.mac_address && (
+                                <p className="text-sm">
+                                  <span className="font-medium">MAC Address:</span> {device.mac_address}
+                                </p>
+                              )}
+                              {device.receiver_mac_address && (
+                                <p className="text-sm">
+                                  <span className="font-medium">Receiver MAC:</span> {device.receiver_mac_address}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                          {device.hardware_master && (
-                            <p className="font-medium">
-                              {device.hardware_master.sku_no} - {device.hardware_master.product_name}
-                            </p>
-                          )}
-                          {device.hardware_master?.description && (
-                            <p className="text-sm text-muted-foreground">{device.hardware_master.description}</p>
-                          )}
-                          <p className="text-sm">
-                            <span className="font-medium">Equipment:</span> {device.equipment_name}
-                          </p>
-                          {device.mac_address && (
-                            <p className="text-sm">
-                              <span className="font-medium">MAC Address:</span> {device.mac_address}
-                            </p>
-                          )}
-                          {device.receiver_mac_address && (
-                            <p className="text-sm">
-                              <span className="font-medium">Receiver MAC:</span> {device.receiver_mac_address}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </TabsContent>
+
+            {/* Vision Requirements Tab */}
+            <TabsContent value="vision" className="space-y-6 mt-6">
+              {/* Cameras */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Cameras</h3>
+                  <Button size="sm" onClick={() => handleOpenDialog('camera')}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Camera
+                  </Button>
+                </div>
+                {cameraRequirements.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No cameras added yet</p>
+                ) : (
+                  <div className="space-y-2">
+                    {cameraRequirements.map((req) => (
+                      <Card key={req.id}>
+                        <CardContent className="pt-6">
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-1 flex-1">
+                              {req.name && (
+                                <p className="text-lg font-semibold">{req.name}</p>
+                              )}
+                              <p className="font-medium">
+                                {req.cameras_master?.manufacturer} - {req.cameras_master?.model_number}
+                              </p>
+                              {req.cameras_master?.camera_type && (
+                                <p className="text-sm text-muted-foreground">Type: {req.cameras_master.camera_type}</p>
+                              )}
+                              {req.cameras_master?.description && (
+                                <p className="text-sm text-muted-foreground">{req.cameras_master.description}</p>
+                              )}
+                              <p className="text-sm">
+                                <span className="font-medium">Quantity:</span> {req.quantity}
+                              </p>
+                              {req.notes && (
+                                <p className="text-sm text-muted-foreground">{req.notes}</p>
+                              )}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteMutation.mutate(req.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Lights */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Lights</h3>
+                  <Button size="sm" onClick={() => handleOpenDialog('light')}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Light
+                  </Button>
+                </div>
+                {lightRequirements.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No lights added yet</p>
+                ) : (
+                  <div className="space-y-2">
+                    {lightRequirements.map((req) => (
+                      <Card key={req.id}>
+                        <CardContent className="pt-6">
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-1 flex-1">
+                              {req.name && (
+                                <p className="text-lg font-semibold">{req.name}</p>
+                              )}
+                              <p className="font-medium">
+                                {req.lights_master?.manufacturer} - {req.lights_master?.model_number}
+                              </p>
+                              {req.lights_master?.light_type && (
+                                <p className="text-sm text-muted-foreground">Type: {req.lights_master.light_type}</p>
+                              )}
+                              {req.lights_master?.description && (
+                                <p className="text-sm text-muted-foreground">{req.lights_master.description}</p>
+                              )}
+                              <p className="text-sm">
+                                <span className="font-medium">Quantity:</span> {req.quantity}
+                              </p>
+                              {req.notes && (
+                                <p className="text-sm text-muted-foreground">{req.notes}</p>
+                              )}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteMutation.mutate(req.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* TV Displays Tab */}
+            <TabsContent value="tv" className="space-y-6 mt-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">TV Display Devices</h3>
+                  <Button size="sm" onClick={() => handleOpenDialog('tv_display')}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add TV Display
+                  </Button>
+                </div>
+                {tvDisplayRequirements.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No TV displays added yet</p>
+                ) : (
+                  <div className="space-y-2">
+                    {tvDisplayRequirements.map((req) => (
+                      <Card key={req.id}>
+                        <CardContent className="pt-6">
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-1 flex-1">
+                              {req.name && (
+                                <p className="text-lg font-semibold">{req.name}</p>
+                              )}
+                              <p className="font-medium">
+                                {req.tv_displays_master?.manufacturer} - {req.tv_displays_master?.model_number}
+                              </p>
+                              {req.tv_displays_master?.screen_size_inches && (
+                                <p className="text-sm text-muted-foreground">
+                                  Screen Size: {req.tv_displays_master.screen_size_inches}"
+                                </p>
+                              )}
+                              {req.tv_displays_master?.description && (
+                                <p className="text-sm text-muted-foreground">{req.tv_displays_master.description}</p>
+                              )}
+                              <p className="text-sm">
+                                <span className="font-medium">Quantity:</span> {req.quantity}
+                              </p>
+                              {req.notes && (
+                                <p className="text-sm text-muted-foreground">{req.notes}</p>
+                              )}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteMutation.mutate(req.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
@@ -426,31 +702,49 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              Add {selectedType === 'gateway' ? 'Gateway' : 'Receiver'}
+              Add {getHardwareLabel()}
             </DialogTitle>
             <DialogDescription>
-              Select a {selectedType} from the master data catalog
+              Select a {getHardwareLabel().toLowerCase()} from the master data catalog
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Select {selectedType === 'gateway' ? 'Gateway' : 'Receiver'}</Label>
+              <Label>Select {getHardwareLabel()}</Label>
               <Select value={selectedHardwareId} onValueChange={setSelectedHardwareId}>
                 <SelectTrigger>
-                  <SelectValue placeholder={`Select a ${selectedType}`} />
+                  <SelectValue placeholder={`Select a ${getHardwareLabel().toLowerCase()}`} />
                 </SelectTrigger>
                 <SelectContent>
                   {selectedType === 'gateway' &&
-                    gateways.map((gateway) => (
+                    gateways.map((gateway: any) => (
                       <SelectItem key={gateway.id} value={gateway.id}>
                         {gateway.manufacturer} - {gateway.model_number}
                       </SelectItem>
                     ))}
                   {selectedType === 'receiver' &&
-                    receivers.map((receiver) => (
+                    receivers.map((receiver: any) => (
                       <SelectItem key={receiver.id} value={receiver.id}>
                         {receiver.manufacturer} - {receiver.model_number}
+                      </SelectItem>
+                    ))}
+                  {selectedType === 'camera' &&
+                    cameras.map((camera: any) => (
+                      <SelectItem key={camera.id} value={camera.id}>
+                        {camera.manufacturer} - {camera.model_number}
+                      </SelectItem>
+                    ))}
+                  {selectedType === 'light' &&
+                    lights.map((light: any) => (
+                      <SelectItem key={light.id} value={light.id}>
+                        {light.manufacturer} - {light.model_number}
+                      </SelectItem>
+                    ))}
+                  {selectedType === 'tv_display' &&
+                    tvDisplays.map((tv: any) => (
+                      <SelectItem key={tv.id} value={tv.id}>
+                        {tv.manufacturer} - {tv.model_number}
                       </SelectItem>
                     ))}
                 </SelectContent>

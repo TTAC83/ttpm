@@ -792,51 +792,6 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                 </div>
               </div>
 
-              {/* Reference & Marketing */}
-              <div className="border-t pt-6">
-                <h3 className="text-2xl font-semibold leading-none tracking-tight mb-4">Reference & Marketing</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Testimonial</p>
-                    <p className="font-medium">
-                      <Badge variant={data.testimonial ? "default" : "outline"}>
-                        {data.testimonial ? 'Yes' : 'No'}
-                      </Badge>
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Reference Call</p>
-                    <p className="font-medium">
-                      <Badge variant={data.reference_call ? "default" : "outline"}>
-                        {data.reference_call ? 'Yes' : 'No'}
-                      </Badge>
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Site Visit</p>
-                    <p className="font-medium">
-                      <Badge variant={data.site_visit ? "default" : "outline"}>
-                        {data.site_visit ? 'Yes' : 'No'}
-                      </Badge>
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Case Study</p>
-                    <p className="font-medium">
-                      <Badge variant={data.case_study ? "default" : "outline"}>
-                        {data.case_study ? 'Yes' : 'No'}
-                      </Badge>
-                    </p>
-                  </div>
-                  {data.reference_status && (
-                    <div className="md:col-span-2">
-                      <p className="text-sm text-muted-foreground">Reference Status</p>
-                      <p className="font-medium whitespace-pre-wrap">{data.reference_status}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
               {/* Expansion */}
               <div className="border-t pt-6">
                 <h3 className="text-2xl font-semibold leading-none tracking-tight mb-4">Expansion</h3>

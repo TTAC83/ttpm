@@ -15,6 +15,7 @@ import { ArrowLeft, Building, Calendar, MapPin, Users, Smile, Frown, CheckCircle
 import ProjectOverview from './tabs/ProjectOverview';
 import { ContractInformationTab } from '@/components/shared/ContractInformationTab';
 import { TeamTab } from '@/components/shared/TeamTab';
+import { AccountInfoTab } from '@/components/shared/AccountInfoTab';
 import { FactoryConfigurationTab } from '@/components/shared/FactoryConfigurationTab';
 import { ProjectLines } from './tabs/ProjectLines';
 import ProjectTasks from './tabs/ProjectTasks';
@@ -376,10 +377,11 @@ export const ProjectDetail = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="space-y-2">
           {/* First row of tabs */}
-          <TabsList className="grid w-full grid-cols-8">
+          <TabsList className="grid w-full grid-cols-9">
             <TabsTrigger value="overview">Customer Overview</TabsTrigger>
             <TabsTrigger value="contract">Contract Info</TabsTrigger>
             <TabsTrigger value="team">Team</TabsTrigger>
+            <TabsTrigger value="account">Account Info</TabsTrigger>
             <TabsTrigger value="hardware">Hardware</TabsTrigger>
             <TabsTrigger value="factory">Factory</TabsTrigger>
             <TabsTrigger value="lines">Lines</TabsTrigger>
@@ -419,6 +421,10 @@ export const ProjectDetail = () => {
 
         <TabsContent value="team" className="space-y-4">
           <TeamTab data={project} onUpdate={fetchProject} type="project" />
+        </TabsContent>
+
+        <TabsContent value="account" className="space-y-4">
+          <AccountInfoTab data={project} onUpdate={fetchProject} type="project" />
         </TabsContent>
 
         <TabsContent value="hardware" className="space-y-4">

@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Cpu, Camera, Lightbulb, Monitor } from 'lucide-react';
+import { Plus, Trash2, Cpu, Camera, Monitor, Server, HardDrive, Network } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
 interface ProjectHardwareProps {
@@ -19,14 +19,13 @@ interface ProjectHardwareProps {
 
 interface HardwareRequirement {
   id: string;
-  hardware_type: 'gateway' | 'receiver' | 'device' | 'camera' | 'light' | 'tv_display';
+  hardware_type: 'gateway' | 'receiver' | 'device' | 'server' | 'sfp_addon' | 'load_balancer' | 'storage' | 'tv_display';
   name: string | null;
   quantity: number;
   notes: string | null;
   gateway_id: string | null;
   receiver_id: string | null;
-  camera_id: string | null;
-  light_id: string | null;
+  hardware_master_id: string | null;
   tv_display_id: string | null;
   gateways_master?: {
     id: string;
@@ -40,18 +39,12 @@ interface HardwareRequirement {
     model_number: string;
     description: string | null;
   } | null;
-  cameras_master?: {
+  hardware_master?: {
     id: string;
-    manufacturer: string;
-    model_number: string;
-    camera_type: string | null;
-    description: string | null;
-  } | null;
-  lights_master?: {
-    id: string;
-    manufacturer: string;
-    model_number: string;
-    light_type: string | null;
+    sku_no: string;
+    product_name: string;
+    hardware_type: string;
+    type: string;
     description: string | null;
   } | null;
   tv_displays_master?: {
@@ -67,7 +60,7 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedType, setSelectedType] = useState<'gateway' | 'receiver' | 'camera' | 'light' | 'tv_display' | null>(null);
+  const [selectedType, setSelectedType] = useState<'gateway' | 'receiver' | 'server' | 'sfp_addon' | 'load_balancer' | 'storage' | 'tv_display' | null>(null);
   const [selectedHardwareId, setSelectedHardwareId] = useState<string>('');
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -83,8 +76,7 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
           *,
           gateways_master (id, manufacturer, model_number, description),
           receivers_master (id, manufacturer, model_number, description),
-          cameras_master (id, manufacturer, model_number, camera_type, description),
-          lights_master (id, manufacturer, model_number, light_type, description),
+          hardware_master (id, sku_no, product_name, hardware_type, type, description),
           tv_displays_master (id, manufacturer, model_number, screen_size_inches, description)
         `);
 
@@ -189,34 +181,24 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
     enabled: selectedType === 'receiver',
   });
 
-  // Fetch cameras
-  const { data: cameras = [] } = useQuery({
-    queryKey: ['cameras-master'],
+  // Fetch hardware master data filtered by type
+  const { data: hardwareMaster = [] } = useQuery({
+    queryKey: ['hardware-master', selectedType],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('cameras_master')
-        .select('*')
-        .order('manufacturer', { ascending: true });
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: selectedType === 'camera',
-  });
+      if (!selectedType || !['server', 'sfp_addon', 'load_balancer', 'storage'].includes(selectedType)) {
+        return [];
+      }
 
-  // Fetch lights
-  const { data: lights = [] } = useQuery({
-    queryKey: ['lights-master'],
-    queryFn: async () => {
       const { data, error } = await supabase
-        .from('lights_master' as any)
+        .from('hardware_master')
         .select('*')
-        .order('manufacturer', { ascending: true });
+        .eq('hardware_type', selectedType)
+        .order('product_name', { ascending: true });
       
       if (error) throw error;
       return data;
     },
-    enabled: selectedType === 'light',
+    enabled: selectedType !== null && ['server', 'sfp_addon', 'load_balancer', 'storage'].includes(selectedType),
   });
 
   // Fetch TV displays
@@ -256,10 +238,8 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
         payload.gateway_id = selectedHardwareId;
       } else if (selectedType === 'receiver') {
         payload.receiver_id = selectedHardwareId;
-      } else if (selectedType === 'camera') {
-        payload.camera_id = selectedHardwareId;
-      } else if (selectedType === 'light') {
-        payload.light_id = selectedHardwareId;
+      } else if (['server', 'sfp_addon', 'load_balancer', 'storage'].includes(selectedType)) {
+        payload.hardware_master_id = selectedHardwareId;
       } else if (selectedType === 'tv_display') {
         payload.tv_display_id = selectedHardwareId;
       }
@@ -307,7 +287,7 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
     },
   });
 
-  const handleOpenDialog = (hwType: 'gateway' | 'receiver' | 'camera' | 'light' | 'tv_display') => {
+  const handleOpenDialog = (hwType: 'gateway' | 'receiver' | 'server' | 'sfp_addon' | 'load_balancer' | 'storage' | 'tv_display') => {
     setSelectedType(hwType);
     setDialogOpen(true);
   };
@@ -335,8 +315,10 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
 
   const gatewayRequirements = requirements.filter(r => r.hardware_type === 'gateway');
   const receiverRequirements = requirements.filter(r => r.hardware_type === 'receiver');
-  const cameraRequirements = requirements.filter(r => r.hardware_type === 'camera');
-  const lightRequirements = requirements.filter(r => r.hardware_type === 'light');
+  const serverRequirements = requirements.filter(r => r.hardware_type === 'server');
+  const sfpAddonRequirements = requirements.filter(r => r.hardware_type === 'sfp_addon');
+  const loadBalancerRequirements = requirements.filter(r => r.hardware_type === 'load_balancer');
+  const storageRequirements = requirements.filter(r => r.hardware_type === 'storage');
   const tvDisplayRequirements = requirements.filter(r => r.hardware_type === 'tv_display');
 
   if (isLoading) {
@@ -351,8 +333,10 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
     switch (selectedType) {
       case 'gateway': return 'Gateway';
       case 'receiver': return 'Receiver';
-      case 'camera': return 'Camera';
-      case 'light': return 'Light';
+      case 'server': return 'Server';
+      case 'sfp_addon': return '10G SFP ADDON';
+      case 'load_balancer': return 'Load Balancer';
+      case 'storage': return 'Storage';
       case 'tv_display': return 'TV Display';
       default: return '';
     }
@@ -373,8 +357,8 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
                 IoT ({gatewayRequirements.length + receiverRequirements.length + iotDevicesFromLines.length})
               </TabsTrigger>
               <TabsTrigger value="vision" className="flex items-center gap-2">
-                <Camera className="h-4 w-4" />
-                Vision ({cameraRequirements.length + lightRequirements.length})
+                <Server className="h-4 w-4" />
+                Vision ({serverRequirements.length + sfpAddonRequirements.length + loadBalancerRequirements.length + storageRequirements.length})
               </TabsTrigger>
               <TabsTrigger value="tv" className="flex items-center gap-2">
                 <Monitor className="h-4 w-4" />
@@ -533,20 +517,20 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
 
             {/* Vision Requirements Tab */}
             <TabsContent value="vision" className="space-y-6 mt-6">
-              {/* Cameras */}
+              {/* Servers */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">Cameras</h3>
-                  <Button size="sm" onClick={() => handleOpenDialog('camera')}>
+                  <h3 className="text-lg font-semibold">Servers</h3>
+                  <Button size="sm" onClick={() => handleOpenDialog('server')}>
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Camera
+                    Add Server
                   </Button>
                 </div>
-                {cameraRequirements.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No cameras added yet</p>
+                {serverRequirements.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No servers added yet</p>
                 ) : (
                   <div className="space-y-2">
-                    {cameraRequirements.map((req) => (
+                    {serverRequirements.map((req) => (
                       <Card key={req.id}>
                         <CardContent className="pt-6">
                           <div className="flex items-start justify-between">
@@ -555,13 +539,10 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
                                 <p className="text-lg font-semibold">{req.name}</p>
                               )}
                               <p className="font-medium">
-                                {req.cameras_master?.manufacturer} - {req.cameras_master?.model_number}
+                                {req.hardware_master?.sku_no} - {req.hardware_master?.product_name}
                               </p>
-                              {req.cameras_master?.camera_type && (
-                                <p className="text-sm text-muted-foreground">Type: {req.cameras_master.camera_type}</p>
-                              )}
-                              {req.cameras_master?.description && (
-                                <p className="text-sm text-muted-foreground">{req.cameras_master.description}</p>
+                              {req.hardware_master?.description && (
+                                <p className="text-sm text-muted-foreground">{req.hardware_master.description}</p>
                               )}
                               <p className="text-sm">
                                 <span className="font-medium">Quantity:</span> {req.quantity}
@@ -585,20 +566,20 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
                 )}
               </div>
 
-              {/* Lights */}
+              {/* 10G SFP ADDON */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">Lights</h3>
-                  <Button size="sm" onClick={() => handleOpenDialog('light')}>
+                  <h3 className="text-lg font-semibold">10G SFP ADDON</h3>
+                  <Button size="sm" onClick={() => handleOpenDialog('sfp_addon')}>
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Light
+                    Add 10G SFP ADDON
                   </Button>
                 </div>
-                {lightRequirements.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No lights added yet</p>
+                {sfpAddonRequirements.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No 10G SFP addons added yet</p>
                 ) : (
                   <div className="space-y-2">
-                    {lightRequirements.map((req) => (
+                    {sfpAddonRequirements.map((req) => (
                       <Card key={req.id}>
                         <CardContent className="pt-6">
                           <div className="flex items-start justify-between">
@@ -607,13 +588,108 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
                                 <p className="text-lg font-semibold">{req.name}</p>
                               )}
                               <p className="font-medium">
-                                {req.lights_master?.manufacturer} - {req.lights_master?.model_number}
+                                {req.hardware_master?.sku_no} - {req.hardware_master?.product_name}
                               </p>
-                              {req.lights_master?.light_type && (
-                                <p className="text-sm text-muted-foreground">Type: {req.lights_master.light_type}</p>
+                              {req.hardware_master?.description && (
+                                <p className="text-sm text-muted-foreground">{req.hardware_master.description}</p>
                               )}
-                              {req.lights_master?.description && (
-                                <p className="text-sm text-muted-foreground">{req.lights_master.description}</p>
+                              <p className="text-sm">
+                                <span className="font-medium">Quantity:</span> {req.quantity}
+                              </p>
+                              {req.notes && (
+                                <p className="text-sm text-muted-foreground">{req.notes}</p>
+                              )}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteMutation.mutate(req.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Load Balancers */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Load Balancers</h3>
+                  <Button size="sm" onClick={() => handleOpenDialog('load_balancer')}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Load Balancer
+                  </Button>
+                </div>
+                {loadBalancerRequirements.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No load balancers added yet</p>
+                ) : (
+                  <div className="space-y-2">
+                    {loadBalancerRequirements.map((req) => (
+                      <Card key={req.id}>
+                        <CardContent className="pt-6">
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-1 flex-1">
+                              {req.name && (
+                                <p className="text-lg font-semibold">{req.name}</p>
+                              )}
+                              <p className="font-medium">
+                                {req.hardware_master?.sku_no} - {req.hardware_master?.product_name}
+                              </p>
+                              {req.hardware_master?.description && (
+                                <p className="text-sm text-muted-foreground">{req.hardware_master.description}</p>
+                              )}
+                              <p className="text-sm">
+                                <span className="font-medium">Quantity:</span> {req.quantity}
+                              </p>
+                              {req.notes && (
+                                <p className="text-sm text-muted-foreground">{req.notes}</p>
+                              )}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteMutation.mutate(req.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Storage */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Storage</h3>
+                  <Button size="sm" onClick={() => handleOpenDialog('storage')}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Storage
+                  </Button>
+                </div>
+                {storageRequirements.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No storage added yet</p>
+                ) : (
+                  <div className="space-y-2">
+                    {storageRequirements.map((req) => (
+                      <Card key={req.id}>
+                        <CardContent className="pt-6">
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-1 flex-1">
+                              {req.name && (
+                                <p className="text-lg font-semibold">{req.name}</p>
+                              )}
+                              <p className="font-medium">
+                                {req.hardware_master?.sku_no} - {req.hardware_master?.product_name}
+                              </p>
+                              {req.hardware_master?.description && (
+                                <p className="text-sm text-muted-foreground">{req.hardware_master.description}</p>
                               )}
                               <p className="text-sm">
                                 <span className="font-medium">Quantity:</span> {req.quantity}
@@ -729,16 +805,10 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
                         {receiver.manufacturer} - {receiver.model_number}
                       </SelectItem>
                     ))}
-                  {selectedType === 'camera' &&
-                    cameras.map((camera: any) => (
-                      <SelectItem key={camera.id} value={camera.id}>
-                        {camera.manufacturer} - {camera.model_number}
-                      </SelectItem>
-                    ))}
-                  {selectedType === 'light' &&
-                    lights.map((light: any) => (
-                      <SelectItem key={light.id} value={light.id}>
-                        {light.manufacturer} - {light.model_number}
+                  {['server', 'sfp_addon', 'load_balancer', 'storage'].includes(selectedType || '') &&
+                    hardwareMaster.map((hardware: any) => (
+                      <SelectItem key={hardware.id} value={hardware.id}>
+                        {hardware.sku_no} - {hardware.product_name}
                       </SelectItem>
                     ))}
                   {selectedType === 'tv_display' &&

@@ -14,6 +14,7 @@ import { ArrowLeft, Building, Calendar, MapPin, Users, Smile, Frown, CheckCircle
 // Tab components
 import ProjectOverview from './tabs/ProjectOverview';
 import { ContractInformationTab } from '@/components/shared/ContractInformationTab';
+import { TeamTab } from '@/components/shared/TeamTab';
 import { FactoryConfigurationTab } from '@/components/shared/FactoryConfigurationTab';
 import { ProjectLines } from './tabs/ProjectLines';
 import ProjectTasks from './tabs/ProjectTasks';
@@ -123,7 +124,7 @@ export const ProjectDetail = () => {
   useEffect(() => {
     // Handle URL parameters to set active tab
     const tab = searchParams.get('tab');
-    if (tab && ['overview', 'contract', 'hardware', 'factory', 'lines', 'tasks', 'wbs', 'actions', 'calendar', 'vision-models', 'audit', 'blockers'].includes(tab)) {
+    if (tab && ['overview', 'contract', 'team', 'hardware', 'factory', 'lines', 'tasks', 'wbs', 'actions', 'calendar', 'vision-models', 'audit', 'blockers'].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -375,9 +376,10 @@ export const ProjectDetail = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="space-y-2">
           {/* First row of tabs */}
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="overview">Customer Overview</TabsTrigger>
             <TabsTrigger value="contract">Contract Info</TabsTrigger>
+            <TabsTrigger value="team">Team</TabsTrigger>
             <TabsTrigger value="hardware">Hardware</TabsTrigger>
             <TabsTrigger value="factory">Factory</TabsTrigger>
             <TabsTrigger value="lines">Lines</TabsTrigger>
@@ -413,6 +415,10 @@ export const ProjectDetail = () => {
 
         <TabsContent value="contract" className="space-y-4">
           <ContractInformationTab data={project} onUpdate={fetchProject} type="project" />
+        </TabsContent>
+
+        <TabsContent value="team" className="space-y-4">
+          <TeamTab data={project} onUpdate={fetchProject} type="project" />
         </TabsContent>
 
         <TabsContent value="hardware" className="space-y-4">

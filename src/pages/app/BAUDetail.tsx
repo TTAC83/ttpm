@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select';
 import { getBauCustomer, updateBauHealth, BAUCustomer } from '@/lib/bauService';
 import { BAUOverviewTab } from './bau/tabs/BAUOverviewTab';
+import { ContractInformationTab } from '@/components/shared/ContractInformationTab';
 import { BAUTicketsTab } from './bau/tabs/BAUTicketsTab';
 import { BAUVisitsTab } from './bau/tabs/BAUVisitsTab';
 import { BAUChangesTab } from './bau/tabs/BAUChangesTab';
@@ -184,8 +185,9 @@ export const BAUDetail = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className={`grid w-full ${hasExpenseAccess ? 'grid-cols-10' : 'grid-cols-9'}`}>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
+        <TabsList className={`grid w-full ${hasExpenseAccess ? 'grid-cols-11' : 'grid-cols-10'}`}>
+          <TabsTrigger value="overview">Customer Overview</TabsTrigger>
+          <TabsTrigger value="contract">Contract Info</TabsTrigger>
           <TabsTrigger value="hardware">Hardware</TabsTrigger>
           <TabsTrigger value="factory">Factory</TabsTrigger>
           <TabsTrigger value="tickets">Tickets</TabsTrigger>
@@ -199,6 +201,10 @@ export const BAUDetail = () => {
 
         <TabsContent value="overview">
           <BAUOverviewTab customer={customer} onUpdate={loadCustomer} />
+        </TabsContent>
+
+        <TabsContent value="contract" className="space-y-4">
+          <ContractInformationTab data={customer} onUpdate={loadCustomer} type="bau" />
         </TabsContent>
 
         <TabsContent value="hardware" className="space-y-4">

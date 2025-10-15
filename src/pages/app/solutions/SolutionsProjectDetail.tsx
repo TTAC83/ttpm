@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { SolutionsLines } from './tabs/SolutionsLines';
 import { OverviewTab } from '@/components/shared/OverviewTab';
+import { ContractInformationTab } from '@/components/shared/ContractInformationTab';
 import { FactoryConfigurationTab } from '@/components/shared/FactoryConfigurationTab';
 import { ProjectHardware } from '../projects/tabs/ProjectHardware';
 
@@ -79,7 +80,7 @@ export const SolutionsProjectDetail = () => {
 
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['overview', 'hardware', 'factory', 'lines'].includes(tab)) {
+    if (tab && ['overview', 'contract', 'hardware', 'factory', 'lines'].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -187,8 +188,9 @@ export const SolutionsProjectDetail = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-4 lg:w-auto">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
+        <TabsList className="grid grid-cols-5 lg:w-auto">
+          <TabsTrigger value="overview">Customer Overview</TabsTrigger>
+          <TabsTrigger value="contract">Contract Info</TabsTrigger>
           <TabsTrigger value="hardware">Hardware</TabsTrigger>
           <TabsTrigger value="factory">Factory</TabsTrigger>
           <TabsTrigger value="lines">Lines</TabsTrigger>
@@ -196,6 +198,10 @@ export const SolutionsProjectDetail = () => {
 
         <TabsContent value="overview" className="space-y-4">
           <OverviewTab data={project} onUpdate={fetchProject} type="solutions" />
+        </TabsContent>
+
+        <TabsContent value="contract" className="space-y-4">
+          <ContractInformationTab data={project} onUpdate={fetchProject} type="solutions" />
         </TabsContent>
 
         <TabsContent value="hardware" className="space-y-4">

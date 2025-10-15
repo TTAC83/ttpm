@@ -285,17 +285,17 @@ export async function getAllProjectsForSelection(): Promise<Project[]> {
   const { data, error } = await supabase
     .from('v_all_projects_for_selection')
     .select('*')
-    .order('customer_name, project_name');
+    .order('company_name, site_name');
 
   if (error) throw error;
   return (data || []).map(item => ({
-    kind: item.kind as 'implementation' | 'solutions',
-    project_id: item.project_id,
-    solutions_project_id: item.solutions_project_id,
-    project_name: item.project_name,
-    site_name: item.site_name,
-    customer_name: item.customer_name,
-    implementation_lead: item.implementation_lead
+    kind: item.project_type === 'implementation' ? 'implementation' : 'solutions' as 'implementation' | 'solutions',
+    project_id: item.project_type === 'implementation' ? item.id : null,
+    solutions_project_id: item.project_type === 'solutions' ? item.id : null,
+    project_name: item.site_name || 'Unnamed',
+    site_name: item.site_name || 'Unnamed',
+    customer_name: item.company_name || 'Unknown',
+    implementation_lead: null
   }));
 }
 

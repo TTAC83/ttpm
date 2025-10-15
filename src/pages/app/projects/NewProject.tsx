@@ -42,6 +42,8 @@ export const NewProject = () => {
     site_address: '',
     domain: '',
     contract_signed_date: '',
+    salesperson: '',
+    solutions_consultant: '',
     customer_project_lead: '',
     implementation_lead: '',
     ai_iot_engineer: '',
@@ -124,6 +126,8 @@ export const NewProject = () => {
           site_address: formData.site_address || null,
           domain: formData.domain as 'IoT' | 'Vision' | 'Hybrid',
           contract_signed_date: formData.contract_signed_date,
+          salesperson: formData.salesperson || null,
+          solutions_consultant: formData.solutions_consultant || null,
           customer_project_lead: formData.customer_project_lead || null,
           implementation_lead: formData.implementation_lead || null,
           ai_iot_engineer: formData.ai_iot_engineer || null,
@@ -307,6 +311,48 @@ export const NewProject = () => {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Team Assignments</h3>
               <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="salesperson">Sales Person</Label>
+                  <Select 
+                    value={formData.salesperson} 
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, salesperson: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select sales person" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {internalProfiles
+                        .filter((profile) => profile.user_id && profile.user_id.trim() !== '')
+                        .map((profile) => (
+                          <SelectItem key={profile.user_id} value={profile.user_id}>
+                            {profile.name || 'Unnamed User'}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="solutions_consultant">Solutions Consultant</Label>
+                  <Select 
+                    value={formData.solutions_consultant} 
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, solutions_consultant: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select solutions consultant" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {internalProfiles
+                        .filter((profile) => profile.user_id && profile.user_id.trim() !== '')
+                        .map((profile) => (
+                          <SelectItem key={profile.user_id} value={profile.user_id}>
+                            {profile.name || 'Unnamed User'}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="customer_project_lead">Customer Project Lead</Label>
                   <Select 

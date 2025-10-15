@@ -38,7 +38,6 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
     site_address: data.site_address || '',
     domain: data.domain || '',
     segment: data.segment || '',
-    expansion_opportunity: data.expansion_opportunity || '',
     contract_signed_date: data.contract_signed_date || data.go_live_date || '',
     contract_start_date: data.contract_start_date || '',
     contract_end_date: data.contract_end_date || '',
@@ -67,19 +66,6 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
     auto_renewal: data.auto_renewal ?? true,
     standard_terms: data.standard_terms ?? true,
     deviation_of_terms: data.deviation_of_terms || '',
-    testimonial: data.testimonial || false,
-    reference_call: data.reference_call || false,
-    site_visit: data.site_visit || false,
-    case_study: data.case_study || false,
-    reference_status: data.reference_status || '',
-    total_sites: data.total_sites?.toString() || '',
-    estimated_lines: data.estimated_lines?.toString() || '',
-    arr_potential_min: data.arr_potential_min?.toString() || '',
-    arr_potential_max: data.arr_potential_max?.toString() || '',
-    short_term_estimated_sites: data.short_term_estimated_sites?.toString() || '',
-    short_term_estimated_lines: data.short_term_estimated_lines?.toString() || '',
-    short_term_arr_min: data.short_term_arr_min?.toString() || '',
-    short_term_arr_max: data.short_term_arr_max?.toString() || '',
   });
 
   const [contractedLinesError, setContractedLinesError] = useState<string>('');
@@ -299,7 +285,6 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
         site_address: formData.site_address || null,
         domain: formData.domain || null,
         segment: formData.segment || null,
-        expansion_opportunity: formData.expansion_opportunity || null,
         break_clause_enabled: formData.break_clause_enabled,
         break_clause_project_date: formData.break_clause_enabled ? formData.break_clause_project_date || null : null,
         break_clause_key_points_md: formData.break_clause_enabled ? formData.break_clause_key_points_md || null : null,
@@ -325,19 +310,6 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
         standard_terms: formData.standard_terms,
         deviation_of_terms: formData.standard_terms ? null : (formData.deviation_of_terms || null),
         useful_links: usefulLinks as any,
-        testimonial: formData.testimonial,
-        reference_call: formData.reference_call,
-        site_visit: formData.site_visit,
-        case_study: formData.case_study,
-        reference_status: formData.reference_status || null,
-        total_sites: formData.total_sites ? parseInt(formData.total_sites) : null,
-        estimated_lines: formData.estimated_lines ? parseInt(formData.estimated_lines) : null,
-        arr_potential_min: formData.arr_potential_min ? parseFloat(formData.arr_potential_min) : null,
-        arr_potential_max: formData.arr_potential_max ? parseFloat(formData.arr_potential_max) : null,
-        short_term_estimated_sites: formData.short_term_estimated_sites ? parseInt(formData.short_term_estimated_sites) : null,
-        short_term_estimated_lines: formData.short_term_estimated_lines ? parseInt(formData.short_term_estimated_lines) : null,
-        short_term_arr_min: formData.short_term_arr_min ? parseFloat(formData.short_term_arr_min) : null,
-        short_term_arr_max: formData.short_term_arr_max ? parseFloat(formData.short_term_arr_max) : null,
       };
 
       // Add type-specific fields
@@ -384,7 +356,6 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
       site_address: data.site_address || '',
       domain: data.domain || '',
       segment: data.segment || '',
-      expansion_opportunity: data.expansion_opportunity || '',
       contract_signed_date: data.contract_signed_date || data.go_live_date || '',
       contract_start_date: data.contract_start_date || '',
       contract_end_date: data.contract_end_date || '',
@@ -413,19 +384,6 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
       auto_renewal: data.auto_renewal ?? true,
       standard_terms: data.standard_terms ?? true,
       deviation_of_terms: data.deviation_of_terms || '',
-      testimonial: data.testimonial || false,
-      reference_call: data.reference_call || false,
-      site_visit: data.site_visit || false,
-      case_study: data.case_study || false,
-      reference_status: data.reference_status || '',
-      total_sites: data.total_sites?.toString() || '',
-      estimated_lines: data.estimated_lines?.toString() || '',
-      arr_potential_min: data.arr_potential_min?.toString() || '',
-      arr_potential_max: data.arr_potential_max?.toString() || '',
-      short_term_estimated_sites: data.short_term_estimated_sites?.toString() || '',
-      short_term_estimated_lines: data.short_term_estimated_lines?.toString() || '',
-      short_term_arr_min: data.short_term_arr_min?.toString() || '',
-      short_term_arr_max: data.short_term_arr_max?.toString() || '',
     });
     setContractedLinesError('');
     setBillingTermsError('');
@@ -560,189 +518,6 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                 </div>
               </div>
 
-              {/* Reference & Marketing */}
-              <div className="space-y-4 border-t pt-6">
-                <h3 className="text-2xl font-semibold leading-none tracking-tight">Reference & Marketing</h3>
-                
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      id="testimonial"
-                      checked={formData.testimonial}
-                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, testimonial: checked }))}
-                    />
-                    <Label htmlFor="testimonial" className="cursor-pointer">Testimonial</Label>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      id="reference_call"
-                      checked={formData.reference_call}
-                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, reference_call: checked }))}
-                    />
-                    <Label htmlFor="reference_call" className="cursor-pointer">Reference Call</Label>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      id="site_visit"
-                      checked={formData.site_visit}
-                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, site_visit: checked }))}
-                    />
-                    <Label htmlFor="site_visit" className="cursor-pointer">Site Visit</Label>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      id="case_study"
-                      checked={formData.case_study}
-                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, case_study: checked }))}
-                    />
-                    <Label htmlFor="case_study" className="cursor-pointer">Case Study</Label>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="reference_status">Reference Status</Label>
-                  <Textarea
-                    id="reference_status"
-                    value={formData.reference_status}
-                    onChange={(e) => setFormData(prev => ({ ...prev, reference_status: e.target.value }))}
-                    rows={3}
-                    placeholder="Enter reference status notes..."
-                  />
-                </div>
-              </div>
-
-              {/* Expansion */}
-              <div className="space-y-4 border-t pt-6">
-                <h3 className="text-2xl font-semibold leading-none tracking-tight">Expansion</h3>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="expansion_opportunity">Expansion Opportunity</Label>
-                  <Textarea
-                    id="expansion_opportunity"
-                    value={formData.expansion_opportunity}
-                    onChange={(e) => setFormData(prev => ({ ...prev, expansion_opportunity: e.target.value }))}
-                    rows={3}
-                    placeholder="Describe expansion opportunities..."
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  <h4 className="font-medium text-lg">Total / Long Term</h4>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="total_sites">Total Sites</Label>
-                      <Input
-                        id="total_sites"
-                        type="number"
-                        min="0"
-                        value={formData.total_sites}
-                        onChange={(e) => setFormData(prev => ({ ...prev, total_sites: e.target.value }))}
-                        placeholder="Enter number of sites"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="estimated_lines">Estimated Lines</Label>
-                      <Input
-                        id="estimated_lines"
-                        type="number"
-                        min="0"
-                        value={formData.estimated_lines}
-                        onChange={(e) => setFormData(prev => ({ ...prev, estimated_lines: e.target.value }))}
-                        placeholder="Enter estimated lines"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="arr_potential_min">ARR Potential Min (£)</Label>
-                      <Input
-                        id="arr_potential_min"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={formData.arr_potential_min}
-                        onChange={(e) => setFormData(prev => ({ ...prev, arr_potential_min: e.target.value }))}
-                        placeholder="Minimum ARR"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="arr_potential_max">ARR Potential Max (£)</Label>
-                      <Input
-                        id="arr_potential_max"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={formData.arr_potential_max}
-                        onChange={(e) => setFormData(prev => ({ ...prev, arr_potential_max: e.target.value }))}
-                        placeholder="Maximum ARR"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h4 className="font-medium text-lg">Short Term</h4>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="short_term_estimated_sites">Short Term Estimated Sites</Label>
-                      <Input
-                        id="short_term_estimated_sites"
-                        type="number"
-                        min="0"
-                        value={formData.short_term_estimated_sites}
-                        onChange={(e) => setFormData(prev => ({ ...prev, short_term_estimated_sites: e.target.value }))}
-                        placeholder="Enter number of sites"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="short_term_estimated_lines">Short Term Estimated Lines</Label>
-                      <Input
-                        id="short_term_estimated_lines"
-                        type="number"
-                        min="0"
-                        value={formData.short_term_estimated_lines}
-                        onChange={(e) => setFormData(prev => ({ ...prev, short_term_estimated_lines: e.target.value }))}
-                        placeholder="Enter estimated lines"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="short_term_arr_min">Short Term ARR Min (£)</Label>
-                      <Input
-                        id="short_term_arr_min"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={formData.short_term_arr_min}
-                        onChange={(e) => setFormData(prev => ({ ...prev, short_term_arr_min: e.target.value }))}
-                        placeholder="Minimum ARR"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="short_term_arr_max">Short Term ARR Max (£)</Label>
-                      <Input
-                        id="short_term_arr_max"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={formData.short_term_arr_max}
-                        onChange={(e) => setFormData(prev => ({ ...prev, short_term_arr_max: e.target.value }))}
-                        placeholder="Maximum ARR"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
 
               <div className="flex gap-2 pt-4">
                 <Button type="submit" disabled={loading}>

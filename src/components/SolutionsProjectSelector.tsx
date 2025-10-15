@@ -157,7 +157,7 @@ export const SolutionsProjectSelector = ({ open, onClose, onConvert }: Solutions
                   {solutionsProjects.map((project) => (
                     <SelectItem key={project.id} value={project.id}>
                       <div className="flex flex-col">
-                        <span className="font-medium">{project.company_name} - {project.site_name}</span>
+                        <span className="font-medium">{project.companies?.name || 'N/A'} - {project.site_name}</span>
                         <span className="text-sm text-muted-foreground">
                           {project.domain} • Created {new Date(project.created_at).toLocaleDateString()}
                         </span>
@@ -185,7 +185,7 @@ export const SolutionsProjectSelector = ({ open, onClose, onConvert }: Solutions
               <h3 className="text-lg font-semibold">Project Details</h3>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="font-medium">Company:</span> {selectedProject.company_name}
+                  <span className="font-medium">Company:</span> {selectedProject.companies?.name || 'N/A'}
                 </div>
                 <div>
                   <span className="font-medium">Site:</span> {selectedProject.site_name}

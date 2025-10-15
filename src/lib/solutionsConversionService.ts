@@ -2,7 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface SolutionsProject {
   id: string;
-  company_name: string;
+  company_id: string;
   domain: 'Vision' | 'IoT' | 'Hybrid';
   site_name: string;
   site_address?: string;
@@ -13,6 +13,9 @@ export interface SolutionsProject {
   customer_phone?: string;
   customer_job_title?: string;
   created_at: string;
+  companies?: {
+    name: string;
+  };
 }
 
 export interface ConversionMapping {
@@ -44,7 +47,7 @@ export const SUGGESTED_ROLE_MAPPINGS = {
 export const fetchSolutionsProjects = async (): Promise<SolutionsProject[]> => {
   const { data, error } = await supabase
     .from('solutions_projects')
-    .select('*')
+    .select('*, companies(name)')
     .order('created_at', { ascending: false });
 
   if (error) throw error;
@@ -54,7 +57,7 @@ export const fetchSolutionsProjects = async (): Promise<SolutionsProject[]> => {
 export const fetchSolutionsProjectById = async (id: string): Promise<SolutionsProject | null> => {
   const { data, error } = await supabase
     .from('solutions_projects')
-    .select('*')
+    .select('*, companies(name)')
     .eq('id', id)
     .single();
 
@@ -99,26 +102,8 @@ export const convertSolutionsToImplementationProject = async (
   roleMapping: { [key: string]: string },
   contractSignedDate: string
 ) => {
-  // Create or find company
-  let company_id;
-  const { data: existingCompany } = await supabase
-    .from('companies')
-    .select('id')
-    .ilike('name', solutionsProject.company_name.trim())
-    .single();
-
-  if (existingCompany) {
-    company_id = existingCompany.id;
-  } else {
-    const { data: newCompany, error: companyError } = await supabase
-      .from('companies')
-      .insert({ name: solutionsProject.company_name.trim(), is_internal: false })
-      .select('id')
-      .single();
-    
-    if (companyError) throw companyError;
-    company_id = newCompany.id;
-  }
+  // Use the existing company_id from the solutions project
+  const company_id = solutionsProject.company_id;
 
   // Create the implementation project
   const projectData = {

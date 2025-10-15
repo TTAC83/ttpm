@@ -14,13 +14,13 @@ import { ProjectHardware } from '../projects/tabs/ProjectHardware';
 
 interface SolutionsProject {
   id: string;
-  company_name: string;
+  company_id: string;
   domain: string;
   site_name: string;
   site_address?: string;
   salesperson?: string;
   solutions_consultant?: string;
-  customer_project_lead?: string;
+  customer_lead?: string;
   customer_email?: string;
   customer_phone?: string;
   customer_job_title?: string;
@@ -31,6 +31,9 @@ interface SolutionsProject {
   lines_required?: number;
   created_at: string;
   updated_at: string;
+  companies?: {
+    name: string;
+  };
 }
 
 export const SolutionsProjectDetail = () => {
@@ -48,7 +51,7 @@ export const SolutionsProjectDetail = () => {
     try {
       const { data, error } = await supabase
         .from('solutions_projects')
-        .select('*')
+        .select('*, companies(name)')
         .eq('id', id)
         .single();
 
@@ -129,7 +132,7 @@ export const SolutionsProjectDetail = () => {
           <div className="flex items-start justify-between">
             <div className="space-y-2">
               <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-bold">{project.company_name}</h1>
+                <h1 className="text-3xl font-bold">{project.companies?.name || 'N/A'}</h1>
                 <Badge variant={getDomainBadgeVariant(project.domain)}>
                   {project.domain}
                 </Badge>

@@ -74,8 +74,30 @@ export const NewSolutionsProject = () => {
     setLoading(true);
 
     try {
+      // First, find or create the company (same as implementation projects)
+      let company_id;
+      let { data: existingCompany } = await supabase
+        .from('companies')
+        .select('id')
+        .ilike('name', formData.company_name.trim())
+        .single();
+
+      if (existingCompany) {
+        company_id = existingCompany.id;
+      } else {
+        // Create new company
+        const { data: newCompany, error: companyError } = await supabase
+          .from('companies')
+          .insert({ name: formData.company_name.trim(), is_internal: false })
+          .select('id')
+          .single();
+        
+        if (companyError) throw companyError;
+        company_id = newCompany.id;
+      }
+
       const projectData = {
-        company_name: formData.company_name,
+        company_id: company_id,
         domain: formData.domain as 'Vision' | 'IoT' | 'Hybrid',
         site_name: formData.site_name,
         site_address: formData.site_address || null,
@@ -97,16 +119,16 @@ export const NewSolutionsProject = () => {
       if (error) throw error;
 
       toast({
-        title: 'Success',
-        description: 'Solutions project created successfully',
+        title: 'Project Created',
+        description: 'Solutions project has been created successfully',
       });
 
       navigate(`/app/solutions/${data.id}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating solutions project:', error);
       toast({
         title: 'Error',
-        description: 'Failed to create solutions project',
+        description: error.message || 'Failed to create solutions project',
         variant: 'destructive',
       });
     } finally {

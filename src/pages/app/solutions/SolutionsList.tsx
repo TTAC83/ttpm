@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface SolutionsProject {
   id: string;
-  company_name: string;
+  company_id: string;
   domain: string;
   site_name: string;
   site_address?: string;
@@ -20,6 +20,9 @@ interface SolutionsProject {
   solutions_consultant?: string;
   customer_lead?: string;
   created_at: string;
+  companies?: {
+    name: string;
+  };
 }
 
 export const SolutionsList = () => {
@@ -34,7 +37,7 @@ export const SolutionsList = () => {
     try {
       const { data, error } = await supabase
         .from('solutions_projects')
-        .select('*')
+        .select('*, companies(name)')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -56,7 +59,7 @@ export const SolutionsList = () => {
   }, []);
 
   const filteredProjects = projects.filter(project =>
-    project.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (project.companies?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     project.site_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     project.domain.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -169,7 +172,7 @@ export const SolutionsList = () => {
                 {filteredProjects.map((project) => (
                   <TableRow key={project.id}>
                     <TableCell className="font-medium">
-                      {project.company_name}
+                      {project.companies?.name || 'N/A'}
                     </TableCell>
                     <TableCell>{project.site_name}</TableCell>
                     <TableCell>

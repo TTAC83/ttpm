@@ -3161,7 +3161,7 @@ export type Database = {
           break_clause_key_points_md: string | null
           break_clause_project_date: string | null
           case_study: boolean | null
-          company_name: string
+          company_id: string
           contract_end_date: string | null
           contract_signed_date: string | null
           contract_start_date: string | null
@@ -3171,8 +3171,8 @@ export type Database = {
           created_by: string
           customer_email: string | null
           customer_job_title: string | null
+          customer_lead: string | null
           customer_phone: string | null
-          customer_project_lead: string | null
           deviation_of_terms: string | null
           domain: Database["public"]["Enums"]["work_domain"]
           expansion_opportunity: string | null
@@ -3224,7 +3224,7 @@ export type Database = {
           break_clause_key_points_md?: string | null
           break_clause_project_date?: string | null
           case_study?: boolean | null
-          company_name: string
+          company_id: string
           contract_end_date?: string | null
           contract_signed_date?: string | null
           contract_start_date?: string | null
@@ -3234,8 +3234,8 @@ export type Database = {
           created_by: string
           customer_email?: string | null
           customer_job_title?: string | null
+          customer_lead?: string | null
           customer_phone?: string | null
-          customer_project_lead?: string | null
           deviation_of_terms?: string | null
           domain: Database["public"]["Enums"]["work_domain"]
           expansion_opportunity?: string | null
@@ -3287,7 +3287,7 @@ export type Database = {
           break_clause_key_points_md?: string | null
           break_clause_project_date?: string | null
           case_study?: boolean | null
-          company_name?: string
+          company_id?: string
           contract_end_date?: string | null
           contract_signed_date?: string | null
           contract_start_date?: string | null
@@ -3297,8 +3297,8 @@ export type Database = {
           created_by?: string
           customer_email?: string | null
           customer_job_title?: string | null
+          customer_lead?: string | null
           customer_phone?: string | null
-          customer_project_lead?: string | null
           deviation_of_terms?: string | null
           domain?: Database["public"]["Enums"]["work_domain"]
           expansion_opportunity?: string | null
@@ -3340,7 +3340,22 @@ export type Database = {
           useful_links?: Json | null
           website_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "solutions_projects_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solutions_projects_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_impl_companies"
+            referencedColumns: ["company_id"]
+          },
+        ]
       }
       subtasks: {
         Row: {
@@ -3597,13 +3612,11 @@ export type Database = {
     Views: {
       v_all_projects_for_selection: {
         Row: {
-          customer_name: string | null
-          implementation_lead: string | null
-          kind: string | null
-          project_id: string | null
-          project_name: string | null
+          company_name: string | null
+          domain: Database["public"]["Enums"]["work_domain"] | null
+          id: string | null
+          project_type: string | null
           site_name: string | null
-          solutions_project_id: string | null
         }
         Relationships: []
       }

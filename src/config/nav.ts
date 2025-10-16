@@ -200,6 +200,12 @@ export const NAV: NavItem[] = [
         iconName: "Package",
         matchPaths: ["/app/admin/hardware"]
       },
+      { 
+        label: "Vision Use Cases", 
+        to: "/app/admin/vision-use-cases",
+        iconName: "Eye",
+        matchPaths: ["/app/admin/vision-use-cases"]
+      },
     ]
   },
 

@@ -3605,6 +3605,36 @@ export type Database = {
         }
         Relationships: []
       }
+      vision_use_cases: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          limitations_watchouts: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          limitations_watchouts?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          limitations_watchouts?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       wbs_layouts: {
         Row: {
           height: number

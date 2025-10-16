@@ -31,6 +31,7 @@ import { UpdateParkCakesDates } from "./pages/app/projects/UpdateParkCakesDates"
 import ProjectDetail from "./pages/app/projects/ProjectDetail";
 import MasterDataManagement from "./pages/app/admin/MasterDataManagement";
 import HardwareManagement from "./pages/app/admin/HardwareManagement";
+import VisionUseCases from "./pages/app/admin/VisionUseCases";
 import FeatureRequests from "./pages/app/FeatureRequests";
 import FeatureRequestDetail from "./pages/app/FeatureRequestDetail";
 import FeatureDashboard from "./pages/app/FeatureDashboard";
@@ -296,6 +297,14 @@ const App = () => (
                 element={
                   <AuthGuard requiredRole="internal_admin">
                     <HardwareManagement />
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="admin/vision-use-cases" 
+                element={
+                  <AuthGuard requiredRole="internal_admin">
+                    <VisionUseCases />
                   </AuthGuard>
                 } 
               />

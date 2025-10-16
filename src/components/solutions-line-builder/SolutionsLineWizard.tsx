@@ -234,33 +234,35 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
 
           if (equipmentError) throw equipmentError;
 
-          // Insert equipment titles
-          await supabase.from('equipment_titles').insert({
+          const { error: etError } = await supabase.from('equipment_titles').insert({
             equipment_id: equipmentData.id,
             title: eq.name,
           });
+          if (etError) throw etError;
 
           // Insert cameras
           for (const camera of eq.cameras) {
-            await supabase.from('cameras').insert({
+            const { error: camError } = await supabase.from('cameras').insert({
               equipment_id: equipmentData.id,
               mac_address: `CAM-${Math.random().toString(36).substring(7)}`,
-              camera_type: camera.camera_type,
+              camera_type: camera.camera_type || 'Generic',
               lens_type: camera.lens_type || 'Standard',
               light_required: camera.light_required || false,
               light_id: camera.light_id || null,
             });
+            if (camError) throw camError;
           }
 
           // Insert IoT devices
           for (const iot of eq.iot_devices) {
-            await supabase.from('iot_devices').insert({
+            const { error: iotError } = await supabase.from('iot_devices').insert({
               equipment_id: equipmentData.id,
               name: iot.name,
               mac_address: `IOT-${Math.random().toString(36).substring(7)}`,
               hardware_master_id: iot.hardware_master_id,
               receiver_mac_address: `REC-${Math.random().toString(36).substring(7)}`,
             });
+            if (iotError) throw iotError;
           }
         }
       }

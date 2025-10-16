@@ -183,6 +183,8 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
         lineId = newLine.id;
       }
 
+      console.log('Saving solutions line with positions:', positions.length);
+      
       // Save process flow (positions, titles, equipment, cameras, IoT devices)
       for (const position of positions) {
         const { data: positionData, error: positionError } = await supabase

@@ -284,12 +284,6 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
 
           if (equipmentError) throw equipmentError;
 
-          const { error: etError } = await supabase.from('equipment_titles').insert({
-            equipment_id: equipmentData.id,
-            title: eq.name,
-          });
-          if (etError) throw etError;
-
           // Insert cameras
           for (const camera of eq.cameras) {
             const { error: camError } = await supabase.from('cameras').insert({

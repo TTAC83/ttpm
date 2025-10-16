@@ -1083,8 +1083,11 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
                   {/* Sticky header for events */}
                   <div className="sticky top-0 z-30 bg-background border-b border-gray-200">
                     <div className="flex">
-                      <div className="sticky left-0 z-40 bg-background w-60 h-6 border-r border-gray-200"></div>
-                      <div className="relative h-6 overflow-hidden">
+                      <div className="sticky left-0 z-40 bg-background w-60 border-r border-gray-200 px-2 py-1">
+                        <div className="text-xs font-semibold">Events</div>
+                        <div className="text-[10px] text-muted-foreground">Event Dates</div>
+                      </div>
+                      <div className="relative h-12 overflow-hidden flex-1">
                         <div className="flex">
                           {dateMarkers.map((marker, index) => (
                             <div
@@ -1160,8 +1163,11 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
                   {/* Sticky header for tasks */}
                   <div className="sticky top-0 z-30 bg-background border-b border-gray-200">
                     <div className="flex">
-                      <div className="sticky left-0 z-40 bg-background w-60 h-6 border-r border-gray-200"></div>
-                      <div className="relative h-6 overflow-hidden">
+                      <div className="sticky left-0 z-40 bg-background w-60 border-r border-gray-200 px-2 py-1">
+                        <div className="text-xs font-semibold">Task / Step</div>
+                        <div className="text-[10px] text-muted-foreground">Planned Dates</div>
+                      </div>
+                      <div className="relative h-12 overflow-hidden flex-1">
                         <div className="flex">
                           {dateMarkers.map((marker, index) => (
                             <div

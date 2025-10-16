@@ -96,8 +96,58 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
         product_description: existingLineData.product_description || "",
       });
 
-      // For solutions lines, we don't have positions/equipment in the database yet
-      // This is just the basic line info
+      // Load positions with titles
+      const { data: positionsData, error: positionsError } = await supabase
+        .from('positions')
+        .select('*, position_titles(id, title)')
+        .eq('line_id', editLineId)
+        .order('position_x', { ascending: true });
+
+      if (positionsError) throw positionsError;
+
+      // Load equipment, cameras, and IoT devices for each position
+      const loadedPositions = await Promise.all(
+        (positionsData || []).map(async (pos) => {
+          const { data: equipmentData, error: equipmentError } = await supabase
+            .from('equipment')
+            .select('*, cameras(*), iot_devices(*)')
+            .eq('position_id', pos.id);
+
+          if (equipmentError) throw equipmentError;
+
+          return {
+            id: pos.id,
+            name: pos.name,
+            position_x: pos.position_x,
+            position_y: pos.position_y,
+            titles: (pos.position_titles || []).map((pt: any) => ({
+              id: pt.id,
+              title: pt.title as "RLE" | "OP"
+            })),
+            equipment: (equipmentData || []).map((eq) => ({
+              id: eq.id,
+              name: eq.name,
+              equipment_type: eq.equipment_type || "",
+              cameras: (eq.cameras || []).map((cam: any) => ({
+                id: cam.id,
+                name: cam.mac_address,
+                camera_type: cam.camera_type,
+                lens_type: cam.lens_type,
+                light_required: cam.light_required || false,
+                light_id: cam.light_id || undefined,
+              })),
+              iot_devices: (eq.iot_devices || []).map((iot: any) => ({
+                id: iot.id,
+                name: iot.name,
+                hardware_master_id: iot.hardware_master_id,
+                receiver_master_id: undefined,
+              })),
+            })),
+          };
+        })
+      );
+
+      setPositions(loadedPositions);
     } catch (error) {
       console.error('Error loading line data:', error);
       toast({

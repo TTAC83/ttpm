@@ -2,9 +2,13 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Camera, Cpu, MapPin } from "lucide-react";
+import { ArrowLeft, Camera, Cpu, MapPin, Edit } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 interface LineData {
   id: string;
@@ -62,10 +66,16 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
 }) => {
   const [lineData, setLineData] = useState<LineData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editingCamera, setEditingCamera] = useState<Camera & { positionName: string; equipmentName: string } | null>(null);
+  const [editingIoT, setEditingIoT] = useState<IoTDevice & { positionName: string; equipmentName: string } | null>(null);
+  const [cameraTypes, setCameraTypes] = useState<Array<{ id: string; product_name: string }>>([]);
+  const [receivers, setReceivers] = useState<Array<{ id: string; name: string }>>([]);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchLineData();
+    fetchCameraTypes();
+    fetchReceivers();
   }, [lineId]);
 
   const fetchLineData = async () => {
@@ -140,6 +150,96 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCameraTypes = async () => {
+    const { data } = await supabase
+      .from('hardware_master')
+      .select('id, product_name')
+      .eq('hardware_type', 'Camera')
+      .order('product_name');
+    setCameraTypes(data || []);
+  };
+
+  const fetchReceivers = async () => {
+    if (!lineData) return;
+    
+    // Try to get solutions_project_id from the line
+    const { data: solutionsLine } = await supabase
+      .from('solutions_lines')
+      .select('solutions_project_id')
+      .eq('id', lineId)
+      .maybeSingle();
+
+    if (solutionsLine?.solutions_project_id) {
+      const { data } = await supabase
+        .from('project_iot_requirements')
+        .select('id, name')
+        .eq('solutions_project_id', solutionsLine.solutions_project_id)
+        .eq('hardware_type', 'receiver');
+      setReceivers(data || []);
+    }
+  };
+
+  const handleUpdateCamera = async () => {
+    if (!editingCamera) return;
+
+    try {
+      const { error } = await supabase
+        .from('cameras')
+        .update({
+          camera_type: editingCamera.camera_type,
+        })
+        .eq('id', editingCamera.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Camera updated successfully",
+      });
+
+      setEditingCamera(null);
+      fetchLineData();
+    } catch (error) {
+      console.error('Error updating camera:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update camera",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateIoT = async () => {
+    if (!editingIoT) return;
+
+    try {
+      const { error } = await supabase
+        .from('iot_devices')
+        .update({
+          name: editingIoT.name,
+          hardware_master_id: editingIoT.hardware_master_id,
+        })
+        .eq('id', editingIoT.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "IoT device updated successfully",
+      });
+
+      setEditingIoT(null);
+      fetchLineData();
+    } catch (error) {
+      console.error('Error updating IoT device:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update IoT device",
+        variant: "destructive",
+      });
     }
   };
 
@@ -300,7 +400,17 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
                             <p className="font-medium">{camera.equipmentName}</p>
                             <p className="text-sm text-muted-foreground">Position: {camera.positionName}</p>
                           </div>
-                          <Badge variant="outline">{camera.camera_type}</Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline">{camera.camera_type}</Badge>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => setEditingCamera(camera)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -336,8 +446,17 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
                             <p className="font-medium">{device.equipmentName}</p>
                             <p className="text-sm text-muted-foreground">Position: {device.positionName}</p>
                           </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setEditingIoT(device)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
                         </div>
                         <div className="space-y-1 text-sm">
+                          <p><span className="font-medium">Device:</span> {device.name}</p>
                           <p><span className="font-medium">Attached Receiver:</span> {device.receiver_name || "Not assigned"}</p>
                         </div>
                       </div>
@@ -352,6 +471,62 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Camera Dialog */}
+      <Dialog open={!!editingCamera} onOpenChange={() => setEditingCamera(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Camera</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Camera Type</Label>
+              <Select
+                value={editingCamera?.camera_type || ""}
+                onValueChange={(value) => setEditingCamera(prev => prev ? { ...prev, camera_type: value } : null)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select camera type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cameraTypes.map((cam) => (
+                    <SelectItem key={cam.id} value={cam.product_name}>
+                      {cam.product_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingCamera(null)}>Cancel</Button>
+            <Button onClick={handleUpdateCamera}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit IoT Device Dialog */}
+      <Dialog open={!!editingIoT} onOpenChange={() => setEditingIoT(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit IoT Device</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Device Name</Label>
+              <Input
+                value={editingIoT?.name || ""}
+                onChange={(e) => setEditingIoT(prev => prev ? { ...prev, name: e.target.value } : null)}
+                placeholder="Enter device name"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingIoT(null)}>Cancel</Button>
+            <Button onClick={handleUpdateIoT}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

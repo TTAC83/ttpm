@@ -316,7 +316,7 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
 
       // Add type-specific fields
       if (type === 'project' || type === 'solutions') {
-        updateData.contract_signed_date = formData.contract_signed_date;
+        updateData.contract_signed_date = formData.contract_signed_date || null;
         updateData.contract_start_date = formData.contract_start_date || null;
         updateData.contract_end_date = formData.contract_end_date || null;
         updateData.billing_terms = formData.billing_terms || null;

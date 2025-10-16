@@ -74,6 +74,7 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
   const [events, setEvents] = useState<ProjectEvent[]>([]);
+  const [stepPositions, setStepPositions] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('task');
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -84,9 +85,28 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
+    fetchStepPositions();
     fetchTasksSubtasksAndEvents();
     fetchProjectDetails();
   }, [effectiveProjectId]);
+
+  const fetchStepPositions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('master_steps')
+        .select('name, position');
+      
+      if (error) throw error;
+      
+      const positions: Record<string, number> = {};
+      (data || []).forEach(step => {
+        positions[step.name] = step.position;
+      });
+      setStepPositions(positions);
+    } catch (error) {
+      console.error('Error fetching step positions:', error);
+    }
+  };
 
   const fetchProjectDetails = async () => {
     try {
@@ -441,12 +461,11 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
       }
     });
     
-    // Sort step groups by the earliest planned_start date within each step
+    // Sort step groups by position from master_steps
     return Object.values(stepGroups).sort((a, b) => {
-      if (!a.planned_start && !b.planned_start) return 0;
-      if (!a.planned_start) return 1;
-      if (!b.planned_start) return -1;
-      return a.planned_start.localeCompare(b.planned_start);
+      const posA = stepPositions[a.step_name] ?? 999;
+      const posB = stepPositions[b.step_name] ?? 999;
+      return posA - posB;
     });
   };
 

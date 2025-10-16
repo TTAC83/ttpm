@@ -251,8 +251,9 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
             await supabase.from('iot_devices').insert({
               equipment_id: equipmentData.id,
               name: iot.name,
+              mac_address: `IOT-${Math.random().toString(36).substring(7)}`,
               hardware_master_id: iot.hardware_master_id,
-              receiver_master_id: iot.receiver_master_id || null,
+              receiver_mac_address: `REC-${Math.random().toString(36).substring(7)}`,
             });
           }
         }

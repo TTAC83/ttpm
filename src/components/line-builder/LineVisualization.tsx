@@ -394,23 +394,21 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
                         }))
                       )
                     ).map((camera) => (
-                      <div key={camera.id} className="bg-muted/50 p-3 rounded">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
+                      <div key={camera.id} className="bg-muted/50 p-3 rounded border">
+                        <div className="flex justify-between items-center">
+                          <div className="flex-1">
                             <p className="font-medium">{camera.equipmentName}</p>
                             <p className="text-sm text-muted-foreground">Position: {camera.positionName}</p>
+                            <Badge variant="outline" className="mt-2">{camera.camera_type}</Badge>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline">{camera.camera_type}</Badge>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => setEditingCamera(camera)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setEditingCamera(camera)}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
+                          </Button>
                         </div>
                       </div>
                     ))}
@@ -440,24 +438,24 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
                         }))
                       )
                     ).map((device) => (
-                      <div key={device.id} className="bg-muted/50 p-3 rounded">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
+                      <div key={device.id} className="bg-muted/50 p-3 rounded border">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
                             <p className="font-medium">{device.equipmentName}</p>
-                            <p className="text-sm text-muted-foreground">Position: {device.positionName}</p>
+                            <p className="text-sm text-muted-foreground mb-2">Position: {device.positionName}</p>
+                            <div className="space-y-1 text-sm">
+                              <p><span className="font-medium">Device:</span> {device.name}</p>
+                              <p><span className="font-medium">Attached Receiver:</span> {device.receiver_name || "Not assigned"}</p>
+                            </div>
                           </div>
                           <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
+                            variant="outline"
+                            size="sm"
                             onClick={() => setEditingIoT(device)}
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
                           </Button>
-                        </div>
-                        <div className="space-y-1 text-sm">
-                          <p><span className="font-medium">Device:</span> {device.name}</p>
-                          <p><span className="font-medium">Attached Receiver:</span> {device.receiver_name || "Not assigned"}</p>
                         </div>
                       </div>
                     ))}

@@ -476,12 +476,21 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
   
   const allItems: (Task | Subtask | ProjectEvent | StepGroup)[] = [
     ...(viewMode === 'step' ? stepsWithDates : tasksWithDates),
-    ...subtasks,
+    ...subtasks.filter(st => st.planned_start && st.planned_end),
     ...events
   ];
   
   const todayPosition = getTodayPosition(allItems);
   const dateMarkers = generateDateMarkers(allItems);
+
+  console.log('Gantt chart data:', { 
+    tasksCount: tasksWithDates.length, 
+    stepsCount: stepsWithDates.length,
+    subtasksCount: subtasks.length,
+    eventsCount: events.length,
+    allItemsCount: allItems.length,
+    dateMarkersCount: dateMarkers.length 
+  });
 
   // Zoom and presentation mode handlers
   const handleZoomIn = () => {

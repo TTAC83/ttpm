@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, Camera, Cpu, Lightbulb, Monitor } from "lucide-react";
+import { Plus, Trash2, Camera, Cpu, Lightbulb, Monitor, Edit } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -99,6 +99,9 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   const [selectedPosition, setSelectedPosition] = useState<string>("");
   const [selectedEquipment, setSelectedEquipment] = useState<string>("");
   const [deviceDialogOpen, setDeviceDialogOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editingCameraId, setEditingCameraId] = useState<string>("");
+  const [editingIotId, setEditingIotId] = useState<string>("");
   const [deviceType, setDeviceType] = useState<"camera" | "iot">("camera");
   const [lights, setLights] = useState<Light[]>([]);
   const [cameras, setCameras] = useState<CameraMaster[]>([]);
@@ -246,32 +249,70 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     }
 
     const selectedCamera = cameras.find(c => c.id === cameraForm.camera_master_id);
-    const newCamera = {
-      id: Math.random().toString(36).substring(7),
-      name: cameraForm.name,
-      camera_type: selectedCamera?.camera_type || "",
-      lens_type: "",
-      light_required: cameraForm.light_required,
-      light_id: cameraForm.light_id,
-      plc_attached: cameraForm.plc_attached,
-      plc_master_id: cameraForm.plc_master_id,
-    };
+    
+    if (editMode && editingCameraId) {
+      // Update existing camera
+      setPositions(
+        positions.map((position) =>
+          position.id === selectedPosition
+            ? {
+                ...position,
+                equipment: position.equipment.map((eq) =>
+                  eq.id === selectedEquipment
+                    ? { 
+                        ...eq, 
+                        cameras: eq.cameras.map(cam => 
+                          cam.id === editingCameraId
+                            ? {
+                                ...cam,
+                                name: cameraForm.name,
+                                camera_type: selectedCamera?.camera_type || "",
+                                light_required: cameraForm.light_required,
+                                light_id: cameraForm.light_id,
+                              }
+                            : cam
+                        )
+                      }
+                    : eq
+                ),
+              }
+            : position
+        )
+      );
+    } else {
+      // Add new camera
+      const newCamera = {
+        id: Math.random().toString(36).substring(7),
+        name: cameraForm.name,
+        camera_type: selectedCamera?.camera_type || "",
+        lens_type: "",
+        light_required: cameraForm.light_required,
+        light_id: cameraForm.light_id,
+        plc_attached: cameraForm.plc_attached,
+        plc_master_id: cameraForm.plc_master_id,
+      };
 
-    setPositions(
-      positions.map((position) =>
-        position.id === selectedPosition
-          ? {
-              ...position,
-              equipment: position.equipment.map((eq) =>
-                eq.id === selectedEquipment
-                  ? { ...eq, cameras: [...eq.cameras, newCamera] }
-                  : eq
-              ),
-            }
-          : position
-      )
-    );
+      setPositions(
+        positions.map((position) =>
+          position.id === selectedPosition
+            ? {
+                ...position,
+                equipment: position.equipment.map((eq) =>
+                  eq.id === selectedEquipment
+                    ? { ...eq, cameras: [...eq.cameras, newCamera] }
+                    : eq
+                ),
+              }
+            : position
+        )
+      );
+    }
 
+    resetCameraForm();
+    setDeviceDialogOpen(false);
+  };
+
+  const resetCameraForm = () => {
     setCameraForm({ 
       name: "", 
       camera_master_id: "", 
@@ -285,7 +326,8 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       hmi_master_id: "",
       hmi_notes: ""
     });
-    setDeviceDialogOpen(false);
+    setEditMode(false);
+    setEditingCameraId("");
   };
 
   const addRelayOutput = () => {
@@ -327,28 +369,65 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       return;
     }
 
-    const newIotDevice = {
-      id: Math.random().toString(36).substring(7),
-      ...iotForm,
-    };
+    if (editMode && editingIotId) {
+      // Update existing IoT device
+      setPositions(
+        positions.map((position) =>
+          position.id === selectedPosition
+            ? {
+                ...position,
+                equipment: position.equipment.map((eq) =>
+                  eq.id === selectedEquipment
+                    ? { 
+                        ...eq, 
+                        iot_devices: eq.iot_devices.map(device => 
+                          device.id === editingIotId
+                            ? {
+                                ...device,
+                                name: iotForm.name,
+                                hardware_master_id: iotForm.hardware_master_id,
+                                receiver_master_id: iotForm.receiver_master_id,
+                              }
+                            : device
+                        )
+                      }
+                    : eq
+                ),
+              }
+            : position
+        )
+      );
+    } else {
+      // Add new IoT device
+      const newIotDevice = {
+        id: Math.random().toString(36).substring(7),
+        ...iotForm,
+      };
 
-    setPositions(
-      positions.map((position) =>
-        position.id === selectedPosition
-          ? {
-              ...position,
-              equipment: position.equipment.map((eq) =>
-                eq.id === selectedEquipment
-                  ? { ...eq, iot_devices: [...eq.iot_devices, newIotDevice] }
-                  : eq
-              ),
-            }
-          : position
-      )
-    );
+      setPositions(
+        positions.map((position) =>
+          position.id === selectedPosition
+            ? {
+                ...position,
+                equipment: position.equipment.map((eq) =>
+                  eq.id === selectedEquipment
+                    ? { ...eq, iot_devices: [...eq.iot_devices, newIotDevice] }
+                    : eq
+                ),
+              }
+            : position
+        )
+      );
+    }
 
-    setIotForm({ name: "", hardware_master_id: "", receiver_master_id: "", energy_monitoring: false, ct_master_id: "" });
+    resetIotForm();
     setDeviceDialogOpen(false);
+  };
+
+  const resetIotForm = () => {
+    setIotForm({ name: "", hardware_master_id: "", receiver_master_id: "", energy_monitoring: false, ct_master_id: "" });
+    setEditMode(false);
+    setEditingIotId("");
   };
 
   const removeCamera = (positionId: string, equipmentId: string, cameraId: string) => {
@@ -389,6 +468,52 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     setSelectedPosition(positionId);
     setSelectedEquipment(equipmentId);
     setDeviceType(type);
+    setEditMode(false);
+    setEditingCameraId("");
+    setEditingIotId("");
+    setDeviceDialogOpen(true);
+  };
+
+  const openEditCameraDialog = (positionId: string, equipmentId: string, camera: any) => {
+    setSelectedPosition(positionId);
+    setSelectedEquipment(equipmentId);
+    setDeviceType("camera");
+    setEditMode(true);
+    setEditingCameraId(camera.id);
+    
+    // Find camera master by camera_type
+    const cameraMaster = cameras.find(c => c.camera_type === camera.camera_type);
+    
+    setCameraForm({
+      name: camera.name,
+      camera_master_id: cameraMaster?.id || "",
+      light_required: camera.light_required || false,
+      light_id: camera.light_id || "",
+      light_notes: "",
+      plc_attached: camera.plc_attached || false,
+      plc_master_id: camera.plc_master_id || "",
+      relay_outputs: [],
+      hmi_required: false,
+      hmi_master_id: "",
+      hmi_notes: ""
+    });
+    setDeviceDialogOpen(true);
+  };
+
+  const openEditIotDialog = (positionId: string, equipmentId: string, device: any) => {
+    setSelectedPosition(positionId);
+    setSelectedEquipment(equipmentId);
+    setDeviceType("iot");
+    setEditMode(true);
+    setEditingIotId(device.id);
+    
+    setIotForm({
+      name: device.name,
+      hardware_master_id: device.hardware_master_id || "",
+      receiver_master_id: device.receiver_master_id || "",
+      energy_monitoring: false,
+      ct_master_id: ""
+    });
     setDeviceDialogOpen(true);
   };
 
@@ -462,13 +587,22 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                                      <Badge variant="outline">{camera.camera_type}</Badge>
                                    </div>
                                  </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => removeCamera(eq.positionId, eq.id, camera.id)}
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => openEditCameraDialog(eq.positionId, eq.id, camera)}
+                                  >
+                                    <Edit className="h-3 w-3" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeCamera(eq.positionId, eq.id, camera.id)}
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -489,17 +623,26 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                               <div
                                 key={device.id}
                                 className="flex items-center justify-between bg-muted/50 p-3 rounded-lg"
-                               >
+                              >
                                  <div className="flex flex-col gap-1">
                                    <div className="font-medium text-sm">{device.name}</div>
                                  </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => removeIotDevice(eq.positionId, eq.id, device.id)}
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => openEditIotDialog(eq.positionId, eq.id, device)}
+                                  >
+                                    <Edit className="h-3 w-3" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeIotDevice(eq.positionId, eq.id, device.id)}
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -519,7 +662,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              Add {deviceType === "camera" ? "Camera" : "IoT Device"}
+              {editMode ? "Edit" : "Add"} {deviceType === "camera" ? "Camera" : "IoT Device"}
             </DialogTitle>
           </DialogHeader>
 
@@ -836,7 +979,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
 
               <div className="pt-4 border-t">
                 <Button onClick={addCamera} className="w-full">
-                  Add Camera
+                  {editMode ? "Update Camera" : "Add Camera"}
                 </Button>
               </div>
             </Tabs>
@@ -936,7 +1079,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
               )}
 
               <Button onClick={addIotDevice} className="w-full">
-                Add IoT Device
+                {editMode ? "Update IoT Device" : "Add IoT Device"}
               </Button>
             </div>
           )}

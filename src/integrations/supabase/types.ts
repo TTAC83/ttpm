@@ -3206,6 +3206,7 @@ export type Database = {
           lines_required: number | null
           modules_and_features: string | null
           mrr: number | null
+          name: string
           payment_terms_days: number | null
           potential_contract_start_date: string
           product_description: string | null
@@ -3272,6 +3273,7 @@ export type Database = {
           lines_required?: number | null
           modules_and_features?: string | null
           mrr?: number | null
+          name?: string
           payment_terms_days?: number | null
           potential_contract_start_date?: string
           product_description?: string | null
@@ -3338,6 +3340,7 @@ export type Database = {
           lines_required?: number | null
           modules_and_features?: string | null
           mrr?: number | null
+          name?: string
           payment_terms_days?: number | null
           potential_contract_start_date?: string
           product_description?: string | null

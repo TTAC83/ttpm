@@ -2491,7 +2491,7 @@ export type Database = {
           parent_task_id: string | null
           planned_end: string | null
           planned_start: string | null
-          project_id: string
+          project_id: string | null
           solutions_project_id: string | null
           status: Database["public"]["Enums"]["task_status"]
           step_name: string
@@ -2508,7 +2508,7 @@ export type Database = {
           parent_task_id?: string | null
           planned_end?: string | null
           planned_start?: string | null
-          project_id: string
+          project_id?: string | null
           solutions_project_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           step_name: string
@@ -2525,7 +2525,7 @@ export type Database = {
           parent_task_id?: string | null
           planned_end?: string | null
           planned_start?: string | null
-          project_id?: string
+          project_id?: string | null
           solutions_project_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           step_name?: string

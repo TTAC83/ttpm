@@ -101,6 +101,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   const [lights, setLights] = useState<Light[]>([]);
   const [cameras, setCameras] = useState<CameraMaster[]>([]);
   const [plcs, setPlcs] = useState<PlcMaster[]>([]);
+  const [hmis, setHmis] = useState<HardwareMaster[]>([]);
   const [iotDevices, setIotDevices] = useState<HardwareMaster[]>([]);
   const [receivers, setReceivers] = useState<ReceiverMaster[]>([]);
   const [cts, setCts] = useState<HardwareMaster[]>([]);
@@ -113,6 +114,8 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     light_id: "",
     plc_attached: false,
     plc_master_id: "",
+    hmi_required: false,
+    hmi_master_id: "",
   });
 
   // IoT form state
@@ -124,10 +127,10 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     ct_master_id: "",
   });
 
-  // Fetch lights, cameras, PLCs, IoT devices, receivers, and CTs for the dropdowns
+  // Fetch lights, cameras, PLCs, HMIs, IoT devices, receivers, and CTs for the dropdowns
   useEffect(() => {
     const fetchData = async () => {
-      const [camerasData, lightsData, plcsData, iotDevicesData, ctsData] = await Promise.all([
+      const [camerasData, lightsData, plcsData, hmisData, iotDevicesData, ctsData] = await Promise.all([
         supabase
           .from('hardware_master')
           .select('id, sku_no, product_name, hardware_type, description')
@@ -142,6 +145,11 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
           .from('hardware_master')
           .select('id, sku_no, product_name, hardware_type, description')
           .eq('hardware_type', 'PLC')
+          .order('product_name', { ascending: true }),
+        supabase
+          .from('hardware_master')
+          .select('id, sku_no, product_name, hardware_type, description')
+          .eq('hardware_type', 'HMI')
           .order('product_name', { ascending: true }),
         supabase
           .from('hardware_master')
@@ -178,6 +186,9 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
           model_number: item.sku_no,
           plc_type: item.description || ''
         })));
+      }
+      if (hmisData.data) {
+        setHmis(hmisData.data);
       }
       if (iotDevicesData.data) {
         setIotDevices(iotDevicesData.data);
@@ -256,7 +267,9 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       light_required: false,
       light_id: "",
       plc_attached: false,
-      plc_master_id: ""
+      plc_master_id: "",
+      hmi_required: false,
+      hmi_master_id: ""
     });
     setDeviceDialogOpen(false);
   };
@@ -568,6 +581,44 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                         <SelectItem key={plc.id} value={plc.id}>
                           {plc.manufacturer} - {plc.model_number}
                           {plc.plc_type && ` (${plc.plc_type})`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="hmi-required"
+                  checked={cameraForm.hmi_required}
+                  onCheckedChange={(checked) =>
+                    setCameraForm({ 
+                      ...cameraForm, 
+                      hmi_required: !!checked,
+                      hmi_master_id: checked ? cameraForm.hmi_master_id : ""
+                    })
+                  }
+                />
+                <Label htmlFor="hmi-required">HMI Required</Label>
+              </div>
+              
+              {cameraForm.hmi_required && (
+                <div>
+                  <Label htmlFor="hmi-select">Select HMI Model</Label>
+                  <Select
+                    value={cameraForm.hmi_master_id}
+                    onValueChange={(value) =>
+                      setCameraForm({ ...cameraForm, hmi_master_id: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose HMI model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {hmis.map((hmi) => (
+                        <SelectItem key={hmi.id} value={hmi.id}>
+                          {hmi.sku_no} - {hmi.product_name}
                         </SelectItem>
                       ))}
                     </SelectContent>

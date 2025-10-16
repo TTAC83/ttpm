@@ -99,21 +99,33 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
 
       if (lineError) throw lineError;
 
-      // Fetch positions with their titles
-      const { data: positions, error: positionsError } = await supabase
+      // Fetch positions - need to use OR filter for line_id or solutions_line_id
+      const { data: allPositions, error: allPositionsError } = await supabase
         .from('positions')
-        .select(`
-          *,
-          position_titles(id, title)
-        `)
-        .eq('line_id', lineId)
+        .select('*')
+        .or(`line_id.eq.${lineId},solutions_line_id.eq.${lineId}`)
         .order('position_x');
+      
+      if (allPositionsError) throw allPositionsError;
 
-      if (positionsError) throw positionsError;
+      // Fetch position titles separately for each position
+      const positionsWithTitles = await Promise.all(
+        (allPositions || []).map(async (position) => {
+          const { data: titles } = await supabase
+            .from('position_titles')
+            .select('id, title')
+            .eq('position_id', position.id);
+          
+          return {
+            ...position,
+            position_titles: titles || []
+          };
+        })
+      );
 
       // Fetch equipment for each position
       const positionsWithEquipment = await Promise.all(
-        positions.map(async (position) => {
+        positionsWithTitles.map(async (position) => {
           const { data: equipment, error: equipmentError } = await supabase
             .from('equipment')
             .select(`

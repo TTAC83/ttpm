@@ -28,7 +28,8 @@ interface Equipment {
     name: string;
     camera_type: string;
     lens_type: string;
-    mac_address: string;
+    light_required?: boolean;
+    light_id?: string;
   }>;
   iot_devices: Array<{
     id: string;

@@ -28,7 +28,8 @@ interface Equipment {
     name: string;
     camera_type: string;
     lens_type: string;
-    mac_address: string;
+    light_required?: boolean;
+    light_id?: string;
   }>;
   iot_devices: Array<{
     id: string;
@@ -133,9 +134,11 @@ export const LineWizard: React.FC<LineWizardProps> = ({
             equipment_type: eq.equipment_type,
             cameras: eq.cameras?.map((cam: any) => ({
               id: cam.id,
+              name: cam.name || "Unnamed Camera",
               camera_type: cam.camera_type,
               lens_type: cam.lens_type,
-              mac_address: cam.mac_address
+              light_required: cam.light_required,
+              light_id: cam.light_id
             })) || [],
             iot_devices: eq.iot_devices?.map((iot: any) => ({
               id: iot.id,
@@ -296,15 +299,19 @@ export const LineWizard: React.FC<LineWizardProps> = ({
           if (equipmentError) throw equipmentError;
 
           // Create cameras for this equipment
-          for (const camera of eq.cameras) {
-            await supabase
+          if (eq.cameras.length > 0) {
+            const { error: camerasError } = await supabase
               .from('cameras')
-              .insert({
+              .insert(eq.cameras.map(camera => ({
                 equipment_id: equipmentData.id,
                 camera_type: camera.camera_type,
                 lens_type: camera.lens_type,
-                mac_address: camera.mac_address
-              });
+                mac_address: '',
+                light_required: camera.light_required || false,
+                light_id: camera.light_id || null
+              })));
+            
+            if (camerasError) throw camerasError;
           }
 
           // Create IoT devices for this equipment

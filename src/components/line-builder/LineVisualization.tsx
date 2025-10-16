@@ -40,7 +40,8 @@ interface Camera {
   id: string;
   camera_type: string;
   lens_type: string;
-  mac_address: string;
+  light_required?: boolean;
+  light_id?: string;
 }
 
 interface IoTDevice {
@@ -292,10 +293,9 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
                           </div>
                           <Badge variant="outline">{camera.camera_type}</Badge>
                         </div>
-                        <div className="space-y-1 text-sm">
-                          <p><span className="font-medium">Lens:</span> {camera.lens_type}</p>
-                          <p><span className="font-medium">MAC:</span> {camera.mac_address}</p>
-                        </div>
+                          <div className="space-y-1 text-sm">
+                            <p><span className="font-medium">Lens:</span> {camera.lens_type}</p>
+                          </div>
                       </div>
                     ))}
                     {lineData.positions.every(pos => pos.equipment.every(eq => eq.cameras.length === 0)) && (

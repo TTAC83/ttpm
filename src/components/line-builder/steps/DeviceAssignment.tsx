@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, Camera, Cpu } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Position {
@@ -114,6 +115,13 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     light_id: "",
     plc_attached: false,
     plc_master_id: "",
+    relay_outputs: [] as Array<{
+      id: string;
+      output_number: number;
+      type: string;
+      custom_name: string;
+      notes: string;
+    }>,
     hmi_required: false,
     hmi_master_id: "",
   });
@@ -268,10 +276,45 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       light_id: "",
       plc_attached: false,
       plc_master_id: "",
+      relay_outputs: [],
       hmi_required: false,
       hmi_master_id: ""
     });
     setDeviceDialogOpen(false);
+  };
+
+  const addRelayOutput = () => {
+    const newOutput = {
+      id: Math.random().toString(36).substring(7),
+      output_number: cameraForm.relay_outputs.length + 1,
+      type: "",
+      custom_name: "",
+      notes: ""
+    };
+    setCameraForm({
+      ...cameraForm,
+      relay_outputs: [...cameraForm.relay_outputs, newOutput]
+    });
+  };
+
+  const updateRelayOutput = (id: string, field: string, value: string) => {
+    setCameraForm({
+      ...cameraForm,
+      relay_outputs: cameraForm.relay_outputs.map(output =>
+        output.id === id ? { ...output, [field]: value } : output
+      )
+    });
+  };
+
+  const deleteRelayOutput = (id: string) => {
+    const updatedOutputs = cameraForm.relay_outputs
+      .filter(output => output.id !== id)
+      .map((output, index) => ({ ...output, output_number: index + 1 }));
+    
+    setCameraForm({
+      ...cameraForm,
+      relay_outputs: updatedOutputs
+    });
   };
 
   const addIotDevice = () => {
@@ -565,27 +608,112 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
               </div>
               
               {cameraForm.plc_attached && (
-                <div>
-                  <Label htmlFor="plc-select">Select PLC Model</Label>
-                  <Select
-                    value={cameraForm.plc_master_id}
-                    onValueChange={(value) =>
-                      setCameraForm({ ...cameraForm, plc_master_id: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose PLC model" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {plcs.map((plc) => (
-                        <SelectItem key={plc.id} value={plc.id}>
-                          {plc.manufacturer} - {plc.model_number}
-                          {plc.plc_type && ` (${plc.plc_type})`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <>
+                  <div>
+                    <Label htmlFor="plc-select">Select PLC Model</Label>
+                    <Select
+                      value={cameraForm.plc_master_id}
+                      onValueChange={(value) =>
+                        setCameraForm({ ...cameraForm, plc_master_id: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose PLC model" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {plcs.map((plc) => (
+                          <SelectItem key={plc.id} value={plc.id}>
+                            {plc.manufacturer} - {plc.model_number}
+                            {plc.plc_type && ` (${plc.plc_type})`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label>Relay Outputs</Label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addRelayOutput}
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Add Output
+                      </Button>
+                    </div>
+
+                    {cameraForm.relay_outputs.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No relay outputs added</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {cameraForm.relay_outputs.map((output) => (
+                          <Card key={output.id} className="p-3">
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <h4 className="font-medium text-sm">Output {output.output_number}</h4>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => deleteRelayOutput(output.id)}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+
+                              <div>
+                                <Label htmlFor={`output-type-${output.id}`}>Type *</Label>
+                                <Select
+                                  value={output.type}
+                                  onValueChange={(value) =>
+                                    updateRelayOutput(output.id, 'type', value)
+                                  }
+                                >
+                                  <SelectTrigger id={`output-type-${output.id}`}>
+                                    <SelectValue placeholder="Select output type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Sounder/Beacon">Sounder/Beacon</SelectItem>
+                                    <SelectItem value="Belt Stop">Belt Stop</SelectItem>
+                                    <SelectItem value="Reject System">Reject System</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div>
+                                <Label htmlFor={`output-name-${output.id}`}>Custom Name (Optional)</Label>
+                                <Input
+                                  id={`output-name-${output.id}`}
+                                  value={output.custom_name}
+                                  onChange={(e) =>
+                                    updateRelayOutput(output.id, 'custom_name', e.target.value)
+                                  }
+                                  placeholder="Enter custom name"
+                                />
+                              </div>
+
+                              <div>
+                                <Label htmlFor={`output-notes-${output.id}`}>Notes (Optional)</Label>
+                                <Textarea
+                                  id={`output-notes-${output.id}`}
+                                  value={output.notes}
+                                  onChange={(e) =>
+                                    updateRelayOutput(output.id, 'notes', e.target.value)
+                                  }
+                                  placeholder="Enter any notes"
+                                  rows={2}
+                                />
+                              </div>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
 
               <div className="flex items-center space-x-2">

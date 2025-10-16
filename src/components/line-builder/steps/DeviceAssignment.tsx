@@ -36,8 +36,6 @@ interface Equipment {
     id: string;
     name: string;
     hardware_master_id: string;
-    mac_address: string;
-    receiver_mac_address: string;
   }>;
 }
 
@@ -113,8 +111,6 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   const [iotForm, setIotForm] = useState({
     name: "",
     hardware_master_id: "",
-    mac_address: "",
-    receiver_mac_address: "",
   });
 
   // Fetch lights, cameras, lenses, PLCs, and IoT devices for the dropdowns
@@ -236,7 +232,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       )
     );
 
-    setIotForm({ name: "", hardware_master_id: "", mac_address: "", receiver_mac_address: "" });
+    setIotForm({ name: "", hardware_master_id: "" });
     setDeviceDialogOpen(false);
   };
 
@@ -385,14 +381,6 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                                >
                                  <div className="flex flex-col gap-1">
                                    <div className="font-medium text-sm">{device.name}</div>
-                                   <div className="flex gap-2 flex-wrap">
-                                     {device.mac_address && (
-                                       <Badge variant="secondary">{device.mac_address}</Badge>
-                                     )}
-                                     {device.receiver_mac_address && (
-                                       <Badge variant="outline">→ {device.receiver_mac_address}</Badge>
-                                     )}
-                                   </div>
                                  </div>
                                 <Button
                                   variant="ghost"
@@ -609,29 +597,6 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="iot-mac">MAC Address (Optional)</Label>
-                <Input
-                  id="iot-mac"
-                  value={iotForm.mac_address}
-                  onChange={(e) =>
-                    setIotForm({ ...iotForm, mac_address: e.target.value })
-                  }
-                  placeholder="XX:XX:XX:XX:XX:XX"
-                />
-              </div>
-              <div>
-                <Label htmlFor="receiver-mac">Receiver MAC Address (Optional)</Label>
-                <Input
-                  id="receiver-mac"
-                  value={iotForm.receiver_mac_address}
-                  onChange={(e) =>
-                    setIotForm({ ...iotForm, receiver_mac_address: e.target.value })
-                  }
-                  placeholder="XX:XX:XX:XX:XX:XX"
-                />
               </div>
               <Button onClick={addIotDevice} className="w-full">
                 Add IoT Device

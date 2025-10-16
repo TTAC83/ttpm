@@ -105,6 +105,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   const [plcs, setPlcs] = useState<PlcMaster[]>([]);
   const [iotDevices, setIotDevices] = useState<HardwareMaster[]>([]);
   const [receivers, setReceivers] = useState<ReceiverMaster[]>([]);
+  const [cts, setCts] = useState<HardwareMaster[]>([]);
 
   // Camera form state
   const [cameraForm, setCameraForm] = useState({
@@ -123,12 +124,14 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     name: "",
     hardware_master_id: "",
     receiver_master_id: "",
+    energy_monitoring: false,
+    ct_master_id: "",
   });
 
-  // Fetch lights, cameras, lenses, PLCs, IoT devices, and receivers for the dropdowns
+  // Fetch lights, cameras, lenses, PLCs, IoT devices, receivers, and CTs for the dropdowns
   useEffect(() => {
     const fetchData = async () => {
-      const [lightsData, camerasData, lensesData, plcsData, iotDevicesData] = await Promise.all([
+      const [lightsData, camerasData, lensesData, plcsData, iotDevicesData, ctsData] = await Promise.all([
         supabase
           .from('lights')
           .select('id, manufacturer, model_number, description')
@@ -149,6 +152,11 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
           .from('hardware_master')
           .select('id, sku_no, product_name, hardware_type, description')
           .eq('hardware_type', 'IoT Device')
+          .order('product_name', { ascending: true }),
+        supabase
+          .from('hardware_master')
+          .select('id, sku_no, product_name, hardware_type, description')
+          .eq('type', 'CTs')
           .order('product_name', { ascending: true })
       ]);
       
@@ -166,6 +174,9 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       }
       if (iotDevicesData.data) {
         setIotDevices(iotDevicesData.data);
+      }
+      if (ctsData.data) {
+        setCts(ctsData.data);
       }
 
       // Fetch receivers separately based on whether we have a solutions project
@@ -272,7 +283,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       )
     );
 
-    setIotForm({ name: "", hardware_master_id: "", receiver_master_id: "" });
+    setIotForm({ name: "", hardware_master_id: "", receiver_master_id: "", energy_monitoring: false, ct_master_id: "" });
     setDeviceDialogOpen(false);
   };
 
@@ -659,6 +670,45 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="energy-monitoring"
+                  checked={iotForm.energy_monitoring}
+                  onCheckedChange={(checked) =>
+                    setIotForm({ 
+                      ...iotForm, 
+                      energy_monitoring: !!checked,
+                      ct_master_id: checked ? iotForm.ct_master_id : ""
+                    })
+                  }
+                />
+                <Label htmlFor="energy-monitoring">Energy Monitoring</Label>
+              </div>
+
+              {iotForm.energy_monitoring && (
+                <div>
+                  <Label htmlFor="ct-model">Select CT</Label>
+                  <Select
+                    value={iotForm.ct_master_id}
+                    onValueChange={(value) =>
+                      setIotForm({ ...iotForm, ct_master_id: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose CT model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cts.map((ct) => (
+                        <SelectItem key={ct.id} value={ct.id}>
+                          {ct.sku_no} - {ct.product_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <Button onClick={addIotDevice} className="w-full">
                 Add IoT Device
               </Button>

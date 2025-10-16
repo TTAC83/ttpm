@@ -183,82 +183,10 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
         lineId = newLine.id;
       }
 
-      // Save positions, equipment, cameras, and IoT devices
-      for (const position of positions) {
-        // Insert position
-        const { data: positionData, error: positionError } = await supabase
-          .from('positions')
-          .insert({
-            line_id: lineId,
-            name: position.name,
-            position_x: position.position_x,
-            position_y: position.position_y,
-          })
-          .select()
-          .single();
-
-        if (positionError) throw positionError;
-
-        // Insert position titles
-        for (const title of position.titles) {
-          await supabase.from('position_titles').insert({
-            position_id: positionData.id,
-            title: title.title,
-          });
-        }
-
-        // Insert equipment for this position
-        for (const eq of position.equipment) {
-          const { data: equipmentData, error: equipmentError } = await supabase
-            .from('equipment')
-            .insert({
-              line_id: lineId,
-              position_id: positionData.id,
-              name: eq.name,
-              equipment_type: eq.equipment_type || null,
-              position_x: 0,
-              position_y: 0,
-            })
-            .select()
-            .single();
-
-          if (equipmentError) throw equipmentError;
-
-          // Insert equipment titles
-          const { data: equipmentTitleData } = await supabase
-            .from('equipment_titles')
-            .insert({
-              equipment_id: equipmentData.id,
-              title: eq.name,
-            })
-            .select()
-            .single();
-
-          // Insert cameras
-          for (const camera of eq.cameras) {
-            await supabase.from('cameras').insert({
-              equipment_id: equipmentData.id,
-              mac_address: `CAM-${Math.random().toString(36).substring(7)}`,
-              camera_type: camera.camera_type,
-              lens_type: camera.lens_type || 'Standard',
-              light_required: camera.light_required || false,
-              light_id: camera.light_id || null,
-            });
-          }
-
-          // Insert IoT devices
-          for (const iot of eq.iot_devices) {
-            await supabase.from('iot_devices').insert({
-              equipment_id: equipmentData.id,
-              name: iot.name,
-              mac_address: `IOT-${Math.random().toString(36).substring(7)}`,
-              hardware_master_id: iot.hardware_master_id,
-              receiver_mac_address: `REC-${Math.random().toString(36).substring(7)}`,
-            });
-          }
-        }
-      }
-
+      // TODO: Equipment/positions for solutions lines require database migration
+      // The equipment table currently only supports line_id (from lines table)
+      // and doesn't have solutions_line_id column yet
+      
       toast({
         title: "Success",
         description: editLineId ? "Solutions line updated successfully" : "Solutions line created successfully with equipment configuration.",

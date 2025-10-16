@@ -183,13 +183,34 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
         lineId = newLine.id;
       }
 
-      // TODO: Equipment/positions for solutions lines require database migration
-      // The equipment table currently only supports line_id (from lines table)
-      // and doesn't have solutions_line_id column yet
-      
+      // Save process flow (positions and titles) for solutions lines
+      for (const position of positions) {
+        const { data: positionData, error: positionError } = await supabase
+          .from('positions')
+          .insert({
+            line_id: lineId,
+            name: position.name,
+            position_x: position.position_x,
+            position_y: position.position_y,
+          })
+          .select()
+          .single();
+
+        if (positionError) throw positionError;
+
+        // Insert position titles
+        for (const title of position.titles) {
+          const { error: ptError } = await supabase.from('position_titles').insert({
+            position_id: positionData.id,
+            title: title.title,
+          });
+          if (ptError) throw ptError;
+        }
+      }
+
       toast({
         title: "Success",
-        description: editLineId ? "Solutions line updated successfully" : "Solutions line created successfully with equipment configuration.",
+        description: editLineId ? "Solutions line updated successfully (process flow saved)." : "Solutions line created successfully (process flow saved).",
       });
 
       onComplete();

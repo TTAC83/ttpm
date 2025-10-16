@@ -48,8 +48,7 @@ interface IoTDevice {
   id: string;
   name: string;
   hardware_master_id?: string;
-  mac_address: string;
-  receiver_mac_address: string;
+  receiver_name?: string;
 }
 
 interface LineVisualizationProps {
@@ -110,7 +109,7 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
             .select(`
               *,
               cameras(*),
-              iot_devices(*)
+              iot_devices(*, receiver:project_iot_requirements(name))
             `)
             .eq('position_id', position.id);
 
@@ -303,9 +302,6 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
                           </div>
                           <Badge variant="outline">{camera.camera_type}</Badge>
                         </div>
-                          <div className="space-y-1 text-sm">
-                            <p><span className="font-medium">Lens:</span> {camera.lens_type}</p>
-                          </div>
                       </div>
                     ))}
                     {lineData.positions.every(pos => pos.equipment.every(eq => eq.cameras.length === 0)) && (
@@ -342,8 +338,7 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
                           </div>
                         </div>
                         <div className="space-y-1 text-sm">
-                          <p><span className="font-medium">Device MAC:</span> {device.mac_address}</p>
-                          <p><span className="font-medium">Receiver MAC:</span> {device.receiver_mac_address}</p>
+                          <p><span className="font-medium">Attached Receiver:</span> {device.receiver_name || "Not assigned"}</p>
                         </div>
                       </div>
                     ))}

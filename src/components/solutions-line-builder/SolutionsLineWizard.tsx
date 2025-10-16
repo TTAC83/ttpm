@@ -184,6 +184,14 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
       }
 
       console.log('Saving solutions line with positions:', positions.length);
+      console.log('Equipment in positions:', positions.map(p => ({ 
+        name: p.name, 
+        equipment: p.equipment.map(e => ({ 
+          name: e.name, 
+          cameras: e.cameras.length, 
+          iot: e.iot_devices.length 
+        }))
+      })));
       
       // Save process flow (positions, titles, equipment, cameras, IoT devices)
       for (const position of positions) {

@@ -55,6 +55,7 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
     account_manager: data.account_manager || 'unassigned',
     line_description: data.line_description || '',
     product_description: data.product_description || '',
+    project_goals: data.project_goals || '',
     contracted_lines: data.contracted_lines?.toString() || '',
     billing_terms: data.billing_terms || data.subscription_plan || '',
     hardware_fee: data.hardware_fee?.toString() || '',
@@ -299,6 +300,7 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
         account_manager: formData.account_manager === 'unassigned' ? null : formData.account_manager,
         line_description: formData.line_description || null,
         product_description: formData.product_description || null,
+        project_goals: formData.project_goals || null,
         contracted_lines: formData.contracted_lines ? parseInt(formData.contracted_lines) : null,
         hardware_fee: formData.hardware_fee ? parseFloat(formData.hardware_fee) : null,
         services_fee: formData.services_fee ? parseFloat(formData.services_fee) : null,
@@ -373,6 +375,7 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
       account_manager: data.account_manager || 'unassigned',
       line_description: data.line_description || '',
       product_description: data.product_description || '',
+      project_goals: data.project_goals || '',
       contracted_lines: data.contracted_lines?.toString() || '',
       billing_terms: data.billing_terms || data.subscription_plan || '',
       hardware_fee: data.hardware_fee?.toString() || '',
@@ -518,6 +521,15 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="project_goals">Project Goals</Label>
+                <Textarea
+                  id="project_goals"
+                  value={formData.project_goals}
+                  onChange={(e) => setFormData(prev => ({ ...prev, project_goals: e.target.value }))}
+                  rows={4}
+                />
+              </div>
 
               <div className="flex gap-2 pt-4">
                 <Button type="submit" disabled={loading}>
@@ -564,6 +576,10 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                 <div className="md:col-span-2">
                   <p className="text-sm text-muted-foreground">Product Description</p>
                   <p className="font-medium whitespace-pre-wrap">{data.product_description || '-'}</p>
+                </div>
+                <div className="md:col-span-2">
+                  <p className="text-sm text-muted-foreground">Project Goals</p>
+                  <p className="font-medium whitespace-pre-wrap">{data.project_goals || '-'}</p>
                 </div>
               </div>
 

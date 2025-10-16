@@ -71,9 +71,19 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
 
   const fetchLineData = async () => {
     try {
+      // First, try to determine if this is a solutions line or implementation line
+      const { data: solutionsLine } = await supabase
+        .from('solutions_lines')
+        .select('id')
+        .eq('id', lineId)
+        .maybeSingle();
+
+      const isSolutionsLine = !!solutionsLine;
+      const tableName = isSolutionsLine ? 'solutions_lines' : 'lines';
+
       // Fetch line basic info
       const { data: line, error: lineError } = await supabase
-        .from('lines')
+        .from(tableName)
         .select('*')
         .eq('id', lineId)
         .single();

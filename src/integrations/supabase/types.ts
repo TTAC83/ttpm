@@ -351,6 +351,7 @@ export type Database = {
           company_id: string
           created_at: string
           created_by: string
+          customer_project_lead: string | null
           customer_type: string
           devices_deployed: number | null
           estimated_lines: number | null
@@ -366,6 +367,7 @@ export type Database = {
           name: string
           notes: string | null
           primary_contact: string | null
+          project_goals: string | null
           receivers_required: number | null
           s3_bucket_required: boolean | null
           salesperson: string | null
@@ -393,6 +395,7 @@ export type Database = {
           company_id: string
           created_at?: string
           created_by: string
+          customer_project_lead?: string | null
           customer_type?: string
           devices_deployed?: number | null
           estimated_lines?: number | null
@@ -408,6 +411,7 @@ export type Database = {
           name: string
           notes?: string | null
           primary_contact?: string | null
+          project_goals?: string | null
           receivers_required?: number | null
           s3_bucket_required?: boolean | null
           salesperson?: string | null
@@ -435,6 +439,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           created_by?: string
+          customer_project_lead?: string | null
           customer_type?: string
           devices_deployed?: number | null
           estimated_lines?: number | null
@@ -450,6 +455,7 @@ export type Database = {
           name?: string
           notes?: string | null
           primary_contact?: string | null
+          project_goals?: string | null
           receivers_required?: number | null
           s3_bucket_required?: boolean | null
           salesperson?: string | null
@@ -2609,6 +2615,7 @@ export type Database = {
           payment_terms_days: number | null
           product_description: string | null
           project_coordinator: string | null
+          project_goals: string | null
           receivers_required: number | null
           reference_call: boolean | null
           reference_status:
@@ -2679,6 +2686,7 @@ export type Database = {
           payment_terms_days?: number | null
           product_description?: string | null
           project_coordinator?: string | null
+          project_goals?: string | null
           receivers_required?: number | null
           reference_call?: boolean | null
           reference_status?:
@@ -2749,6 +2757,7 @@ export type Database = {
           payment_terms_days?: number | null
           product_description?: string | null
           project_coordinator?: string | null
+          project_goals?: string | null
           receivers_required?: number | null
           reference_call?: boolean | null
           reference_status?:
@@ -3183,6 +3192,7 @@ export type Database = {
           customer_job_title: string | null
           customer_lead: string | null
           customer_phone: string | null
+          customer_project_lead: string | null
           deviation_of_terms: string | null
           domain: Database["public"]["Enums"]["work_domain"]
           expansion_opportunity: string | null
@@ -3200,6 +3210,7 @@ export type Database = {
           potential_contract_start_date: string
           product_description: string | null
           project_coordinator: string | null
+          project_goals: string | null
           receivers_required: number | null
           reference_call: boolean | null
           reference_status: string | null
@@ -3247,6 +3258,7 @@ export type Database = {
           customer_job_title?: string | null
           customer_lead?: string | null
           customer_phone?: string | null
+          customer_project_lead?: string | null
           deviation_of_terms?: string | null
           domain: Database["public"]["Enums"]["work_domain"]
           expansion_opportunity?: string | null
@@ -3264,6 +3276,7 @@ export type Database = {
           potential_contract_start_date?: string
           product_description?: string | null
           project_coordinator?: string | null
+          project_goals?: string | null
           receivers_required?: number | null
           reference_call?: boolean | null
           reference_status?: string | null
@@ -3311,6 +3324,7 @@ export type Database = {
           customer_job_title?: string | null
           customer_lead?: string | null
           customer_phone?: string | null
+          customer_project_lead?: string | null
           deviation_of_terms?: string | null
           domain?: Database["public"]["Enums"]["work_domain"]
           expansion_opportunity?: string | null
@@ -3328,6 +3342,7 @@ export type Database = {
           potential_contract_start_date?: string
           product_description?: string | null
           project_coordinator?: string | null
+          project_goals?: string | null
           receivers_required?: number | null
           reference_call?: boolean | null
           reference_status?: string | null

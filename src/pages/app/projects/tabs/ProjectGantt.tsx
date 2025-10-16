@@ -441,7 +441,13 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
       }
     });
     
-    return Object.values(stepGroups);
+    // Sort step groups by the earliest planned_start date within each step
+    return Object.values(stepGroups).sort((a, b) => {
+      if (!a.planned_start && !b.planned_start) return 0;
+      if (!a.planned_start) return 1;
+      if (!b.planned_start) return -1;
+      return a.planned_start.localeCompare(b.planned_start);
+    });
   };
 
   // Create combined list for positioning calculation

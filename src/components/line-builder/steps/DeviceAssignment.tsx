@@ -156,7 +156,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
         supabase
           .from('hardware_master')
           .select('id, sku_no, product_name, hardware_type, description')
-          .eq('type', 'CTs')
+          .eq('hardware_type', 'CTs')
           .order('product_name', { ascending: true })
       ]);
       

@@ -172,22 +172,17 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       if (solutionsProjectId) {
         const { data: receiversData } = await supabase
           .from('project_iot_requirements')
-          .select(`
-            name,
-            receivers_master (
-              id,
-              manufacturer,
-              model_number,
-              receiver_type
-            )
-          `)
+          .select('id, name')
           .eq('solutions_project_id', solutionsProjectId)
           .eq('hardware_type', 'receiver');
 
         if (receiversData) {
-          const transformedReceivers = receiversData
-            .map((item: any) => item.receivers_master)
-            .filter(Boolean);
+          const transformedReceivers = receiversData.map((item: any) => ({
+            id: item.id,
+            manufacturer: item.name,
+            model_number: '',
+            receiver_type: ''
+          }));
           setReceivers(transformedReceivers);
         }
       } else {
@@ -658,8 +653,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                   <SelectContent>
                     {receivers.map((receiver) => (
                       <SelectItem key={receiver.id} value={receiver.id}>
-                        {receiver.manufacturer} - {receiver.model_number}
-                        {receiver.receiver_type && ` (${receiver.receiver_type})`}
+                        {receiver.manufacturer}
                       </SelectItem>
                     ))}
                   </SelectContent>

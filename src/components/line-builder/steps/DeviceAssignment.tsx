@@ -114,6 +114,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     camera_master_id: "",
     light_required: false,
     light_id: "",
+    light_notes: "",
     plc_attached: false,
     plc_master_id: "",
     relay_outputs: [] as Array<{
@@ -125,6 +126,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     }>,
     hmi_required: false,
     hmi_master_id: "",
+    hmi_notes: "",
   });
 
   // IoT form state
@@ -275,11 +277,13 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       camera_master_id: "", 
       light_required: false,
       light_id: "",
+      light_notes: "",
       plc_attached: false,
       plc_master_id: "",
       relay_outputs: [],
       hmi_required: false,
-      hmi_master_id: ""
+      hmi_master_id: "",
+      hmi_notes: ""
     });
     setDeviceDialogOpen(false);
   };
@@ -591,27 +595,42 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                 </div>
                 
                 {cameraForm.light_required && (
-                  <div>
-                    <Label htmlFor="light-select">Select Light Model</Label>
-                    <Select
-                      value={cameraForm.light_id}
-                      onValueChange={(value) =>
-                        setCameraForm({ ...cameraForm, light_id: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose light model" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {lights.map((light) => (
-                          <SelectItem key={light.id} value={light.id}>
-                            {light.manufacturer} - {light.model_number}
-                            {light.description && ` (${light.description})`}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <>
+                    <div>
+                      <Label htmlFor="light-select">Select Light Model</Label>
+                      <Select
+                        value={cameraForm.light_id}
+                        onValueChange={(value) =>
+                          setCameraForm({ ...cameraForm, light_id: value })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose light model" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {lights.map((light) => (
+                            <SelectItem key={light.id} value={light.id}>
+                              {light.manufacturer} - {light.model_number}
+                              {light.description && ` (${light.description})`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="light-notes">Notes (Optional)</Label>
+                      <Textarea
+                        id="light-notes"
+                        value={cameraForm.light_notes}
+                        onChange={(e) =>
+                          setCameraForm({ ...cameraForm, light_notes: e.target.value })
+                        }
+                        placeholder="Enter any notes about the lighting configuration"
+                        rows={3}
+                      />
+                    </div>
+                  </>
                 )}
 
                 {!cameraForm.light_required && (
@@ -771,26 +790,41 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                 </div>
                 
                 {cameraForm.hmi_required && (
-                  <div>
-                    <Label htmlFor="hmi-select">Select HMI Model</Label>
-                    <Select
-                      value={cameraForm.hmi_master_id}
-                      onValueChange={(value) =>
-                        setCameraForm({ ...cameraForm, hmi_master_id: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose HMI model" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {hmis.map((hmi) => (
-                          <SelectItem key={hmi.id} value={hmi.id}>
-                            {hmi.sku_no} - {hmi.product_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <>
+                    <div>
+                      <Label htmlFor="hmi-select">Select HMI Model</Label>
+                      <Select
+                        value={cameraForm.hmi_master_id}
+                        onValueChange={(value) =>
+                          setCameraForm({ ...cameraForm, hmi_master_id: value })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose HMI model" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {hmis.map((hmi) => (
+                            <SelectItem key={hmi.id} value={hmi.id}>
+                              {hmi.sku_no} - {hmi.product_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="hmi-notes">Notes (Optional)</Label>
+                      <Textarea
+                        id="hmi-notes"
+                        value={cameraForm.hmi_notes}
+                        onChange={(e) =>
+                          setCameraForm({ ...cameraForm, hmi_notes: e.target.value })
+                        }
+                        placeholder="Enter any notes about the HMI configuration"
+                        rows={3}
+                      />
+                    </div>
+                  </>
                 )}
 
                 {!cameraForm.hmi_required && (

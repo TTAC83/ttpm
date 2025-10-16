@@ -101,7 +101,6 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   const [deviceType, setDeviceType] = useState<"camera" | "iot">("camera");
   const [lights, setLights] = useState<Light[]>([]);
   const [cameras, setCameras] = useState<CameraMaster[]>([]);
-  const [lenses, setLenses] = useState<LensMaster[]>([]);
   const [plcs, setPlcs] = useState<PlcMaster[]>([]);
   const [iotDevices, setIotDevices] = useState<HardwareMaster[]>([]);
   const [receivers, setReceivers] = useState<ReceiverMaster[]>([]);
@@ -111,7 +110,6 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   const [cameraForm, setCameraForm] = useState({
     name: "",
     camera_master_id: "",
-    lens_master_id: "",
     mac_address: "",
     light_required: false,
     light_id: "",
@@ -128,19 +126,14 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     ct_master_id: "",
   });
 
-  // Fetch lights, cameras, lenses, PLCs, IoT devices, receivers, and CTs for the dropdowns
+  // Fetch lights, cameras, PLCs, IoT devices, receivers, and CTs for the dropdowns
   useEffect(() => {
     const fetchData = async () => {
-      const [camerasData, lensesData, lightsData, plcsData, iotDevicesData, ctsData] = await Promise.all([
+      const [camerasData, lightsData, plcsData, iotDevicesData, ctsData] = await Promise.all([
         supabase
           .from('hardware_master')
           .select('id, sku_no, product_name, hardware_type, description')
           .eq('hardware_type', 'Camera')
-          .order('product_name', { ascending: true }),
-        supabase
-          .from('hardware_master')
-          .select('id, sku_no, product_name, hardware_type, description')
-          .eq('hardware_type', 'Lens')
           .order('product_name', { ascending: true }),
         supabase
           .from('hardware_master')
@@ -170,15 +163,6 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
           manufacturer: item.product_name,
           model_number: item.sku_no,
           camera_type: item.description || ''
-        })));
-      }
-      if (lensesData.data) {
-        setLenses(lensesData.data.map(item => ({
-          id: item.id,
-          manufacturer: item.product_name,
-          model_number: item.sku_no,
-          lens_type: item.description || '',
-          focal_length: ''
         })));
       }
       if (lightsData.data) {
@@ -242,12 +226,11 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     }
 
     const selectedCamera = cameras.find(c => c.id === cameraForm.camera_master_id);
-    const selectedLens = lenses.find(l => l.id === cameraForm.lens_master_id);
     const newCamera = {
       id: Math.random().toString(36).substring(7),
       name: cameraForm.name,
       camera_type: selectedCamera?.camera_type || "",
-      lens_type: selectedLens?.lens_type || "",
+      lens_type: "",
       mac_address: cameraForm.mac_address,
       light_required: cameraForm.light_required,
       light_id: cameraForm.light_id,
@@ -273,7 +256,6 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     setCameraForm({ 
       name: "", 
       camera_master_id: "", 
-      lens_master_id: "",
       mac_address: "",
       light_required: false,
       light_id: "",
@@ -523,28 +505,6 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                 </Select>
               </div>
               
-              <div>
-                <Label htmlFor="lens-model">Lens Model</Label>
-                <Select
-                  value={cameraForm.lens_master_id}
-                  onValueChange={(value) =>
-                    setCameraForm({ ...cameraForm, lens_master_id: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose lens model" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {lenses.map((lens) => (
-                      <SelectItem key={lens.id} value={lens.id}>
-                        {lens.manufacturer} - {lens.model_number}
-                        {lens.lens_type && ` (${lens.lens_type})`}
-                        {lens.focal_length && ` - ${lens.focal_length}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
               <div>
                 <Label htmlFor="camera-mac">MAC Address (Optional)</Label>
                 <Input

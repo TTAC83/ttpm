@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2, Camera, Cpu } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Plus, Trash2, Camera, Cpu, Lightbulb, Cpu as CpuIcon, Monitor } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -520,239 +521,279 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
 
           {deviceType === "camera" ? (
             <div className="space-y-4">
-              <div>
-                <Label htmlFor="camera-name">Camera Name</Label>
-                <Input
-                  id="camera-name"
-                  value={cameraForm.name}
-                  onChange={(e) =>
-                    setCameraForm({ ...cameraForm, name: e.target.value })
-                  }
-                  placeholder="Enter camera name"
-                />
-              </div>
-              <div>
-                <Label htmlFor="camera-model">Camera Model</Label>
-                <Select
-                  value={cameraForm.camera_master_id}
-                  onValueChange={(value) =>
-                    setCameraForm({ ...cameraForm, camera_master_id: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose camera model" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {cameras.map((camera) => (
-                      <SelectItem key={camera.id} value={camera.id}>
-                        {camera.manufacturer} - {camera.model_number}
-                        {camera.camera_type && ` (${camera.camera_type})`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="light-required"
-                  checked={cameraForm.light_required}
-                  onCheckedChange={(checked) =>
-                    setCameraForm({ 
-                      ...cameraForm, 
-                      light_required: !!checked,
-                      light_id: checked ? cameraForm.light_id : ""
-                    })
-                  }
-                />
-                <Label htmlFor="light-required">Light Required</Label>
-              </div>
-              
-              {cameraForm.light_required && (
+              {/* Basic Info - Always Visible */}
+              <div className="space-y-4 pb-4 border-b">
                 <div>
-                  <Label htmlFor="light-select">Select Light Model</Label>
+                  <Label htmlFor="camera-name">Camera Name *</Label>
+                  <Input
+                    id="camera-name"
+                    value={cameraForm.name}
+                    onChange={(e) =>
+                      setCameraForm({ ...cameraForm, name: e.target.value })
+                    }
+                    placeholder="Enter camera name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="camera-model">Camera Model *</Label>
                   <Select
-                    value={cameraForm.light_id}
+                    value={cameraForm.camera_master_id}
                     onValueChange={(value) =>
-                      setCameraForm({ ...cameraForm, light_id: value })
+                      setCameraForm({ ...cameraForm, camera_master_id: value })
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Choose light model" />
+                      <SelectValue placeholder="Choose camera model" />
                     </SelectTrigger>
                     <SelectContent>
-                      {lights.map((light) => (
-                        <SelectItem key={light.id} value={light.id}>
-                          {light.manufacturer} - {light.model_number}
-                          {light.description && ` (${light.description})`}
+                      {cameras.map((camera) => (
+                        <SelectItem key={camera.id} value={camera.id}>
+                          {camera.manufacturer} - {camera.model_number}
+                          {camera.camera_type && ` (${camera.camera_type})`}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-              )}
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="plc-attached"
-                  checked={cameraForm.plc_attached}
-                  onCheckedChange={(checked) =>
-                    setCameraForm({ 
-                      ...cameraForm, 
-                      plc_attached: !!checked,
-                      plc_master_id: checked ? cameraForm.plc_master_id : ""
-                    })
-                  }
-                />
-                <Label htmlFor="plc-attached">PLC Attached</Label>
               </div>
-              
-              {cameraForm.plc_attached && (
-                <>
-                  <div>
-                    <Label htmlFor="plc-select">Select PLC Model</Label>
-                    <Select
-                      value={cameraForm.plc_master_id}
-                      onValueChange={(value) =>
-                        setCameraForm({ ...cameraForm, plc_master_id: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose PLC model" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {plcs.map((plc) => (
-                          <SelectItem key={plc.id} value={plc.id}>
-                            {plc.manufacturer} - {plc.model_number}
-                            {plc.plc_type && ` (${plc.plc_type})`}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
 
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label>Relay Outputs</Label>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={addRelayOutput}
-                      >
-                        <Plus className="h-3 w-3 mr-1" />
-                        Add Output
-                      </Button>
+              {/* Accordion Sections */}
+              <Accordion type="multiple" className="w-full">
+                {/* Lighting Configuration */}
+                <AccordionItem value="lighting">
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <Lightbulb className="h-4 w-4" />
+                      <span>Lighting Configuration</span>
                     </div>
-
-                    {cameraForm.relay_outputs.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No relay outputs added</p>
-                    ) : (
-                      <div className="space-y-3">
-                        {cameraForm.relay_outputs.map((output) => (
-                          <Card key={output.id} className="p-3">
-                            <div className="space-y-3">
-                              <div className="flex items-center justify-between">
-                                <h4 className="font-medium text-sm">Output {output.output_number}</h4>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => deleteRelayOutput(output.id)}
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </div>
-
-                              <div>
-                                <Label htmlFor={`output-type-${output.id}`}>Type *</Label>
-                                <Select
-                                  value={output.type}
-                                  onValueChange={(value) =>
-                                    updateRelayOutput(output.id, 'type', value)
-                                  }
-                                >
-                                  <SelectTrigger id={`output-type-${output.id}`}>
-                                    <SelectValue placeholder="Select output type" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="Sounder/Beacon">Sounder/Beacon</SelectItem>
-                                    <SelectItem value="Belt Stop">Belt Stop</SelectItem>
-                                    <SelectItem value="Reject System">Reject System</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-
-                              <div>
-                                <Label htmlFor={`output-name-${output.id}`}>Custom Name (Optional)</Label>
-                                <Input
-                                  id={`output-name-${output.id}`}
-                                  value={output.custom_name}
-                                  onChange={(e) =>
-                                    updateRelayOutput(output.id, 'custom_name', e.target.value)
-                                  }
-                                  placeholder="Enter custom name"
-                                />
-                              </div>
-
-                              <div>
-                                <Label htmlFor={`output-notes-${output.id}`}>Notes (Optional)</Label>
-                                <Textarea
-                                  id={`output-notes-${output.id}`}
-                                  value={output.notes}
-                                  onChange={(e) =>
-                                    updateRelayOutput(output.id, 'notes', e.target.value)
-                                  }
-                                  placeholder="Enter any notes"
-                                  rows={2}
-                                />
-                              </div>
-                            </div>
-                          </Card>
-                        ))}
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-4 pt-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="light-required"
+                        checked={cameraForm.light_required}
+                        onCheckedChange={(checked) =>
+                          setCameraForm({ 
+                            ...cameraForm, 
+                            light_required: !!checked,
+                            light_id: checked ? cameraForm.light_id : ""
+                          })
+                        }
+                      />
+                      <Label htmlFor="light-required">Light Required</Label>
+                    </div>
+                    
+                    {cameraForm.light_required && (
+                      <div>
+                        <Label htmlFor="light-select">Select Light Model</Label>
+                        <Select
+                          value={cameraForm.light_id}
+                          onValueChange={(value) =>
+                            setCameraForm({ ...cameraForm, light_id: value })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose light model" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {lights.map((light) => (
+                              <SelectItem key={light.id} value={light.id}>
+                                {light.manufacturer} - {light.model_number}
+                                {light.description && ` (${light.description})`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     )}
-                  </div>
-                </>
-              )}
+                  </AccordionContent>
+                </AccordionItem>
 
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="hmi-required"
-                  checked={cameraForm.hmi_required}
-                  onCheckedChange={(checked) =>
-                    setCameraForm({ 
-                      ...cameraForm, 
-                      hmi_required: !!checked,
-                      hmi_master_id: checked ? cameraForm.hmi_master_id : ""
-                    })
-                  }
-                />
-                <Label htmlFor="hmi-required">HMI Required</Label>
-              </div>
-              
-              {cameraForm.hmi_required && (
-                <div>
-                  <Label htmlFor="hmi-select">Select HMI Model</Label>
-                  <Select
-                    value={cameraForm.hmi_master_id}
-                    onValueChange={(value) =>
-                      setCameraForm({ ...cameraForm, hmi_master_id: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose HMI model" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {hmis.map((hmi) => (
-                        <SelectItem key={hmi.id} value={hmi.id}>
-                          {hmi.sku_no} - {hmi.product_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+                {/* PLC Configuration */}
+                <AccordionItem value="plc">
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <CpuIcon className="h-4 w-4" />
+                      <span>PLC Configuration</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-4 pt-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="plc-attached"
+                        checked={cameraForm.plc_attached}
+                        onCheckedChange={(checked) =>
+                          setCameraForm({ 
+                            ...cameraForm, 
+                            plc_attached: !!checked,
+                            plc_master_id: checked ? cameraForm.plc_master_id : "",
+                            relay_outputs: checked ? cameraForm.relay_outputs : []
+                          })
+                        }
+                      />
+                      <Label htmlFor="plc-attached">PLC Attached</Label>
+                    </div>
+                    
+                    {cameraForm.plc_attached && (
+                      <>
+                        <div>
+                          <Label htmlFor="plc-select">Select PLC Model</Label>
+                          <Select
+                            value={cameraForm.plc_master_id}
+                            onValueChange={(value) =>
+                              setCameraForm({ ...cameraForm, plc_master_id: value })
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Choose PLC model" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {plcs.map((plc) => (
+                                <SelectItem key={plc.id} value={plc.id}>
+                                  {plc.manufacturer} - {plc.model_number}
+                                  {plc.plc_type && ` (${plc.plc_type})`}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <Label>Relay Outputs</Label>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={addRelayOutput}
+                            >
+                              <Plus className="h-3 w-3 mr-1" />
+                              Add Output
+                            </Button>
+                          </div>
+
+                          {cameraForm.relay_outputs.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">No relay outputs added</p>
+                          ) : (
+                            <div className="space-y-3">
+                              {cameraForm.relay_outputs.map((output) => (
+                                <Card key={output.id} className="p-3">
+                                  <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                      <h4 className="font-medium text-sm">Output {output.output_number}</h4>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => deleteRelayOutput(output.id)}
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+
+                                    <div>
+                                      <Label htmlFor={`output-type-${output.id}`}>Type *</Label>
+                                      <Select
+                                        value={output.type}
+                                        onValueChange={(value) =>
+                                          updateRelayOutput(output.id, 'type', value)
+                                        }
+                                      >
+                                        <SelectTrigger id={`output-type-${output.id}`}>
+                                          <SelectValue placeholder="Select output type" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="Sounder/Beacon">Sounder/Beacon</SelectItem>
+                                          <SelectItem value="Belt Stop">Belt Stop</SelectItem>
+                                          <SelectItem value="Reject System">Reject System</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+
+                                    <div>
+                                      <Label htmlFor={`output-name-${output.id}`}>Custom Name (Optional)</Label>
+                                      <Input
+                                        id={`output-name-${output.id}`}
+                                        value={output.custom_name}
+                                        onChange={(e) =>
+                                          updateRelayOutput(output.id, 'custom_name', e.target.value)
+                                        }
+                                        placeholder="Enter custom name"
+                                      />
+                                    </div>
+
+                                    <div>
+                                      <Label htmlFor={`output-notes-${output.id}`}>Notes (Optional)</Label>
+                                      <Textarea
+                                        id={`output-notes-${output.id}`}
+                                        value={output.notes}
+                                        onChange={(e) =>
+                                          updateRelayOutput(output.id, 'notes', e.target.value)
+                                        }
+                                        placeholder="Enter any notes"
+                                        rows={2}
+                                      />
+                                    </div>
+                                  </div>
+                                </Card>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+
+                {/* HMI Configuration */}
+                <AccordionItem value="hmi">
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <Monitor className="h-4 w-4" />
+                      <span>HMI Configuration</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-4 pt-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="hmi-required"
+                        checked={cameraForm.hmi_required}
+                        onCheckedChange={(checked) =>
+                          setCameraForm({ 
+                            ...cameraForm, 
+                            hmi_required: !!checked,
+                            hmi_master_id: checked ? cameraForm.hmi_master_id : ""
+                          })
+                        }
+                      />
+                      <Label htmlFor="hmi-required">HMI Required</Label>
+                    </div>
+                    
+                    {cameraForm.hmi_required && (
+                      <div>
+                        <Label htmlFor="hmi-select">Select HMI Model</Label>
+                        <Select
+                          value={cameraForm.hmi_master_id}
+                          onValueChange={(value) =>
+                            setCameraForm({ ...cameraForm, hmi_master_id: value })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose HMI model" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {hmis.map((hmi) => (
+                              <SelectItem key={hmi.id} value={hmi.id}>
+                                {hmi.sku_no} - {hmi.product_name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
               
               <Button onClick={addCamera} className="w-full">
                 Add Camera

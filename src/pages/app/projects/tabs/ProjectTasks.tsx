@@ -45,10 +45,12 @@ interface Profile {
 }
 
 interface ProjectTasksProps {
-  projectId: string;
+  projectId?: string;
+  solutionsProjectId?: string;
 }
 
-const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
+const ProjectTasks = ({ projectId, solutionsProjectId }: ProjectTasksProps) => {
+  const effectiveProjectId = projectId || solutionsProjectId!;
   const { profile, user } = useAuth();
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -77,7 +79,7 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
     const handleSubtaskUpdate = (event: Event) => {
       const customEvent = event as CustomEvent;
       console.log('Subtask update event received in ProjectTasks:', customEvent.detail);
-      if (!customEvent.detail.projectId || customEvent.detail.projectId === projectId) {
+      if (!customEvent.detail.projectId || customEvent.detail.projectId === effectiveProjectId) {
         fetchTasks();
       }
     };
@@ -87,7 +89,7 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
     return () => {
       window.removeEventListener('subtask-updated', handleSubtaskUpdate);
     };
-  }, [projectId, user]);
+  }, [effectiveProjectId, user]);
 
   // Handle URL parameter to automatically open edit dialog for specific task
   useEffect(() => {
@@ -106,10 +108,10 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
 
   const fetchTasks = async () => {
     try {
-      console.log('ProjectTasks: Starting to fetch tasks for project:', projectId);
+      console.log('ProjectTasks: Starting to fetch tasks for project:', effectiveProjectId);
       setLoading(true);
       
-      const { data, error } = await supabase
+      let query = supabase
         .from('project_tasks')
         .select(`
           *,
@@ -121,9 +123,15 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
               position
             )
           )
-        `)
-        .eq('project_id', projectId)
-        .order('planned_start');
+        `);
+      
+      if (solutionsProjectId) {
+        query = query.eq('solutions_project_id', effectiveProjectId);
+      } else {
+        query = query.eq('project_id', effectiveProjectId);
+      }
+      
+      const { data, error } = await query.order('planned_start');
 
       console.log('ProjectTasks: Query response:', { data, error });
 
@@ -169,11 +177,17 @@ const ProjectTasks = ({ projectId }: ProjectTasksProps) => {
       return;
     }
 
+    // For solutions projects, allow editing for now (can be restricted later)
+    if (solutionsProjectId) {
+      setIsProjectMember(true);
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('project_members')
         .select('user_id')
-        .eq('project_id', projectId)
+        .eq('project_id', effectiveProjectId)
         .eq('user_id', user.id)
         .single();
 

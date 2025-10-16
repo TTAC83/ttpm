@@ -10,6 +10,7 @@ import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { DatePicker } from '@/components/ui/date-picker';
 
 interface UserProfile {
   user_id: string;
@@ -33,7 +34,8 @@ export const NewSolutionsProject = () => {
     customer_lead: '',
     customer_email: '',
     customer_phone: '',
-    customer_job_title: ''
+    customer_job_title: '',
+    potential_contract_start_date: null as Date | null
   });
 
   const fetchUsers = async () => {
@@ -52,7 +54,7 @@ export const NewSolutionsProject = () => {
     fetchUsers();
   }, []);
 
-  const handleInputChange = (name: string, value: string) => {
+  const handleInputChange = (name: string, value: string | Date | null) => {
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -62,10 +64,10 @@ export const NewSolutionsProject = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.company_name || !formData.domain || !formData.site_name) {
+    if (!formData.company_name || !formData.domain || !formData.site_name || !formData.potential_contract_start_date) {
       toast({
         title: 'Error',
-        description: 'Please fill in all required fields',
+        description: 'Please fill in all required fields including Potential Contract Start Date',
         variant: 'destructive',
       });
       return;
@@ -107,6 +109,7 @@ export const NewSolutionsProject = () => {
         customer_email: formData.customer_email || null,
         customer_phone: formData.customer_phone || null,
         customer_job_title: formData.customer_job_title || null,
+        potential_contract_start_date: formData.potential_contract_start_date!.toISOString().split('T')[0],
         created_by: user?.id
       };
 
@@ -192,6 +195,15 @@ export const NewSolutionsProject = () => {
                     <SelectItem value="Hybrid">Hybrid</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="potential_contract_start_date">Potential Contract Start Date *</Label>
+                <DatePicker
+                  value={formData.potential_contract_start_date || undefined}
+                  onChange={(date) => handleInputChange('potential_contract_start_date', date || null)}
+                  placeholder="Select start date"
+                />
               </div>
             </div>
 

@@ -2492,6 +2492,7 @@ export type Database = {
           planned_end: string | null
           planned_start: string | null
           project_id: string
+          solutions_project_id: string | null
           status: Database["public"]["Enums"]["task_status"]
           step_name: string
           task_details: string | null
@@ -2508,6 +2509,7 @@ export type Database = {
           planned_end?: string | null
           planned_start?: string | null
           project_id: string
+          solutions_project_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           step_name: string
           task_details?: string | null
@@ -2524,6 +2526,7 @@ export type Database = {
           planned_end?: string | null
           planned_start?: string | null
           project_id?: string
+          solutions_project_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           step_name?: string
           task_details?: string | null
@@ -2556,6 +2559,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tasks_solutions_project_id_fkey"
+            columns: ["solutions_project_id"]
+            isOneToOne: false
+            referencedRelation: "solutions_projects"
             referencedColumns: ["id"]
           },
         ]
@@ -3187,6 +3197,7 @@ export type Database = {
           modules_and_features: string | null
           mrr: number | null
           payment_terms_days: number | null
+          potential_contract_start_date: string
           product_description: string | null
           project_coordinator: string | null
           receivers_required: number | null
@@ -3250,6 +3261,7 @@ export type Database = {
           modules_and_features?: string | null
           mrr?: number | null
           payment_terms_days?: number | null
+          potential_contract_start_date?: string
           product_description?: string | null
           project_coordinator?: string | null
           receivers_required?: number | null
@@ -3313,6 +3325,7 @@ export type Database = {
           modules_and_features?: string | null
           mrr?: number | null
           payment_terms_days?: number | null
+          potential_contract_start_date?: string
           product_description?: string | null
           project_coordinator?: string | null
           receivers_required?: number | null
@@ -4326,6 +4339,10 @@ export type Database = {
       }
       snapshot_project_tasks: {
         Args: { p_project_id: string }
+        Returns: undefined
+      }
+      snapshot_solutions_project_tasks: {
+        Args: { p_solutions_project_id: string }
         Returns: undefined
       }
       suggest_assignee: {

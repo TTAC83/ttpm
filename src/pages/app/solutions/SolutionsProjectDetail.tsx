@@ -14,6 +14,8 @@ import { TeamTab } from '@/components/shared/TeamTab';
 import { AccountInfoTab } from '@/components/shared/AccountInfoTab';
 import { FactoryConfigurationTab } from '@/components/shared/FactoryConfigurationTab';
 import { ProjectHardware } from '../projects/tabs/ProjectHardware';
+import ProjectGantt from '../projects/tabs/ProjectGantt';
+import ProjectTasks from '../projects/tabs/ProjectTasks';
 
 interface SolutionsProject {
   id: string;
@@ -82,7 +84,7 @@ export const SolutionsProjectDetail = () => {
 
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['overview', 'contract', 'team', 'account', 'hardware', 'factory', 'lines'].includes(tab)) {
+    if (tab && ['overview', 'contract', 'team', 'account', 'hardware', 'factory', 'lines', 'wbs', 'tasks'].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -190,7 +192,7 @@ export const SolutionsProjectDetail = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-7 lg:w-auto">
+        <TabsList className="grid grid-cols-9 lg:w-auto">
           <TabsTrigger value="overview">Customer Overview</TabsTrigger>
           <TabsTrigger value="contract">Contract Info</TabsTrigger>
           <TabsTrigger value="team">Team</TabsTrigger>
@@ -198,6 +200,8 @@ export const SolutionsProjectDetail = () => {
           <TabsTrigger value="hardware">Hardware</TabsTrigger>
           <TabsTrigger value="factory">Factory</TabsTrigger>
           <TabsTrigger value="lines">Lines</TabsTrigger>
+          <TabsTrigger value="wbs">WBS</TabsTrigger>
+          <TabsTrigger value="tasks">Tasks</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -226,6 +230,14 @@ export const SolutionsProjectDetail = () => {
 
         <TabsContent value="lines" className="space-y-4">
           <SolutionsLines solutionsProjectId={project.id} />
+        </TabsContent>
+
+        <TabsContent value="wbs" className="space-y-4">
+          <ProjectGantt solutionsProjectId={project.id} />
+        </TabsContent>
+
+        <TabsContent value="tasks" className="space-y-4">
+          <ProjectTasks solutionsProjectId={project.id} />
         </TabsContent>
       </Tabs>
     </div>

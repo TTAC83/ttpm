@@ -64,10 +64,12 @@ interface StepGroup {
 type ViewMode = 'step' | 'task';
 
 interface ProjectGanttProps {
-  projectId: string;
+  projectId?: string;
+  solutionsProjectId?: string;
 }
 
-const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
+const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
+  const effectiveProjectId = projectId || solutionsProjectId!;
   const { toast } = useToast();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
@@ -84,21 +86,35 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
   useEffect(() => {
     fetchTasksSubtasksAndEvents();
     fetchProjectDetails();
-  }, [projectId]);
+  }, [effectiveProjectId]);
 
   const fetchProjectDetails = async () => {
     try {
-      const { data: projectData, error } = await supabase
-        .from('projects')
-        .select('name, companies(name)')
-        .eq('id', projectId)
-        .single();
+      if (solutionsProjectId) {
+        const { data: projectData, error } = await supabase
+          .from('solutions_projects')
+          .select('site_name, companies(name)')
+          .eq('id', effectiveProjectId)
+          .single();
 
-      if (error) throw error;
-      setProject({
-        project_name: projectData.name,
-        customer_name: projectData.companies?.name || 'Unknown Customer'
-      });
+        if (error) throw error;
+        setProject({
+          project_name: projectData.site_name,
+          customer_name: projectData.companies?.name || 'Unknown Customer'
+        });
+      } else {
+        const { data: projectData, error } = await supabase
+          .from('projects')
+          .select('name, companies(name)')
+          .eq('id', effectiveProjectId)
+          .single();
+
+        if (error) throw error;
+        setProject({
+          project_name: projectData.name,
+          customer_name: projectData.companies?.name || 'Unknown Customer'
+        });
+      }
     } catch (error) {
       console.error('Error fetching project details:', error);
     }
@@ -106,15 +122,21 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
 
   const fetchTasksSubtasksAndEvents = async () => {
     try {
-      console.log('ProjectGantt: Starting to fetch tasks, subtasks, and events for project:', projectId);
+      console.log('ProjectGantt: Starting to fetch tasks, subtasks, and events for project:', effectiveProjectId);
       setLoading(true);
       
       // Fetch tasks
-      const { data: tasksData, error: tasksError } = await supabase
+      let taskQuery = supabase
         .from('project_tasks')
-        .select('id, step_name, task_title, planned_start, planned_end, actual_start, actual_end, status')
-        .eq('project_id', projectId)
-        .order('planned_start');
+        .select('id, step_name, task_title, planned_start, planned_end, actual_start, actual_end, status');
+      
+      if (solutionsProjectId) {
+        taskQuery = taskQuery.eq('solutions_project_id', effectiveProjectId);
+      } else {
+        taskQuery = taskQuery.eq('project_id', effectiveProjectId);
+      }
+      
+      const { data: tasksData, error: tasksError } = await taskQuery.order('planned_start');
 
       if (tasksError) throw tasksError;
 
@@ -133,15 +155,20 @@ const ProjectGantt = ({ projectId }: ProjectGanttProps) => {
         subtasksData = subtasksResponse || [];
       }
 
-      // Fetch calendar events
-      const { data: eventsData, error: eventsError } = await supabase
-        .from('project_events')
-        .select('*')
-        .eq('project_id', projectId)
-        .order('start_date');
+      // Fetch calendar events (only for implementation projects for now)
+      let eventsData = [];
+      if (!solutionsProjectId) {
+        const { data, error: eventsError } = await supabase
+          .from('project_events')
+          .select('*')
+          .eq('project_id', effectiveProjectId)
+          .order('start_date');
 
-      if (eventsError) {
-        console.error('Error fetching events:', eventsError);
+        if (eventsError) {
+          console.error('Error fetching events:', eventsError);
+        } else {
+          eventsData = data || [];
+        }
       }
 
       // Fetch attendees for events

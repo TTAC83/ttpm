@@ -215,7 +215,7 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
           {currentStep === 1 && <LineBasicInfo lineData={lineData} setLineData={setLineData} />}
           {currentStep === 2 && <ProcessFlowBuilder positions={positions} setPositions={setPositions} />}
           {currentStep === 3 && <EquipmentTitles positions={positions} setPositions={setPositions} />}
-          {currentStep === 4 && <DeviceAssignment positions={positions} setPositions={setPositions} />}
+          {currentStep === 4 && <DeviceAssignment positions={positions} setPositions={setPositions} solutionsProjectId={solutionsProjectId} />}
         </div>
 
         <div className="flex justify-between pt-4 border-t">

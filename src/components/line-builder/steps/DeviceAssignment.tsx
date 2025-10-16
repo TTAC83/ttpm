@@ -87,11 +87,13 @@ interface ReceiverMaster {
 interface DeviceAssignmentProps {
   positions: Position[];
   setPositions: (positions: Position[]) => void;
+  solutionsProjectId?: string;
 }
 
 export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   positions,
   setPositions,
+  solutionsProjectId,
 }) => {
   const [selectedPosition, setSelectedPosition] = useState<string>("");
   const [selectedEquipment, setSelectedEquipment] = useState<string>("");
@@ -126,7 +128,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   // Fetch lights, cameras, lenses, PLCs, IoT devices, and receivers for the dropdowns
   useEffect(() => {
     const fetchData = async () => {
-      const [lightsData, camerasData, lensesData, plcsData, iotDevicesData, receiversData] = await Promise.all([
+      const [lightsData, camerasData, lensesData, plcsData, iotDevicesData] = await Promise.all([
         supabase
           .from('lights')
           .select('id, manufacturer, model_number, description')
@@ -147,11 +149,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
           .from('hardware_master')
           .select('id, sku_no, product_name, hardware_type, description')
           .eq('hardware_type', 'IoT Device')
-          .order('product_name', { ascending: true }),
-        supabase
-          .from('receivers_master')
-          .select('id, manufacturer, model_number, receiver_type')
-          .order('manufacturer', { ascending: true })
+          .order('product_name', { ascending: true })
       ]);
       
       if (lightsData.data) {
@@ -169,13 +167,41 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       if (iotDevicesData.data) {
         setIotDevices(iotDevicesData.data);
       }
-      if (receiversData.data) {
-        setReceivers(receiversData.data);
+
+      // Fetch receivers separately based on whether we have a solutions project
+      if (solutionsProjectId) {
+        const { data: receiversData } = await supabase
+          .from('solutions_project_receivers')
+          .select(`
+            receiver_master_id (
+              id,
+              manufacturer,
+              model_number,
+              receiver_type
+            )
+          `)
+          .eq('solutions_project_id', solutionsProjectId);
+
+        if (receiversData) {
+          const transformedReceivers = receiversData
+            .map((item: any) => item.receiver_master_id)
+            .filter(Boolean);
+          setReceivers(transformedReceivers);
+        }
+      } else {
+        const { data: receiversData } = await supabase
+          .from('receivers_master')
+          .select('id, manufacturer, model_number, receiver_type')
+          .order('manufacturer', { ascending: true });
+
+        if (receiversData) {
+          setReceivers(receiversData);
+        }
       }
     };
 
     fetchData();
-  }, []);
+  }, [solutionsProjectId]);
 
   const addCamera = () => {
     if (!selectedPosition || !selectedEquipment || !cameraForm.name || !cameraForm.camera_master_id) {

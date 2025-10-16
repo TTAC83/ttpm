@@ -109,7 +109,7 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
             .select(`
               *,
               cameras(*),
-              iot_devices(*, receiver:project_iot_requirements(name))
+              iot_devices(*)
             `)
             .eq('position_id', position.id);
 

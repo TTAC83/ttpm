@@ -332,11 +332,39 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
                           ) : (
                             position.equipment.map((equipment) => (
                               <div key={equipment.id} className="bg-muted/50 p-2 rounded border">
-                                <div className="flex items-center justify-between mb-1">
-                                  <span className="font-medium text-sm">{equipment.name}</span>
-                                  <Badge variant="secondary" className="text-xs">
-                                    {equipment.equipment_type}
-                                  </Badge>
+                                <div className="flex items-start justify-between gap-2 mb-1">
+                                  <div className="flex-1 min-w-0">
+                                    <span className="font-medium text-sm block truncate">{equipment.name}</span>
+                                    <Badge variant="secondary" className="text-xs mt-1">
+                                      {equipment.equipment_type}
+                                    </Badge>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 px-2 flex-shrink-0"
+                                    onClick={() => {
+                                      // Find camera or IoT device to edit
+                                      const camera = equipment.cameras[0];
+                                      const iot = equipment.iot_devices[0];
+                                      
+                                      if (camera) {
+                                        setEditingCamera({
+                                          ...camera,
+                                          positionName: position.name,
+                                          equipmentName: equipment.name
+                                        });
+                                      } else if (iot) {
+                                        setEditingIoT({
+                                          ...iot,
+                                          positionName: position.name,
+                                          equipmentName: equipment.name
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    <Edit className="h-3 w-3" />
+                                  </Button>
                                 </div>
                                 
                                 {/* Devices */}

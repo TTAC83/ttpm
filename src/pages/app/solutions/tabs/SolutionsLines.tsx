@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Plus, Trash2, Edit } from "lucide-react";
+import { Loader2, Plus, Trash2, Edit, Eye } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { SolutionsLineWizard } from "@/components/solutions-line-builder/SolutionsLineWizard";
+import { LineVisualization } from "@/components/line-builder/LineVisualization";
 
 interface SolutionsLine {
   id: string;
@@ -27,6 +28,7 @@ export const SolutionsLines: React.FC<SolutionsLinesProps> = ({ solutionsProject
   const [loading, setLoading] = useState(true);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editingLineId, setEditingLineId] = useState<string | undefined>(undefined);
+  const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -96,6 +98,18 @@ export const SolutionsLines: React.FC<SolutionsLinesProps> = ({ solutionsProject
     setWizardOpen(true);
   };
 
+  const handleViewLine = (lineId: string) => {
+    setSelectedLineId(lineId);
+  };
+
+  const handleBackToLines = () => {
+    setSelectedLineId(null);
+  };
+
+  if (selectedLineId) {
+    return <LineVisualization lineId={selectedLineId} onBack={handleBackToLines} />;
+  }
+
   if (loading) {
     return (
       <Card>
@@ -162,6 +176,14 @@ export const SolutionsLines: React.FC<SolutionsLinesProps> = ({ solutionsProject
                   <TableCell>{new Date(line.created_at).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleViewLine(line.id)}
+                        title="View Line"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"

@@ -131,23 +131,27 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   // Fetch lights, cameras, lenses, PLCs, IoT devices, receivers, and CTs for the dropdowns
   useEffect(() => {
     const fetchData = async () => {
-      const [lightsData, camerasData, lensesData, plcsData, iotDevicesData, ctsData] = await Promise.all([
+      const [camerasData, lensesData, lightsData, plcsData, iotDevicesData, ctsData] = await Promise.all([
         supabase
-          .from('lights')
-          .select('id, manufacturer, model_number, description')
-          .order('manufacturer', { ascending: true }),
+          .from('hardware_master')
+          .select('id, sku_no, product_name, hardware_type, description')
+          .eq('hardware_type', 'Camera')
+          .order('product_name', { ascending: true }),
         supabase
-          .from('cameras_master')
-          .select('id, manufacturer, model_number, camera_type')
-          .order('manufacturer', { ascending: true }),
+          .from('hardware_master')
+          .select('id, sku_no, product_name, hardware_type, description')
+          .eq('hardware_type', 'Lens')
+          .order('product_name', { ascending: true }),
         supabase
-          .from('lens_master')
-          .select('id, manufacturer, model_number, lens_type, focal_length')
-          .order('manufacturer', { ascending: true }),
+          .from('hardware_master')
+          .select('id, sku_no, product_name, hardware_type, description')
+          .eq('hardware_type', 'Light')
+          .order('product_name', { ascending: true }),
         supabase
-          .from('plc_master')
-          .select('id, manufacturer, model_number, plc_type')
-          .order('manufacturer', { ascending: true }),
+          .from('hardware_master')
+          .select('id, sku_no, product_name, hardware_type, description')
+          .eq('hardware_type', 'PLC')
+          .order('product_name', { ascending: true }),
         supabase
           .from('hardware_master')
           .select('id, sku_no, product_name, hardware_type, description')
@@ -160,17 +164,38 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
           .order('product_name', { ascending: true })
       ]);
       
-      if (lightsData.data) {
-        setLights(lightsData.data);
-      }
       if (camerasData.data) {
-        setCameras(camerasData.data);
+        setCameras(camerasData.data.map(item => ({
+          id: item.id,
+          manufacturer: item.product_name,
+          model_number: item.sku_no,
+          camera_type: item.description || ''
+        })));
       }
       if (lensesData.data) {
-        setLenses(lensesData.data);
+        setLenses(lensesData.data.map(item => ({
+          id: item.id,
+          manufacturer: item.product_name,
+          model_number: item.sku_no,
+          lens_type: item.description || '',
+          focal_length: ''
+        })));
+      }
+      if (lightsData.data) {
+        setLights(lightsData.data.map(item => ({
+          id: item.id,
+          manufacturer: item.product_name,
+          model_number: item.sku_no,
+          description: item.description
+        })));
       }
       if (plcsData.data) {
-        setPlcs(plcsData.data);
+        setPlcs(plcsData.data.map(item => ({
+          id: item.id,
+          manufacturer: item.product_name,
+          model_number: item.sku_no,
+          plc_type: item.description || ''
+        })));
       }
       if (iotDevicesData.data) {
         setIotDevices(iotDevicesData.data);

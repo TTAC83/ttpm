@@ -183,7 +183,7 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
         lineId = newLine.id;
       }
 
-      // Save process flow (positions and titles) for solutions lines
+      // Save process flow (positions, titles, equipment, cameras, IoT devices)
       for (const position of positions) {
         const { data: positionData, error: positionError } = await supabase
           .from('positions')
@@ -206,11 +206,58 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
           });
           if (ptError) throw ptError;
         }
+
+        // Insert equipment for this position
+        for (const eq of position.equipment) {
+          const { data: equipmentData, error: equipmentError } = await supabase
+            .from('equipment')
+            .insert({
+              solutions_line_id: lineId,
+              position_id: positionData.id,
+              name: eq.name,
+              equipment_type: eq.equipment_type || null,
+              position_x: 0,
+              position_y: 0,
+            })
+            .select()
+            .single();
+
+          if (equipmentError) throw equipmentError;
+
+          // Insert equipment titles
+          await supabase.from('equipment_titles').insert({
+            equipment_id: equipmentData.id,
+            title: eq.name,
+          });
+
+          // Insert cameras
+          for (const camera of eq.cameras) {
+            await supabase.from('cameras').insert({
+              equipment_id: equipmentData.id,
+              mac_address: `CAM-${Math.random().toString(36).substring(7)}`,
+              camera_type: camera.camera_type,
+              lens_type: camera.lens_type || 'Standard',
+              light_required: camera.light_required || false,
+              light_id: camera.light_id || null,
+            });
+          }
+
+          // Insert IoT devices
+          for (const iot of eq.iot_devices) {
+            await supabase.from('iot_devices').insert({
+              equipment_id: equipmentData.id,
+              name: iot.name,
+              mac_address: `IOT-${Math.random().toString(36).substring(7)}`,
+              hardware_master_id: iot.hardware_master_id,
+              receiver_mac_address: `REC-${Math.random().toString(36).substring(7)}`,
+            });
+          }
+        }
       }
 
       toast({
         title: "Success",
-        description: editLineId ? "Solutions line updated successfully (process flow saved)." : "Solutions line created successfully (process flow saved).",
+        description: editLineId ? "Solutions line updated successfully" : "Solutions line created successfully with full configuration.",
       });
 
       onComplete();

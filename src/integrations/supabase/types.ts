@@ -1056,33 +1056,36 @@ export type Database = {
           created_at: string
           equipment_type: string | null
           id: string
-          line_id: string
+          line_id: string | null
           name: string
           position_id: string
           position_x: number
           position_y: number
+          solutions_line_id: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           equipment_type?: string | null
           id?: string
-          line_id: string
+          line_id?: string | null
           name: string
           position_id: string
           position_x?: number
           position_y?: number
+          solutions_line_id?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           equipment_type?: string | null
           id?: string
-          line_id?: string
+          line_id?: string | null
           name?: string
           position_id?: string
           position_x?: number
           position_y?: number
+          solutions_line_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1091,6 +1094,13 @@ export type Database = {
             columns: ["line_id"]
             isOneToOne: false
             referencedRelation: "lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_solutions_line_id_fkey"
+            columns: ["solutions_line_id"]
+            isOneToOne: false
+            referencedRelation: "solutions_lines"
             referencedColumns: ["id"]
           },
         ]

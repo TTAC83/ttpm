@@ -30,6 +30,7 @@ interface Equipment {
     id: string;
     name: string;
     hardware_master_id: string;
+    receiver_master_id?: string;
   }>;
 }
 

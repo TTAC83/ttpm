@@ -34,6 +34,7 @@ interface Equipment {
     id: string;
     name: string;
     hardware_master_id: string;
+    receiver_master_id?: string;
   }>;
 }
 
@@ -139,7 +140,8 @@ export const LineWizard: React.FC<LineWizardProps> = ({
             iot_devices: eq.iot_devices?.map((iot: any) => ({
               id: iot.id,
               name: iot.name || "Unnamed Device",
-              hardware_master_id: iot.hardware_master_id || ""
+              hardware_master_id: iot.hardware_master_id || "",
+              receiver_master_id: iot.receiver_master_id || ""
             })) || []
           })) || []
         };
@@ -313,6 +315,7 @@ export const LineWizard: React.FC<LineWizardProps> = ({
                 equipment_id: equipmentData.id,
                 name: iot.name,
                 hardware_master_id: iot.hardware_master_id,
+                receiver_master_id: iot.receiver_master_id || null,
                 mac_address: '',
                 receiver_mac_address: ''
               });

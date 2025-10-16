@@ -36,6 +36,7 @@ interface Equipment {
     id: string;
     name: string;
     hardware_master_id: string;
+    receiver_master_id?: string;
   }>;
 }
 
@@ -76,6 +77,13 @@ interface HardwareMaster {
   description?: string;
 }
 
+interface ReceiverMaster {
+  id: string;
+  manufacturer: string;
+  model_number: string;
+  receiver_type?: string;
+}
+
 interface DeviceAssignmentProps {
   positions: Position[];
   setPositions: (positions: Position[]) => void;
@@ -94,6 +102,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   const [lenses, setLenses] = useState<LensMaster[]>([]);
   const [plcs, setPlcs] = useState<PlcMaster[]>([]);
   const [iotDevices, setIotDevices] = useState<HardwareMaster[]>([]);
+  const [receivers, setReceivers] = useState<ReceiverMaster[]>([]);
 
   // Camera form state
   const [cameraForm, setCameraForm] = useState({
@@ -111,12 +120,13 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   const [iotForm, setIotForm] = useState({
     name: "",
     hardware_master_id: "",
+    receiver_master_id: "",
   });
 
-  // Fetch lights, cameras, lenses, PLCs, and IoT devices for the dropdowns
+  // Fetch lights, cameras, lenses, PLCs, IoT devices, and receivers for the dropdowns
   useEffect(() => {
     const fetchData = async () => {
-      const [lightsData, camerasData, lensesData, plcsData, iotDevicesData] = await Promise.all([
+      const [lightsData, camerasData, lensesData, plcsData, iotDevicesData, receiversData] = await Promise.all([
         supabase
           .from('lights')
           .select('id, manufacturer, model_number, description')
@@ -137,7 +147,11 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
           .from('hardware_master')
           .select('id, sku_no, product_name, hardware_type, description')
           .eq('hardware_type', 'IoT Device')
-          .order('product_name', { ascending: true })
+          .order('product_name', { ascending: true }),
+        supabase
+          .from('receivers_master')
+          .select('id, manufacturer, model_number, receiver_type')
+          .order('manufacturer', { ascending: true })
       ]);
       
       if (lightsData.data) {
@@ -154,6 +168,9 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       }
       if (iotDevicesData.data) {
         setIotDevices(iotDevicesData.data);
+      }
+      if (receiversData.data) {
+        setReceivers(receiversData.data);
       }
     };
 
@@ -232,7 +249,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       )
     );
 
-    setIotForm({ name: "", hardware_master_id: "" });
+    setIotForm({ name: "", hardware_master_id: "", receiver_master_id: "" });
     setDeviceDialogOpen(false);
   };
 
@@ -593,6 +610,28 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                       <SelectItem key={device.id} value={device.id}>
                         {device.sku_no} - {device.product_name}
                         {device.hardware_type && ` (${device.hardware_type})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="receiver-model">Receiver (Optional)</Label>
+                <Select
+                  value={iotForm.receiver_master_id}
+                  onValueChange={(value) =>
+                    setIotForm({ ...iotForm, receiver_master_id: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose receiver model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {receivers.map((receiver) => (
+                      <SelectItem key={receiver.id} value={receiver.id}>
+                        {receiver.manufacturer} - {receiver.model_number}
+                        {receiver.receiver_type && ` (${receiver.receiver_type})`}
                       </SelectItem>
                     ))}
                   </SelectContent>

@@ -89,57 +89,112 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
 
   // Fetch IoT devices from lines/equipment
   const { data: iotDevicesFromLines = [] } = useQuery({
-    queryKey: ['project-iot-devices-from-lines', projectId],
+    queryKey: ['project-iot-devices-from-lines', projectId, type],
     queryFn: async () => {
-      // First get all lines for this project
-      const { data: lines, error: linesError } = await supabase
-        .from('lines')
-        .select('id')
-        .eq('project_id', projectId);
-      
-      if (linesError) throw linesError;
-      if (!lines || lines.length === 0) return [];
+      if (type === 'solutions') {
+        // For solutions projects, query solutions_lines
+        const { data: solutionsLines, error: linesError } = await supabase
+          .from('solutions_lines')
+          .select('id')
+          .eq('solutions_project_id', projectId);
+        
+        if (linesError) throw linesError;
+        if (!solutionsLines || solutionsLines.length === 0) return [];
 
-      const lineIds = lines.map(l => l.id);
+        const lineIds = solutionsLines.map(l => l.id);
 
-      // Get all equipment for these lines
-      const { data: equipment, error: equipmentError } = await supabase
-        .from('equipment')
-        .select('id, name')
-        .in('line_id', lineIds);
-      
-      if (equipmentError) throw equipmentError;
-      if (!equipment || equipment.length === 0) return [];
+        // Get all equipment for these solutions lines (using solutions_line_id)
+        const { data: equipment, error: equipmentError } = await supabase
+          .from('equipment')
+          .select('id, name')
+          .in('solutions_line_id', lineIds);
+        
+        if (equipmentError) throw equipmentError;
+        if (!equipment || equipment.length === 0) return [];
 
-      const equipmentIds = equipment.map(e => e.id);
+        const equipmentIds = equipment.map(e => e.id);
 
-      // Get all IoT devices for this equipment
-      const { data: iotDevices, error: iotError } = await supabase
-        .from('iot_devices')
-        .select(`
-          id,
-          name,
-          mac_address,
-          receiver_mac_address,
-          hardware_master_id,
-          equipment_id,
-          hardware_master (
+        // Get all IoT devices for this equipment
+        const { data: iotDevices, error: iotError } = await supabase
+          .from('iot_devices')
+          .select(`
             id,
-            sku_no,
-            product_name,
-            hardware_type,
-            description
-          )
-        `)
-        .in('equipment_id', equipmentIds);
-      
-      if (iotError) throw iotError;
+            name,
+            mac_address,
+            receiver_mac_address,
+            hardware_master_id,
+            equipment_id,
+            hardware_master (
+              id,
+              sku_no,
+              product_name,
+              hardware_type,
+              description
+            )
+          `)
+          .in('equipment_id', equipmentIds);
+        
+        if (iotError) throw iotError;
 
-      // Add equipment name to each device
-      return (iotDevices || []).map(device => ({
-        ...device,
-        equipment_name: equipment.find(e => e.id === device.equipment_id)?.name || 'Unknown Equipment'
-      }));
+        // Add equipment name to each device
+        return (iotDevices || []).map(device => ({
+          ...device,
+          equipment_name: equipment.find(e => e.id === device.equipment_id)?.name || 'Unknown Equipment'
+        }));
+      } else if (type === 'project') {
+        // For implementation projects, query lines
+        const { data: lines, error: linesError } = await supabase
+          .from('lines')
+          .select('id')
+          .eq('project_id', projectId);
+        
+        if (linesError) throw linesError;
+        if (!lines || lines.length === 0) return [];
+
+        const lineIds = lines.map(l => l.id);
+
+        // Get all equipment for these lines (using line_id)
+        const { data: equipment, error: equipmentError } = await supabase
+          .from('equipment')
+          .select('id, name')
+          .in('line_id', lineIds);
+        
+        if (equipmentError) throw equipmentError;
+        if (!equipment || equipment.length === 0) return [];
+
+        const equipmentIds = equipment.map(e => e.id);
+
+        // Get all IoT devices for this equipment
+        const { data: iotDevices, error: iotError } = await supabase
+          .from('iot_devices')
+          .select(`
+            id,
+            name,
+            mac_address,
+            receiver_mac_address,
+            hardware_master_id,
+            equipment_id,
+            hardware_master (
+              id,
+              sku_no,
+              product_name,
+              hardware_type,
+              description
+            )
+          `)
+          .in('equipment_id', equipmentIds);
+        
+        if (iotError) throw iotError;
+
+        // Add equipment name to each device
+        return (iotDevices || []).map(device => ({
+          ...device,
+          equipment_name: equipment.find(e => e.id === device.equipment_id)?.name || 'Unknown Equipment'
+        }));
+      }
+      
+      // For BAU, return empty (or could implement similar logic if needed)
+      return [];
     },
   });
 

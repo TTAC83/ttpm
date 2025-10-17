@@ -99,11 +99,11 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
 
       if (lineError) throw lineError;
 
-      // Fetch positions - need to use OR filter for line_id or solutions_line_id
+      // Fetch positions - positions always use line_id regardless of implementation/solutions
       const { data: allPositions, error: allPositionsError } = await supabase
         .from('positions')
         .select('*')
-        .or(`line_id.eq.${lineId},solutions_line_id.eq.${lineId}`)
+        .eq('line_id', lineId)
         .order('position_x');
       
       if (allPositionsError) throw allPositionsError;

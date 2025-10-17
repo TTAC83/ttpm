@@ -103,11 +103,22 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
 
         const lineIds = solutionsLines.map(l => l.id);
 
-        // Get all equipment for these solutions lines (using solutions_line_id)
+        // Get positions for these solutions lines
+        const { data: positions, error: positionsError } = await supabase
+          .from('positions')
+          .select('id')
+          .in('line_id', lineIds);
+
+        if (positionsError) throw positionsError;
+        if (!positions || positions.length === 0) return [];
+
+        const positionIds = positions.map(p => p.id);
+
+        // Get all equipment attached to these positions
         const { data: equipment, error: equipmentError } = await supabase
           .from('equipment')
           .select('id, name')
-          .in('solutions_line_id', lineIds);
+          .in('position_id', positionIds);
         
         if (equipmentError) throw equipmentError;
         if (!equipment || equipment.length === 0) return [];

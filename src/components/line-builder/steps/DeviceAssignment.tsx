@@ -236,32 +236,14 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
         setVisionUseCases(useCasesData.data);
       }
 
-      // Fetch receivers separately based on whether we have a solutions project
-      if (solutionsProjectId) {
-        const { data: receiversData } = await supabase
-          .from('project_iot_requirements')
-          .select('id, name')
-          .eq('solutions_project_id', solutionsProjectId)
-          .eq('hardware_type', 'receiver');
+      // Fetch receivers from receivers_master table
+      const { data: receiversData } = await supabase
+        .from('receivers_master')
+        .select('id, manufacturer, model_number, receiver_type')
+        .order('manufacturer', { ascending: true });
 
-        if (receiversData) {
-          const transformedReceivers = receiversData.map((item: any) => ({
-            id: item.id,
-            manufacturer: item.name,
-            model_number: '',
-            receiver_type: ''
-          }));
-          setReceivers(transformedReceivers);
-        }
-      } else {
-        const { data: receiversData } = await supabase
-          .from('receivers_master')
-          .select('id, manufacturer, model_number, receiver_type')
-          .order('manufacturer', { ascending: true });
-
-        if (receiversData) {
-          setReceivers(receiversData);
-        }
+      if (receiversData) {
+        setReceivers(receiversData);
       }
     };
 

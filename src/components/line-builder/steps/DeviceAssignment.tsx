@@ -737,7 +737,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
 
       {/* Device Dialog */}
       <Dialog open={deviceDialogOpen} onOpenChange={setDeviceDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>
               {editMode ? "Edit" : "Add"} {deviceType === "camera" ? "Camera" : "IoT Device"}
@@ -745,7 +745,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
           </DialogHeader>
 
           {deviceType === "camera" ? (
-            <Tabs defaultValue="basic" className="w-full">
+            <Tabs defaultValue="basic" className="w-full flex-1 overflow-hidden flex flex-col">
               <TabsList className="inline-flex w-full overflow-x-auto">
                 <TabsTrigger value="basic">Basic Info</TabsTrigger>
                 <TabsTrigger value="measurements">Measurements</TabsTrigger>
@@ -765,9 +765,10 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                 </TabsTrigger>
               </TabsList>
 
-              {/* Basic Info Tab */}
-              <TabsContent value="basic" className="space-y-4">
-                <div>
+              <div className="flex-1 overflow-y-auto mt-4">
+                {/* Basic Info Tab */}
+                <TabsContent value="basic" className="space-y-4 mt-0">
+                  <div>
                   <Label htmlFor="camera-name">Camera Name *</Label>
                   <Input
                     id="camera-name"
@@ -798,11 +799,11 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-              </TabsContent>
+                  </div>
+                </TabsContent>
 
-              {/* Lighting Tab */}
-              <TabsContent value="lighting" className="space-y-4">
+                {/* Lighting Tab */}
+                <TabsContent value="lighting" className="space-y-4 mt-0">
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="light-required"
@@ -862,11 +863,11 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                     Check "Light Required" to configure lighting for this camera.
                   </p>
                 )}
-              </TabsContent>
+                </TabsContent>
 
-              {/* PLC Tab */}
-              <TabsContent value="plc" className="space-y-4">
-                <div className="flex items-center space-x-2">
+                {/* PLC Tab */}
+                <TabsContent value="plc" className="space-y-4 mt-0">
+                  <div className="flex items-center space-x-2">
                   <Checkbox
                     id="plc-attached"
                     checked={cameraForm.plc_attached}
@@ -994,11 +995,11 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                     Check "PLC Attached" to configure PLC and relay outputs for this camera.
                   </p>
                 )}
-              </TabsContent>
+                </TabsContent>
 
-              {/* HMI Tab */}
-              <TabsContent value="hmi" className="space-y-4">
-                <div className="flex items-center space-x-2">
+                {/* HMI Tab */}
+                <TabsContent value="hmi" className="space-y-4 mt-0">
+                  <div className="flex items-center space-x-2">
                   <Checkbox
                     id="hmi-required"
                     checked={cameraForm.hmi_required}
@@ -1056,11 +1057,11 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                     Check "HMI Required" to configure HMI for this camera.
                   </p>
                 )}
-              </TabsContent>
+                </TabsContent>
 
-              {/* Measurements Tab */}
-              <TabsContent value="measurements" className="space-y-4">
-                <div>
+                {/* Measurements Tab */}
+                <TabsContent value="measurements" className="space-y-4 mt-0">
+                  <div>
                   <Label htmlFor="horizontal-fov">Horizontal Field of View</Label>
                   <Input
                     id="horizontal-fov"
@@ -1093,11 +1094,11 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                     placeholder="e.g., 3mm"
                   />
                 </div>
-              </TabsContent>
+                </TabsContent>
 
-              {/* Use Case Tab */}
-              <TabsContent value="usecase" className="space-y-4">
-                <div>
+                {/* Use Case Tab */}
+                <TabsContent value="usecase" className="space-y-4 mt-0">
+                  <div>
                   <Label>Vision Use Cases</Label>
                   <div className="grid grid-cols-1 gap-2 mt-2 max-h-48 overflow-y-auto border rounded-md p-3">
                     {visionUseCases.map((useCase) => (
@@ -1175,11 +1176,11 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                     </Button>
                   </div>
                 </div>
-              </TabsContent>
+                </TabsContent>
 
-              {/* Camera View Tab */}
-              <TabsContent value="cameraview" className="space-y-4">
-                <div>
+                {/* Camera View Tab */}
+                <TabsContent value="cameraview" className="space-y-4 mt-0">
+                  <div>
                   <Label htmlFor="product-flow">Product Flow</Label>
                   <Input
                     id="product-flow"
@@ -1202,9 +1203,10 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                     rows={4}
                   />
                 </div>
-              </TabsContent>
+                </TabsContent>
+              </div>
 
-              <div className="pt-4 border-t">
+              <div className="pt-4 border-t flex-shrink-0">
                 <Button onClick={addCamera} className="w-full">
                   {editMode ? "Update Camera" : "Add Camera"}
                 </Button>

@@ -236,14 +236,39 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
         setVisionUseCases(useCasesData.data);
       }
 
-      // Fetch receivers from receivers_master table
-      const { data: receiversData } = await supabase
-        .from('receivers_master')
-        .select('id, manufacturer, model_number, receiver_type')
-        .order('manufacturer', { ascending: true });
+      // Fetch receivers from project_iot_requirements based on project type
+      if (solutionsProjectId) {
+        const { data: receiversData } = await supabase
+          .from('project_iot_requirements')
+          .select('id, name')
+          .eq('solutions_project_id', solutionsProjectId)
+          .eq('hardware_type', 'receiver');
 
-      if (receiversData) {
-        setReceivers(receiversData);
+        if (receiversData) {
+          const transformedReceivers = receiversData.map((item: any) => ({
+            id: item.id,
+            manufacturer: '',
+            model_number: item.name || 'Unnamed Receiver',
+            receiver_type: ''
+          }));
+          setReceivers(transformedReceivers);
+        }
+      } else {
+        const { data: receiversData } = await supabase
+          .from('project_iot_requirements')
+          .select('id, name')
+          .eq('project_id', solutionsProjectId)
+          .eq('hardware_type', 'receiver');
+
+        if (receiversData) {
+          const transformedReceivers = receiversData.map((item: any) => ({
+            id: item.id,
+            manufacturer: '',
+            model_number: item.name || 'Unnamed Receiver',
+            receiver_type: ''
+          }));
+          setReceivers(transformedReceivers);
+        }
       }
     };
 
@@ -1244,7 +1269,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                   <SelectContent>
                     {receivers.map((receiver) => (
                       <SelectItem key={receiver.id} value={receiver.id}>
-                        {receiver.manufacturer}
+                        {receiver.model_number}
                       </SelectItem>
                     ))}
                   </SelectContent>

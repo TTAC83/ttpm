@@ -61,6 +61,7 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
     max_speed: 0,
     line_description: "",
     product_description: "",
+    photos_url: "",
   });
   const [positions, setPositions] = useState<Position[]>([]);
   const { toast } = useToast();
@@ -68,7 +69,7 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
   useEffect(() => {
     if (!open) {
       setCurrentStep(1);
-      setLineData({ name: "", min_speed: 0, max_speed: 0, line_description: "", product_description: "" });
+      setLineData({ name: "", min_speed: 0, max_speed: 0, line_description: "", product_description: "", photos_url: "" });
       setPositions([]);
     } else if (editLineId) {
       loadLineData();
@@ -94,6 +95,7 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
         max_speed: existingLineData.max_speed || 0,
         line_description: existingLineData.line_description || "",
         product_description: existingLineData.product_description || "",
+        photos_url: existingLineData.photos_url || "",
       });
 
       // Load positions with titles
@@ -321,7 +323,7 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
       
       // Reset state
       setCurrentStep(1);
-      setLineData({ name: "", min_speed: 0, max_speed: 0, line_description: "", product_description: "" });
+      setLineData({ name: "", min_speed: 0, max_speed: 0, line_description: "", product_description: "", photos_url: "" });
       setPositions([]);
 
     } catch (error) {

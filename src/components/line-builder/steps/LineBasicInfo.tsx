@@ -11,6 +11,7 @@ interface LineBasicInfoProps {
     max_speed: number;
     line_description: string;
     product_description: string;
+    photos_url: string;
   };
   setLineData: (data: any) => void;
 }
@@ -39,6 +40,10 @@ export const LineBasicInfo: React.FC<LineBasicInfoProps> = ({
     setLineData({ ...lineData, product_description: e.target.value });
   };
 
+  const handlePhotosUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLineData({ ...lineData, photos_url: e.target.value });
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -56,6 +61,17 @@ export const LineBasicInfo: React.FC<LineBasicInfoProps> = ({
               placeholder="Enter line name"
               value={lineData.name}
               onChange={handleNameChange}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="photos-url">Photos SharePoint URL</Label>
+            <Input
+              id="photos-url"
+              type="url"
+              placeholder="https://sharepoint.com/..."
+              value={lineData.photos_url || ""}
+              onChange={handlePhotosUrlChange}
             />
           </div>
 

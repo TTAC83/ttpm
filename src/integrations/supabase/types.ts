@@ -2030,6 +2030,7 @@ export type Database = {
           line_name: string
           max_speed: number | null
           min_speed: number | null
+          photos_url: string | null
           product_description: string | null
           project_id: string
         }
@@ -2042,6 +2043,7 @@ export type Database = {
           line_name: string
           max_speed?: number | null
           min_speed?: number | null
+          photos_url?: string | null
           product_description?: string | null
           project_id: string
         }
@@ -2054,6 +2056,7 @@ export type Database = {
           line_name?: string
           max_speed?: number | null
           min_speed?: number | null
+          photos_url?: string | null
           product_description?: string | null
           project_id?: string
         }
@@ -3132,6 +3135,7 @@ export type Database = {
           line_name: string
           max_speed: number | null
           min_speed: number | null
+          photos_url: string | null
           product_description: string | null
           solutions_project_id: string
         }
@@ -3144,6 +3148,7 @@ export type Database = {
           line_name: string
           max_speed?: number | null
           min_speed?: number | null
+          photos_url?: string | null
           product_description?: string | null
           solutions_project_id: string
         }
@@ -3156,6 +3161,7 @@ export type Database = {
           line_name?: string
           max_speed?: number | null
           min_speed?: number | null
+          photos_url?: string | null
           product_description?: string | null
           solutions_project_id?: string
         }

@@ -931,6 +931,156 @@ export type Database = {
         }
         Relationships: []
       }
+      camera_attributes: {
+        Row: {
+          camera_id: string
+          created_at: string
+          description: string | null
+          id: string
+          order_index: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          camera_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_index?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          camera_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_index?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "camera_attributes_camera_id_fkey"
+            columns: ["camera_id"]
+            isOneToOne: false
+            referencedRelation: "cameras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      camera_measurements: {
+        Row: {
+          camera_id: string
+          created_at: string
+          horizontal_fov: number | null
+          id: string
+          smallest_text: string | null
+          updated_at: string
+          working_distance: number | null
+        }
+        Insert: {
+          camera_id: string
+          created_at?: string
+          horizontal_fov?: number | null
+          id?: string
+          smallest_text?: string | null
+          updated_at?: string
+          working_distance?: number | null
+        }
+        Update: {
+          camera_id?: string
+          created_at?: string
+          horizontal_fov?: number | null
+          id?: string
+          smallest_text?: string | null
+          updated_at?: string
+          working_distance?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "camera_measurements_camera_id_fkey"
+            columns: ["camera_id"]
+            isOneToOne: true
+            referencedRelation: "cameras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      camera_use_cases: {
+        Row: {
+          camera_id: string
+          created_at: string
+          description: string | null
+          id: string
+          vision_use_case_id: string
+        }
+        Insert: {
+          camera_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          vision_use_case_id: string
+        }
+        Update: {
+          camera_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          vision_use_case_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "camera_use_cases_camera_id_fkey"
+            columns: ["camera_id"]
+            isOneToOne: false
+            referencedRelation: "cameras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "camera_use_cases_vision_use_case_id_fkey"
+            columns: ["vision_use_case_id"]
+            isOneToOne: false
+            referencedRelation: "vision_use_cases_master"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      camera_views: {
+        Row: {
+          camera_id: string
+          created_at: string
+          description: string | null
+          id: string
+          product_flow: string | null
+          updated_at: string
+        }
+        Insert: {
+          camera_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          product_flow?: string | null
+          updated_at?: string
+        }
+        Update: {
+          camera_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          product_flow?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "camera_views_camera_id_fkey"
+            columns: ["camera_id"]
+            isOneToOne: true
+            referencedRelation: "cameras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cameras: {
         Row: {
           camera_type: string
@@ -3630,6 +3780,30 @@ export type Database = {
           description?: string | null
           id?: string
           limitations_watchouts?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      vision_use_cases_master: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
           name?: string
           updated_at?: string
         }

@@ -46,6 +46,26 @@ interface Camera {
   lens_type: string;
   light_required?: boolean;
   light_id?: string;
+  measurements?: {
+    horizontal_fov?: string;
+    working_distance?: string;
+    smallest_text?: string;
+  };
+  use_cases?: Array<{
+    id: string;
+    vision_use_case_id: string;
+    use_case_name: string;
+    description?: string;
+  }>;
+  attributes?: Array<{
+    id: string;
+    title: string;
+    description?: string;
+  }>;
+  camera_view?: {
+    product_flow?: string;
+    description?: string;
+  };
 }
 
 interface IoTDevice {
@@ -137,13 +157,78 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
 
           if (equipmentError) throw equipmentError;
 
+          // Fetch additional camera data for each camera in each equipment
+          const equipmentWithCameraData = await Promise.all(
+            (equipment || []).map(async (eq) => {
+              const camerasWithData = await Promise.all(
+                (eq.cameras || []).map(async (camera: any) => {
+                  // Fetch measurements
+                  const { data: measurements } = await supabase
+                    .from('camera_measurements')
+                    .select('*')
+                    .eq('camera_id', camera.id)
+                    .maybeSingle();
+
+                  // Fetch use cases
+                  const { data: useCases } = await supabase
+                    .from('camera_use_cases')
+                    .select(`
+                      id,
+                      vision_use_case_id,
+                      description,
+                      vision_use_cases_master (
+                        name
+                      )
+                    `)
+                    .eq('camera_id', camera.id);
+
+                  // Fetch attributes
+                  const { data: attributes } = await supabase
+                    .from('camera_attributes')
+                    .select('*')
+                    .eq('camera_id', camera.id)
+                    .order('order_index');
+
+                  // Fetch camera view
+                  const { data: cameraView } = await supabase
+                    .from('camera_views')
+                    .select('*')
+                    .eq('camera_id', camera.id)
+                    .maybeSingle();
+
+                  return {
+                    ...camera,
+                    measurements: measurements ? {
+                      horizontal_fov: measurements.horizontal_fov,
+                      working_distance: measurements.working_distance,
+                      smallest_text: measurements.smallest_text
+                    } : undefined,
+                    use_cases: useCases?.map((uc: any) => ({
+                      id: uc.id,
+                      vision_use_case_id: uc.vision_use_case_id,
+                      use_case_name: uc.vision_use_cases_master?.name || '',
+                      description: uc.description
+                    })) || [],
+                    attributes: attributes || [],
+                    camera_view: cameraView || undefined
+                  };
+                })
+              );
+
+              return {
+                ...eq,
+                cameras: camerasWithData
+              };
+            })
+          );
+
           return {
             ...position,
             titles: (position.position_titles || []).map((title: any) => ({
               id: title.id,
               title: title.title as "RLE" | "OP"
             })),
-            equipment: equipment || []
+            equipment: equipmentWithCameraData
           };
         })
       );
@@ -512,33 +597,84 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
 
       {/* Edit Camera Dialog */}
       <Dialog open={!!editingCamera} onOpenChange={() => setEditingCamera(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Camera</DialogTitle>
+            <DialogTitle>Camera Details - {editingCamera?.equipmentName}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-6 py-4">
             <div className="space-y-2">
-              <Label>Camera Type</Label>
-              <Select
-                value={editingCamera?.camera_type || ""}
-                onValueChange={(value) => setEditingCamera(prev => prev ? { ...prev, camera_type: value } : null)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select camera type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {cameraTypes.map((cam) => (
-                    <SelectItem key={cam.id} value={cam.product_name}>
-                      {cam.product_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label className="text-base font-semibold">Basic Info</Label>
+              <div className="bg-muted/50 p-3 rounded-md">
+                <p className="text-sm"><span className="font-medium">Position:</span> {editingCamera?.positionName}</p>
+                <p className="text-sm"><span className="font-medium">Camera Type:</span> {editingCamera?.camera_type}</p>
+              </div>
             </div>
+
+            {editingCamera?.measurements && (
+              <div className="space-y-2">
+                <Label className="text-base font-semibold">Measurements</Label>
+                <div className="bg-muted/50 p-3 rounded-md space-y-1">
+                  {editingCamera.measurements.horizontal_fov && (
+                    <p className="text-sm"><span className="font-medium">Horizontal FOV:</span> {editingCamera.measurements.horizontal_fov}</p>
+                  )}
+                  {editingCamera.measurements.working_distance && (
+                    <p className="text-sm"><span className="font-medium">Working Distance:</span> {editingCamera.measurements.working_distance}</p>
+                  )}
+                  {editingCamera.measurements.smallest_text && (
+                    <p className="text-sm"><span className="font-medium">Smallest Text:</span> {editingCamera.measurements.smallest_text}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {editingCamera?.use_cases && editingCamera.use_cases.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-base font-semibold">Use Cases</Label>
+                <div className="space-y-2">
+                  {editingCamera.use_cases.map((uc) => (
+                    <div key={uc.id} className="bg-muted/50 p-3 rounded-md">
+                      <p className="font-medium text-sm">{uc.use_case_name}</p>
+                      {uc.description && (
+                        <p className="text-xs text-muted-foreground mt-1">{uc.description}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {editingCamera?.attributes && editingCamera.attributes.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-base font-semibold">Attributes</Label>
+                <div className="space-y-2">
+                  {editingCamera.attributes.map((attr) => (
+                    <div key={attr.id} className="bg-muted/50 p-3 rounded-md">
+                      <p className="font-medium text-sm">{attr.title}</p>
+                      {attr.description && (
+                        <p className="text-xs text-muted-foreground mt-1">{attr.description}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {editingCamera?.camera_view && (
+              <div className="space-y-2">
+                <Label className="text-base font-semibold">Camera View</Label>
+                <div className="bg-muted/50 p-3 rounded-md space-y-1">
+                  {editingCamera.camera_view.product_flow && (
+                    <p className="text-sm"><span className="font-medium">Product Flow:</span> {editingCamera.camera_view.product_flow}</p>
+                  )}
+                  {editingCamera.camera_view.description && (
+                    <p className="text-sm mt-2">{editingCamera.camera_view.description}</p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingCamera(null)}>Cancel</Button>
-            <Button onClick={handleUpdateCamera}>Save Changes</Button>
+            <Button variant="outline" onClick={() => setEditingCamera(null)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

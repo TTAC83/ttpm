@@ -130,7 +130,25 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     hmi_required: false,
     hmi_master_id: "",
     hmi_notes: "",
+    // New fields for measurements
+    horizontal_fov: "",
+    working_distance: "",
+    smallest_text: "",
+    // New fields for use cases
+    use_case_ids: [] as string[],
+    use_case_description: "",
+    // New fields for attributes
+    attributes: [] as Array<{
+      id: string;
+      title: string;
+      description: string;
+    }>,
+    // New fields for camera view
+    product_flow: "",
+    camera_view_description: "",
   });
+  
+  const [visionUseCases, setVisionUseCases] = useState<Array<{ id: string; name: string; description?: string }>>([]);
 
   // IoT form state
   const [iotForm, setIotForm] = useState({
@@ -141,10 +159,10 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     ct_master_id: "",
   });
 
-  // Fetch lights, cameras, PLCs, HMIs, IoT devices, receivers, and CTs for the dropdowns
+  // Fetch lights, cameras, PLCs, HMIs, IoT devices, receivers, CTs, and vision use cases for the dropdowns
   useEffect(() => {
     const fetchData = async () => {
-      const [camerasData, lightsData, plcsData, hmisData, iotDevicesData, ctsData] = await Promise.all([
+      const [camerasData, lightsData, plcsData, hmisData, iotDevicesData, ctsData, useCasesData] = await Promise.all([
         supabase
           .from('hardware_master')
           .select('id, sku_no, product_name, hardware_type, description')
@@ -174,7 +192,11 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
           .from('hardware_master')
           .select('id, sku_no, product_name, hardware_type, description')
           .eq('hardware_type', 'CTs')
-          .order('product_name', { ascending: true })
+          .order('product_name', { ascending: true }),
+        supabase
+          .from('vision_use_cases_master')
+          .select('id, name, description')
+          .order('name', { ascending: true })
       ]);
       
       if (camerasData.data) {
@@ -209,6 +231,9 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       }
       if (ctsData.data) {
         setCts(ctsData.data);
+      }
+      if (useCasesData.data) {
+        setVisionUseCases(useCasesData.data);
       }
 
       // Fetch receivers separately based on whether we have a solutions project
@@ -324,10 +349,55 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       relay_outputs: [],
       hmi_required: false,
       hmi_master_id: "",
-      hmi_notes: ""
+      hmi_notes: "",
+      horizontal_fov: "",
+      working_distance: "",
+      smallest_text: "",
+      use_case_ids: [],
+      use_case_description: "",
+      attributes: [],
+      product_flow: "",
+      camera_view_description: "",
     });
     setEditMode(false);
     setEditingCameraId("");
+  };
+
+  const addAttribute = () => {
+    const newAttribute = {
+      id: Math.random().toString(36).substring(7),
+      title: "",
+      description: ""
+    };
+    setCameraForm({
+      ...cameraForm,
+      attributes: [...cameraForm.attributes, newAttribute]
+    });
+  };
+
+  const updateAttribute = (id: string, field: "title" | "description", value: string) => {
+    setCameraForm({
+      ...cameraForm,
+      attributes: cameraForm.attributes.map(attr =>
+        attr.id === id ? { ...attr, [field]: value } : attr
+      )
+    });
+  };
+
+  const deleteAttribute = (id: string) => {
+    setCameraForm({
+      ...cameraForm,
+      attributes: cameraForm.attributes.filter(attr => attr.id !== id)
+    });
+  };
+
+  const toggleUseCase = (useCaseId: string) => {
+    setCameraForm({
+      ...cameraForm,
+      use_case_ids: cameraForm.use_case_ids.includes(useCaseId)
+        ? cameraForm.use_case_ids.filter(id => id !== useCaseId)
+        : [...cameraForm.use_case_ids, useCaseId]
+    });
   };
 
   const addRelayOutput = () => {
@@ -495,7 +565,15 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       relay_outputs: [],
       hmi_required: false,
       hmi_master_id: "",
-      hmi_notes: ""
+      hmi_notes: "",
+      horizontal_fov: "",
+      working_distance: "",
+      smallest_text: "",
+      use_case_ids: [],
+      use_case_description: "",
+      attributes: [],
+      product_flow: "",
+      camera_view_description: "",
     });
     setDeviceDialogOpen(true);
   };
@@ -668,8 +746,11 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
 
           {deviceType === "camera" ? (
             <Tabs defaultValue="basic" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="inline-flex w-full overflow-x-auto">
                 <TabsTrigger value="basic">Basic Info</TabsTrigger>
+                <TabsTrigger value="measurements">Measurements</TabsTrigger>
+                <TabsTrigger value="usecase">Use Case</TabsTrigger>
+                <TabsTrigger value="cameraview">Camera View</TabsTrigger>
                 <TabsTrigger value="lighting">
                   <Lightbulb className="h-4 w-4 mr-1" />
                   Lighting
@@ -975,6 +1056,152 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                     Check "HMI Required" to configure HMI for this camera.
                   </p>
                 )}
+              </TabsContent>
+
+              {/* Measurements Tab */}
+              <TabsContent value="measurements" className="space-y-4">
+                <div>
+                  <Label htmlFor="horizontal-fov">Horizontal Field of View</Label>
+                  <Input
+                    id="horizontal-fov"
+                    value={cameraForm.horizontal_fov}
+                    onChange={(e) =>
+                      setCameraForm({ ...cameraForm, horizontal_fov: e.target.value })
+                    }
+                    placeholder="e.g., 45°"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="working-distance">Working Distance</Label>
+                  <Input
+                    id="working-distance"
+                    value={cameraForm.working_distance}
+                    onChange={(e) =>
+                      setCameraForm({ ...cameraForm, working_distance: e.target.value })
+                    }
+                    placeholder="e.g., 300mm"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="smallest-text">Smallest Text</Label>
+                  <Input
+                    id="smallest-text"
+                    value={cameraForm.smallest_text}
+                    onChange={(e) =>
+                      setCameraForm({ ...cameraForm, smallest_text: e.target.value })
+                    }
+                    placeholder="e.g., 3mm"
+                  />
+                </div>
+              </TabsContent>
+
+              {/* Use Case Tab */}
+              <TabsContent value="usecase" className="space-y-4">
+                <div>
+                  <Label>Vision Use Cases</Label>
+                  <div className="grid grid-cols-1 gap-2 mt-2 max-h-48 overflow-y-auto border rounded-md p-3">
+                    {visionUseCases.map((useCase) => (
+                      <div key={useCase.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`usecase-${useCase.id}`}
+                          checked={cameraForm.use_case_ids.includes(useCase.id)}
+                          onCheckedChange={() => toggleUseCase(useCase.id)}
+                        />
+                        <Label 
+                          htmlFor={`usecase-${useCase.id}`}
+                          className="text-sm font-normal cursor-pointer"
+                        >
+                          {useCase.name}
+                          {useCase.description && (
+                            <span className="text-xs text-muted-foreground block">
+                              {useCase.description}
+                            </span>
+                          )}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="usecase-description">Description</Label>
+                  <Textarea
+                    id="usecase-description"
+                    value={cameraForm.use_case_description}
+                    onChange={(e) =>
+                      setCameraForm({ ...cameraForm, use_case_description: e.target.value })
+                    }
+                    placeholder="Enter additional details about the use case"
+                    rows={4}
+                  />
+                </div>
+                <div>
+                  <Label>Attributes</Label>
+                  <div className="space-y-2 mt-2">
+                    {cameraForm.attributes.map((attr) => (
+                      <div key={attr.id} className="border rounded-md p-3 space-y-2">
+                        <div className="flex justify-between items-center">
+                          <Label className="text-sm font-medium">Attribute</Label>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteAttribute(attr.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <Input
+                          value={attr.title}
+                          onChange={(e) => updateAttribute(attr.id, "title", e.target.value)}
+                          placeholder="Attribute title"
+                        />
+                        <Textarea
+                          value={attr.description}
+                          onChange={(e) => updateAttribute(attr.id, "description", e.target.value)}
+                          placeholder="Attribute description"
+                          rows={2}
+                        />
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={addAttribute}
+                      className="w-full"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Attribute
+                    </Button>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Camera View Tab */}
+              <TabsContent value="cameraview" className="space-y-4">
+                <div>
+                  <Label htmlFor="product-flow">Product Flow</Label>
+                  <Input
+                    id="product-flow"
+                    value={cameraForm.product_flow}
+                    onChange={(e) =>
+                      setCameraForm({ ...cameraForm, product_flow: e.target.value })
+                    }
+                    placeholder="e.g., Single file, Flow Wrap, Multi product"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="camera-view-description">Description</Label>
+                  <Textarea
+                    id="camera-view-description"
+                    value={cameraForm.camera_view_description}
+                    onChange={(e) =>
+                      setCameraForm({ ...cameraForm, camera_view_description: e.target.value })
+                    }
+                    placeholder="Enter details about the camera view"
+                    rows={4}
+                  />
+                </div>
               </TabsContent>
 
               <div className="pt-4 border-t">

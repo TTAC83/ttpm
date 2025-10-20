@@ -32,6 +32,18 @@ interface Equipment {
     light_id?: string;
     plc_attached?: boolean;
     plc_master_id?: string;
+    horizontal_fov?: string;
+    working_distance?: string;
+    smallest_text?: string;
+    use_case_ids?: string[];
+    use_case_description?: string;
+    attributes?: Array<{
+      id: string;
+      title: string;
+      description: string;
+    }>;
+    product_flow?: string;
+    camera_view_description?: string;
     relay_outputs?: Array<{
       output_number: number;
       type: string;
@@ -332,6 +344,52 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
               .single();
             
             if (camError) throw camError;
+
+            // Create measurements if provided
+            if (camera.horizontal_fov || camera.working_distance || camera.smallest_text) {
+              await supabase
+                .from('camera_measurements')
+                .insert({
+                  camera_id: cameraData.id,
+                  horizontal_fov: camera.horizontal_fov ? parseFloat(camera.horizontal_fov) : null,
+                  working_distance: camera.working_distance ? parseFloat(camera.working_distance) : null,
+                  smallest_text: camera.smallest_text || null,
+                });
+            }
+
+            // Create use cases if provided
+            if (camera.use_case_ids && camera.use_case_ids.length > 0) {
+              await supabase
+                .from('camera_use_cases')
+                .insert(camera.use_case_ids.map(useCaseId => ({
+                  camera_id: cameraData.id,
+                  vision_use_case_id: useCaseId,
+                  description: camera.use_case_description || null,
+                })));
+            }
+
+            // Create attributes if provided
+            if (camera.attributes && camera.attributes.length > 0) {
+              await supabase
+                .from('camera_attributes')
+                .insert(camera.attributes.map((attr, index) => ({
+                  camera_id: cameraData.id,
+                  title: attr.title,
+                  description: attr.description || null,
+                  order_index: index,
+                })));
+            }
+
+            // Create camera view if provided
+            if (camera.product_flow || camera.camera_view_description) {
+              await supabase
+                .from('camera_views')
+                .insert({
+                  camera_id: cameraData.id,
+                  product_flow: camera.product_flow || null,
+                  description: camera.camera_view_description || null,
+                });
+            }
 
             // Create relay outputs for this camera
             if (camera.relay_outputs && camera.relay_outputs.length > 0) {

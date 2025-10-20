@@ -12,7 +12,7 @@ interface HardwareItem {
   source: 'direct' | 'line';
   line_name?: string;
   equipment_name?: string;
-  // Master data fields
+  quantity?: number;
   sku_no?: string;
   manufacturer?: string;
   model_number?: string;
@@ -41,55 +41,351 @@ export const SolutionsHardwareSummary = ({ solutionsProjectId }: SolutionsHardwa
   const fetchAllHardware = async () => {
     try {
       setLoading(true);
+      const allHardware: HardwareItem[] = [];
       
-      // Fetch all equipment with lines for this solutions project
-      const { data: equipmentData, error: equipmentError } = await supabase
-        .from('equipment')
+      // ============= CAMERAS FROM LINES =============
+      const { data: cameraData } = await supabase
+        .from('cameras')
         .select(`
           id,
-          name,
-          equipment_type,
-          solutions_lines!inner(
+          camera_type,
+          equipment!inner(
             id,
-            line_name,
-            solutions_project_id
+            name,
+            solutions_line_id
           )
-        `)
-        .eq('solutions_lines.solutions_project_id', solutionsProjectId);
+        `);
 
-      if (equipmentError) throw equipmentError;
+      if (cameraData) {
+        // Get line names for cameras
+        const lineIds = [...new Set(cameraData
+          .map(c => c.equipment?.solutions_line_id)
+          .filter(Boolean))] as string[];
+        
+        const { data: lines } = await supabase
+          .from('solutions_lines')
+          .select('id, line_name, solutions_project_id')
+          .in('id', lineIds)
+          .eq('solutions_project_id', solutionsProjectId);
 
-      // Fetch cameras from lines with master data
-      const { data: cameras, error: camerasError } = await supabase
-        .from('cameras')
-        .select('id, camera_type, equipment_id');
+        const { data: cameraMaster } = await supabase
+          .from('cameras_master')
+          .select('*');
 
-      if (camerasError) throw camerasError;
-
-      // Fetch camera master data
-      const { data: cameraMaster, error: cameraMasterError } = await supabase
-        .from('cameras_master')
-        .select('*');
-
-      if (cameraMasterError) throw cameraMasterError;
-
-      const allHardware: HardwareItem[] = [];
-
-      // Process cameras
-      if (cameras && equipmentData) {
-        cameras.forEach(cam => {
-          const equipment = equipmentData.find(eq => eq.id === cam.equipment_id);
-          if (equipment) {
+        cameraData.forEach((cam: any) => {
+          const line = lines?.find(l => l.id === cam.equipment?.solutions_line_id);
+          if (line) {
             const master = cameraMaster?.find(m => m.camera_type === cam.camera_type);
             allHardware.push({
-              id: cam.id,
+              id: `camera-${cam.id}`,
               hardware_type: `Camera - ${cam.camera_type}`,
-              source: 'line' as const,
-              line_name: equipment.solutions_lines?.line_name,
-              equipment_name: equipment.name,
+              source: 'line',
+              line_name: line.line_name,
+              equipment_name: cam.equipment?.name,
               sku_no: master?.model_number,
               manufacturer: master?.manufacturer,
               model_number: master?.model_number,
+              description: master?.description,
+              price: master?.price,
+              supplier_name: master?.supplier_name,
+              supplier_person: master?.supplier_person,
+              supplier_email: master?.supplier_email,
+              supplier_phone: master?.supplier_phone,
+              order_hyperlink: master?.order_hyperlink,
+            });
+          }
+        });
+      }
+
+      // ============= IOT DEVICES FROM LINES =============
+      const { data: iotData } = await supabase
+        .from('iot_devices')
+        .select(`
+          id,
+          name,
+          mac_address,
+          equipment!inner(
+            id,
+            name,
+            solutions_line_id
+          ),
+          hardware_master(
+            sku_no,
+            product_name,
+            manufacturer,
+            description,
+            price,
+            supplier_name,
+            supplier_person,
+            supplier_email,
+            supplier_phone,
+            order_hyperlink
+          )
+        `);
+
+      if (iotData) {
+        const lineIds = [...new Set(iotData
+          .map((d: any) => d.equipment?.solutions_line_id)
+          .filter(Boolean))] as string[];
+        
+        const { data: lines } = await supabase
+          .from('solutions_lines')
+          .select('id, line_name, solutions_project_id')
+          .in('id', lineIds)
+          .eq('solutions_project_id', solutionsProjectId);
+
+        iotData.forEach((device: any) => {
+          const line = lines?.find(l => l.id === device.equipment?.solutions_line_id);
+          if (line) {
+            const master = device.hardware_master;
+            allHardware.push({
+              id: `iot-${device.id}`,
+              hardware_type: `IoT Device - ${device.name}`,
+              source: 'line',
+              line_name: line.line_name,
+              equipment_name: device.equipment?.name,
+              sku_no: master?.sku_no,
+              manufacturer: master?.manufacturer,
+              model_number: master?.sku_no,
+              description: master?.description,
+              price: master?.price,
+              supplier_name: master?.supplier_name,
+              supplier_person: master?.supplier_person,
+              supplier_email: master?.supplier_email,
+              supplier_phone: master?.supplier_phone,
+              order_hyperlink: master?.order_hyperlink,
+            });
+          }
+        });
+      }
+
+      // ============= DIRECT HARDWARE (From Hardware Tab) =============
+      
+      // Gateways
+      const { data: directGateways } = await supabase
+        .from('solutions_project_gateways')
+        .select(`
+          id,
+          quantity,
+          gateways_master(
+            manufacturer,
+            model_number,
+            description,
+            price,
+            supplier_name,
+            supplier_person,
+            supplier_email,
+            supplier_phone,
+            order_hyperlink
+          )
+        `)
+        .eq('solutions_project_id', solutionsProjectId);
+
+      if (directGateways) {
+        directGateways.forEach((gw: any) => {
+          const master = gw.gateways_master;
+          allHardware.push({
+            id: `direct-gw-${gw.id}`,
+            hardware_type: `Gateway - ${master?.model_number || 'Unknown'}`,
+            source: 'direct',
+            quantity: gw.quantity,
+            sku_no: master?.model_number,
+            manufacturer: master?.manufacturer,
+            model_number: master?.model_number,
+            description: master?.description,
+            price: master?.price,
+            supplier_name: master?.supplier_name,
+            supplier_person: master?.supplier_person,
+            supplier_email: master?.supplier_email,
+            supplier_phone: master?.supplier_phone,
+            order_hyperlink: master?.order_hyperlink,
+          });
+        });
+      }
+
+      // Servers
+      const { data: directServers } = await supabase
+        .from('solutions_project_servers')
+        .select(`
+          id,
+          quantity,
+          servers_master(
+            manufacturer,
+            model_number,
+            description,
+            price,
+            supplier_name,
+            supplier_person,
+            supplier_email,
+            supplier_phone,
+            order_hyperlink
+          )
+        `)
+        .eq('solutions_project_id', solutionsProjectId);
+
+      if (directServers) {
+        directServers.forEach((srv: any) => {
+          const master = srv.servers_master;
+          allHardware.push({
+            id: `direct-srv-${srv.id}`,
+            hardware_type: `Server - ${master?.model_number || 'Unknown'}`,
+            source: 'direct',
+            quantity: srv.quantity,
+            sku_no: master?.model_number,
+            manufacturer: master?.manufacturer,
+            model_number: master?.model_number,
+            description: master?.description,
+            price: master?.price,
+            supplier_name: master?.supplier_name,
+            supplier_person: master?.supplier_person,
+            supplier_email: master?.supplier_email,
+            supplier_phone: master?.supplier_phone,
+            order_hyperlink: master?.order_hyperlink,
+          });
+        });
+      }
+
+      // Receivers
+      const { data: directReceivers } = await supabase
+        .from('solutions_project_receivers')
+        .select(`
+          id,
+          quantity,
+          receivers_master(
+            manufacturer,
+            model_number,
+            description,
+            price,
+            supplier_name,
+            supplier_person,
+            supplier_email,
+            supplier_phone,
+            order_hyperlink
+          )
+        `)
+        .eq('solutions_project_id', solutionsProjectId);
+
+      if (directReceivers) {
+        directReceivers.forEach((rcv: any) => {
+          const master = rcv.receivers_master;
+          allHardware.push({
+            id: `direct-rcv-${rcv.id}`,
+            hardware_type: `Receiver - ${master?.model_number || 'Unknown'}`,
+            source: 'direct',
+            quantity: rcv.quantity,
+            sku_no: master?.model_number,
+            manufacturer: master?.manufacturer,
+            model_number: master?.model_number,
+            description: master?.description,
+            price: master?.price,
+            supplier_name: master?.supplier_name,
+            supplier_person: master?.supplier_person,
+            supplier_email: master?.supplier_email,
+            supplier_phone: master?.supplier_phone,
+            order_hyperlink: master?.order_hyperlink,
+          });
+        });
+      }
+
+      // TV Displays
+      const { data: directTVs } = await supabase
+        .from('solutions_project_tv_displays')
+        .select(`
+          id,
+          quantity,
+          tv_displays_master(
+            manufacturer,
+            model_number,
+            description,
+            price,
+            supplier_name,
+            supplier_person,
+            supplier_email,
+            supplier_phone,
+            order_hyperlink
+          )
+        `)
+        .eq('solutions_project_id', solutionsProjectId);
+
+      if (directTVs) {
+        directTVs.forEach((tv: any) => {
+          const master = tv.tv_displays_master;
+          allHardware.push({
+            id: `direct-tv-${tv.id}`,
+            hardware_type: `TV Display - ${master?.model_number || 'Unknown'}`,
+            source: 'direct',
+            quantity: tv.quantity,
+            sku_no: master?.model_number,
+            manufacturer: master?.manufacturer,
+            model_number: master?.model_number,
+            description: master?.description,
+            price: master?.price,
+            supplier_name: master?.supplier_name,
+            supplier_person: master?.supplier_person,
+            supplier_email: master?.supplier_email,
+            supplier_phone: master?.supplier_phone,
+            order_hyperlink: master?.order_hyperlink,
+          });
+        });
+      }
+
+      // Other hardware requirements (servers, storage, load balancers, etc.)
+      const { data: iotRequirements } = await supabase
+        .from('project_iot_requirements')
+        .select(`
+          id,
+          hardware_type,
+          name,
+          quantity,
+          gateways_master(
+            manufacturer,
+            model_number,
+            description,
+            price,
+            supplier_name,
+            supplier_person,
+            supplier_email,
+            supplier_phone,
+            order_hyperlink
+          ),
+          receivers_master(
+            manufacturer,
+            model_number,
+            description,
+            price,
+            supplier_name,
+            supplier_person,
+            supplier_email,
+            supplier_phone,
+            order_hyperlink
+          ),
+          hardware_master(
+            sku_no,
+            product_name,
+            manufacturer,
+            description,
+            price,
+            supplier_name,
+            supplier_person,
+            supplier_email,
+            supplier_phone,
+            order_hyperlink
+          )
+        `)
+        .eq('solutions_project_id', solutionsProjectId);
+
+      if (iotRequirements) {
+        iotRequirements.forEach((req: any) => {
+          const master = req.hardware_master || req.gateways_master || req.receivers_master;
+          if (master) {
+            allHardware.push({
+              id: `direct-hw-${req.id}`,
+              hardware_type: `${req.hardware_type} - ${req.name || master?.product_name || master?.model_number || 'Unknown'}`,
+              source: 'direct',
+              quantity: req.quantity,
+              sku_no: master?.sku_no || master?.model_number,
+              manufacturer: master?.manufacturer,
+              model_number: master?.sku_no || master?.model_number,
               description: master?.description,
               price: master?.price,
               supplier_name: master?.supplier_name,
@@ -146,6 +442,7 @@ export const SolutionsHardwareSummary = ({ solutionsProjectId }: SolutionsHardwa
                 <TableRow>
                   <TableHead>Type</TableHead>
                   <TableHead>Source</TableHead>
+                  <TableHead>Qty</TableHead>
                   <TableHead>Line/Equipment</TableHead>
                   <TableHead>SKU/Model</TableHead>
                   <TableHead>Manufacturer</TableHead>
@@ -165,8 +462,12 @@ export const SolutionsHardwareSummary = ({ solutionsProjectId }: SolutionsHardwa
                       </Badge>
                     </TableCell>
                     <TableCell>
+                      {item.quantity || 1}
+                    </TableCell>
+                    <TableCell>
                       {item.line_name && <div className="text-sm">{item.line_name}</div>}
                       {item.equipment_name && <div className="text-xs text-muted-foreground">{item.equipment_name}</div>}
+                      {!item.line_name && !item.equipment_name && <span className="text-muted-foreground">-</span>}
                     </TableCell>
                     <TableCell>{item.model_number || 'N/A'}</TableCell>
                     <TableCell>{item.manufacturer || 'N/A'}</TableCell>
@@ -179,6 +480,7 @@ export const SolutionsHardwareSummary = ({ solutionsProjectId }: SolutionsHardwa
                     <TableCell>
                       {item.supplier_name && <div className="text-sm">{item.supplier_name}</div>}
                       {item.supplier_person && <div className="text-xs text-muted-foreground">{item.supplier_person}</div>}
+                      {!item.supplier_name && !item.supplier_person && <span className="text-muted-foreground">-</span>}
                     </TableCell>
                     <TableCell>
                       {item.supplier_email && (

@@ -59,32 +59,28 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
           .in('equipment.solutions_line_id', lineIds);
 
         if (cameraData) {
-          const { data: cameraMaster } = await supabase
-            .from('cameras_master')
-            .select('*');
+          // Fetch camera details from unified hardware_master
+          const { data: hardwareMaster } = await supabase
+            .from('hardware_master')
+            .select('*')
+            .eq('hardware_type', 'Camera');
 
           cameraData.forEach((cam: any) => {
             const line = lines?.find(l => l.id === cam.equipment?.solutions_line_id);
-            const master = cameraMaster?.find(m => m.camera_type === cam.camera_type);
+            const master = hardwareMaster?.find(m => m.id === cam.camera_type);
             
             if (line) {
               allHardware.push({
                 id: `camera-${cam.id}`,
-                hardware_type: `Camera - ${cam.camera_type}`,
+                hardware_type: `Camera - ${master?.product_name || 'Unknown'}`,
                 source: 'line',
                 line_name: line.line_name,
                 equipment_name: cam.equipment?.name,
                 quantity: 1,
-                sku_no: master?.model_number,
-                manufacturer: master?.manufacturer,
-                model_number: master?.model_number,
+                sku_no: master?.sku_no,
+                model_number: master?.sku_no,
                 description: master?.description,
-                price: master?.price,
-                supplier_name: master?.supplier_name,
-                supplier_person: master?.supplier_person,
-                supplier_email: master?.supplier_email,
-                supplier_phone: master?.supplier_phone,
-                order_hyperlink: master?.order_hyperlink,
+                price: master?.price_gbp,
               });
             }
           });

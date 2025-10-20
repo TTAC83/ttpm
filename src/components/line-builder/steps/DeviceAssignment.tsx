@@ -164,20 +164,17 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     const fetchData = async () => {
       const [camerasData, lightsData, plcsData, hmisData, iotDevicesData, ctsData, useCasesData] = await Promise.all([
         supabase
-          .from('hardware_master')
-          .select('id, sku_no, product_name, hardware_type, description')
-          .eq('hardware_type', 'Camera')
-          .order('product_name', { ascending: true }),
+          .from('cameras_master')
+          .select('*')
+          .order('manufacturer', { ascending: true }),
         supabase
-          .from('hardware_master')
-          .select('id, sku_no, product_name, hardware_type, description')
-          .eq('hardware_type', 'Light')
-          .order('product_name', { ascending: true }),
+          .from('lights')
+          .select('*')
+          .order('manufacturer', { ascending: true }),
         supabase
-          .from('hardware_master')
-          .select('id, sku_no, product_name, hardware_type, description')
-          .eq('hardware_type', 'PLC')
-          .order('product_name', { ascending: true }),
+          .from('plc_master')
+          .select('*')
+          .order('manufacturer', { ascending: true }),
         supabase
           .from('hardware_master')
           .select('id, sku_no, product_name, hardware_type, description')
@@ -203,25 +200,25 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       if (camerasData.data) {
         setCameras(camerasData.data.map(item => ({
           id: item.id,
-          manufacturer: item.product_name,
-          model_number: item.sku_no,
-          camera_type: item.description || ''
+          manufacturer: item.manufacturer,
+          model_number: item.model_number,
+          camera_type: item.camera_type || ''
         })));
       }
       if (lightsData.data) {
         setLights(lightsData.data.map(item => ({
           id: item.id,
-          manufacturer: item.product_name,
-          model_number: item.sku_no,
+          manufacturer: item.manufacturer,
+          model_number: item.model_number,
           description: item.description
         })));
       }
       if (plcsData.data) {
         setPlcs(plcsData.data.map(item => ({
           id: item.id,
-          manufacturer: item.product_name,
-          model_number: item.sku_no,
-          plc_type: item.description || ''
+          manufacturer: item.manufacturer,
+          model_number: item.model_number,
+          plc_type: item.plc_type || ''
         })));
       }
       if (hmisData.data) {
@@ -604,12 +601,12 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       hmi_notes: camera.hmi_notes || "",
       horizontal_fov: camera.horizontal_fov || "",
       working_distance: camera.working_distance || "",
-      smallest_text: "",
-      use_case_ids: [],
-      use_case_description: "",
-      attributes: [],
-      product_flow: "",
-      camera_view_description: "",
+      smallest_text: camera.smallest_text || "",
+      use_case_ids: camera.use_case_ids || [],
+      use_case_description: camera.use_case_description || "",
+      attributes: camera.attributes || [],
+      product_flow: camera.product_flow || "",
+      camera_view_description: camera.camera_view_description || "",
     });
     setDeviceDialogOpen(true);
   };

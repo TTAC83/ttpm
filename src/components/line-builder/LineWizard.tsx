@@ -141,27 +141,56 @@ export const LineWizard: React.FC<LineWizardProps> = ({
           `)
           .eq('position_id', pos.id);
 
-        // Load equipment with camera outputs
+        // Load equipment with all camera ancillary data
         const equipmentWithOutputs = await Promise.all(
           (equipmentData || []).map(async (eq: any) => {
-            const camerasWithOutputs = await Promise.all(
+            const camerasWithFullData = await Promise.all(
               (eq.cameras || []).map(async (cam: any) => {
-                const { data: outputs } = await supabase
-                  .from('camera_plc_outputs')
-                  .select('output_number, type, custom_name, notes')
-                  .eq('camera_id', cam.id)
-                  .order('output_number');
+                // Fetch all camera-related data in parallel
+                const [outputs, measurements, useCases, attributes, views] = await Promise.all([
+                  supabase.from('camera_plc_outputs')
+                    .select('output_number, type, custom_name, notes')
+                    .eq('camera_id', cam.id)
+                    .order('output_number'),
+                  supabase.from('camera_measurements')
+                    .select('*')
+                    .eq('camera_id', cam.id)
+                    .single(),
+                  supabase.from('camera_use_cases')
+                    .select('vision_use_case_id, description')
+                    .eq('camera_id', cam.id),
+                  supabase.from('camera_attributes')
+                    .select('*')
+                    .eq('camera_id', cam.id)
+                    .order('order_index'),
+                  supabase.from('camera_views')
+                    .select('*')
+                    .eq('camera_id', cam.id)
+                    .single(),
+                ]);
                 
                 return {
                   id: cam.id,
-                  name: cam.name || "Unnamed Camera",
+                  name: cam.mac_address || "Unnamed Camera",
                   camera_type: cam.camera_type,
                   lens_type: cam.lens_type,
-                  light_required: cam.light_required,
-                  light_id: cam.light_id,
+                  light_required: cam.light_required || false,
+                  light_id: cam.light_id || undefined,
                   plc_attached: cam.plc_attached || false,
                   plc_master_id: cam.plc_master_id || "",
-                  relay_outputs: outputs || [],
+                  relay_outputs: outputs.data || [],
+                  horizontal_fov: measurements.data?.horizontal_fov?.toString() || "",
+                  working_distance: measurements.data?.working_distance?.toString() || "",
+                  smallest_text: measurements.data?.smallest_text || "",
+                  use_case_ids: useCases.data?.map(uc => uc.vision_use_case_id) || [],
+                  use_case_description: useCases.data?.[0]?.description || "",
+                  attributes: attributes.data?.map(attr => ({
+                    id: attr.id,
+                    title: attr.title,
+                    description: attr.description || ""
+                  })) || [],
+                  product_flow: views.data?.product_flow || "",
+                  camera_view_description: views.data?.description || "",
                 };
               })
             );
@@ -170,7 +199,7 @@ export const LineWizard: React.FC<LineWizardProps> = ({
               id: eq.id,
               name: eq.name,
               equipment_type: eq.equipment_type,
-              cameras: camerasWithOutputs,
+              cameras: camerasWithFullData,
               iot_devices: (eq.iot_devices || []).map((iot: any) => ({
                 id: iot.id,
                 name: iot.name || "Unnamed Device",
@@ -257,14 +286,32 @@ export const LineWizard: React.FC<LineWizardProps> = ({
 
         if (lineError) throw lineError;
 
-        // Delete existing related data
+        // Delete existing related data - cascade properly
         const { data: existingEquipment } = await supabase
           .from('equipment')
-          .select('id')
+          .select('id, cameras(id)')
           .eq('line_id', editLineId);
 
         if (existingEquipment?.length) {
           const equipmentIds = existingEquipment.map(e => e.id);
+          
+          // Get all camera IDs to delete their ancillary data
+          const cameraIds = existingEquipment
+            .flatMap(e => (e.cameras as any[]) || [])
+            .map(c => c.id);
+          
+          if (cameraIds.length > 0) {
+            // Delete camera ancillary data first
+            await Promise.all([
+              supabase.from('camera_measurements').delete().in('camera_id', cameraIds),
+              supabase.from('camera_use_cases').delete().in('camera_id', cameraIds),
+              supabase.from('camera_attributes').delete().in('camera_id', cameraIds),
+              supabase.from('camera_views').delete().in('camera_id', cameraIds),
+              supabase.from('camera_plc_outputs').delete().in('camera_id', cameraIds),
+            ]);
+          }
+          
+          // Now delete cameras and iot devices
           await supabase.from('cameras').delete().in('equipment_id', equipmentIds);
           await supabase.from('iot_devices').delete().in('equipment_id', equipmentIds);
         }
@@ -352,7 +399,7 @@ export const LineWizard: React.FC<LineWizardProps> = ({
                 lens_type: camera.lens_type,
                 mac_address: camera.name || '',
                 light_required: camera.light_required || false,
-                light_id: null,
+                light_id: camera.light_id || null,
               })
               .select()
               .single();

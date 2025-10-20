@@ -340,7 +340,7 @@ export const LineWizard: React.FC<LineWizardProps> = ({
                 lens_type: camera.lens_type,
                 mac_address: camera.name || '',
                 light_required: camera.light_required || false,
-                light_id: camera.light_id || null,
+                light_id: null,
               })
               .select()
               .single();

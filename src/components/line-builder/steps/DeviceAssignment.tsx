@@ -194,9 +194,10 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
           .eq('hardware_type', 'CTs')
           .order('product_name', { ascending: true }),
         supabase
-          .from('vision_use_cases_master')
+          .from('vision_use_cases')
           .select('id, name, description, category')
-          .order('category, name', { ascending: true })
+          .order('category', { ascending: true })
+          .order('name', { ascending: true })
       ]);
       
       if (camerasData.data) {

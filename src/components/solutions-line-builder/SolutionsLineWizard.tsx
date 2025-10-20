@@ -30,6 +30,14 @@ interface Equipment {
     lens_type: string;
     light_required?: boolean;
     light_id?: string;
+    plc_attached?: boolean;
+    plc_master_id?: string;
+    relay_outputs?: Array<{
+      output_number: number;
+      type: string;
+      custom_name: string;
+      notes: string;
+    }>;
   }>;
   iot_devices: Array<{
     id: string;
@@ -130,14 +138,25 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
               id: eq.id,
               name: eq.name,
               equipment_type: eq.equipment_type || "",
-              cameras: (eq.cameras || []).map((cam: any) => ({
-                id: cam.id,
-                name: cam.mac_address,
-                camera_type: cam.camera_type,
-                lens_type: cam.lens_type,
-                light_required: cam.light_required || false,
-                light_id: cam.light_id || undefined,
-              })),
+              const camerasWithOutputs = await Promise.all((eq.cameras || []).map(async (cam: any) => {
+                const { data: outputs } = await supabase
+                  .from('camera_plc_outputs')
+                  .select('output_number, type, custom_name, notes')
+                  .eq('camera_id', cam.id)
+                  .order('output_number');
+                return {
+                  id: cam.id,
+                  name: cam.mac_address,
+                  camera_type: cam.camera_type,
+                  lens_type: cam.lens_type,
+                  light_required: cam.light_required || false,
+                  light_id: cam.light_id || undefined,
+                  plc_attached: cam.plc_attached || false,
+                  plc_master_id: cam.plc_master_id || undefined,
+                  relay_outputs: outputs || [],
+                };
+              }));
+              cameras: camerasWithOutputs,
               iot_devices: (eq.iot_devices || []).map((iot: any) => ({
                 id: iot.id,
                 name: iot.name,

@@ -30,6 +30,14 @@ interface Equipment {
     lens_type: string;
     light_required?: boolean;
     light_id?: string;
+    plc_attached?: boolean;
+    plc_master_id?: string;
+    relay_outputs?: Array<{
+      output_number: number;
+      type: string;
+      custom_name: string;
+      notes: string;
+    }>;
   }>;
   iot_devices: Array<{
     id: string;

@@ -1007,6 +1007,39 @@ export type Database = {
           },
         ]
       }
+      camera_plc_outputs: {
+        Row: {
+          camera_id: string
+          created_at: string
+          custom_name: string | null
+          id: string
+          notes: string | null
+          output_number: number
+          type: string | null
+          updated_at: string
+        }
+        Insert: {
+          camera_id: string
+          created_at?: string
+          custom_name?: string | null
+          id?: string
+          notes?: string | null
+          output_number: number
+          type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          camera_id?: string
+          created_at?: string
+          custom_name?: string | null
+          id?: string
+          notes?: string | null
+          output_number?: number
+          type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       camera_use_cases: {
         Row: {
           camera_id: string
@@ -3793,6 +3826,7 @@ export type Database = {
       }
       vision_use_cases_master: {
         Row: {
+          category: string | null
           created_at: string
           description: string | null
           id: string
@@ -3800,6 +3834,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          category?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -3807,6 +3842,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          category?: string | null
           created_at?: string
           description?: string | null
           id?: string

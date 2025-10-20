@@ -32,6 +32,7 @@ interface Equipment {
     light_id?: string;
     plc_attached?: boolean;
     plc_master_id?: string;
+    hmi_master_id?: string;
     horizontal_fov?: string;
     working_distance?: string;
     smallest_text?: string;
@@ -460,6 +461,35 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
                   custom_name: output.custom_name,
                   notes: output.notes
                 })));
+            }
+
+            // Persist attached hardware (Light, PLC, HMI) as line hardware via iot_devices
+            if (camera.light_id) {
+              await supabase.from('iot_devices').insert({
+                equipment_id: equipmentData.id,
+                name: 'Light',
+                mac_address: `IOT-${Math.random().toString(36).substring(7)}`,
+                hardware_master_id: camera.light_id,
+                receiver_mac_address: `REC-${Math.random().toString(36).substring(7)}`,
+              });
+            }
+            if (camera.plc_master_id) {
+              await supabase.from('iot_devices').insert({
+                equipment_id: equipmentData.id,
+                name: 'PLC',
+                mac_address: `IOT-${Math.random().toString(36).substring(7)}`,
+                hardware_master_id: camera.plc_master_id,
+                receiver_mac_address: `REC-${Math.random().toString(36).substring(7)}`,
+              });
+            }
+            if (camera.hmi_master_id) {
+              await supabase.from('iot_devices').insert({
+                equipment_id: equipmentData.id,
+                name: 'HMI',
+                mac_address: `IOT-${Math.random().toString(36).substring(7)}`,
+                hardware_master_id: camera.hmi_master_id,
+                receiver_mac_address: `REC-${Math.random().toString(36).substring(7)}`,
+              });
             }
           }
 

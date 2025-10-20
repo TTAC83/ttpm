@@ -117,7 +117,7 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
             if (line) {
               allHardware.push({
                 id: `iot-${device.id}`,
-                hardware_type: `IoT Device - ${device.name}`,
+                hardware_type: `${master?.hardware_type || master?.type || 'Hardware'}`,
                 source: 'line',
                 line_name: line.line_name,
                 equipment_name: device.equipment?.name,

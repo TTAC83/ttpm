@@ -464,6 +464,35 @@ export const LineWizard: React.FC<LineWizardProps> = ({
                   notes: output.notes
                 })));
             }
+
+            // Persist attached hardware (Light, PLC, HMI) as line hardware via iot_devices
+            if (camera.light_id) {
+              await supabase.from('iot_devices').insert({
+                equipment_id: equipmentData.id,
+                name: 'Light',
+                mac_address: `IOT-${Math.random().toString(36).substring(7)}`,
+                hardware_master_id: camera.light_id,
+                receiver_mac_address: `REC-${Math.random().toString(36).substring(7)}`,
+              });
+            }
+            if (camera.plc_master_id) {
+              await supabase.from('iot_devices').insert({
+                equipment_id: equipmentData.id,
+                name: 'PLC',
+                mac_address: `IOT-${Math.random().toString(36).substring(7)}`,
+                hardware_master_id: camera.plc_master_id,
+                receiver_mac_address: `REC-${Math.random().toString(36).substring(7)}`,
+              });
+            }
+            if ((camera as any).hmi_master_id) {
+              await supabase.from('iot_devices').insert({
+                equipment_id: equipmentData.id,
+                name: 'HMI',
+                mac_address: `IOT-${Math.random().toString(36).substring(7)}`,
+                hardware_master_id: (camera as any).hmi_master_id,
+                receiver_mac_address: `REC-${Math.random().toString(36).substring(7)}`,
+              });
+            }
           }
 
           // Create IoT devices for this equipment

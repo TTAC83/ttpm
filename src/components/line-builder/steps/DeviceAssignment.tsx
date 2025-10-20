@@ -159,22 +159,25 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     ct_master_id: "",
   });
 
-  // Fetch lights, cameras, PLCs, HMIs, IoT devices, receivers, CTs, and vision use cases for the dropdowns
+  // Fetch lights, cameras, PLCs, HMIs, IoT devices, receivers, CTs, and vision use cases from unified hardware catalog
   useEffect(() => {
     const fetchData = async () => {
       const [camerasData, lightsData, plcsData, hmisData, iotDevicesData, ctsData, useCasesData] = await Promise.all([
         supabase
-          .from('cameras_master')
-          .select('*')
-          .order('manufacturer', { ascending: true }),
+          .from('hardware_master')
+          .select('id, sku_no, product_name, hardware_type, description')
+          .eq('hardware_type', 'Camera')
+          .order('product_name', { ascending: true }),
         supabase
-          .from('lights')
-          .select('*')
-          .order('manufacturer', { ascending: true }),
+          .from('hardware_master')
+          .select('id, sku_no, product_name, hardware_type, description')
+          .eq('hardware_type', 'Light')
+          .order('product_name', { ascending: true }),
         supabase
-          .from('plc_master')
-          .select('*')
-          .order('manufacturer', { ascending: true }),
+          .from('hardware_master')
+          .select('id, sku_no, product_name, hardware_type, description')
+          .eq('hardware_type', 'PLC')
+          .order('product_name', { ascending: true }),
         supabase
           .from('hardware_master')
           .select('id, sku_no, product_name, hardware_type, description')
@@ -200,25 +203,25 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       if (camerasData.data) {
         setCameras(camerasData.data.map(item => ({
           id: item.id,
-          manufacturer: item.manufacturer,
-          model_number: item.model_number,
-          camera_type: item.camera_type || ''
+          manufacturer: item.product_name,
+          model_number: item.sku_no,
+          camera_type: item.description || ''
         })));
       }
       if (lightsData.data) {
         setLights(lightsData.data.map(item => ({
           id: item.id,
-          manufacturer: item.manufacturer,
-          model_number: item.model_number,
+          manufacturer: item.product_name,
+          model_number: item.sku_no,
           description: item.description
         })));
       }
       if (plcsData.data) {
         setPlcs(plcsData.data.map(item => ({
           id: item.id,
-          manufacturer: item.manufacturer,
-          model_number: item.model_number,
-          plc_type: item.plc_type || ''
+          manufacturer: item.product_name,
+          model_number: item.sku_no,
+          plc_type: item.description || ''
         })));
       }
       if (hmisData.data) {

@@ -302,6 +302,21 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                                 camera_type: selectedCamera?.camera_type || "",
                                 light_required: cameraForm.light_required,
                                 light_id: cameraForm.light_id,
+                                light_notes: cameraForm.light_notes,
+                                plc_attached: cameraForm.plc_attached,
+                                plc_master_id: cameraForm.plc_master_id,
+                                relay_outputs: cameraForm.relay_outputs,
+                                hmi_required: cameraForm.hmi_required,
+                                hmi_master_id: cameraForm.hmi_master_id,
+                                hmi_notes: cameraForm.hmi_notes,
+                                horizontal_fov: cameraForm.horizontal_fov,
+                                working_distance: cameraForm.working_distance,
+                                smallest_text: cameraForm.smallest_text,
+                                use_case_ids: cameraForm.use_case_ids,
+                                use_case_description: cameraForm.use_case_description,
+                                attributes: cameraForm.attributes,
+                                product_flow: cameraForm.product_flow,
+                                camera_view_description: cameraForm.camera_view_description,
                               }
                             : cam
                         )

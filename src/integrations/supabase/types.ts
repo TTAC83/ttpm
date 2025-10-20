@@ -4449,10 +4449,6 @@ export type Database = {
           user_id: string
         }[]
       }
-      get_camera_full: {
-        Args: { p_camera_id: string }
-        Returns: Json
-      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -4588,10 +4584,6 @@ export type Database = {
           p_is_billable?: boolean
         }
         Returns: undefined
-      }
-      save_camera_full: {
-        Args: { p_payload: Json }
-        Returns: Json
       }
       set_bau_weekly_review: {
         Args:

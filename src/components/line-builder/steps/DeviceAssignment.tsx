@@ -11,7 +11,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Trash2, Camera, Cpu, Lightbulb, Monitor, Edit } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
-import { CameraFormDialog } from "@/components/camera-form/CameraFormDialog";
 
 interface Position {
   id: string;
@@ -111,11 +110,6 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   const [iotDevices, setIotDevices] = useState<HardwareMaster[]>([]);
   const [receivers, setReceivers] = useState<ReceiverMaster[]>([]);
   const [cts, setCts] = useState<HardwareMaster[]>([]);
-  
-  // New unified camera dialog state
-  const [cameraDialogOpen, setCameraDialogOpen] = useState(false);
-  const [currentCameraId, setCurrentCameraId] = useState<string | undefined>(undefined);
-  const [currentEquipmentId, setCurrentEquipmentId] = useState<string | undefined>(undefined);
 
   // Camera form state
   const [cameraForm, setCameraForm] = useState({
@@ -587,9 +581,37 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   };
 
   const openEditCameraDialog = (positionId: string, equipmentId: string, camera: any) => {
-    setCurrentCameraId(camera.id);
-    setCurrentEquipmentId(equipmentId);
-    setCameraDialogOpen(true);
+    setSelectedPosition(positionId);
+    setSelectedEquipment(equipmentId);
+    setDeviceType("camera");
+    setEditMode(true);
+    setEditingCameraId(camera.id);
+    
+    // Find camera master by camera_type
+    const cameraMaster = cameras.find(c => c.camera_type === camera.camera_type);
+    
+    setCameraForm({
+      name: camera.name,
+      camera_master_id: cameraMaster?.id || "",
+      light_required: camera.light_required || false,
+      light_id: camera.light_id || "",
+      light_notes: "",
+      plc_attached: camera.plc_attached || false,
+      plc_master_id: camera.plc_master_id || "",
+      relay_outputs: camera.relay_outputs || [],
+      hmi_required: camera.hmi_required || false,
+      hmi_master_id: camera.hmi_master_id || "",
+      hmi_notes: camera.hmi_notes || "",
+      horizontal_fov: camera.horizontal_fov || "",
+      working_distance: camera.working_distance || "",
+      smallest_text: "",
+      use_case_ids: [],
+      use_case_description: "",
+      attributes: [],
+      product_flow: "",
+      camera_view_description: "",
+    });
+    setDeviceDialogOpen(true);
   };
 
   const openEditIotDialog = (positionId: string, equipmentId: string, device: any) => {
@@ -1344,18 +1366,6 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
           )}
         </DialogContent>
       </Dialog>
-
-      {/* New unified camera dialog */}
-      <CameraFormDialog
-        open={cameraDialogOpen}
-        onOpenChange={setCameraDialogOpen}
-        cameraId={currentCameraId}
-        equipmentId={currentEquipmentId}
-        onSave={() => {
-          // Refresh the positions data to reflect camera changes
-          // The wizard will handle reloading from database on next edit
-        }}
-      />
     </div>
   );
 };

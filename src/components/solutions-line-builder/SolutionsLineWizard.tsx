@@ -327,8 +327,6 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
                 lens_type: camera.lens_type || 'Standard',
                 light_required: camera.light_required || false,
                 light_id: camera.light_id || null,
-                plc_attached: camera.plc_attached || false,
-                plc_master_id: camera.plc_master_id || null,
               })
               .select()
               .single();

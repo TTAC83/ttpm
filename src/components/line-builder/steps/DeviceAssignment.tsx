@@ -148,7 +148,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     camera_view_description: "",
   });
   
-  const [visionUseCases, setVisionUseCases] = useState<Array<{ id: string; name: string; description?: string }>>([]);
+  const [visionUseCases, setVisionUseCases] = useState<Array<{ id: string; name: string; description?: string; category?: string }>>([]);
 
   // IoT form state
   const [iotForm, setIotForm] = useState({
@@ -195,8 +195,8 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
           .order('product_name', { ascending: true }),
         supabase
           .from('vision_use_cases_master')
-          .select('id, name, description')
-          .order('name', { ascending: true })
+          .select('id, name, description, category')
+          .order('category, name', { ascending: true })
       ]);
       
       if (camerasData.data) {
@@ -233,7 +233,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
         setCts(ctsData.data);
       }
       if (useCasesData.data) {
-        setVisionUseCases(useCasesData.data);
+        setVisionUseCases(useCasesData.data as any);
       }
 
       // Fetch receivers from project_iot_requirements based on project type
@@ -1107,25 +1107,41 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                 <TabsContent value="usecase" className="space-y-4 mt-0">
                   <div>
                   <Label>Vision Use Cases</Label>
-                  <div className="grid grid-cols-1 gap-2 mt-2 max-h-48 overflow-y-auto border rounded-md p-3">
-                    {visionUseCases.map((useCase) => (
-                      <div key={useCase.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`usecase-${useCase.id}`}
-                          checked={cameraForm.use_case_ids.includes(useCase.id)}
-                          onCheckedChange={() => toggleUseCase(useCase.id)}
-                        />
-                        <Label 
-                          htmlFor={`usecase-${useCase.id}`}
-                          className="text-sm font-normal cursor-pointer"
-                        >
-                          {useCase.name}
-                          {useCase.description && (
-                            <span className="text-xs text-muted-foreground block">
-                              {useCase.description}
-                            </span>
-                          )}
-                        </Label>
+                  <div className="grid grid-cols-1 gap-3 mt-2 max-h-96 overflow-y-auto border rounded-md p-3">
+                    {Object.entries(
+                      visionUseCases.reduce((acc, useCase) => {
+                        const category = useCase.category || 'Uncategorized';
+                        if (!acc[category]) acc[category] = [];
+                        acc[category].push(useCase);
+                        return acc;
+                      }, {} as Record<string, typeof visionUseCases>)
+                    ).map(([category, cases]) => (
+                      <div key={category} className="space-y-2">
+                        <h4 className="text-sm font-semibold text-foreground border-b pb-1">
+                          {category}
+                        </h4>
+                        <div className="space-y-2 pl-2">
+                          {cases.map((useCase) => (
+                            <div key={useCase.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`usecase-${useCase.id}`}
+                                checked={cameraForm.use_case_ids.includes(useCase.id)}
+                                onCheckedChange={() => toggleUseCase(useCase.id)}
+                              />
+                              <Label 
+                                htmlFor={`usecase-${useCase.id}`}
+                                className="text-sm font-normal cursor-pointer"
+                              >
+                                {useCase.name}
+                                {useCase.description && (
+                                  <span className="text-xs text-muted-foreground block">
+                                    {useCase.description}
+                                  </span>
+                                )}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     ))}
                   </div>

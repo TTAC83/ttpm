@@ -125,6 +125,46 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
 
           if (equipmentError) throw equipmentError;
 
+          // Load equipment with camera outputs
+          const equipmentWithOutputs = await Promise.all(
+            (equipmentData || []).map(async (eq) => {
+              const camerasWithOutputs = await Promise.all(
+                (eq.cameras || []).map(async (cam: any) => {
+                  const { data: outputs } = await supabase
+                    .from('camera_plc_outputs')
+                    .select('output_number, type, custom_name, notes')
+                    .eq('camera_id', cam.id)
+                    .order('output_number');
+                  
+                  return {
+                    id: cam.id,
+                    name: cam.mac_address,
+                    camera_type: cam.camera_type,
+                    lens_type: cam.lens_type,
+                    light_required: cam.light_required || false,
+                    light_id: cam.light_id || undefined,
+                    plc_attached: cam.plc_attached || false,
+                    plc_master_id: cam.plc_master_id || undefined,
+                    relay_outputs: outputs || [],
+                  };
+                })
+              );
+
+              return {
+                id: eq.id,
+                name: eq.name,
+                equipment_type: eq.equipment_type || "",
+                cameras: camerasWithOutputs,
+                iot_devices: (eq.iot_devices || []).map((iot: any) => ({
+                  id: iot.id,
+                  name: iot.name,
+                  hardware_master_id: iot.hardware_master_id,
+                  receiver_master_id: undefined,
+                })),
+              };
+            })
+          );
+
           return {
             id: pos.id,
             name: pos.name,
@@ -134,36 +174,7 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
               id: pt.id,
               title: pt.title as "RLE" | "OP"
             })),
-            equipment: (equipmentData || []).map((eq) => ({
-              id: eq.id,
-              name: eq.name,
-              equipment_type: eq.equipment_type || "",
-              const camerasWithOutputs = await Promise.all((eq.cameras || []).map(async (cam: any) => {
-                const { data: outputs } = await supabase
-                  .from('camera_plc_outputs')
-                  .select('output_number, type, custom_name, notes')
-                  .eq('camera_id', cam.id)
-                  .order('output_number');
-                return {
-                  id: cam.id,
-                  name: cam.mac_address,
-                  camera_type: cam.camera_type,
-                  lens_type: cam.lens_type,
-                  light_required: cam.light_required || false,
-                  light_id: cam.light_id || undefined,
-                  plc_attached: cam.plc_attached || false,
-                  plc_master_id: cam.plc_master_id || undefined,
-                  relay_outputs: outputs || [],
-                };
-              }));
-              cameras: camerasWithOutputs,
-              iot_devices: (eq.iot_devices || []).map((iot: any) => ({
-                id: iot.id,
-                name: iot.name,
-                hardware_master_id: iot.hardware_master_id,
-                receiver_master_id: undefined,
-              })),
-            })),
+            equipment: equipmentWithOutputs,
           };
         })
       );
@@ -307,15 +318,35 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
 
           // Insert cameras
           for (const camera of eq.cameras) {
-            const { error: camError } = await supabase.from('cameras').insert({
-              equipment_id: equipmentData.id,
-              mac_address: `CAM-${Math.random().toString(36).substring(7)}`,
-              camera_type: camera.camera_type || 'Generic',
-              lens_type: camera.lens_type || 'Standard',
-              light_required: camera.light_required || false,
-              light_id: camera.light_id || null,
-            });
+            const { data: cameraData, error: camError } = await supabase
+              .from('cameras')
+              .insert({
+                equipment_id: equipmentData.id,
+                mac_address: `CAM-${Math.random().toString(36).substring(7)}`,
+                camera_type: camera.camera_type || 'Generic',
+                lens_type: camera.lens_type || 'Standard',
+                light_required: camera.light_required || false,
+                light_id: camera.light_id || null,
+                plc_attached: camera.plc_attached || false,
+                plc_master_id: camera.plc_master_id || null,
+              })
+              .select()
+              .single();
+            
             if (camError) throw camError;
+
+            // Create relay outputs for this camera
+            if (camera.relay_outputs && camera.relay_outputs.length > 0) {
+              await supabase
+                .from('camera_plc_outputs')
+                .insert(camera.relay_outputs.map(output => ({
+                  camera_id: cameraData.id,
+                  output_number: output.output_number,
+                  type: output.type,
+                  custom_name: output.custom_name,
+                  notes: output.notes
+                })));
+            }
           }
 
           // Insert IoT devices

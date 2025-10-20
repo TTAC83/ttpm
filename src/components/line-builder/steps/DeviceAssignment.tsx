@@ -299,7 +299,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                             ? {
                                 ...cam,
                                 name: cameraForm.name,
-                                camera_type: selectedCamera?.camera_type || "",
+                                camera_type: cameraForm.camera_master_id,
                                 light_required: cameraForm.light_required,
                                 light_id: cameraForm.light_id,
                                 light_notes: cameraForm.light_notes,
@@ -332,7 +332,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       const newCamera = {
         id: Math.random().toString(36).substring(7),
         name: cameraForm.name,
-        camera_type: selectedCamera?.camera_type || "",
+        camera_type: cameraForm.camera_master_id,
         lens_type: "",
         light_required: cameraForm.light_required,
         light_id: cameraForm.light_id,
@@ -587,8 +587,8 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     setEditMode(true);
     setEditingCameraId(camera.id);
     
-    // Find camera master by camera_type
-    const cameraMaster = cameras.find(c => c.camera_type === camera.camera_type);
+    // Find camera master by selected hardware id stored in camera_type
+    const cameraMaster = cameras.find(c => c.id === (camera as any).camera_type);
     
     setCameraForm({
       name: camera.name,

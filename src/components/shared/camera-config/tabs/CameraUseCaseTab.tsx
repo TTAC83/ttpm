@@ -24,36 +24,46 @@ export function CameraUseCaseTab({
   updateAttribute,
   deleteAttribute
 }: CameraUseCaseTabProps) {
+  // Group use cases by category
+  const groupedUseCases = masterData.visionUseCases.reduce((acc, useCase) => {
+    const category = useCase.category || 'Other';
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(useCase);
+    return acc;
+  }, {} as Record<string, typeof masterData.visionUseCases>);
+
   return (
     <TabsContent value="usecase" className="space-y-4 mt-0">
       <div>
         <Label className="text-base mb-3 block">Select Vision Use Cases</Label>
-        <div className="space-y-2 max-h-[300px] overflow-y-auto">
-          {masterData.visionUseCases.map((useCase) => (
-            <div key={useCase.id} className="flex items-start space-x-2">
-              <Checkbox
-                id={`usecase-${useCase.id}`}
-                checked={formData.use_case_ids.includes(useCase.id)}
-                onCheckedChange={() => toggleUseCase(useCase.id)}
-              />
-              <div className="flex-1">
-                <Label 
-                  htmlFor={`usecase-${useCase.id}`}
-                  className="font-medium cursor-pointer"
-                >
-                  {useCase.name}
-                  {useCase.category && (
-                    <span className="ml-2 text-xs text-muted-foreground">
-                      ({useCase.category})
-                    </span>
-                  )}
-                </Label>
-                {useCase.description && (
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {useCase.description}
-                  </p>
-                )}
-              </div>
+        <div className="space-y-4 max-h-[300px] overflow-y-auto">
+          {Object.entries(groupedUseCases).map(([category, useCases]) => (
+            <div key={category} className="space-y-2">
+              <h3 className="text-sm font-semibold text-foreground">{category}</h3>
+              {useCases.map((useCase) => (
+                <div key={useCase.id} className="flex items-start space-x-2 ml-2">
+                  <Checkbox
+                    id={`usecase-${useCase.id}`}
+                    checked={formData.use_case_ids.includes(useCase.id)}
+                    onCheckedChange={() => toggleUseCase(useCase.id)}
+                  />
+                  <div className="flex-1">
+                    <Label 
+                      htmlFor={`usecase-${useCase.id}`}
+                      className="font-medium cursor-pointer"
+                    >
+                      {useCase.name}
+                    </Label>
+                    {useCase.description && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {useCase.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           ))}
         </div>

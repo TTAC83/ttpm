@@ -3813,6 +3813,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       vision_models: {
         Row: {
           created_at: string
@@ -4572,12 +4596,27 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string[]
       }
+      get_user_primary_role: {
+        Args: { _user_id: string }
+        Returns: string
+      }
+      get_user_roles: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"][]
+      }
       has_expense_access: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
       has_expense_admin_access: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
         Returns: boolean
       }
       impl_generate_weeks: {
@@ -4743,6 +4782,11 @@ export type Database = {
     }
     Enums: {
       action_status: "Open" | "In Progress" | "Done"
+      app_role:
+        | "internal_admin"
+        | "internal_user"
+        | "customer_admin"
+        | "customer_user"
       bau_health_enum: "Excellent" | "Good" | "Watch" | "AtRisk"
       bau_health_simple: "green" | "red"
       change_req_status_enum:
@@ -4916,6 +4960,12 @@ export const Constants = {
   public: {
     Enums: {
       action_status: ["Open", "In Progress", "Done"],
+      app_role: [
+        "internal_admin",
+        "internal_user",
+        "customer_admin",
+        "customer_user",
+      ],
       bau_health_enum: ["Excellent", "Good", "Watch", "AtRisk"],
       bau_health_simple: ["green", "red"],
       change_req_status_enum: [

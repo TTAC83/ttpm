@@ -226,7 +226,7 @@ export const UserManagement = () => {
         throw new Error('No active session');
       }
 
-      // Update profile information directly
+      // Update non-sensitive profile information (name, job title, phone, avatar)
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
@@ -234,7 +234,6 @@ export const UserManagement = () => {
           job_title: editForm.job_title || null,
           phone: editForm.phone || null,
           avatar_url: editForm.avatar_url || null,
-          role: editForm.role,
           company_id: editForm.company_id === 'none' ? null : editForm.company_id || null,
           is_internal: editForm.role === 'internal_admin' || editForm.role === 'internal_user'
         })
@@ -242,9 +241,47 @@ export const UserManagement = () => {
 
       if (profileError) throw profileError;
 
+      // Get user's current role to determine if we need to update
+      const currentRole = editingUser.profile?.role;
+      
+      // Update role through secure edge function if role has changed
+      if (currentRole !== editForm.role && editForm.role) {
+        // Remove old role if exists
+        if (currentRole) {
+          const removeResponse = await supabase.functions.invoke('admin-set-user-role', {
+            body: {
+              target_user_id: editingUser.id,
+              role: currentRole,
+              action: 'remove'
+            }
+          });
+
+          if (removeResponse.error) {
+            throw new Error('Failed to remove old role: ' + removeResponse.error.message);
+          }
+        }
+
+        // Add new role
+        const addResponse = await supabase.functions.invoke('admin-set-user-role', {
+          body: {
+            target_user_id: editingUser.id,
+            role: editForm.role,
+            action: 'add'
+          }
+        });
+
+        if (addResponse.error) {
+          throw new Error('Failed to assign new role: ' + addResponse.error.message);
+        }
+
+        if (addResponse.data && !addResponse.data.success) {
+          throw new Error(addResponse.data.error || 'Failed to assign role');
+        }
+      }
+
       toast({
         title: "User Updated",
-        description: "User profile has been updated successfully",
+        description: "User profile and role have been updated successfully",
       });
       
       setEditingUser(null);

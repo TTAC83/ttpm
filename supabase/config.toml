@@ -5,10 +5,13 @@ enabled = true
 port = 54321
 
 [functions.admin-invite-user]
-verify_jwt = false
+verify_jwt = true
 
 [functions.admin-update-user]
-verify_jwt = false
+verify_jwt = true
+
+[functions.admin-set-user-role]
+verify_jwt = true
 
 [functions.update-task]
 verify_jwt = false

@@ -31,9 +31,34 @@ export const SolutionsHardwareSummary = ({ solutionsProjectId }: SolutionsHardwa
   const uniqueLines = new Set(hardware.filter(h => h.line_name).map(h => h.line_name));
   const totalLines = uniqueLines.size;
 
-  // Group by hardware category (extract prefix before " - ")
+  // Extract category from hardware_type string
+  const extractCategory = (hardwareType: string): string => {
+    const parts = hardwareType.split(' - ');
+    
+    // Common hardware categories to look for
+    const categories = ['Camera', 'Light', 'PLC', 'HMI', 'Server', 'Gateway', 'Receiver', 'Tablet', 'IoT'];
+    
+    // Check each part for a known category
+    for (const part of parts) {
+      for (const category of categories) {
+        if (part.toLowerCase().includes(category.toLowerCase())) {
+          return category;
+        }
+      }
+    }
+    
+    // Special handling for SFP and other add-ons
+    if (hardwareType.toLowerCase().includes('sfp')) {
+      return 'SFP add on';
+    }
+    
+    // Fallback to first part
+    return parts[0] || 'Other';
+  };
+
+  // Group by hardware category
   const categoryCounts = hardware.reduce((acc, item) => {
-    const category = item.hardware_type.split(' - ')[0] || 'Other';
+    const category = extractCategory(item.hardware_type);
     const quantity = item.quantity || 1;
     acc[category] = (acc[category] || 0) + quantity;
     return acc;

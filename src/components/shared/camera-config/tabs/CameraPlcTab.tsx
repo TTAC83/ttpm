@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TabsContent } from "@/components/ui/tabs";
 import { RelayOutputList } from "../shared/RelayOutputList";
 import { CameraFormData, MasterData } from "../types";
+// IMPORTANT: PLCs come from hardware_master via hardwareCatalog service, not from plc_master table
 
 interface CameraPlcTabProps {
   formData: CameraFormData;

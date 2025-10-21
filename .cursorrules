@@ -1,0 +1,36 @@
+# ThingTrax Project Rules
+
+## Hardware Catalog System
+
+**CRITICAL:** All hardware data MUST come from the unified `hardware_master` table.
+
+### Forbidden Patterns
+
+The following patterns are FORBIDDEN and must be rejected in code review:
+
+```typescript
+// ❌ FORBIDDEN - Never query these deprecated tables:
+supabase.from('cameras_master')
+supabase.from('plc_master')
+supabase.from('lights')
+```
+
+### Required Patterns
+
+```typescript
+// ✅ REQUIRED - Use the hardware catalog service:
+import { hardwareCatalog } from "@/lib/hardwareCatalogService";
+
+const cameras = await hardwareCatalog.getCameras();
+const lights = await hardwareCatalog.getLights();
+const plcs = await hardwareCatalog.getPlcs();
+```
+
+### Code Review Checklist
+
+Before approving any PR:
+- [ ] No references to `cameras_master`, `plc_master`, or `lights` tables
+- [ ] Hardware queries use `hardwareCatalog` service or `hardware_master` directly
+- [ ] Admin pages only manage `hardware_master` table
+
+See `HARDWARE_CATALOG_USAGE.md` for complete documentation.

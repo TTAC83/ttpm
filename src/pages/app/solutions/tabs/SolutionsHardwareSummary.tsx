@@ -33,25 +33,27 @@ export const SolutionsHardwareSummary = ({ solutionsProjectId }: SolutionsHardwa
 
   // Extract category from hardware_type string
   const extractCategory = (hardwareType: string): string => {
-    // Common hardware categories to look for
-    const categories = ['Camera', 'Light', 'PLC', 'HMI', 'Server', 'Gateway', 'Receiver', 'Tablet', 'IoT'];
+    const type = hardwareType.toLowerCase();
     
-    // Special handling for specific keywords
-    if (hardwareType.toLowerCase().includes('sfp')) {
+    // Special handling for specific hardware types
+    if (type.includes('sfp')) {
       return 'SFP add on';
     }
     
-    if (hardwareType.toLowerCase().includes('portal')) {
-      return 'Server';
+    if (type.includes('load_balancer') || type.includes('load balancer')) {
+      return 'Load Balancer';
     }
     
-    if (hardwareType.toLowerCase().includes('vision')) {
-      return 'Server';
+    if (type.includes('storage')) {
+      return 'Storage';
     }
+    
+    // Common hardware categories to look for
+    const categories = ['Camera', 'Light', 'PLC', 'HMI', 'Server', 'Gateway', 'Receiver', 'Tablet', 'IoT'];
     
     // Check the full string for category matches
     for (const category of categories) {
-      if (hardwareType.toLowerCase().includes(category.toLowerCase())) {
+      if (type.includes(category.toLowerCase())) {
         return category;
       }
     }

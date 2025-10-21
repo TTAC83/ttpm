@@ -64,10 +64,6 @@ export const LineUseCasesTable: React.FC<LineUseCasesTableProps> = ({ lineId }) 
                     description
                   )
                 )
-              ),
-              positions!position_id (
-                id,
-                name
               )
             `)
             .eq('solutions_line_id', lineId)
@@ -91,10 +87,6 @@ export const LineUseCasesTable: React.FC<LineUseCasesTableProps> = ({ lineId }) 
                     description
                   )
                 )
-              ),
-              positions!position_id (
-                id,
-                name
               )
             `)
             .eq('line_id', lineId);
@@ -113,7 +105,7 @@ export const LineUseCasesTable: React.FC<LineUseCasesTableProps> = ({ lineId }) 
               useCasesData.push({
                 camera_name: camera.camera_type || 'Unknown Camera',
                 equipment_name: equipment.name,
-                position_name: equipment.positions?.name || 'Unknown Position',
+                position_name: 'Equipment Position', // Simplified since positions table not accessible
                 use_case_name: visionUseCase.name,
                 use_case_category: visionUseCase.category || 'Uncategorized',
                 use_case_description: visionUseCase.description,

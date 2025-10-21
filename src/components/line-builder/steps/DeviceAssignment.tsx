@@ -7,10 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, Camera, Cpu, Lightbulb, Monitor, Edit } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
+import { Plus, Trash2, Camera, Cpu, Edit, Lightbulb, Monitor } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { CameraConfigDialog } from "@/components/shared/CameraConfigDialog";
 
 interface Position {
   id: string;
@@ -123,11 +122,11 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
 }) => {
   const [selectedPosition, setSelectedPosition] = useState<string>("");
   const [selectedEquipment, setSelectedEquipment] = useState<string>("");
-  const [deviceDialogOpen, setDeviceDialogOpen] = useState(false);
-  const [editMode, setEditMode] = useState(false);
+  const [cameraDialogOpen, setCameraDialogOpen] = useState(false);
+  const [iotDialogOpen, setIotDialogOpen] = useState(false);
+  const [cameraEditMode, setCameraEditMode] = useState(false);
   const [editingCameraId, setEditingCameraId] = useState<string>("");
   const [editingIotId, setEditingIotId] = useState<string>("");
-  const [deviceType, setDeviceType] = useState<"camera" | "iot">("camera");
   const [lights, setLights] = useState<Light[]>([]);
   const [cameras, setCameras] = useState<CameraMaster[]>([]);
   const [plcs, setPlcs] = useState<PlcMaster[]>([]);
@@ -301,14 +300,14 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     fetchData();
   }, [solutionsProjectId]);
 
-  const addCamera = () => {
-    if (!selectedPosition || !selectedEquipment || !cameraForm.name || !cameraForm.camera_master_id) {
+  const addCamera = (formData: typeof cameraForm) => {
+    if (!selectedPosition || !selectedEquipment || !formData.name || !formData.camera_master_id) {
       return;
     }
 
-    const selectedCamera = cameras.find(c => c.id === cameraForm.camera_master_id);
+    const selectedCamera = cameras.find(c => c.id === formData.camera_master_id);
     
-    if (editMode && editingCameraId) {
+    if (cameraEditMode && editingCameraId) {
       // Update existing camera
       setPositions(
         positions.map((position) =>
@@ -323,25 +322,25 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                           cam.id === editingCameraId
                             ? {
                                 ...cam,
-                                name: cameraForm.name,
-                                camera_type: cameraForm.camera_master_id,
-                                light_required: cameraForm.light_required,
-                                light_id: cameraForm.light_id,
-                                light_notes: cameraForm.light_notes,
-                                plc_attached: cameraForm.plc_attached,
-                                plc_master_id: cameraForm.plc_master_id,
-                                relay_outputs: cameraForm.relay_outputs,
-                                hmi_required: cameraForm.hmi_required,
-                                hmi_master_id: cameraForm.hmi_master_id,
-                                hmi_notes: cameraForm.hmi_notes,
-                                horizontal_fov: cameraForm.horizontal_fov,
-                                working_distance: cameraForm.working_distance,
-                                smallest_text: cameraForm.smallest_text,
-                                use_case_ids: cameraForm.use_case_ids,
-                                use_case_description: cameraForm.use_case_description,
-                                attributes: cameraForm.attributes,
-                                product_flow: cameraForm.product_flow,
-                                camera_view_description: cameraForm.camera_view_description,
+                                name: formData.name,
+                                camera_type: formData.camera_master_id,
+                                light_required: formData.light_required,
+                                light_id: formData.light_id,
+                                light_notes: formData.light_notes,
+                                plc_attached: formData.plc_attached,
+                                plc_master_id: formData.plc_master_id,
+                                relay_outputs: formData.relay_outputs,
+                                hmi_required: formData.hmi_required,
+                                hmi_master_id: formData.hmi_master_id,
+                                hmi_notes: formData.hmi_notes,
+                                horizontal_fov: formData.horizontal_fov,
+                                working_distance: formData.working_distance,
+                                smallest_text: formData.smallest_text,
+                                use_case_ids: formData.use_case_ids,
+                                use_case_description: formData.use_case_description,
+                                attributes: formData.attributes,
+                                product_flow: formData.product_flow,
+                                camera_view_description: formData.camera_view_description,
                               }
                             : cam
                         )
@@ -395,13 +394,12 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     }
 
     resetCameraForm();
-    setDeviceDialogOpen(false);
   };
 
   const resetCameraForm = () => {
-    setCameraForm({ 
-      name: "", 
-      camera_master_id: "", 
+    setCameraForm({
+      name: "",
+      camera_master_id: "",
       light_required: false,
       light_id: "",
       light_notes: "",
@@ -420,7 +418,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       product_flow: "",
       camera_view_description: "",
     });
-    setEditMode(false);
+    setCameraEditMode(false);
     setEditingCameraId("");
   };
 
@@ -500,7 +498,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       return;
     }
 
-    if (editMode && editingIotId) {
+    if (editingIotId) {
       // Update existing IoT device
       setPositions(
         positions.map((position) =>
@@ -552,12 +550,11 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     }
 
     resetIotForm();
-    setDeviceDialogOpen(false);
+    setIotDialogOpen(false);
   };
 
   const resetIotForm = () => {
     setIotForm({ name: "", hardware_master_id: "", receiver_master_id: "", energy_monitoring: false, ct_master_id: "" });
-    setEditMode(false);
     setEditingIotId("");
   };
 
@@ -595,21 +592,19 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     );
   };
 
-  const openDeviceDialog = (positionId: string, equipmentId: string, type: "camera" | "iot") => {
+  const openAddCameraDialog = (positionId: string, equipmentId: string) => {
     setSelectedPosition(positionId);
     setSelectedEquipment(equipmentId);
-    setDeviceType(type);
-    setEditMode(false);
+    setCameraEditMode(false);
     setEditingCameraId("");
-    setEditingIotId("");
-    setDeviceDialogOpen(true);
+    resetCameraForm();
+    setCameraDialogOpen(true);
   };
 
   const openEditCameraDialog = (positionId: string, equipmentId: string, camera: any) => {
     setSelectedPosition(positionId);
     setSelectedEquipment(equipmentId);
-    setDeviceType("camera");
-    setEditMode(true);
+    setCameraEditMode(true);
     setEditingCameraId(camera.id);
     
     // Find camera master by selected hardware id stored in camera_type
@@ -620,7 +615,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       camera_master_id: cameraMaster?.id || "",
       light_required: camera.light_required || false,
       light_id: camera.light_id || "",
-      light_notes: "",
+      light_notes: camera.light_notes || "",
       plc_attached: camera.plc_attached || false,
       plc_master_id: camera.plc_master_id || "",
       relay_outputs: camera.relay_outputs || [],
@@ -636,14 +631,20 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       product_flow: camera.product_flow || "",
       camera_view_description: camera.camera_view_description || "",
     });
-    setDeviceDialogOpen(true);
+    setCameraDialogOpen(true);
+  };
+
+  const openAddIotDialog = (positionId: string, equipmentId: string) => {
+    setSelectedPosition(positionId);
+    setSelectedEquipment(equipmentId);
+    setEditingIotId("");
+    resetIotForm();
+    setIotDialogOpen(true);
   };
 
   const openEditIotDialog = (positionId: string, equipmentId: string, device: any) => {
     setSelectedPosition(positionId);
     setSelectedEquipment(equipmentId);
-    setDeviceType("iot");
-    setEditMode(true);
     setEditingIotId(device.id);
     
     setIotForm({
@@ -653,7 +654,11 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       energy_monitoring: false,
       ct_master_id: ""
     });
-    setDeviceDialogOpen(true);
+    setIotDialogOpen(true);
+  };
+
+  const handleCameraSave = (formData: typeof cameraForm) => {
+    addCamera(formData);
   };
 
   const allEquipment = positions.flatMap((position) =>
@@ -689,7 +694,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => openDeviceDialog(eq.positionId, eq.id, "camera")}
+                            onClick={() => openAddCameraDialog(eq.positionId, eq.id)}
                           >
                             <Camera className="mr-1 h-3 w-3" />
                             Add Camera
@@ -697,7 +702,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => openDeviceDialog(eq.positionId, eq.id, "iot")}
+                            onClick={() => openAddIotDialog(eq.positionId, eq.id)}
                           >
                             <Cpu className="mr-1 h-3 w-3" />
                             Add IoT Device
@@ -831,599 +836,121 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
         </CardContent>
       </Card>
 
-      {/* Device Dialog */}
-      <Dialog open={deviceDialogOpen} onOpenChange={setDeviceDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
+      {/* Camera Config Dialog */}
+      <CameraConfigDialog
+        open={cameraDialogOpen}
+        onOpenChange={setCameraDialogOpen}
+        mode={cameraEditMode ? "edit" : "add"}
+        cameraData={cameraForm}
+        masterData={{
+          cameras,
+          lights,
+          plcs,
+          hmis,
+          visionUseCases,
+        }}
+        onSave={handleCameraSave}
+      />
+
+      {/* IoT Device Dialog */}
+      <Dialog open={iotDialogOpen} onOpenChange={setIotDialogOpen}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>
-              {editMode ? "Edit" : "Add"} {deviceType === "camera" ? "Camera" : "IoT Device"}
+              {editingIotId ? "Edit" : "Add"} IoT Device
             </DialogTitle>
           </DialogHeader>
 
-          {deviceType === "camera" ? (
-            <Tabs defaultValue="basic" className="w-full flex-1 overflow-hidden flex flex-col">
-              <TabsList className="inline-flex w-full overflow-x-auto">
-                <TabsTrigger value="basic">Basic Info</TabsTrigger>
-                <TabsTrigger value="measurements">Measurements</TabsTrigger>
-                <TabsTrigger value="usecase">Use Case</TabsTrigger>
-                <TabsTrigger value="cameraview">Camera View</TabsTrigger>
-                <TabsTrigger value="lighting">
-                  <Lightbulb className="h-4 w-4 mr-1" />
-                  Lighting
-                </TabsTrigger>
-                <TabsTrigger value="plc">
-                  <Cpu className="h-4 w-4 mr-1" />
-                  PLC
-                </TabsTrigger>
-                <TabsTrigger value="hmi">
-                  <Monitor className="h-4 w-4 mr-1" />
-                  HMI
-                </TabsTrigger>
-              </TabsList>
+          <div className="space-y-4">
+            <div>
+            <Label htmlFor="device-name">Device Name</Label>
+            <Input
+              id="device-name"
+              value={iotForm.name}
+              onChange={(e) => setIotForm({ ...iotForm, name: e.target.value })}
+              placeholder="Enter device name"
+            />
+          </div>
 
-              <div className="flex-1 overflow-y-auto mt-4">
-                {/* Basic Info Tab */}
-                <TabsContent value="basic" className="space-y-4 mt-0">
-                  <div>
-                  <Label htmlFor="camera-name">Camera Name *</Label>
-                  <Input
-                    id="camera-name"
-                    value={cameraForm.name}
-                    onChange={(e) =>
-                      setCameraForm({ ...cameraForm, name: e.target.value })
-                    }
-                    placeholder="Enter camera name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="camera-model">Camera Model *</Label>
-                  <Select
-                    value={cameraForm.camera_master_id}
-                    onValueChange={(value) =>
-                      setCameraForm({ ...cameraForm, camera_master_id: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose camera model" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cameras.map((camera) => (
-                        <SelectItem key={camera.id} value={camera.id}>
-                          {camera.manufacturer} - {camera.model_number}
-                          {camera.camera_type && ` (${camera.camera_type})`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  </div>
-                </TabsContent>
+          <div>
+            <Label htmlFor="iot-device-model">IoT Device Model</Label>
+            <Select
+              value={iotForm.hardware_master_id}
+              onValueChange={(value) => setIotForm({ ...iotForm, hardware_master_id: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Choose IoT device from hardware master data" />
+              </SelectTrigger>
+              <SelectContent>
+                {iotDevices.map((device) => (
+                  <SelectItem key={device.id} value={device.id}>
+                    {device.sku_no} - {device.product_name}
+                    {device.hardware_type && ` (${device.hardware_type})`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-                {/* Lighting Tab */}
-                <TabsContent value="lighting" className="space-y-4 mt-0">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="light-required"
-                    checked={cameraForm.light_required}
-                    onCheckedChange={(checked) =>
-                      setCameraForm({ 
-                        ...cameraForm, 
-                        light_required: !!checked,
-                        light_id: checked ? cameraForm.light_id : ""
-                      })
-                    }
-                  />
-                  <Label htmlFor="light-required">Light Required</Label>
-                </div>
-                
-                {cameraForm.light_required && (
-                  <>
-                    <div>
-                      <Label htmlFor="light-select">Select Light Model</Label>
-                      <Select
-                        value={cameraForm.light_id}
-                        onValueChange={(value) =>
-                          setCameraForm({ ...cameraForm, light_id: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Choose light model" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {lights.map((light) => (
-                            <SelectItem key={light.id} value={light.id}>
-                              {light.manufacturer} - {light.model_number}
-                              {light.description && ` (${light.description})`}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+          <div>
+            <Label htmlFor="receiver-model">Receiver (Optional)</Label>
+            <Select
+              value={iotForm.receiver_master_id}
+              onValueChange={(value) => setIotForm({ ...iotForm, receiver_master_id: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Choose receiver model" />
+              </SelectTrigger>
+              <SelectContent>
+                {receivers.map((receiver) => (
+                  <SelectItem key={receiver.id} value={receiver.id}>
+                    {receiver.model_number}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-                    <div>
-                      <Label htmlFor="light-notes">Notes (Optional)</Label>
-                      <Textarea
-                        id="light-notes"
-                        value={cameraForm.light_notes}
-                        onChange={(e) =>
-                          setCameraForm({ ...cameraForm, light_notes: e.target.value })
-                        }
-                        placeholder="Enter any notes about the lighting configuration"
-                        rows={3}
-                      />
-                    </div>
-                  </>
-                )}
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="energy-monitoring"
+              checked={iotForm.energy_monitoring}
+              onCheckedChange={(checked) =>
+                setIotForm({
+                  ...iotForm,
+                  energy_monitoring: !!checked,
+                  ct_master_id: checked ? iotForm.ct_master_id : "",
+                })
+              }
+            />
+            <Label htmlFor="energy-monitoring">Energy Monitoring</Label>
+          </div>
 
-                {!cameraForm.light_required && (
-                  <p className="text-sm text-muted-foreground">
-                    Check "Light Required" to configure lighting for this camera.
-                  </p>
-                )}
-                </TabsContent>
-
-                {/* PLC Tab */}
-                <TabsContent value="plc" className="space-y-4 mt-0">
-                  <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="plc-attached"
-                    checked={cameraForm.plc_attached}
-                    onCheckedChange={(checked) =>
-                      setCameraForm({ 
-                        ...cameraForm, 
-                        plc_attached: !!checked,
-                        plc_master_id: checked ? cameraForm.plc_master_id : "",
-                        relay_outputs: checked ? cameraForm.relay_outputs : []
-                      })
-                    }
-                  />
-                  <Label htmlFor="plc-attached">PLC Attached</Label>
-                </div>
-                
-                {cameraForm.plc_attached ? (
-                  <>
-                    <div>
-                      <Label htmlFor="plc-select">Select PLC Model</Label>
-                      <Select
-                        value={cameraForm.plc_master_id}
-                        onValueChange={(value) =>
-                          setCameraForm({ ...cameraForm, plc_master_id: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Choose PLC model" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {plcs.map((plc) => (
-                            <SelectItem key={plc.id} value={plc.id}>
-                              {plc.manufacturer} - {plc.model_number}
-                              {plc.plc_type && ` (${plc.plc_type})`}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-3 pt-4 border-t">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-base">Relay Outputs</Label>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={addRelayOutput}
-                        >
-                          <Plus className="h-3 w-3 mr-1" />
-                          Add Output
-                        </Button>
-                      </div>
-
-                      {cameraForm.relay_outputs.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">No relay outputs added</p>
-                      ) : (
-                        <div className="space-y-3 max-h-[300px] overflow-y-auto">
-                          {cameraForm.relay_outputs.map((output) => (
-                            <Card key={output.id} className="p-3">
-                              <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                  <h4 className="font-medium text-sm">Output {output.output_number}</h4>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => deleteRelayOutput(output.id)}
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
-                                </div>
-
-                                <div>
-                                  <Label htmlFor={`output-type-${output.id}`}>Type *</Label>
-                                  <Select
-                                    value={output.type}
-                                    onValueChange={(value) =>
-                                      updateRelayOutput(output.id, 'type', value)
-                                    }
-                                  >
-                                    <SelectTrigger id={`output-type-${output.id}`}>
-                                      <SelectValue placeholder="Select output type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="Sounder/Beacon">Sounder/Beacon</SelectItem>
-                                      <SelectItem value="Belt Stop">Belt Stop</SelectItem>
-                                      <SelectItem value="Reject System">Reject System</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-
-                                <div>
-                                  <Label htmlFor={`output-name-${output.id}`}>Custom Name (Optional)</Label>
-                                  <Input
-                                    id={`output-name-${output.id}`}
-                                    value={output.custom_name}
-                                    onChange={(e) =>
-                                      updateRelayOutput(output.id, 'custom_name', e.target.value)
-                                    }
-                                    placeholder="Enter custom name"
-                                  />
-                                </div>
-
-                                <div>
-                                  <Label htmlFor={`output-notes-${output.id}`}>Notes (Optional)</Label>
-                                  <Textarea
-                                    id={`output-notes-${output.id}`}
-                                    value={output.notes}
-                                    onChange={(e) =>
-                                      updateRelayOutput(output.id, 'notes', e.target.value)
-                                    }
-                                    placeholder="Enter any notes"
-                                    rows={2}
-                                  />
-                                </div>
-                              </div>
-                            </Card>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Check "PLC Attached" to configure PLC and relay outputs for this camera.
-                  </p>
-                )}
-                </TabsContent>
-
-                {/* HMI Tab */}
-                <TabsContent value="hmi" className="space-y-4 mt-0">
-                  <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="hmi-required"
-                    checked={cameraForm.hmi_required}
-                    onCheckedChange={(checked) =>
-                      setCameraForm({ 
-                        ...cameraForm, 
-                        hmi_required: !!checked,
-                        hmi_master_id: checked ? cameraForm.hmi_master_id : ""
-                      })
-                    }
-                  />
-                  <Label htmlFor="hmi-required">HMI Required</Label>
-                </div>
-                
-                {cameraForm.hmi_required && (
-                  <>
-                    <div>
-                      <Label htmlFor="hmi-select">Select HMI Model</Label>
-                      <Select
-                        value={cameraForm.hmi_master_id}
-                        onValueChange={(value) =>
-                          setCameraForm({ ...cameraForm, hmi_master_id: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Choose HMI model" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {hmis.map((hmi) => (
-                            <SelectItem key={hmi.id} value={hmi.id}>
-                              {hmi.sku_no} - {hmi.product_name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="hmi-notes">Notes (Optional)</Label>
-                      <Textarea
-                        id="hmi-notes"
-                        value={cameraForm.hmi_notes}
-                        onChange={(e) =>
-                          setCameraForm({ ...cameraForm, hmi_notes: e.target.value })
-                        }
-                        placeholder="Enter any notes about the HMI configuration"
-                        rows={3}
-                      />
-                    </div>
-                  </>
-                )}
-
-                {!cameraForm.hmi_required && (
-                  <p className="text-sm text-muted-foreground">
-                    Check "HMI Required" to configure HMI for this camera.
-                  </p>
-                )}
-                </TabsContent>
-
-                {/* Measurements Tab */}
-                <TabsContent value="measurements" className="space-y-4 mt-0">
-                  <div>
-                  <Label htmlFor="horizontal-fov">Horizontal Field of View</Label>
-                  <Input
-                    id="horizontal-fov"
-                    value={cameraForm.horizontal_fov}
-                    onChange={(e) =>
-                      setCameraForm({ ...cameraForm, horizontal_fov: e.target.value })
-                    }
-                    placeholder="e.g., 45°"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="working-distance">Working Distance</Label>
-                  <Input
-                    id="working-distance"
-                    value={cameraForm.working_distance}
-                    onChange={(e) =>
-                      setCameraForm({ ...cameraForm, working_distance: e.target.value })
-                    }
-                    placeholder="e.g., 300mm"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="smallest-text">Smallest Text</Label>
-                  <Input
-                    id="smallest-text"
-                    value={cameraForm.smallest_text}
-                    onChange={(e) =>
-                      setCameraForm({ ...cameraForm, smallest_text: e.target.value })
-                    }
-                    placeholder="e.g., 3mm"
-                  />
-                </div>
-                </TabsContent>
-
-                {/* Use Case Tab */}
-                <TabsContent value="usecase" className="space-y-4 mt-0">
-                  <div>
-                  <Label>Vision Use Cases</Label>
-                  <div className="grid grid-cols-1 gap-3 mt-2 max-h-96 overflow-y-auto border rounded-md p-3">
-                    {Object.entries(
-                      visionUseCases.reduce((acc, useCase) => {
-                        const category = useCase.category || 'Uncategorized';
-                        if (!acc[category]) acc[category] = [];
-                        acc[category].push(useCase);
-                        return acc;
-                      }, {} as Record<string, typeof visionUseCases>)
-                    ).map(([category, cases]) => (
-                      <div key={category} className="space-y-2">
-                        <h4 className="text-sm font-semibold text-foreground border-b pb-1">
-                          {category}
-                        </h4>
-                        <div className="space-y-2 pl-2">
-                          {cases.map((useCase) => (
-                            <div key={useCase.id} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`usecase-${useCase.id}`}
-                                checked={cameraForm.use_case_ids.includes(useCase.id)}
-                                onCheckedChange={() => toggleUseCase(useCase.id)}
-                              />
-                              <Label 
-                                htmlFor={`usecase-${useCase.id}`}
-                                className="text-sm font-normal cursor-pointer"
-                              >
-                                {useCase.name}
-                                {useCase.description && (
-                                  <span className="text-xs text-muted-foreground block">
-                                    {useCase.description}
-                                  </span>
-                                )}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="usecase-description">Description</Label>
-                  <Textarea
-                    id="usecase-description"
-                    value={cameraForm.use_case_description}
-                    onChange={(e) =>
-                      setCameraForm({ ...cameraForm, use_case_description: e.target.value })
-                    }
-                    placeholder="Enter additional details about the use case"
-                    rows={4}
-                  />
-                </div>
-                <div>
-                  <Label>Attributes</Label>
-                  <div className="space-y-2 mt-2">
-                    {cameraForm.attributes.map((attr) => (
-                      <div key={attr.id} className="border rounded-md p-3 space-y-2">
-                        <div className="flex justify-between items-center">
-                          <Label className="text-sm font-medium">Attribute</Label>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteAttribute(attr.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        <Input
-                          value={attr.title}
-                          onChange={(e) => updateAttribute(attr.id, "title", e.target.value)}
-                          placeholder="Attribute title"
-                        />
-                        <Textarea
-                          value={attr.description}
-                          onChange={(e) => updateAttribute(attr.id, "description", e.target.value)}
-                          placeholder="Attribute description"
-                          rows={2}
-                        />
-                      </div>
-                    ))}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={addAttribute}
-                      className="w-full"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Attribute
-                    </Button>
-                  </div>
-                </div>
-                </TabsContent>
-
-                {/* Camera View Tab */}
-                <TabsContent value="cameraview" className="space-y-4 mt-0">
-                  <div>
-                  <Label htmlFor="product-flow">Product Flow</Label>
-                  <Input
-                    id="product-flow"
-                    value={cameraForm.product_flow}
-                    onChange={(e) =>
-                      setCameraForm({ ...cameraForm, product_flow: e.target.value })
-                    }
-                    placeholder="e.g., Single file, Flow Wrap, Multi product"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="camera-view-description">Description</Label>
-                  <Textarea
-                    id="camera-view-description"
-                    value={cameraForm.camera_view_description}
-                    onChange={(e) =>
-                      setCameraForm({ ...cameraForm, camera_view_description: e.target.value })
-                    }
-                    placeholder="Enter details about the camera view"
-                    rows={4}
-                  />
-                </div>
-                </TabsContent>
-              </div>
-
-              <div className="pt-4 border-t flex-shrink-0">
-                <Button onClick={addCamera} className="w-full">
-                  {editMode ? "Update Camera" : "Add Camera"}
-                </Button>
-              </div>
-            </Tabs>
-          ) : (
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="device-name">Device Name</Label>
-                <Input
-                  id="device-name"
-                  value={iotForm.name}
-                  onChange={(e) =>
-                    setIotForm({ ...iotForm, name: e.target.value })
-                  }
-                  placeholder="Enter device name"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="iot-device-model">IoT Device Model</Label>
-                <Select
-                  value={iotForm.hardware_master_id}
-                  onValueChange={(value) =>
-                    setIotForm({ ...iotForm, hardware_master_id: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose IoT device from hardware master data" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {iotDevices.map((device) => (
-                      <SelectItem key={device.id} value={device.id}>
-                        {device.sku_no} - {device.product_name}
-                        {device.hardware_type && ` (${device.hardware_type})`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="receiver-model">Receiver (Optional)</Label>
-                <Select
-                  value={iotForm.receiver_master_id}
-                  onValueChange={(value) =>
-                    setIotForm({ ...iotForm, receiver_master_id: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose receiver model" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {receivers.map((receiver) => (
-                      <SelectItem key={receiver.id} value={receiver.id}>
-                        {receiver.model_number}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="energy-monitoring"
-                  checked={iotForm.energy_monitoring}
-                  onCheckedChange={(checked) =>
-                    setIotForm({ 
-                      ...iotForm, 
-                      energy_monitoring: !!checked,
-                      ct_master_id: checked ? iotForm.ct_master_id : ""
-                    })
-                  }
-                />
-                <Label htmlFor="energy-monitoring">Energy Monitoring</Label>
-              </div>
-
-              {iotForm.energy_monitoring && (
-                <div>
-                  <Label htmlFor="ct-model">Select CT</Label>
-                  <Select
-                    value={iotForm.ct_master_id}
-                    onValueChange={(value) =>
-                      setIotForm({ ...iotForm, ct_master_id: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose CT model" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cts.map((ct) => (
-                        <SelectItem key={ct.id} value={ct.id}>
-                          {ct.sku_no} - {ct.product_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              <Button onClick={addIotDevice} className="w-full">
-                {editMode ? "Update IoT Device" : "Add IoT Device"}
-              </Button>
+          {iotForm.energy_monitoring && (
+            <div>
+              <Label htmlFor="ct-model">Select CT</Label>
+              <Select
+                value={iotForm.ct_master_id}
+                onValueChange={(value) => setIotForm({ ...iotForm, ct_master_id: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose CT model" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cts.map((ct) => (
+                    <SelectItem key={ct.id} value={ct.id}>
+                      {ct.sku_no} - {ct.product_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
+
+          <Button onClick={addIotDevice} className="w-full">
+            {editingIotId ? "Update IoT Device" : "Add IoT Device"}
+          </Button>
+        </div>
         </DialogContent>
       </Dialog>
     </div>

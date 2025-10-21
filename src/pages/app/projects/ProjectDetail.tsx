@@ -382,7 +382,7 @@ export const ProjectDetail = () => {
             <TabsTrigger value="contract">Contract Info</TabsTrigger>
             <TabsTrigger value="team">Team</TabsTrigger>
             <TabsTrigger value="account">Account Info</TabsTrigger>
-            <TabsTrigger value="hardware">Hardware</TabsTrigger>
+            <TabsTrigger value="hardware">Factory Hardware</TabsTrigger>
             <TabsTrigger value="factory">Factory</TabsTrigger>
             <TabsTrigger value="lines">Lines</TabsTrigger>
             <TabsTrigger value="tasks">Tasks</TabsTrigger>

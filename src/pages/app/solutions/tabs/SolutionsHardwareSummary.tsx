@@ -37,7 +37,7 @@ export const SolutionsHardwareSummary = ({ solutionsProjectId }: SolutionsHardwa
           </span>
         </CardTitle>
         <CardDescription>
-          All hardware attributed to this solutions project from Hardware and Lines tabs
+          All hardware attributed to this solutions project from Factory Hardware and Lines tabs
         </CardDescription>
       </CardHeader>
 

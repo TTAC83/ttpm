@@ -349,16 +349,93 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
     if (!editingCamera) return;
 
     try {
-      await supabase
+      // Convert empty strings to null for UUID fields
+      const cleanFormData = {
+        ...formData,
+        light_id: formData.light_id || null,
+        plc_master_id: formData.plc_master_id || null,
+        hmi_master_id: formData.hmi_master_id || null,
+      };
+
+      // Update main camera record
+      const { error: cameraError } = await supabase
         .from('cameras')
         .update({
-          camera_type: formData.camera_master_id,
-          light_required: formData.light_required,
-          light_id: formData.light_id,
-          plc_master_id: formData.plc_master_id,
-          hmi_master_id: formData.hmi_master_id,
+          camera_type: cleanFormData.camera_master_id,
+          light_required: cleanFormData.light_required,
+          light_id: cleanFormData.light_id,
+          plc_attached: cleanFormData.plc_attached,
+          plc_master_id: cleanFormData.plc_master_id,
+          hmi_required: cleanFormData.hmi_required,
+          hmi_master_id: cleanFormData.hmi_master_id,
         })
         .eq('id', editingCamera.id);
+
+      if (cameraError) throw cameraError;
+
+      // Update or insert camera measurements
+      const { error: measurementsError } = await supabase
+        .from('camera_measurements')
+        .upsert({
+          camera_id: editingCamera.id,
+          horizontal_fov: parseFloat(cleanFormData.horizontal_fov) || null,
+          working_distance: parseFloat(cleanFormData.working_distance) || null,
+          smallest_text: cleanFormData.smallest_text || null,
+        }, { onConflict: 'camera_id' });
+
+      if (measurementsError) throw measurementsError;
+
+      // Update camera view
+      const { error: viewError } = await supabase
+        .from('camera_views')
+        .upsert({
+          camera_id: editingCamera.id,
+          product_flow: cleanFormData.product_flow || null,
+          description: cleanFormData.camera_view_description || null,
+        }, { onConflict: 'camera_id' });
+
+      if (viewError) throw viewError;
+
+      // Delete existing use cases and insert new ones
+      await supabase
+        .from('camera_use_cases')
+        .delete()
+        .eq('camera_id', editingCamera.id);
+
+      if (cleanFormData.use_case_ids && cleanFormData.use_case_ids.length > 0) {
+        const useCases = cleanFormData.use_case_ids.map((useCaseId: string) => ({
+          camera_id: editingCamera.id,
+          vision_use_case_id: useCaseId,
+          description: cleanFormData.use_case_description || null,
+        }));
+
+        const { error: useCasesError } = await supabase
+          .from('camera_use_cases')
+          .insert(useCases);
+
+        if (useCasesError) throw useCasesError;
+      }
+
+      // Delete existing attributes and insert new ones
+      await supabase
+        .from('camera_attributes')
+        .delete()
+        .eq('camera_id', editingCamera.id);
+
+      if (cleanFormData.attributes && cleanFormData.attributes.length > 0) {
+        const attributes = cleanFormData.attributes.map((attr: any, index: number) => ({
+          camera_id: editingCamera.id,
+          title: attr.title,
+          description: attr.description,
+          order_index: index,
+        }));
+
+        const { error: attributesError } = await supabase
+          .from('camera_attributes')
+          .insert(attributes);
+
+        if (attributesError) throw attributesError;
+      }
 
       toast({
         title: "Success",
@@ -369,6 +446,7 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
       setEditingCamera(null);
       fetchLineData();
     } catch (error) {
+      console.error('Error updating camera:', error);
       toast({
         title: "Error",
         description: "Failed to update camera",

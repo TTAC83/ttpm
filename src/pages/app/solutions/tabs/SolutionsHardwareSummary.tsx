@@ -27,6 +27,18 @@ export const SolutionsHardwareSummary = ({ solutionsProjectId }: SolutionsHardwa
     return sum + (itemPrice * quantity);
   }, 0);
 
+  // Calculate stats
+  const uniqueLines = new Set(hardware.filter(h => h.line_name).map(h => h.line_name));
+  const totalLines = uniqueLines.size;
+
+  // Group by hardware category (extract prefix before " - ")
+  const categoryCounts = hardware.reduce((acc, item) => {
+    const category = item.hardware_type.split(' - ')[0] || 'Other';
+    const quantity = item.quantity || 1;
+    acc[category] = (acc[category] || 0) + quantity;
+    return acc;
+  }, {} as Record<string, number>);
+
   return (
     <Card>
       <CardHeader>
@@ -42,11 +54,27 @@ export const SolutionsHardwareSummary = ({ solutionsProjectId }: SolutionsHardwa
       </CardHeader>
 
       <CardContent>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+          <div className="p-4 rounded-lg border bg-card">
+            <div className="text-sm text-muted-foreground">Total Lines</div>
+            <div className="text-2xl font-bold">{totalLines}</div>
+          </div>
+          {Object.entries(categoryCounts)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([category, count]) => (
+              <div key={category} className="p-4 rounded-lg border bg-card">
+                <div className="text-sm text-muted-foreground">{category}</div>
+                <div className="text-2xl font-bold">{count}</div>
+              </div>
+            ))}
+        </div>
         {hardware.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             No hardware configured yet
           </div>
         ) : (
+          <>
           <div className="overflow-auto">
             <Table>
               <TableHeader>
@@ -121,6 +149,7 @@ export const SolutionsHardwareSummary = ({ solutionsProjectId }: SolutionsHardwa
               </TableBody>
             </Table>
           </div>
+          </>
         )}
       </CardContent>
     </Card>

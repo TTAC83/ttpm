@@ -22,11 +22,20 @@ interface LinkManagerProps {
 }
 
 const isValidUrl = (url: string): boolean => {
+  if (!url.trim()) return false;
+  
   try {
+    // Try with the URL as-is first
     new URL(url);
     return true;
   } catch {
-    return false;
+    // If it fails, try adding https:// prefix
+    try {
+      new URL(`https://${url}`);
+      return true;
+    } catch {
+      return false;
+    }
   }
 };
 
@@ -93,6 +102,17 @@ export const LinkManager = ({
   const saveLink = (id: string) => {
     const link = links.find(l => l.id === id);
     if (link && link.name.trim() && link.url.trim() && isValidUrl(link.url)) {
+      // Normalize URL to ensure it has a protocol
+      let normalizedUrl = link.url.trim();
+      if (!normalizedUrl.match(/^https?:\/\//i)) {
+        normalizedUrl = `https://${normalizedUrl}`;
+      }
+      
+      // Update the link with normalized URL
+      const updatedLinks = links.map(l => 
+        l.id === id ? { ...l, url: normalizedUrl } : l
+      );
+      onChange(updatedLinks);
       setEditingId(null);
     }
   };

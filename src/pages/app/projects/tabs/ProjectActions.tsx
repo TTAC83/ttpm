@@ -221,11 +221,19 @@ const ProjectActions = ({ projectId, projectType = 'implementation' }: ProjectAc
 
   const handleCreateAction = async (actionData: any) => {
     try {
+      const bodyData = {
+        ...actionData,
+        ...(actionData.project_task_id 
+          ? {} 
+          : (projectType === 'solutions' 
+            ? { solutions_project_id: projectId }
+            : { project_id: projectId }
+          )
+        )
+      };
+      
       const { data, error } = await supabase.functions.invoke('create-action', {
-        body: {
-          ...actionData,
-          project_id: actionData.project_task_id ? undefined : projectId
-        },
+        body: bodyData,
       });
 
       if (error) throw error;

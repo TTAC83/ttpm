@@ -16,7 +16,8 @@ interface CreateActionRequest {
   notes?: string;
   status?: string;
   isUpdate?: boolean;
-  project_id?: string; // For actions without specific tasks
+  project_id?: string; // For implementation project actions
+  solutions_project_id?: string; // For solutions project actions
   is_critical?: boolean; // Add critical flag
 }
 
@@ -106,26 +107,30 @@ serve(async (req) => {
 
       taskData = { project_id: actionData.project_id || actionData.project_tasks?.project_id };
     } else {
-      // For new actions, we need either project_task_id or project_id
+      // For new actions, we need either project_task_id or project_id/solutions_project_id
       if (body.project_task_id) {
         // If task is specified, get project from task
         console.log('Checking project access for task:', body.project_task_id);
         const result = await supabaseServiceClient
           .from('project_tasks')
-          .select('project_id')
+          .select('project_id, solutions_project_id')
           .eq('id', body.project_task_id)
           .single();
         
         taskData = result.data;
         taskError = result.error;
       } else if (body.project_id) {
-        // If no task but project_id is provided directly
+        // If no task but project_id is provided directly (implementation project)
         console.log('Using direct project_id:', body.project_id);
         taskData = { project_id: body.project_id };
+      } else if (body.solutions_project_id) {
+        // If no task but solutions_project_id is provided directly (solutions project)
+        console.log('Using direct solutions_project_id:', body.solutions_project_id);
+        taskData = { solutions_project_id: body.solutions_project_id };
       } else {
-        console.error('Missing both project_task_id and project_id for new action');
+        console.error('Missing project_task_id, project_id, and solutions_project_id for new action');
         return new Response(
-          JSON.stringify({ error: 'Either task ID or project ID is required for new actions' }),
+          JSON.stringify({ error: 'Either task ID, project ID, or solutions project ID is required for new actions' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -139,7 +144,10 @@ serve(async (req) => {
       );
     }
 
-    console.log('Task found, checking project membership for project:', taskData.project_id);
+    console.log('Task found, checking project membership');
+    
+    const projectId = taskData.project_id;
+    const solutionsProjectId = taskData.solutions_project_id;
 
     // Check if user is internal or project member
     const { data: userProfile } = await supabaseServiceClient
@@ -152,21 +160,24 @@ serve(async (req) => {
     console.log('User is internal:', isInternal);
 
     if (!isInternal) {
-      // Check if user is a project member
-      const { data: membershipData } = await supabaseServiceClient
-        .from('project_members')
-        .select('user_id')
-        .eq('project_id', taskData.project_id)
-        .eq('user_id', user.id)
-        .single();
+      // Check if user is a project member (for implementation projects)
+      if (projectId) {
+        const { data: membershipData } = await supabaseServiceClient
+          .from('project_members')
+          .select('user_id')
+          .eq('project_id', projectId)
+          .eq('user_id', user.id)
+          .single();
 
-      if (!membershipData) {
-        console.error('User lacks permission to create actions for this project');
-        return new Response(
-          JSON.stringify({ error: 'Permission denied' }),
-          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        if (!membershipData) {
+          console.error('User lacks permission to create actions for this project');
+          return new Response(
+            JSON.stringify({ error: 'Permission denied' }),
+            { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
       }
+      // Note: Solutions projects don't have project_members table, so internal check is sufficient
     }
 
     if (body.isUpdate && body.id) {
@@ -219,19 +230,29 @@ serve(async (req) => {
     } else {
       // Create new action
       console.log('Creating action...');
+      const insertData: any = {
+        project_task_id: body.project_task_id || null,
+        title: body.title,
+        details: body.details || null,
+        assignee: body.assignee || null,
+        planned_date: body.planned_date || null,
+        notes: body.notes || null,
+        status: 'Open',
+        is_critical: (typeof body.is_critical === 'boolean') ? body.is_critical : false
+      };
+
+      // Set either project_id or solutions_project_id
+      if (body.project_id) {
+        insertData.project_id = body.project_id;
+        insertData.project_type = 'implementation';
+      } else if (body.solutions_project_id) {
+        insertData.solutions_project_id = body.solutions_project_id;
+        insertData.project_type = 'solutions';
+      }
+
       const { data: action, error: createError } = await supabaseServiceClient
         .from('actions')
-        .insert({
-          project_task_id: body.project_task_id || null,
-          project_id: body.project_id || null,
-          title: body.title,
-          details: body.details || null,
-          assignee: body.assignee || null,
-          planned_date: body.planned_date || null,
-          notes: body.notes || null,
-          status: 'Open',
-          is_critical: (typeof body.is_critical === 'boolean') ? body.is_critical : false
-        })
+        .insert(insertData)
         .select()
         .single();
 

@@ -596,15 +596,37 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
             <CardDescription>Quick access to important resources</CardDescription>
           </CardHeader>
           <CardContent>
-            {canEdit && (
-              <LinkManager
-                links={usefulLinks}
-                onChange={setUsefulLinks}
-              />
-            )}
-            {!canEdit && usefulLinks.length === 0 && (
-              <p className="text-sm text-muted-foreground">No links available</p>
-            )}
+            <LinkManager
+              links={usefulLinks}
+              onChange={async (newLinks) => {
+                setUsefulLinks(newLinks);
+                // Save immediately when links change
+                try {
+                  const tableName = type === 'project' ? 'projects' : type === 'solutions' ? 'solutions_projects' : 'bau_customers';
+                  const { error } = await supabase
+                    .from(tableName)
+                    .update({ useful_links: newLinks as any })
+                    .eq('id', data.id);
+
+                  if (error) throw error;
+
+                  toast({
+                    title: "Links Updated",
+                    description: "Useful links have been saved successfully",
+                  });
+                  onUpdate();
+                } catch (error: any) {
+                  toast({
+                    title: "Error",
+                    description: error.message || "Failed to update links",
+                    variant: "destructive",
+                  });
+                }
+              }}
+              maxLinks={10}
+              isEditing={canEdit}
+              title=""
+            />
           </CardContent>
         </Card>
       )}

@@ -16,7 +16,8 @@ import {
   AlertTriangle,
   BarChart3,
   User,
-  PieChart
+  PieChart,
+  Camera
 } from "lucide-react";
 
 export type Role = "internal_admin" | "internal_user" | "external_admin" | "external_user";
@@ -174,7 +175,21 @@ export const NAV: NavItem[] = [
     ]
   },
 
-  // 6) Expenses
+  // 6) Vision Models
+  {
+    label: "Vision Models",
+    iconName: "Camera",
+    roles: ["internal_admin", "internal_user"],
+    children: [
+      {
+        label: "Schedule Required",
+        to: "/app/vision-models/schedule-required",
+        matchPaths: ["/app/vision-models/schedule-required"],
+      }
+    ]
+  },
+
+  // 7) Expenses
   {
     label: "Expenses",
     iconName: "Receipt",
@@ -183,7 +198,7 @@ export const NAV: NavItem[] = [
     matchPaths: ["/app/expenses"]
   },
 
-  // 7) Master Data (consolidate prior Master Data + Hardware MasterData children)
+  // 8) Master Data
   {
     label: "Master Data",
     iconName: "Database",
@@ -209,7 +224,7 @@ export const NAV: NavItem[] = [
     ]
   },
 
-  // 8) User Management
+  // 9) User Management
   {
     label: "User Management",
     iconName: "UserCog",
@@ -218,7 +233,7 @@ export const NAV: NavItem[] = [
     matchPaths: ["/app/admin/users"]
   },
 
-  // 9) Feature Requests
+  // 10) Feature Requests
   {
     label: "Feature Requests",
     iconName: "Lightbulb",
@@ -257,7 +272,8 @@ export const ICON_MAP = {
   AlertTriangle,
   BarChart3,
   User,
-  PieChart
+  PieChart,
+  Camera
 } as const;
 
 export function visibleItemsForRole(role: Role | null | undefined): NavItem[] {

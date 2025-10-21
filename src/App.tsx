@@ -49,6 +49,7 @@ import ExecutiveSummary from "./pages/app/implementation/ExecutiveSummary";
 import BoardSummary from "./pages/app/implementation/BoardSummary";
 import { InternalRoute } from "@/components/auth/InternalRoute";
 import ExpansionReport from "./pages/app/global-dashboards/ExpansionReport";
+import ScheduleRequired from "./pages/app/vision-models/ScheduleRequired";
 
 const queryClient = new QueryClient();
 
@@ -141,6 +142,9 @@ const App = () => (
               <Route path="tasks" element={<GlobalTasks />} />
               <Route path="calendar" element={<GlobalCalendar />} />
               <Route path="models" element={<GlobalModels />} />
+              <Route path="vision-models/schedule-required" element={<InternalRoute>
+                <ScheduleRequired />
+              </InternalRoute>} />
               <Route path="expenses" element={<Expenses />} />
               <Route path="bau" element={<BAU />} />
               <Route path="bau/board-summary" element={<BAUBoardSummary />} />

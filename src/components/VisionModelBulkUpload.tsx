@@ -225,9 +225,10 @@ export function VisionModelBulkUpload({
 
       // Upload to database
       const uploadResult = await visionModelsService.bulkUpsertVisionModels(
-        models,
         projectId,
-        projectType
+        projectType,
+        models,
+        warnings
       );
 
       setProgress(100);

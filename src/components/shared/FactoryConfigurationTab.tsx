@@ -97,10 +97,27 @@ export const FactoryConfigurationTab = ({ projectId, type, projectDomain = '', o
   const validateUrl = (url: string): boolean => {
     if (!url) return true;
     try {
+      // Try with the URL as-is first
       new URL(url);
       return true;
     } catch {
-      return false;
+      // If it fails, try adding https:// prefix
+      try {
+        new URL(`https://${url}`);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+  };
+
+  const normalizeUrl = (url: string): string => {
+    if (!url) return url;
+    try {
+      new URL(url);
+      return url; // Already has protocol
+    } catch {
+      return `https://${url}`; // Add https:// prefix
     }
   };
 
@@ -158,13 +175,13 @@ export const FactoryConfigurationTab = ({ projectId, type, projectDomain = '', o
       const { error } = await supabase
         .from(tableName)
         .update({
-          website_url: formData.website_url || null,
+          website_url: formData.website_url ? normalizeUrl(formData.website_url) : null,
           job_scheduling: formData.job_scheduling,
           job_scheduling_notes: formData.job_scheduling_notes || null,
           s3_bucket_required: formData.s3_bucket_required,
           teams_integration: formData.teams_integration,
           teams_id: formData.teams_integration ? formData.teams_id : null,
-          teams_webhook_url: formData.teams_integration ? formData.teams_webhook_url : null,
+          teams_webhook_url: formData.teams_integration ? normalizeUrl(formData.teams_webhook_url) : null,
           tablet_use_cases: formData.tablet_use_cases,
           modules_and_features: selectedModules.join(','),
         })

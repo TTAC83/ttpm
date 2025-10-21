@@ -43,40 +43,62 @@ export const LineUseCasesTable: React.FC<LineUseCasesTableProps> = ({ lineId }) 
       const isSolutionsLine = !!lineCheck;
 
       // Fetch all cameras with their use cases for this line
-      const query = supabase
-        .from('equipment')
-        .select(`
-          id,
-          name,
-          position_id,
-          cameras (
-            id,
-            camera_type,
-            camera_use_cases (
+      const { data: equipmentData, error } = isSolutionsLine
+        ? await supabase
+            .from('equipment')
+            .select(`
               id,
-              description,
-              vision_use_case_id,
-              vision_use_cases_master (
+              name,
+              position_id,
+              cameras!inner (
                 id,
-                name,
-                category,
-                description
+                camera_type,
+                camera_use_cases (
+                  id,
+                  description,
+                  vision_use_case_id,
+                  vision_use_cases_master (
+                    id,
+                    name,
+                    category,
+                    description
+                  )
+                )
+              ),
+              positions (
+                id,
+                name
               )
-            )
-          ),
-          positions (
-            id,
-            name
-          )
-        `);
+            `)
+            .eq('solutions_line_id', lineId)
+        : await supabase
+            .from('equipment')
+            .select(`
+              id,
+              name,
+              position_id,
+              cameras!inner (
+                id,
+                camera_type,
+                camera_use_cases (
+                  id,
+                  description,
+                  vision_use_case_id,
+                  vision_use_cases_master (
+                    id,
+                    name,
+                    category,
+                    description
+                  )
+                )
+              ),
+              positions (
+                id,
+                name
+              )
+            `)
+            .eq('line_id', lineId);
 
-      if (isSolutionsLine) {
-        query.eq('solutions_line_id', lineId);
-      } else {
-        query.eq('line_id', lineId);
-      }
-
-      const { data: equipmentData, error } = await query;
 
       if (error) throw error;
 

@@ -67,6 +67,7 @@ export const TeamTab = ({ data, onUpdate, type }: TeamTabProps) => {
     setLoading(true);
     try {
       const tableName = type === 'project' ? 'projects' : type === 'solutions' ? 'solutions_projects' : 'bau_customers';
+      const scValue = formData.solution_consultant === 'unassigned' ? null : formData.solution_consultant;
       const updateData: any = {
         customer_project_lead: formData.customer_project_lead === 'unassigned' ? null : formData.customer_project_lead,
         implementation_lead: formData.implementation_lead === 'unassigned' ? null : formData.implementation_lead,
@@ -75,9 +76,14 @@ export const TeamTab = ({ data, onUpdate, type }: TeamTabProps) => {
         project_coordinator: formData.project_coordinator === 'unassigned' ? null : formData.project_coordinator,
         sales_lead: formData.sales_lead === 'unassigned' ? null : formData.sales_lead,
         salesperson: formData.salesperson === 'unassigned' ? null : formData.salesperson,
-        solution_consultant: formData.solution_consultant === 'unassigned' ? null : formData.solution_consultant,
+        solutions_consultant: scValue,
         account_manager: formData.account_manager === 'unassigned' ? null : formData.account_manager,
       };
+
+      // Keep legacy column in sync for projects if present
+      if (type === 'project') {
+        updateData.solution_consultant = scValue;
+      }
 
       // For solutions projects, map customer_project_lead to customer_lead
       if (type === 'solutions') {

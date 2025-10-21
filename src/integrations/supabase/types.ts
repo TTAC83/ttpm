@@ -3901,7 +3901,7 @@ export type Database = {
           product_run_start: string | null
           product_sku: string
           product_title: string
-          project_id: string
+          project_id: string | null
           project_type: Database["public"]["Enums"]["project_type"] | null
           solutions_project_id: string | null
           start_date: string | null
@@ -3920,7 +3920,7 @@ export type Database = {
           product_run_start?: string | null
           product_sku: string
           product_title: string
-          project_id: string
+          project_id?: string | null
           project_type?: Database["public"]["Enums"]["project_type"] | null
           solutions_project_id?: string | null
           start_date?: string | null
@@ -3939,7 +3939,7 @@ export type Database = {
           product_run_start?: string | null
           product_sku?: string
           product_title?: string
-          project_id?: string
+          project_id?: string | null
           project_type?: Database["public"]["Enums"]["project_type"] | null
           solutions_project_id?: string | null
           start_date?: string | null

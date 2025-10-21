@@ -1179,7 +1179,7 @@ export type Database = {
             foreignKeyName: "cameras_light_id_fkey"
             columns: ["light_id"]
             isOneToOne: false
-            referencedRelation: "lights"
+            referencedRelation: "hardware_master"
             referencedColumns: ["id"]
           },
           {

@@ -93,7 +93,7 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
               allHardware.push({
                 id: `camera-${cam.id}`,
                 hardware_type: `Camera - ${master?.product_name || cam.camera_type || 'Unknown'}`,
-                category: 'Camera',
+                category: master?.type || 'Camera',
                 source: 'line',
                 line_name: line.line_name,
                 equipment_name: cam.equipment?.name,

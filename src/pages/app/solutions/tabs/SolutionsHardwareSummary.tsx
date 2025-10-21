@@ -94,7 +94,7 @@ export const SolutionsHardwareSummary = ({ solutionsProjectId }: SolutionsHardwa
               <TableBody>
                 {hardware.map((item) => (
                   <TableRow key={item.id}>
-                    <TableCell className="font-medium">{item.hardware_type}</TableCell>
+                    <TableCell className="font-medium">{item.category || 'Other'}</TableCell>
                     <TableCell>
                       <Badge variant={item.source === 'line' ? 'default' : 'secondary'}>
                         {item.source === 'line' ? 'Line' : 'Direct'}

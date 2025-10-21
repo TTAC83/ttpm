@@ -50,6 +50,9 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
           .select(`
             id,
             camera_type,
+            light_id,
+            plc_master_id,
+            hmi_master_id,
             equipment!inner(
               id,
               name,
@@ -65,11 +68,27 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
             .select('*')
             .eq('hardware_type', 'Camera');
 
+          // Collect all light, PLC, and HMI IDs
+          const lightIds = [...new Set(cameraData.filter(c => c.light_id).map(c => c.light_id))];
+          const plcIds = [...new Set(cameraData.filter(c => c.plc_master_id).map(c => c.plc_master_id))];
+          const hmiIds = [...new Set(cameraData.filter(c => c.hmi_master_id).map(c => c.hmi_master_id))];
+
+          // Fetch all accessory master data
+          let accessoryMasterData: any[] = [];
+          if ([...lightIds, ...plcIds, ...hmiIds].length > 0) {
+            const { data } = await supabase
+              .from('hardware_master')
+              .select('*')
+              .in('id', [...lightIds, ...plcIds, ...hmiIds]);
+            accessoryMasterData = data || [];
+          }
+
           cameraData.forEach((cam: any) => {
             const line = lines?.find(l => l.id === cam.equipment?.solutions_line_id);
             const master = hardwareMaster?.find(m => m.id === cam.camera_type);
             
             if (line) {
+              // Add camera
               allHardware.push({
                 id: `camera-${cam.id}`,
                 hardware_type: `Camera - ${master?.product_name || cam.camera_type || 'Unknown'}`,
@@ -82,6 +101,81 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
                 description: master?.description,
                 price: master?.price_gbp,
               });
+
+              // Add light if attached
+              if (cam.light_id) {
+                const lightMaster = accessoryMasterData.find(m => m.id === cam.light_id);
+                if (lightMaster) {
+                  allHardware.push({
+                    id: `light-${cam.id}`,
+                    hardware_type: `Light - ${lightMaster.product_name || 'Unknown'}`,
+                    source: 'line',
+                    line_name: line.line_name,
+                    equipment_name: cam.equipment?.name,
+                    quantity: 1,
+                    sku_no: lightMaster.sku_no,
+                    model_number: lightMaster.sku_no,
+                    manufacturer: lightMaster.manufacturer,
+                    description: lightMaster.description,
+                    price: lightMaster.price_gbp,
+                    supplier_name: lightMaster.supplier_name,
+                    supplier_person: lightMaster.supplier_person,
+                    supplier_email: lightMaster.supplier_email,
+                    supplier_phone: lightMaster.supplier_phone,
+                    order_hyperlink: lightMaster.order_hyperlink,
+                  });
+                }
+              }
+
+              // Add PLC if attached
+              if (cam.plc_master_id) {
+                const plcMaster = accessoryMasterData.find(m => m.id === cam.plc_master_id);
+                if (plcMaster) {
+                  allHardware.push({
+                    id: `plc-${cam.id}`,
+                    hardware_type: `PLC - ${plcMaster.product_name || 'Unknown'}`,
+                    source: 'line',
+                    line_name: line.line_name,
+                    equipment_name: cam.equipment?.name,
+                    quantity: 1,
+                    sku_no: plcMaster.sku_no,
+                    model_number: plcMaster.sku_no,
+                    manufacturer: plcMaster.manufacturer,
+                    description: plcMaster.description,
+                    price: plcMaster.price_gbp,
+                    supplier_name: plcMaster.supplier_name,
+                    supplier_person: plcMaster.supplier_person,
+                    supplier_email: plcMaster.supplier_email,
+                    supplier_phone: plcMaster.supplier_phone,
+                    order_hyperlink: plcMaster.order_hyperlink,
+                  });
+                }
+              }
+
+              // Add HMI if attached
+              if (cam.hmi_master_id) {
+                const hmiMaster = accessoryMasterData.find(m => m.id === cam.hmi_master_id);
+                if (hmiMaster) {
+                  allHardware.push({
+                    id: `hmi-${cam.id}`,
+                    hardware_type: `HMI - ${hmiMaster.product_name || 'Unknown'}`,
+                    source: 'line',
+                    line_name: line.line_name,
+                    equipment_name: cam.equipment?.name,
+                    quantity: 1,
+                    sku_no: hmiMaster.sku_no,
+                    model_number: hmiMaster.sku_no,
+                    manufacturer: hmiMaster.manufacturer,
+                    description: hmiMaster.description,
+                    price: hmiMaster.price_gbp,
+                    supplier_name: hmiMaster.supplier_name,
+                    supplier_person: hmiMaster.supplier_person,
+                    supplier_email: hmiMaster.supplier_email,
+                    supplier_phone: hmiMaster.supplier_phone,
+                    order_hyperlink: hmiMaster.order_hyperlink,
+                  });
+                }
+              }
             }
           });
         }

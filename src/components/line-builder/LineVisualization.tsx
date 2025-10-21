@@ -635,7 +635,7 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setEditingCamera(camera)}
+                            onClick={() => handleEditCamera(camera, camera.positionName, camera.equipmentName)}
                           >
                             <Edit className="h-4 w-4 mr-2" />
                             Edit

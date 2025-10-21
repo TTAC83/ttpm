@@ -600,17 +600,18 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
               links={usefulLinks}
               onChange={async (newLinks) => {
                 setUsefulLinks(newLinks);
-                // Save immediately when links change
+                // Save immediately when links change - ONLY update useful_links field
                 try {
                   const tableName = type === 'project' ? 'projects' : type === 'solutions' ? 'solutions_projects' : 'bau_customers';
                   
-                  // Only update the useful_links column, nothing else
                   const { error } = await supabase
                     .from(tableName as any)
                     .update({ 
                       useful_links: newLinks 
                     })
-                    .eq('id', data.id);
+                    .eq('id', data.id)
+                    .select()
+                    .single();
 
                   if (error) {
                     console.error('Error updating links:', error);
@@ -621,13 +622,22 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                     title: "Links Updated",
                     description: "Useful links have been saved successfully",
                   });
-                  onUpdate();
+                  
+                  // Don't call onUpdate to avoid refetching the entire record
                 } catch (error: any) {
                   console.error('Failed to save links:', error);
                   toast({
                     title: "Error",
                     description: error.message || "Failed to update links",
                     variant: "destructive",
+                  });
+                  // Revert on error
+                  setUsefulLinks(() => {
+                    try {
+                      return Array.isArray(data.useful_links) ? data.useful_links : [];
+                    } catch {
+                      return [];
+                    }
                   });
                 }
               }}

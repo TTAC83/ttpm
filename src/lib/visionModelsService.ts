@@ -16,7 +16,7 @@ export interface VisionModel {
   end_date: string | null;
   product_run_start: string | null;
   product_run_end: string | null;
-  status: 'Footage Required' | 'Model Training' | 'Model Validation' | 'Complete';
+  status: 'Footage Required' | 'Annotation Required' | 'Processing Required' | 'Deployment Required' | 'Validation Required' | 'Complete';
   created_at: string;
   updated_at: string;
   project_name?: string;
@@ -133,6 +133,46 @@ export const visionModelsService = {
     }]));
 
     // Transform to include project_name and customer_name
+    const models = visionModels.map((item: any) => {
+      const projectInfo = projectMap.get(item.project_id);
+      return {
+        ...item,
+        project_name: projectInfo?.name || 'Unknown',
+        customer_name: projectInfo?.customer || 'Unknown',
+        project_type: 'implementation' as const
+      };
+    });
+
+    return models as VisionModel[];
+  },
+
+  async getModelsByStatus(status: VisionModel['status']): Promise<VisionModel[]> {
+    const { data: visionModels, error } = await supabase
+      .from('vision_models')
+      .select('*')
+      .eq('status', status)
+      .not('project_id', 'is', null)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    if (!visionModels || visionModels.length === 0) return [];
+
+    const projectIds = [...new Set(visionModels.map((m: any) => m.project_id).filter(Boolean))];
+
+    const { data: projects } = await supabase
+      .from('projects')
+      .select(`
+        id,
+        name,
+        companies!projects_company_id_fkey(name)
+      `)
+      .in('id', projectIds);
+
+    const projectMap = new Map((projects || []).map((p: any) => [p.id, {
+      name: p.name,
+      customer: p.companies?.name || 'Unknown'
+    }]));
+
     const models = visionModels.map((item: any) => {
       const projectInfo = projectMap.get(item.project_id);
       return {

@@ -190,6 +190,31 @@ export const NAV: NavItem[] = [
         label: "Schedule Required",
         to: "/app/vision-models/schedule-required",
         matchPaths: ["/app/vision-models/schedule-required"],
+      },
+      {
+        label: "Annotation Required",
+        to: "/app/vision-models/annotation-required",
+        matchPaths: ["/app/vision-models/annotation-required"],
+      },
+      {
+        label: "Processing Required",
+        to: "/app/vision-models/processing-required",
+        matchPaths: ["/app/vision-models/processing-required"],
+      },
+      {
+        label: "Deployment Required",
+        to: "/app/vision-models/deployment-required",
+        matchPaths: ["/app/vision-models/deployment-required"],
+      },
+      {
+        label: "Validation Required",
+        to: "/app/vision-models/validation-required",
+        matchPaths: ["/app/vision-models/validation-required"],
+      },
+      {
+        label: "Complete",
+        to: "/app/vision-models/complete",
+        matchPaths: ["/app/vision-models/complete"],
       }
     ]
   },

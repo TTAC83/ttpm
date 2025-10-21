@@ -51,6 +51,11 @@ import { InternalRoute } from "@/components/auth/InternalRoute";
 import ExpansionReport from "./pages/app/global-dashboards/ExpansionReport";
 import ScheduleRequired from "./pages/app/vision-models/ScheduleRequired";
 import FootageRequired from "./pages/app/vision-models/FootageRequired";
+import AnnotationRequired from "./pages/app/vision-models/AnnotationRequired";
+import ProcessingRequired from "./pages/app/vision-models/ProcessingRequired";
+import DeploymentRequired from "./pages/app/vision-models/DeploymentRequired";
+import ValidationRequired from "./pages/app/vision-models/ValidationRequired";
+import Complete from "./pages/app/vision-models/Complete";
 
 const queryClient = new QueryClient();
 
@@ -148,6 +153,21 @@ const App = () => (
               </InternalRoute>} />
               <Route path="vision-models/schedule-required" element={<InternalRoute>
                 <ScheduleRequired />
+              </InternalRoute>} />
+              <Route path="vision-models/annotation-required" element={<InternalRoute>
+                <AnnotationRequired />
+              </InternalRoute>} />
+              <Route path="vision-models/processing-required" element={<InternalRoute>
+                <ProcessingRequired />
+              </InternalRoute>} />
+              <Route path="vision-models/deployment-required" element={<InternalRoute>
+                <DeploymentRequired />
+              </InternalRoute>} />
+              <Route path="vision-models/validation-required" element={<InternalRoute>
+                <ValidationRequired />
+              </InternalRoute>} />
+              <Route path="vision-models/complete" element={<InternalRoute>
+                <Complete />
               </InternalRoute>} />
               <Route path="expenses" element={<Expenses />} />
               <Route path="bau" element={<BAU />} />

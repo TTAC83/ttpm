@@ -27,21 +27,26 @@ export function useLineData(config: WizardConfig) {
       };
 
       // Load positions with titles
-      const { data: positionsData, error: positionsError }: any = await supabase
+      const positionsResponse = await (supabase as any)
         .from('positions')
         .select('*, position_titles(id, title)')
         .eq(config.projectIdField, lineId)
         .order('position_x');
+      
+      const positionsData = positionsResponse.data;
+      const positionsError = positionsResponse.error;
 
       if (positionsError) throw positionsError;
 
       // Load equipment with cameras and IoT devices for each position
       const positions: Position[] = await Promise.all(
         (positionsData || []).map(async (pos: any) => {
-          const { data: equipmentData }: any = await supabase
+          const equipmentResponse = await (supabase as any)
             .from('equipment')
             .select('*, cameras(*), iot_devices(*)')
             .eq('position_id', pos.id);
+          
+          const equipmentData = equipmentResponse.data;
 
           const equipmentWithFullData = await Promise.all(
             (equipmentData || []).map(async (eq: any) => {
@@ -167,10 +172,12 @@ export function useLineData(config: WizardConfig) {
       if (lineError) throw lineError;
 
       // Delete existing data
-      const { data: existingEquipment } = await supabase
+      const equipmentResponse = await (supabase as any)
         .from('equipment')
         .select('id, cameras(id)')
         .eq(config.projectIdField, editLineId);
+      
+      const existingEquipment = equipmentResponse.data;
 
       if (existingEquipment?.length) {
         const equipmentIds = existingEquipment.map((e: any) => e.id);
@@ -192,18 +199,20 @@ export function useLineData(config: WizardConfig) {
         await supabase.from('iot_devices').delete().in('equipment_id', equipmentIds);
       }
 
-      const { data: existingPositions } = await supabase
+      const positionsResponse = await (supabase as any)
         .from('positions')
         .select('id')
         .eq(config.projectIdField, editLineId);
+      
+      const existingPositions = positionsResponse.data;
 
       if (existingPositions?.length) {
         const positionIds = existingPositions.map((p: any) => p.id);
         await supabase.from('position_titles').delete().in('position_id', positionIds);
       }
 
-      await supabase.from('equipment').delete().eq(config.projectIdField, editLineId);
-      await supabase.from('positions').delete().eq(config.projectIdField, editLineId);
+      await (supabase as any).from('equipment').delete().eq(config.projectIdField, editLineId);
+      await (supabase as any).from('positions').delete().eq(config.projectIdField, editLineId);
     } else {
       // Create new line
       const insertData: any = {

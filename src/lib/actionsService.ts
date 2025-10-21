@@ -7,8 +7,6 @@ export interface DashboardAction {
   status: string;
   is_critical: boolean;
   project_id?: string;
-  solutions_project_id?: string;
-  project_type?: 'implementation' | 'solutions';
   project_task_id?: string;
   assignee?: string;
   project_name?: string;

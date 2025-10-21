@@ -603,12 +603,19 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                 // Save immediately when links change
                 try {
                   const tableName = type === 'project' ? 'projects' : type === 'solutions' ? 'solutions_projects' : 'bau_customers';
+                  
+                  // Only update the useful_links column, nothing else
                   const { error } = await supabase
-                    .from(tableName)
-                    .update({ useful_links: newLinks as any })
+                    .from(tableName as any)
+                    .update({ 
+                      useful_links: newLinks 
+                    })
                     .eq('id', data.id);
 
-                  if (error) throw error;
+                  if (error) {
+                    console.error('Error updating links:', error);
+                    throw error;
+                  }
 
                   toast({
                     title: "Links Updated",
@@ -616,6 +623,7 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                   });
                   onUpdate();
                 } catch (error: any) {
+                  console.error('Failed to save links:', error);
                   toast({
                     title: "Error",
                     description: error.message || "Failed to update links",

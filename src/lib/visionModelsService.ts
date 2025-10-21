@@ -73,7 +73,11 @@ export const visionModelsService = {
     // Fetch project names and company info
     const { data: projects } = await supabase
       .from('projects')
-      .select('id, name, company_id, companies(name)')
+      .select(`
+        id,
+        name,
+        companies!projects_company_id_fkey(name)
+      `)
       .in('id', projectIds);
 
     const projectMap = new Map((projects || []).map((p: any) => [p.id, {

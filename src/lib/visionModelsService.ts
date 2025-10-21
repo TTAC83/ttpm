@@ -55,23 +55,32 @@ export const visionModelsService = {
   async getScheduleRequiredModels(): Promise<VisionModel[]> {
     // Get all vision models from implementation projects with status = 'Footage Required'
     // and missing product run dates
-    const { data, error } = await supabase
+    const { data: visionModels, error } = await supabase
       .from('vision_models')
-      .select(`
-        *,
-        projects!vision_models_project_id_fkey(name)
-      `)
+      .select('*')
       .eq('status', 'Footage Required')
       .not('project_id', 'is', null)
       .or('product_run_start.is.null,product_run_end.is.null')
-      .order('created_at', { ascending: false});
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
+    if (!visionModels || visionModels.length === 0) return [];
+
+    // Get unique project IDs
+    const projectIds = [...new Set(visionModels.map((m: any) => m.project_id).filter(Boolean))];
+
+    // Fetch project names
+    const { data: projects } = await supabase
+      .from('projects')
+      .select('id, name')
+      .in('id', projectIds);
+
+    const projectMap = new Map((projects || []).map((p: any) => [p.id, p.name]));
 
     // Transform to include project_name
-    const models = (data || []).map((item: any) => ({
+    const models = visionModels.map((item: any) => ({
       ...item,
-      project_name: item.projects?.name || 'Unknown',
+      project_name: projectMap.get(item.project_id) || 'Unknown',
       project_type: 'implementation' as const
     }));
 

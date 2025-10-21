@@ -657,15 +657,17 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {lineData.positions.flatMap(pos => 
-                      pos.equipment.flatMap(eq => 
-                        eq.cameras.map(camera => ({
-                          ...camera,
-                          positionName: pos.name,
-                          equipmentName: eq.name
-                        }))
-                      )
-                    ).map((camera) => (
+                    {Array.from(new Map(
+                      lineData.positions.flatMap(pos => 
+                        pos.equipment.flatMap(eq => 
+                          eq.cameras.map(camera => ({
+                            ...camera,
+                            positionName: pos.name,
+                            equipmentName: eq.name
+                          }))
+                        )
+                      ).map(camera => [camera.id, camera])
+                    ).values()).map((camera) => (
                       <div key={camera.id} className="bg-muted/50 p-3 rounded border">
                         <div className="flex justify-between items-center">
                           <div className="flex-1">

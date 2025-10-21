@@ -2406,7 +2406,7 @@ export type Database = {
           feature_request_id: string | null
           id: string
           is_critical: boolean
-          project_id: string
+          project_id: string | null
           project_type: Database["public"]["Enums"]["project_type"] | null
           resolution_notes: string | null
           solutions_project_id: string | null
@@ -2425,7 +2425,7 @@ export type Database = {
           feature_request_id?: string | null
           id?: string
           is_critical?: boolean
-          project_id: string
+          project_id?: string | null
           project_type?: Database["public"]["Enums"]["project_type"] | null
           resolution_notes?: string | null
           solutions_project_id?: string | null
@@ -2444,7 +2444,7 @@ export type Database = {
           feature_request_id?: string | null
           id?: string
           is_critical?: boolean
-          project_id?: string
+          project_id?: string | null
           project_type?: Database["public"]["Enums"]["project_type"] | null
           resolution_notes?: string | null
           solutions_project_id?: string | null

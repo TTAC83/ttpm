@@ -182,14 +182,14 @@ export const NAV: NavItem[] = [
     roles: ["internal_admin", "internal_user"],
     children: [
       {
-        label: "Footage Required",
-        to: "/app/vision-models/footage-required",
-        matchPaths: ["/app/vision-models/footage-required"],
-      },
-      {
         label: "Schedule Required",
         to: "/app/vision-models/schedule-required",
         matchPaths: ["/app/vision-models/schedule-required"],
+      },
+      {
+        label: "Footage Required",
+        to: "/app/vision-models/footage-required",
+        matchPaths: ["/app/vision-models/footage-required"],
       },
       {
         label: "Annotation Required",

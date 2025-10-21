@@ -203,7 +203,6 @@ export default function ProjectVisionModels({ projectId, projectType = 'implemen
       const search = searchTerm.toLowerCase();
       return (
         model.line_name?.toLowerCase().includes(search) ||
-        model.position?.toLowerCase().includes(search) ||
         model.equipment?.toLowerCase().includes(search) ||
         model.product_sku?.toLowerCase().includes(search) ||
         model.product_title?.toLowerCase().includes(search) ||
@@ -387,7 +386,7 @@ export default function ProjectVisionModels({ projectId, projectType = 'implemen
       <Tabs value={activeView} onValueChange={setActiveView} className="space-y-4">
         <TabsContent value="table" className="space-y-4">
           <Input
-            placeholder="Search by line, position, equipment, SKU, title, use case, group, or status..."
+            placeholder="Search by line, equipment, SKU, title, use case, group, or status..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="max-w-md"
@@ -430,11 +429,6 @@ export default function ProjectVisionModels({ projectId, projectType = 'implemen
                         </Button>
                       </TableHead>
                       <TableHead>
-                        <Button variant="ghost" onClick={() => handleSort('position')} className="h-8 p-0 font-semibold hover:bg-transparent">
-                          Position {getSortIcon('position')}
-                        </Button>
-                      </TableHead>
-                      <TableHead>
                         <Button variant="ghost" onClick={() => handleSort('equipment')} className="h-8 p-0 font-semibold hover:bg-transparent">
                           Equipment {getSortIcon('equipment')}
                         </Button>
@@ -469,6 +463,16 @@ export default function ProjectVisionModels({ projectId, projectType = 'implemen
                           End Date {getSortIcon('end_date')}
                         </Button>
                       </TableHead>
+                      <TableHead>
+                        <Button variant="ghost" onClick={() => handleSort('product_run_start')} className="h-8 p-0 font-semibold hover:bg-transparent">
+                          Run Start {getSortIcon('product_run_start')}
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button variant="ghost" onClick={() => handleSort('product_run_end')} className="h-8 p-0 font-semibold hover:bg-transparent">
+                          Run End {getSortIcon('product_run_end')}
+                        </Button>
+                      </TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -476,7 +480,6 @@ export default function ProjectVisionModels({ projectId, projectType = 'implemen
                     {filteredAndSortedModels.map((model) => (
                       <TableRow key={model.id}>
                         <TableCell className="font-medium">{model.line_name}</TableCell>
-                        <TableCell>{model.position}</TableCell>
                         <TableCell>{model.equipment}</TableCell>
                         <TableCell>{model.product_sku}</TableCell>
                         <TableCell>{model.product_title}</TableCell>
@@ -491,6 +494,12 @@ export default function ProjectVisionModels({ projectId, projectType = 'implemen
                         </TableCell>
                         <TableCell>
                           {model.end_date ? formatDateUK(model.end_date) : 'Not set'}
+                        </TableCell>
+                        <TableCell>
+                          {model.product_run_start ? formatDateUK(model.product_run_start) : 'Not set'}
+                        </TableCell>
+                        <TableCell>
+                          {model.product_run_end ? formatDateUK(model.product_run_end) : 'Not set'}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">

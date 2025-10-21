@@ -272,20 +272,17 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
   const fetchMasterData = async () => {
     const [camerasData, lightsData, plcsData, hmisData, useCasesData] = await Promise.all([
       supabase
-        .from('hardware_master')
-        .select('id, sku_no, product_name, description')
-        .eq('hardware_type', 'Camera')
-        .order('product_name'),
+        .from('cameras_master')
+        .select('id, manufacturer, model_number, camera_type')
+        .order('manufacturer'),
       supabase
-        .from('hardware_master')
-        .select('id, sku_no, product_name, description')
-        .eq('hardware_type', 'Light')
-        .order('product_name'),
+        .from('lights')
+        .select('id, manufacturer, model_number, description')
+        .order('manufacturer'),
       supabase
-        .from('hardware_master')
-        .select('id, sku_no, product_name, description')
-        .eq('hardware_type', 'PLC')
-        .order('product_name'),
+        .from('plc_master')
+        .select('id, manufacturer, model_number, plc_type')
+        .order('manufacturer'),
       supabase
         .from('hardware_master')
         .select('id, sku_no, product_name')
@@ -299,28 +296,13 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
     ]);
 
     if (camerasData.data) {
-      setCameras(camerasData.data.map(c => ({
-        id: c.id,
-        manufacturer: c.product_name,
-        model_number: c.sku_no,
-        camera_type: c.description || '',
-      })));
+      setCameras(camerasData.data);
     }
     if (lightsData.data) {
-      setLights(lightsData.data.map(l => ({
-        id: l.id,
-        manufacturer: l.product_name,
-        model_number: l.sku_no,
-        description: l.description,
-      })));
+      setLights(lightsData.data);
     }
     if (plcsData.data) {
-      setPlcs(plcsData.data.map(p => ({
-        id: p.id,
-        manufacturer: p.product_name,
-        model_number: p.sku_no,
-        plc_type: p.description || '',
-      })));
+      setPlcs(plcsData.data);
     }
     if (hmisData.data) {
       setHmis(hmisData.data);

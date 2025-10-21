@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { CameraConfigDialog } from "@/components/shared/CameraConfigDialog";
 import { hardwareCatalog } from "@/lib/hardwareCatalogService"; // Use unified hardware catalog
+import { LineUseCasesTable } from "./LineUseCasesTable";
 
 interface LineData {
   id: string;
@@ -747,6 +748,9 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
           </div>
         </CardContent>
       </Card>
+
+      {/* Line Use Cases Table */}
+      <LineUseCasesTable lineId={lineId} />
 
       {/* Edit Camera Dialog */}
       <CameraConfigDialog

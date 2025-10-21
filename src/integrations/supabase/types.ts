@@ -2708,6 +2708,53 @@ export type Database = {
           },
         ]
       }
+      project_task_updates: {
+        Row: {
+          actual_end: string | null
+          actual_start: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          planned_end: string | null
+          planned_start: string | null
+          project_id: string
+          task_title: string
+          updated_at: string | null
+        }
+        Insert: {
+          actual_end?: string | null
+          actual_start?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          planned_end?: string | null
+          planned_start?: string | null
+          project_id: string
+          task_title: string
+          updated_at?: string | null
+        }
+        Update: {
+          actual_end?: string | null
+          actual_start?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          planned_end?: string | null
+          planned_start?: string | null
+          project_id?: string
+          task_title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_task_updates_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_tasks: {
         Row: {
           actual_end: string | null

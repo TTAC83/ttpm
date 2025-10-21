@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 export interface HardwareItem {
   id: string;
   hardware_type: string;
+  category?: string; // The "Type" field from hardware_master
   source: 'direct' | 'line';
   line_name?: string;
   equipment_name?: string;
@@ -92,6 +93,7 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
               allHardware.push({
                 id: `camera-${cam.id}`,
                 hardware_type: `Camera - ${master?.product_name || cam.camera_type || 'Unknown'}`,
+                category: 'Camera',
                 source: 'line',
                 line_name: line.line_name,
                 equipment_name: cam.equipment?.name,
@@ -109,6 +111,7 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
                   allHardware.push({
                     id: `light-${cam.id}`,
                     hardware_type: `Light - ${lightMaster.product_name || 'Unknown'}`,
+                    category: lightMaster.type || 'Light',
                     source: 'line',
                     line_name: line.line_name,
                     equipment_name: cam.equipment?.name,
@@ -134,6 +137,7 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
                   allHardware.push({
                     id: `plc-${cam.id}`,
                     hardware_type: `PLC - ${plcMaster.product_name || 'Unknown'}`,
+                    category: plcMaster.type || 'PLC',
                     source: 'line',
                     line_name: line.line_name,
                     equipment_name: cam.equipment?.name,
@@ -159,6 +163,7 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
                   allHardware.push({
                     id: `hmi-${cam.id}`,
                     hardware_type: `HMI - ${hmiMaster.product_name || 'Unknown'}`,
+                    category: hmiMaster.type || 'HMI',
                     source: 'line',
                     line_name: line.line_name,
                     equipment_name: cam.equipment?.name,
@@ -212,6 +217,7 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
               allHardware.push({
                 id: `iot-${device.id}`,
                 hardware_type: `${master?.hardware_type || master?.type || 'Hardware'}`,
+                category: master?.type || master?.hardware_type,
                 source: 'line',
                 line_name: line.line_name,
                 equipment_name: device.equipment?.name,
@@ -290,25 +296,30 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
         iotRequirements.forEach((req: any) => {
           let master: any = null;
           let hardwareType = req.hardware_type || 'Unknown';
+          let category = req.hardware_type || 'Unknown';
           let itemName = req.name || 'Unknown';
 
           if (req.gateway_id) {
             master = gatewaysMap.get(req.gateway_id);
             hardwareType = 'Gateway';
+            category = 'Gateway';
             itemName = master?.model_number || req.name || 'Gateway';
           } else if (req.receiver_id) {
             master = receiversMap.get(req.receiver_id);
             hardwareType = 'Receiver';
+            category = 'Receiver';
             itemName = master?.model_number || req.name || 'Receiver';
           } else if (req.hardware_master_id) {
             master = hardwareMap.get(req.hardware_master_id);
             hardwareType = master?.type || master?.hardware_type || req.hardware_type || 'Hardware';
+            category = master?.type || master?.hardware_type || req.hardware_type || 'Hardware';
             itemName = master?.product_name || req.name || 'Hardware';
           }
 
           allHardware.push({
             id: `direct-${req.id}`,
             hardware_type: `${hardwareType} - ${itemName}`,
+            category: category,
             source: 'direct',
             quantity: req.quantity || 1,
             sku_no: master?.sku_no || master?.model_number,

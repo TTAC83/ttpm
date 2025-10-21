@@ -31,17 +31,9 @@ export const SolutionsHardwareSummary = ({ solutionsProjectId }: SolutionsHardwa
   const uniqueLines = new Set(hardware.filter(h => h.line_name).map(h => h.line_name));
   const totalLines = uniqueLines.size;
 
-  // Extract category from hardware_type string
-  // The hardware_type format is "CategoryType - Name" from the master data
-  const extractCategory = (hardwareType: string): string => {
-    // Split by " - " and take the first part, which is the category from master data
-    const parts = hardwareType.split(' - ');
-    return parts[0]?.trim() || 'Other';
-  };
-
-  // Group by hardware category
+  // Group by hardware category from the "Type" field in hardware_master
   const categoryCounts = hardware.reduce((acc, item) => {
-    const category = extractCategory(item.hardware_type);
+    const category = item.category || 'Other';
     const quantity = item.quantity || 1;
     acc[category] = (acc[category] || 0) + quantity;
     return acc;

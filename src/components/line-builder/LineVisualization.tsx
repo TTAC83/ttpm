@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { CameraConfigDialog } from "@/components/shared/CameraConfigDialog";
+import { hardwareCatalog } from "@/lib/hardwareCatalogService"; // Use unified hardware catalog
 
 interface LineData {
   id: string;
@@ -270,19 +271,11 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
   };
 
   const fetchMasterData = async () => {
-    const [camerasData, lightsData, plcsData, hmisData, useCasesData] = await Promise.all([
-      supabase
-        .from('cameras_master')
-        .select('id, manufacturer, model_number, camera_type')
-        .order('manufacturer'),
-      supabase
-        .from('lights')
-        .select('id, manufacturer, model_number, description')
-        .order('manufacturer'),
-      supabase
-        .from('plc_master')
-        .select('id, manufacturer, model_number, plc_type')
-        .order('manufacturer'),
+    // IMPORTANT: Always use unified hardware_master via hardwareCatalog service
+    const [camerasList, lightsList, plcsList, hmisData, useCasesData] = await Promise.all([
+      hardwareCatalog.getCameras(),
+      hardwareCatalog.getLights(),
+      hardwareCatalog.getPlcs(),
       supabase
         .from('hardware_master')
         .select('id, sku_no, product_name')
@@ -295,15 +288,9 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
         .order('name', { ascending: true }),
     ]);
 
-    if (camerasData.data) {
-      setCameras(camerasData.data);
-    }
-    if (lightsData.data) {
-      setLights(lightsData.data);
-    }
-    if (plcsData.data) {
-      setPlcs(plcsData.data);
-    }
+    setCameras(camerasList);
+    setLights(lightsList);
+    setPlcs(plcsList);
     if (hmisData.data) {
       setHmis(hmisData.data);
     }

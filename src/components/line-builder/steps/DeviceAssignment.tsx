@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, Camera, Cpu, Edit, Lightbulb, Monitor } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CameraConfigDialog } from "@/components/shared/CameraConfigDialog";
+import { hardwareCatalog } from "@/lib/hardwareCatalogService"; // Use unified hardware catalog
 
 interface Position {
   id: string;
@@ -183,22 +184,13 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     ct_master_id: "",
   });
 
-  // Fetch lights, cameras, PLCs, HMIs, IoT devices, receivers, CTs, and vision use cases from master tables
+  // Fetch lights, cameras, PLCs, HMIs, IoT devices, receivers, CTs, and vision use cases from unified hardware catalog
   useEffect(() => {
     const fetchData = async () => {
-      const [camerasData, lightsData, plcsData, hmisData, iotDevicesData, ctsData, useCasesData] = await Promise.all([
-        supabase
-          .from('cameras_master')
-          .select('id, manufacturer, model_number, camera_type')
-          .order('manufacturer', { ascending: true }),
-        supabase
-          .from('lights')
-          .select('id, manufacturer, model_number, description')
-          .order('manufacturer', { ascending: true }),
-        supabase
-          .from('plc_master')
-          .select('id, manufacturer, model_number, plc_type')
-          .order('manufacturer', { ascending: true }),
+      const [camerasList, lightsList, plcsList, hmisData, iotDevicesData, ctsData, useCasesData] = await Promise.all([
+        hardwareCatalog.getCameras(),
+        hardwareCatalog.getLights(),
+        hardwareCatalog.getPlcs(),
         supabase
           .from('hardware_master')
           .select('id, sku_no, product_name, hardware_type, description')
@@ -221,15 +213,9 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
           .order('name', { ascending: true })
       ]);
       
-      if (camerasData.data) {
-        setCameras(camerasData.data);
-      }
-      if (lightsData.data) {
-        setLights(lightsData.data);
-      }
-      if (plcsData.data) {
-        setPlcs(plcsData.data);
-      }
+      setCameras(camerasList);
+      setLights(lightsList);
+      setPlcs(plcsList);
       if (hmisData.data) {
         setHmis(hmisData.data);
       }

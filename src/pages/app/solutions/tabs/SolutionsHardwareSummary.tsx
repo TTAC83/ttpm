@@ -21,10 +21,21 @@ export const SolutionsHardwareSummary = ({ solutionsProjectId }: SolutionsHardwa
     );
   }
 
+  const totalPrice = hardware.reduce((sum, item) => {
+    const itemPrice = item.price || 0;
+    const quantity = item.quantity || 1;
+    return sum + (itemPrice * quantity);
+  }, 0);
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Hardware Summary</CardTitle>
+        <CardTitle className="flex items-center justify-between">
+          <span>Hardware Summary</span>
+          <span className="text-2xl font-bold text-primary">
+            £{totalPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+        </CardTitle>
         <CardDescription>
           All hardware attributed to this solutions project from Hardware and Lines tabs
         </CardDescription>

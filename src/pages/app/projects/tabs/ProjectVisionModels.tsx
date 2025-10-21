@@ -9,7 +9,8 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateUK } from '@/lib/dateUtils';
-import { Plus, Pencil, Trash2, Eye, AlertCircle, Calendar as CalendarIcon, Table as TableIcon, Download, FileDown } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, AlertCircle, Calendar as CalendarIcon, Table as TableIcon, Download, FileDown, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { VisionModelDialog } from '@/components/VisionModelDialog';
 import { VisionModelBulkUpload } from '@/components/VisionModelBulkUpload';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -48,6 +49,9 @@ export default function ProjectVisionModels({ projectId, projectType = 'implemen
   const [viewMode, setViewMode] = useState<'view' | 'edit' | 'create'>('create');
   const [activeView, setActiveView] = useState('table');
   const [showProductRunDates, setShowProductRunDates] = useState(false);
+  const [sortColumn, setSortColumn] = useState<keyof VisionModel | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -174,6 +178,52 @@ export default function ProjectVisionModels({ projectId, projectType = 'implemen
       description: `Exported ${models.length} vision models`,
     });
   };
+
+  const handleSort = (column: keyof VisionModel) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortIcon = (column: keyof VisionModel) => {
+    if (sortColumn !== column) {
+      return <ArrowUpDown className="h-4 w-4 ml-1" />;
+    }
+    return sortDirection === 'asc' ? 
+      <ArrowUp className="h-4 w-4 ml-1" /> : 
+      <ArrowDown className="h-4 w-4 ml-1" />;
+  };
+
+  const filteredAndSortedModels = models
+    .filter(model => {
+      if (!searchTerm) return true;
+      const search = searchTerm.toLowerCase();
+      return (
+        model.line_name?.toLowerCase().includes(search) ||
+        model.position?.toLowerCase().includes(search) ||
+        model.equipment?.toLowerCase().includes(search) ||
+        model.product_sku?.toLowerCase().includes(search) ||
+        model.product_title?.toLowerCase().includes(search) ||
+        model.use_case?.toLowerCase().includes(search) ||
+        model.group_name?.toLowerCase().includes(search) ||
+        model.status?.toLowerCase().includes(search)
+      );
+    })
+    .sort((a, b) => {
+      if (!sortColumn) return 0;
+      
+      const aVal = a[sortColumn];
+      const bVal = b[sortColumn];
+      
+      if (aVal === null || aVal === undefined) return 1;
+      if (bVal === null || bVal === undefined) return -1;
+      
+      const comparison = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
 
   // Calendar helper functions
   const isDateInRange = (date: Date, startDate: string | null, endDate: string | null) => {
@@ -336,6 +386,12 @@ export default function ProjectVisionModels({ projectId, projectType = 'implemen
 
       <Tabs value={activeView} onValueChange={setActiveView} className="space-y-4">
         <TabsContent value="table" className="space-y-4">
+          <Input
+            placeholder="Search by line, position, equipment, SKU, title, use case, group, or status..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="max-w-md"
+          />
           {models.length === 0 ? (
             <Card>
               <CardHeader>
@@ -357,29 +413,67 @@ export default function ProjectVisionModels({ projectId, projectType = 'implemen
           ) : (
             <Card>
               <CardHeader>
-                <CardTitle>Models ({models.length})</CardTitle>
+                <CardTitle>Models ({filteredAndSortedModels.length})</CardTitle>
                 <CardDescription>
-                  Manage and track vision models for this project
+                  {filteredAndSortedModels.length !== models.length 
+                    ? `Showing ${filteredAndSortedModels.length} of ${models.length} models`
+                    : 'Manage and track vision models for this project'}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Line</TableHead>
-                      <TableHead>Position</TableHead>
-                      <TableHead>Equipment</TableHead>
-                      <TableHead>Product SKU</TableHead>
-                      <TableHead>Product Title</TableHead>
-                      <TableHead>Group</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Start Date</TableHead>
-                      <TableHead>End Date</TableHead>
+                      <TableHead>
+                        <Button variant="ghost" onClick={() => handleSort('line_name')} className="h-8 p-0 font-semibold hover:bg-transparent">
+                          Line {getSortIcon('line_name')}
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button variant="ghost" onClick={() => handleSort('position')} className="h-8 p-0 font-semibold hover:bg-transparent">
+                          Position {getSortIcon('position')}
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button variant="ghost" onClick={() => handleSort('equipment')} className="h-8 p-0 font-semibold hover:bg-transparent">
+                          Equipment {getSortIcon('equipment')}
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button variant="ghost" onClick={() => handleSort('product_sku')} className="h-8 p-0 font-semibold hover:bg-transparent">
+                          Product SKU {getSortIcon('product_sku')}
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button variant="ghost" onClick={() => handleSort('product_title')} className="h-8 p-0 font-semibold hover:bg-transparent">
+                          Product Title {getSortIcon('product_title')}
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button variant="ghost" onClick={() => handleSort('group_name')} className="h-8 p-0 font-semibold hover:bg-transparent">
+                          Group {getSortIcon('group_name')}
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button variant="ghost" onClick={() => handleSort('status')} className="h-8 p-0 font-semibold hover:bg-transparent">
+                          Status {getSortIcon('status')}
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button variant="ghost" onClick={() => handleSort('start_date')} className="h-8 p-0 font-semibold hover:bg-transparent">
+                          Start Date {getSortIcon('start_date')}
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button variant="ghost" onClick={() => handleSort('end_date')} className="h-8 p-0 font-semibold hover:bg-transparent">
+                          End Date {getSortIcon('end_date')}
+                        </Button>
+                      </TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {models.map((model) => (
+                    {filteredAndSortedModels.map((model) => (
                       <TableRow key={model.id}>
                         <TableCell className="font-medium">{model.line_name}</TableCell>
                         <TableCell>{model.position}</TableCell>

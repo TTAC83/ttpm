@@ -2,6 +2,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { TabsContent } from "@/components/ui/tabs";
+import { AttributeList } from "../shared/AttributeList";
 import { CameraFormData, MasterData } from "../types";
 
 interface CameraUseCaseTabProps {
@@ -9,9 +10,20 @@ interface CameraUseCaseTabProps {
   masterData: MasterData;
   updateField: (field: keyof CameraFormData, value: any) => void;
   toggleUseCase: (useCaseId: string) => void;
+  addAttribute: () => void;
+  updateAttribute: (id: string, field: "title" | "description", value: string) => void;
+  deleteAttribute: (id: string) => void;
 }
 
-export function CameraUseCaseTab({ formData, masterData, updateField, toggleUseCase }: CameraUseCaseTabProps) {
+export function CameraUseCaseTab({ 
+  formData, 
+  masterData, 
+  updateField, 
+  toggleUseCase,
+  addAttribute,
+  updateAttribute,
+  deleteAttribute
+}: CameraUseCaseTabProps) {
   return (
     <TabsContent value="usecase" className="space-y-4 mt-0">
       <div>
@@ -56,6 +68,12 @@ export function CameraUseCaseTab({ formData, masterData, updateField, toggleUseC
           rows={3}
         />
       </div>
+      <AttributeList
+        attributes={formData.attributes}
+        onAdd={addAttribute}
+        onUpdate={updateAttribute}
+        onDelete={deleteAttribute}
+      />
     </TabsContent>
   );
 }

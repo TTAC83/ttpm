@@ -101,13 +101,13 @@ export const CameraConfigDialog: React.FC<CameraConfigDialogProps> = ({
               masterData={masterData} 
               updateField={updateField}
               toggleUseCase={toggleUseCase}
+              addAttribute={addAttribute}
+              updateAttribute={updateAttribute}
+              deleteAttribute={deleteAttribute}
             />
             <CameraViewTab
               formData={formData}
               updateField={updateField}
-              addAttribute={addAttribute}
-              updateAttribute={updateAttribute}
-              deleteAttribute={deleteAttribute}
             />
             <CameraLightingTab formData={formData} masterData={masterData} updateField={updateField} />
             <CameraPlcTab

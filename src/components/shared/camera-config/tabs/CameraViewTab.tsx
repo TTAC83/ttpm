@@ -1,23 +1,16 @@
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { TabsContent } from "@/components/ui/tabs";
-import { AttributeList } from "../shared/AttributeList";
 import { CameraFormData } from "../types";
 
 interface CameraViewTabProps {
   formData: CameraFormData;
   updateField: (field: keyof CameraFormData, value: any) => void;
-  addAttribute: () => void;
-  updateAttribute: (id: string, field: "title" | "description", value: string) => void;
-  deleteAttribute: (id: string) => void;
 }
 
 export function CameraViewTab({ 
   formData, 
-  updateField, 
-  addAttribute, 
-  updateAttribute, 
-  deleteAttribute 
+  updateField
 }: CameraViewTabProps) {
   return (
     <TabsContent value="cameraview" className="space-y-4 mt-0">
@@ -41,12 +34,6 @@ export function CameraViewTab({
           rows={3}
         />
       </div>
-      <AttributeList
-        attributes={formData.attributes}
-        onAdd={addAttribute}
-        onUpdate={updateAttribute}
-        onDelete={deleteAttribute}
-      />
     </TabsContent>
   );
 }

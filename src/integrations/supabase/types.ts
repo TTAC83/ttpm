@@ -3894,6 +3894,7 @@ export type Database = {
           created_at: string
           end_date: string | null
           equipment: string
+          group_name: string | null
           id: string
           line_name: string
           position: string
@@ -3913,6 +3914,7 @@ export type Database = {
           created_at?: string
           end_date?: string | null
           equipment: string
+          group_name?: string | null
           id?: string
           line_name: string
           position: string
@@ -3932,6 +3934,7 @@ export type Database = {
           created_at?: string
           end_date?: string | null
           equipment?: string
+          group_name?: string | null
           id?: string
           line_name?: string
           position?: string

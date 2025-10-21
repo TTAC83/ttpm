@@ -9,10 +9,12 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateUK } from '@/lib/dateUtils';
-import { Plus, Pencil, Trash2, Eye, AlertCircle, Calendar as CalendarIcon, Table as TableIcon } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, AlertCircle, Calendar as CalendarIcon, Table as TableIcon, Download, FileDown } from 'lucide-react';
 import { VisionModelDialog } from '@/components/VisionModelDialog';
+import { VisionModelBulkUpload } from '@/components/VisionModelBulkUpload';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths } from 'date-fns';
+import * as XLSX from 'xlsx';
 
 interface VisionModel {
   id: string;
@@ -23,6 +25,7 @@ interface VisionModel {
   product_sku: string;
   product_title: string;
   use_case: string;
+  group_name?: string;
   start_date: string | null;
   end_date: string | null;
   product_run_start: string | null;
@@ -120,6 +123,56 @@ export default function ProjectVisionModels({ projectId, projectType = 'implemen
     setDialogOpen(false);
     setSelectedModel(null);
     fetchModels();
+  };
+
+  const handleDownloadTemplate = () => {
+    // Create empty template with just headers
+    const headers = [
+      'Line', 'Position', 'Equipment', 'Product SKU', 'Product Title', 
+      'Use Case', 'Group', 'Status', 'Start Date', 'End Date', 
+      'Product Run Start', 'Product Run End'
+    ];
+    
+    const ws = XLSX.utils.aoa_to_sheet([headers]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Vision Models Template");
+    XLSX.writeFile(wb, `vision_models_template.xlsx`);
+  };
+
+  const handleExportModels = () => {
+    if (models.length === 0) {
+      toast({
+        title: "No Data",
+        description: "No vision models to export",
+      });
+      return;
+    }
+
+    // Transform to CSV structure
+    const csvData = models.map(model => ({
+      'Line': model.line_name,
+      'Position': model.position,
+      'Equipment': model.equipment,
+      'Product SKU': model.product_sku,
+      'Product Title': model.product_title,
+      'Use Case': model.use_case,
+      'Group': model.group_name || '',
+      'Status': model.status,
+      'Start Date': model.start_date ? formatDateUK(model.start_date) : '',
+      'End Date': model.end_date ? formatDateUK(model.end_date) : '',
+      'Product Run Start': model.product_run_start ? formatDateUK(model.product_run_start) : '',
+      'Product Run End': model.product_run_end ? formatDateUK(model.product_run_end) : ''
+    }));
+    
+    const ws = XLSX.utils.json_to_sheet(csvData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Vision Models");
+    XLSX.writeFile(wb, `vision_models_${projectId}_${Date.now()}.xlsx`);
+
+    toast({
+      title: "Success",
+      description: `Exported ${models.length} vision models`,
+    });
   };
 
   // Calendar helper functions
@@ -248,7 +301,20 @@ export default function ProjectVisionModels({ projectId, projectType = 'implemen
           <h2 className="text-2xl font-bold tracking-tight">Vision Models</h2>
           <p className="text-muted-foreground">Manage vision models for this project</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
+            <Download className="h-4 w-4 mr-2" />
+            Template
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportModels}>
+            <FileDown className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+          <VisionModelBulkUpload 
+            projectId={projectId}
+            projectType={projectType}
+            onUploadSuccess={fetchModels}
+          />
           <Tabs value={activeView} onValueChange={setActiveView}>
             <TabsList>
               <TabsTrigger value="table" className="flex items-center gap-2">
@@ -305,6 +371,7 @@ export default function ProjectVisionModels({ projectId, projectType = 'implemen
                       <TableHead>Equipment</TableHead>
                       <TableHead>Product SKU</TableHead>
                       <TableHead>Product Title</TableHead>
+                      <TableHead>Group</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Start Date</TableHead>
                       <TableHead>End Date</TableHead>
@@ -319,6 +386,7 @@ export default function ProjectVisionModels({ projectId, projectType = 'implemen
                         <TableCell>{model.equipment}</TableCell>
                         <TableCell>{model.product_sku}</TableCell>
                         <TableCell>{model.product_title}</TableCell>
+                        <TableCell>{model.group_name || '-'}</TableCell>
                         <TableCell>
                           <Badge variant={getStatusBadgeVariant(model.status)}>
                             {model.status}

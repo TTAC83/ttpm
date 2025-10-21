@@ -23,6 +23,7 @@ const visionModelSchema = z.object({
   product_sku: z.string().min(1, 'Product SKU is required'),
   product_title: z.string().min(1, 'Product Title is required'),
   use_case: z.string().min(1, 'Use Case is required'),
+  group_name: z.string().optional(),
   start_date: z.date().optional(),
   end_date: z.date().optional(),
   product_run_start: z.date().optional(),
@@ -41,6 +42,7 @@ interface VisionModel {
   product_sku: string;
   product_title: string;
   use_case: string;
+  group_name?: string;
   start_date: string | null;
   end_date: string | null;
   product_run_start: string | null;
@@ -84,6 +86,7 @@ export function VisionModelDialog({
       product_sku: '',
       product_title: '',
       use_case: '',
+      group_name: '',
       status: 'Footage Required',
     },
   });
@@ -173,6 +176,7 @@ export function VisionModelDialog({
         product_sku: model.product_sku,
         product_title: model.product_title,
         use_case: model.use_case,
+        group_name: model.group_name || '',
         start_date: model.start_date ? new Date(model.start_date) : undefined,
         end_date: model.end_date ? new Date(model.end_date) : undefined,
         product_run_start: model.product_run_start ? new Date(model.product_run_start) : undefined,
@@ -187,6 +191,7 @@ export function VisionModelDialog({
         product_sku: '',
         product_title: '',
         use_case: '',
+        group_name: '',
         status: 'Footage Required',
       });
       setPositions([]);
@@ -211,6 +216,7 @@ export function VisionModelDialog({
         product_sku: data.product_sku,
         product_title: data.product_title,
         use_case: data.use_case,
+        group_name: data.group_name || null,
         start_date: data.start_date?.toISOString().split('T')[0] || null,
         end_date: data.end_date?.toISOString().split('T')[0] || null,
         product_run_start: data.product_run_start?.toISOString().split('T')[0] || null,
@@ -431,6 +437,20 @@ export function VisionModelDialog({
                   <FormLabel>Use Case</FormLabel>
                   <FormControl>
                     <Textarea {...field} disabled={mode === 'view'} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="group_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Group (Optional)</FormLabel>
+                  <FormControl>
+                    <Input {...field} disabled={mode === 'view'} placeholder="e.g., UK-Beef, Pol-Chicken" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

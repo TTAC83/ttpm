@@ -58,6 +58,9 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
           `)
           .in('equipment.solutions_line_id', lineIds);
 
+        // Get equipment IDs that have cameras (to filter out camera-attached IoT devices later)
+        const cameraEquipmentIds = cameraData?.map((cam: any) => cam.equipment?.id) || [];
+
         if (cameraData) {
           // Fetch camera details from unified hardware_master
           const { data: hardwareMaster } = await supabase
@@ -86,7 +89,7 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
           });
         }
 
-        // ============= IOT DEVICES FROM LINES =============
+        // ============= IOT DEVICES FROM LINES (EXCLUDE CAMERA-ATTACHED ITEMS) =============
         const { data: iotData } = await supabase
           .from('iot_devices')
           .select(`
@@ -111,6 +114,11 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
 
         if (iotData) {
           iotData.forEach((device: any) => {
+            // Skip IoT devices that are attached to camera equipment (lights, PLCs, HMIs)
+            if (cameraEquipmentIds.includes(device.equipment?.id)) {
+              return;
+            }
+
             const line = lines?.find(l => l.id === device.equipment?.solutions_line_id);
             const master = device.hardware_master;
             

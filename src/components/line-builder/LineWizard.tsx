@@ -155,7 +155,7 @@ export const LineWizard: React.FC<LineWizardProps> = ({
                   supabase.from('camera_measurements')
                     .select('*')
                     .eq('camera_id', cam.id)
-                    .single(),
+                    .maybeSingle(),
                   supabase.from('camera_use_cases')
                     .select('vision_use_case_id, description')
                     .eq('camera_id', cam.id),
@@ -166,7 +166,7 @@ export const LineWizard: React.FC<LineWizardProps> = ({
                   supabase.from('camera_views')
                     .select('*')
                     .eq('camera_id', cam.id)
-                    .single(),
+                    .maybeSingle(),
                 ]);
                 
                 return {

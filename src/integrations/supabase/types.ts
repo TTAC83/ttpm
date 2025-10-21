@@ -2567,7 +2567,7 @@ export type Database = {
           end_date: string
           id: string
           is_critical: boolean
-          project_id: string
+          project_id: string | null
           project_type: Database["public"]["Enums"]["project_type"] | null
           solutions_project_id: string | null
           start_date: string
@@ -2581,7 +2581,7 @@ export type Database = {
           end_date: string
           id?: string
           is_critical?: boolean
-          project_id: string
+          project_id?: string | null
           project_type?: Database["public"]["Enums"]["project_type"] | null
           solutions_project_id?: string | null
           start_date: string
@@ -2595,7 +2595,7 @@ export type Database = {
           end_date?: string
           id?: string
           is_critical?: boolean
-          project_id?: string
+          project_id?: string | null
           project_type?: Database["public"]["Enums"]["project_type"] | null
           solutions_project_id?: string | null
           start_date?: string

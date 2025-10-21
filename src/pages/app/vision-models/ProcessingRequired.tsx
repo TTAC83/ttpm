@@ -105,7 +105,9 @@ export default function ProcessingRequired() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Processing Required</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Processing Required <span className="text-muted-foreground">({models.length})</span>
+        </h1>
         <p className="text-muted-foreground mt-2">
           Vision models requiring processing
         </p>

@@ -105,7 +105,9 @@ export default function Complete() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Complete</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Complete <span className="text-muted-foreground">({models.length})</span>
+        </h1>
         <p className="text-muted-foreground mt-2">
           Completed vision models
         </p>

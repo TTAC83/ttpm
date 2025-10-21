@@ -107,7 +107,9 @@ export default function ScheduleRequired() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Schedule Required</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Schedule Required <span className="text-muted-foreground">({models.length})</span>
+        </h1>
         <p className="text-muted-foreground mt-2">
           Vision models with status "Footage Required" that need production run dates
         </p>

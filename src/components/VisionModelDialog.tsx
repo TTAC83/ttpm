@@ -55,6 +55,7 @@ interface VisionModelDialogProps {
   onOpenChange: (open: boolean) => void;
   onClose: () => void;
   projectId: string;
+  projectType?: 'implementation' | 'solutions';
   model?: VisionModel | null;
   mode: 'view' | 'edit' | 'create';
 }
@@ -63,7 +64,8 @@ export function VisionModelDialog({
   open, 
   onOpenChange, 
   onClose, 
-  projectId, 
+  projectId,
+  projectType = 'implementation',
   model, 
   mode 
 }: VisionModelDialogProps) {
@@ -94,14 +96,25 @@ export function VisionModelDialog({
 
   const loadLines = async () => {
     try {
-      const { data, error } = await supabase
-        .from('lines')
-        .select('id, line_name')
-        .eq('project_id', projectId)
-        .order('line_name');
+      if (projectType === 'solutions') {
+        const { data, error } = await supabase
+          .from('solutions_lines')
+          .select('id, line_name')
+          .eq('solutions_project_id', projectId)
+          .order('line_name');
 
-      if (error) throw error;
-      setLines(data || []);
+        if (error) throw error;
+        setLines(data || []);
+      } else {
+        const { data, error } = await supabase
+          .from('lines')
+          .select('id, line_name')
+          .eq('project_id', projectId)
+          .order('line_name');
+
+        if (error) throw error;
+        setLines(data || []);
+      }
     } catch (error) {
       console.error('Error loading lines:', error);
     }
@@ -187,8 +200,11 @@ export function VisionModelDialog({
     try {
       setLoading(true);
 
-      const formattedData = {
-        project_id: projectId,
+      const formattedData: any = {
+        ...(projectType === 'solutions' 
+          ? { solutions_project_id: projectId, project_type: 'solutions' as const }
+          : { project_id: projectId, project_type: 'implementation' as const }
+        ),
         line_name: data.line_name,
         position: data.position,
         equipment: data.equipment,

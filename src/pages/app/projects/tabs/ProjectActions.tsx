@@ -54,9 +54,10 @@ interface Profile {
 
 interface ProjectActionsProps {
   projectId: string;
+  projectType?: 'implementation' | 'solutions';
 }
 
-const ProjectActions = ({ projectId }: ProjectActionsProps) => {
+const ProjectActions = ({ projectId, projectType = 'implementation' }: ProjectActionsProps) => {
   const { profile, user } = useAuth();
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -117,6 +118,8 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
       console.log('ProjectActions: Starting to fetch tasks for project:', projectId);
       setLoading(true);
       
+      const column = projectType === 'solutions' ? 'solutions_project_id' : 'project_id';
+      
       const { data, error } = await supabase
         .from('project_tasks')
         .select(`
@@ -130,7 +133,7 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
             )
           )
         `)
-        .eq('project_id', projectId)
+        .eq(column, projectId)
         .order('task_title');
 
       console.log('ProjectActions: Query response:', { data, error });
@@ -174,23 +177,26 @@ const ProjectActions = ({ projectId }: ProjectActionsProps) => {
 
   const fetchAllActions = async () => {
     try {
+      const column = projectType === 'solutions' ? 'solutions_project_id' : 'project_id';
+      const taskColumn = projectType === 'solutions' ? 'solutions_project_id' : 'project_id';
+      
       const [withTask, withoutTask] = await Promise.all([
         supabase
           .from('actions')
           .select(`
             *,
             profiles:assignee ( name ),
-            project_tasks!inner ( task_title, step_name, project_id )
+            project_tasks!inner ( task_title, step_name, ${taskColumn} )
           `)
-          .eq('project_tasks.project_id', projectId),
+          .eq(`project_tasks.${taskColumn}`, projectId),
         supabase
           .from('actions')
           .select(`
             *,
             profiles:assignee ( name ),
-            project_tasks ( task_title, step_name, project_id )
+            project_tasks ( task_title, step_name, ${taskColumn} )
           `)
-          .eq('project_id', projectId)
+          .eq(column, projectId)
       ]);
 
       if (withTask.error) throw withTask.error;

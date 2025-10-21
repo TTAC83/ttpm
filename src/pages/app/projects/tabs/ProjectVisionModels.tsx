@@ -34,9 +34,10 @@ interface VisionModel {
 
 interface ProjectVisionModelsProps {
   projectId: string;
+  projectType?: 'implementation' | 'solutions';
 }
 
-export default function ProjectVisionModels({ projectId }: ProjectVisionModelsProps) {
+export default function ProjectVisionModels({ projectId, projectType = 'implementation' }: ProjectVisionModelsProps) {
   const [models, setModels] = useState<VisionModel[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -53,10 +54,12 @@ export default function ProjectVisionModels({ projectId }: ProjectVisionModelsPr
   const fetchModels = async () => {
     try {
       setLoading(true);
+      const column = projectType === 'solutions' ? 'solutions_project_id' : 'project_id';
+      
       const { data, error } = await supabase
         .from('vision_models')
         .select('*')
-        .eq('project_id', projectId)
+        .eq(column, projectId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -385,6 +388,7 @@ export default function ProjectVisionModels({ projectId }: ProjectVisionModelsPr
         onOpenChange={setDialogOpen}
         onClose={handleDialogClose}
         projectId={projectId}
+        projectType={projectType}
         model={selectedModel}
         mode={viewMode}
       />

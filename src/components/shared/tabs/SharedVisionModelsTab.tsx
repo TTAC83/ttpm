@@ -5,8 +5,8 @@ interface SharedVisionModelsTabProps {
   projectType: 'implementation' | 'solutions';
 }
 
-export function SharedVisionModelsTab({ projectId }: SharedVisionModelsTabProps) {
+export function SharedVisionModelsTab({ projectId, projectType }: SharedVisionModelsTabProps) {
   // VisionModels currently uses direct supabase queries
   // The component itself handles both project types via the service layer
-  return <ProjectVisionModels projectId={projectId} />;
+  return <ProjectVisionModels projectId={projectId} projectType={projectType} />;
 }

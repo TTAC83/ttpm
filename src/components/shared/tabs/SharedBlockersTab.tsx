@@ -195,6 +195,7 @@ export function SharedBlockersTab({ projectId, projectType }: SharedBlockersTabP
       <BlockerDrawer
         blocker={selectedBlocker}
         projectId={projectId}
+        projectType={projectType}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
         onSuccess={loadBlockers}

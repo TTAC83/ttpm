@@ -5,8 +5,7 @@ interface SharedActionsTabProps {
   projectType: 'implementation' | 'solutions';
 }
 
-export function SharedActionsTab({ projectId }: SharedActionsTabProps) {
-  // Actions component currently only supports implementation projects
-  // as it uses project_tasks which are implementation-specific
-  return <ProjectActions projectId={projectId} />;
+export function SharedActionsTab({ projectId, projectType }: SharedActionsTabProps) {
+  // Actions component now supports both implementation and solutions projects
+  return <ProjectActions projectId={projectId} projectType={projectType} />;
 }

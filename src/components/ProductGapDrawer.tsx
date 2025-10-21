@@ -23,6 +23,7 @@ interface Profile {
 
 interface ProductGapDrawerProps {
   projectId?: string;
+  projectType?: 'implementation' | 'solutions';
   productGap?: ProductGap;
   featureRequest?: any; // Feature request to link to
   open: boolean;
@@ -31,7 +32,7 @@ interface ProductGapDrawerProps {
   trigger?: React.ReactNode;
 }
 
-export function ProductGapDrawer({ projectId, productGap, featureRequest, open, onOpenChange, onSuccess, trigger }: ProductGapDrawerProps) {
+export function ProductGapDrawer({ projectId, projectType = 'implementation', productGap, featureRequest, open, onOpenChange, onSuccess, trigger }: ProductGapDrawerProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -149,8 +150,12 @@ export function ProductGapDrawer({ projectId, productGap, featureRequest, open, 
     setIsSubmitting(true);
 
     try {
+      const finalProjectId = projectId || selectedProjectId;
       const productGapData = {
-        project_id: projectId || selectedProjectId,
+        ...(projectType === 'solutions' 
+          ? { solutions_project_id: finalProjectId, project_type: 'solutions' as const }
+          : { project_id: finalProjectId, project_type: 'implementation' as const }
+        ),
         title: title.trim(),
         description: description.trim() || undefined,
         ticket_link: ticketLink.trim() || undefined,

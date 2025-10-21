@@ -124,6 +124,7 @@ export function SharedProductGapsTab({ projectId, projectType }: SharedProductGa
 
       <ProductGapDrawer
         projectId={projectId}
+        projectType={projectType}
         productGap={selectedProductGap}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}

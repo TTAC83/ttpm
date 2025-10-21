@@ -82,6 +82,7 @@ interface EscalationDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projectId: string;
+  projectType?: 'implementation' | 'solutions';
   blocker?: ImplementationBlocker;
   onSuccess: () => void;
 }
@@ -90,6 +91,7 @@ export function BlockerDrawer({
   open,
   onOpenChange,
   projectId,
+  projectType = 'implementation',
   blocker,
   onSuccess,
 }: EscalationDrawerProps) {
@@ -189,8 +191,10 @@ export function BlockerDrawer({
         toast.success("Escalation updated successfully");
       } else {
         const newBlocker = await blockersService.createBlocker({
-          project_id: projectId,
-          project_type: 'implementation',
+          ...(projectType === 'solutions' 
+            ? { solutions_project_id: projectId, project_type: 'solutions' as const }
+            : { project_id: projectId, project_type: 'implementation' as const }
+          ),
           title: data.title,
           description: data.description,
           owner: data.owner,

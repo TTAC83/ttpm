@@ -26,6 +26,7 @@ interface CreateEventDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projectId: string;
+  projectType?: 'implementation' | 'solutions';
   prefilledTitle?: string;
   onEventCreated?: () => void;
 }
@@ -33,7 +34,8 @@ interface CreateEventDialogProps {
 const CreateEventDialog = ({ 
   open, 
   onOpenChange, 
-  projectId, 
+  projectId,
+  projectType = 'implementation',
   prefilledTitle = '', 
   onEventCreated 
 }: CreateEventDialogProps) => {
@@ -120,17 +122,22 @@ const CreateEventDialog = ({
     
     try {
       // Create the event
+      const eventInsert: any = {
+        ...(projectType === 'solutions' 
+          ? { solutions_project_id: projectId, project_type: 'solutions' as const }
+          : { project_id: projectId, project_type: 'implementation' as const }
+        ),
+        title: formData.title,
+        description: formData.description || null,
+        start_date: formData.start_date,
+        end_date: formData.end_date,
+        created_by: user.id,
+        is_critical: formData.is_critical
+      };
+
       const { data: eventData, error: eventError } = await supabase
         .from('project_events')
-        .insert({
-          project_id: projectId,
-          title: formData.title,
-          description: formData.description || null,
-          start_date: formData.start_date,
-          end_date: formData.end_date,
-          created_by: user.id,
-          is_critical: formData.is_critical
-        })
+        .insert(eventInsert)
         .select()
         .single();
 

@@ -46,6 +46,8 @@ interface Camera {
   lens_type: string;
   light_required?: boolean;
   light_id?: string;
+  plc_master_id?: string;
+  hmi_master_id?: string;
   measurements?: {
     horizontal_fov?: string;
     working_distance?: string;
@@ -143,6 +145,13 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
         })
       );
 
+      // Prepare vision accessory master IDs to filter IoT list
+      const { data: visionMaster } = await supabase
+        .from('hardware_master')
+        .select('id, hardware_type')
+        .in('hardware_type', ['Light','PLC','HMI']);
+      const visionAccessoryIds = new Set((visionMaster || []).map((h: any) => h.id));
+
       // Fetch equipment for each position
       const positionsWithEquipment = await Promise.all(
         positionsWithTitles.map(async (position) => {
@@ -217,7 +226,8 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
 
               return {
                 ...eq,
-                cameras: camerasWithData
+                cameras: camerasWithData,
+                iot_devices: (eq.iot_devices || []).filter((d: any) => !visionAccessoryIds.has(d.hardware_master_id))
               };
             })
           );
@@ -525,6 +535,13 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
                             <p className="font-medium">{camera.equipmentName}</p>
                             <p className="text-sm text-muted-foreground">Position: {camera.positionName}</p>
                             <Badge variant="outline" className="mt-2">{camera.camera_type}</Badge>
+                            {(camera.light_id || camera.plc_master_id || camera.hmi_master_id) && (
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {camera.light_id && <Badge variant="secondary" className="text-xs">Light attached</Badge>}
+                                {camera.plc_master_id && <Badge variant="secondary" className="text-xs">PLC attached</Badge>}
+                                {camera.hmi_master_id && <Badge variant="secondary" className="text-xs">HMI attached</Badge>}
+                              </div>
+                            )}
                           </div>
                           <Button
                             variant="outline"

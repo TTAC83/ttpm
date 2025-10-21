@@ -182,7 +182,9 @@ export const LineWizard: React.FC<LineWizardProps> = ({
                   light_required: cam.light_required || false,
                   light_id: cam.light_id || undefined,
                   plc_attached: cam.plc_attached || false,
-                  plc_master_id: cam.plc_master_id || "",
+                  plc_master_id: cam.plc_master_id || undefined,
+                  hmi_required: cam.hmi_required || false,
+                  hmi_master_id: cam.hmi_master_id || undefined,
                   relay_outputs: outputs.data || [],
                   horizontal_fov: measurements.data?.horizontal_fov?.toString() || "",
                   working_distance: measurements.data?.working_distance?.toString() || "",
@@ -404,7 +406,11 @@ export const LineWizard: React.FC<LineWizardProps> = ({
                 lens_type: camera.lens_type,
                 mac_address: camera.name || '',
                 light_required: camera.light_required || false,
-                light_id: null, // Lighting managed via hardware catalog
+                light_id: camera.light_id || null,
+                plc_attached: camera.plc_attached || false,
+                plc_master_id: camera.plc_master_id || null,
+                hmi_required: camera.hmi_required || false,
+                hmi_master_id: camera.hmi_master_id || null,
               })
               .select()
               .single();
@@ -469,38 +475,9 @@ export const LineWizard: React.FC<LineWizardProps> = ({
                   notes: output.notes
                 })));
             }
-
-            // Persist attached hardware (Light, PLC, HMI) as line hardware via iot_devices
-            if (camera.light_id) {
-              await supabase.from('iot_devices').insert({
-                equipment_id: equipmentData.id,
-                name: 'Light',
-                mac_address: `IOT-${Math.random().toString(36).substring(7)}`,
-                hardware_master_id: camera.light_id,
-                receiver_mac_address: `REC-${Math.random().toString(36).substring(7)}`,
-              });
-            }
-            if (camera.plc_master_id) {
-              await supabase.from('iot_devices').insert({
-                equipment_id: equipmentData.id,
-                name: 'PLC',
-                mac_address: `IOT-${Math.random().toString(36).substring(7)}`,
-                hardware_master_id: camera.plc_master_id,
-                receiver_mac_address: `REC-${Math.random().toString(36).substring(7)}`,
-              });
-            }
-            if ((camera as any).hmi_master_id) {
-              await supabase.from('iot_devices').insert({
-                equipment_id: equipmentData.id,
-                name: 'HMI',
-                mac_address: `IOT-${Math.random().toString(36).substring(7)}`,
-                hardware_master_id: (camera as any).hmi_master_id,
-                receiver_mac_address: `REC-${Math.random().toString(36).substring(7)}`,
-              });
-            }
           }
 
-          // Create IoT devices for this equipment
+          // Create IoT devices for this equipment (excluding camera accessories)
           for (const iot of eq.iot_devices) {
             await supabase
               .from('iot_devices')

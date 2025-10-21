@@ -320,7 +320,7 @@ export function VisionModelDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {lines.map((line) => (
+                        {lines.filter(line => line.line_name && line.line_name.trim() !== '').map((line) => (
                           <SelectItem key={line.id} value={line.line_name}>
                             {line.line_name}
                           </SelectItem>
@@ -359,7 +359,7 @@ export function VisionModelDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {positions.map((position) => (
+                        {positions.filter(position => position.name && position.name.trim() !== '').map((position) => (
                           <SelectItem key={position.id} value={position.name}>
                             {position.name}
                           </SelectItem>
@@ -388,7 +388,7 @@ export function VisionModelDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {equipment.map((eq) => (
+                        {equipment.filter(eq => eq.name && eq.name.trim() !== '').map((eq) => (
                           <SelectItem key={eq.id} value={eq.name}>
                             {eq.name}
                           </SelectItem>

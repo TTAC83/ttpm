@@ -166,14 +166,23 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
       // Fetch equipment for each position
       const positionsWithEquipment = await Promise.all(
         positionsWithTitles.map(async (position) => {
-          const { data: equipment, error: equipmentError } = await supabase
+          // For solutions lines, equipment is linked via solutions_line_id
+          // For implementation lines, equipment is linked via position_id
+          const equipmentQuery = supabase
             .from('equipment')
             .select(`
               *,
               cameras(*),
               iot_devices(*)
-            `)
-            .eq('position_id', position.id);
+            `);
+          
+          if (isSolutionsLine) {
+            equipmentQuery.eq('solutions_line_id', lineId).eq('position_id', position.id);
+          } else {
+            equipmentQuery.eq('position_id', position.id);
+          }
+          
+          const { data: equipment, error: equipmentError } = await equipmentQuery;
 
           if (equipmentError) throw equipmentError;
 

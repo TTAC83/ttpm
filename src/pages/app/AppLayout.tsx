@@ -36,26 +36,6 @@ export const AppLayout = () => {
   const location = useLocation();
   const [openGroups, setOpenGroups] = useState<string[]>([]);
 
-  // Load open groups from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem('nav:openGroups');
-    if (saved) {
-      setOpenGroups(JSON.parse(saved));
-    } else {
-      // Auto-open group containing active route
-      const currentPath = location.pathname;
-      const autoOpenGroup = NAV.find(item => 
-        item.children?.some(child => 
-          child.to === currentPath || 
-          child.matchPaths?.some(path => currentPath.startsWith(path))
-        )
-      );
-      if (autoOpenGroup) {
-        setOpenGroups([autoOpenGroup.label]);
-      }
-    }
-  }, [location.pathname]);
-
   // Save open groups to localStorage
   useEffect(() => {
     localStorage.setItem('nav:openGroups', JSON.stringify(openGroups));

@@ -27,6 +27,7 @@ import { ProjectBlockers } from './tabs/ProjectBlockers';
 import { ProjectProductGaps } from './tabs/ProjectProductGaps';
 import WBS from '../implementation/WBS';
 import { ProjectHardware } from './tabs/ProjectHardware';
+import { ProjectHardwareSummary } from './tabs/ProjectHardwareSummary';
 
 interface Project {
   id: string;
@@ -125,7 +126,7 @@ export const ProjectDetail = () => {
   useEffect(() => {
     // Handle URL parameters to set active tab
     const tab = searchParams.get('tab');
-    if (tab && ['overview', 'contract', 'team', 'hardware', 'factory', 'lines', 'tasks', 'wbs', 'actions', 'calendar', 'vision-models', 'audit', 'blockers'].includes(tab)) {
+    if (tab && ['overview', 'contract', 'team', 'hardware', 'hardware-summary', 'factory', 'lines', 'tasks', 'wbs', 'actions', 'calendar', 'vision-models', 'audit', 'blockers'].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -377,12 +378,13 @@ export const ProjectDetail = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="space-y-2">
           {/* First row of tabs */}
-          <TabsList className="grid w-full grid-cols-9">
+          <TabsList className="grid w-full grid-cols-10">
             <TabsTrigger value="overview">Customer Overview</TabsTrigger>
             <TabsTrigger value="contract">Contract Info</TabsTrigger>
             <TabsTrigger value="team">Team</TabsTrigger>
             <TabsTrigger value="account">Account Info</TabsTrigger>
             <TabsTrigger value="hardware">Factory Hardware</TabsTrigger>
+            <TabsTrigger value="hardware-summary">Hardware Summary</TabsTrigger>
             <TabsTrigger value="factory">Factory</TabsTrigger>
             <TabsTrigger value="lines">Lines</TabsTrigger>
             <TabsTrigger value="tasks">Tasks</TabsTrigger>
@@ -429,6 +431,10 @@ export const ProjectDetail = () => {
 
         <TabsContent value="hardware" className="space-y-4">
           <ProjectHardware projectId={project.id} type="project" />
+        </TabsContent>
+
+        <TabsContent value="hardware-summary" className="space-y-4">
+          <ProjectHardwareSummary projectId={project.id} />
         </TabsContent>
 
         <TabsContent value="factory" className="space-y-4">

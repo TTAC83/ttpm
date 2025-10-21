@@ -65,7 +65,7 @@ export const LineUseCasesTable: React.FC<LineUseCasesTableProps> = ({ lineId }) 
                   )
                 )
               ),
-              positions (
+              positions!position_id (
                 id,
                 name
               )
@@ -92,7 +92,7 @@ export const LineUseCasesTable: React.FC<LineUseCasesTableProps> = ({ lineId }) 
                   )
                 )
               ),
-              positions (
+              positions!position_id (
                 id,
                 name
               )

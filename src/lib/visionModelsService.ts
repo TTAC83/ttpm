@@ -20,6 +20,7 @@ export interface VisionModel {
   created_at: string;
   updated_at: string;
   project_name?: string;
+  customer_name?: string;
 }
 
 export interface VisionModelVerification {
@@ -69,20 +70,27 @@ export const visionModelsService = {
     // Get unique project IDs
     const projectIds = [...new Set(visionModels.map((m: any) => m.project_id).filter(Boolean))];
 
-    // Fetch project names
+    // Fetch project names and company info
     const { data: projects } = await supabase
       .from('projects')
-      .select('id, name')
+      .select('id, name, company_id, companies(name)')
       .in('id', projectIds);
 
-    const projectMap = new Map((projects || []).map((p: any) => [p.id, p.name]));
+    const projectMap = new Map((projects || []).map((p: any) => [p.id, {
+      name: p.name,
+      customer: p.companies?.name || 'Unknown'
+    }]));
 
-    // Transform to include project_name
-    const models = visionModels.map((item: any) => ({
-      ...item,
-      project_name: projectMap.get(item.project_id) || 'Unknown',
-      project_type: 'implementation' as const
-    }));
+    // Transform to include project_name and customer_name
+    const models = visionModels.map((item: any) => {
+      const projectInfo = projectMap.get(item.project_id);
+      return {
+        ...item,
+        project_name: projectInfo?.name || 'Unknown',
+        customer_name: projectInfo?.customer || 'Unknown',
+        project_type: 'implementation' as const
+      };
+    });
 
     return models as VisionModel[];
   },

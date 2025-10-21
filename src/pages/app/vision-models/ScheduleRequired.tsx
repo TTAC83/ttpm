@@ -55,6 +55,7 @@ export default function ScheduleRequired() {
       if (!searchTerm) return true;
       const search = searchTerm.toLowerCase();
       return (
+        model.customer_name?.toLowerCase().includes(search) ||
         model.project_name?.toLowerCase().includes(search) ||
         model.line_name?.toLowerCase().includes(search) ||
         model.equipment?.toLowerCase().includes(search) ||
@@ -118,7 +119,7 @@ export default function ScheduleRequired() {
         </CardHeader>
         <CardContent className="space-y-4">
           <Input
-            placeholder="Search by project, line, equipment, SKU, title, use case, or group..."
+            placeholder="Search by customer, project, line, equipment, SKU, title, use case, or group..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="max-w-md"
@@ -128,6 +129,11 @@ export default function ScheduleRequired() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>
+                    <Button variant="ghost" onClick={() => handleSort('customer_name')} className="h-8 p-0 font-semibold hover:bg-transparent">
+                      Customer {getSortIcon('customer_name')}
+                    </Button>
+                  </TableHead>
                   <TableHead>
                     <Button variant="ghost" onClick={() => handleSort('project_name')} className="h-8 p-0 font-semibold hover:bg-transparent">
                       Project {getSortIcon('project_name')}
@@ -179,13 +185,14 @@ export default function ScheduleRequired() {
               <TableBody>
                 {filteredAndSortedModels.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={11} className="text-center text-muted-foreground py-8">
                       No models found requiring schedule
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredAndSortedModels.map((model) => (
                     <TableRow key={model.id}>
+                      <TableCell className="font-medium">{model.customer_name}</TableCell>
                       <TableCell className="font-medium">{model.project_name}</TableCell>
                       <TableCell>{model.line_name}</TableCell>
                       <TableCell>{model.equipment}</TableCell>

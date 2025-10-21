@@ -50,6 +50,7 @@ import BoardSummary from "./pages/app/implementation/BoardSummary";
 import { InternalRoute } from "@/components/auth/InternalRoute";
 import ExpansionReport from "./pages/app/global-dashboards/ExpansionReport";
 import ScheduleRequired from "./pages/app/vision-models/ScheduleRequired";
+import FootageRequired from "./pages/app/vision-models/FootageRequired";
 
 const queryClient = new QueryClient();
 
@@ -142,6 +143,9 @@ const App = () => (
               <Route path="tasks" element={<GlobalTasks />} />
               <Route path="calendar" element={<GlobalCalendar />} />
               <Route path="models" element={<GlobalModels />} />
+              <Route path="vision-models/footage-required" element={<InternalRoute>
+                <FootageRequired />
+              </InternalRoute>} />
               <Route path="vision-models/schedule-required" element={<InternalRoute>
                 <ScheduleRequired />
               </InternalRoute>} />

@@ -99,6 +99,53 @@ export const visionModelsService = {
     return models as VisionModel[];
   },
 
+  async getFootageRequiredModels(): Promise<VisionModel[]> {
+    // Get all vision models from implementation projects with status = 'Footage Required'
+    // and WITH product run dates set
+    const { data: visionModels, error } = await supabase
+      .from('vision_models')
+      .select('*')
+      .eq('status', 'Footage Required')
+      .not('project_id', 'is', null)
+      .not('product_run_start', 'is', null)
+      .not('product_run_end', 'is', null)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    if (!visionModels || visionModels.length === 0) return [];
+
+    // Get unique project IDs
+    const projectIds = [...new Set(visionModels.map((m: any) => m.project_id).filter(Boolean))];
+
+    // Fetch project names and company info
+    const { data: projects } = await supabase
+      .from('projects')
+      .select(`
+        id,
+        name,
+        companies!projects_company_id_fkey(name)
+      `)
+      .in('id', projectIds);
+
+    const projectMap = new Map((projects || []).map((p: any) => [p.id, {
+      name: p.name,
+      customer: p.companies?.name || 'Unknown'
+    }]));
+
+    // Transform to include project_name and customer_name
+    const models = visionModels.map((item: any) => {
+      const projectInfo = projectMap.get(item.project_id);
+      return {
+        ...item,
+        project_name: projectInfo?.name || 'Unknown',
+        customer_name: projectInfo?.customer || 'Unknown',
+        project_type: 'implementation' as const
+      };
+    });
+
+    return models as VisionModel[];
+  },
+
   async createVisionModel(model: Omit<VisionModel, 'id' | 'created_at' | 'updated_at'>) {
     const insertData: any = model;
     

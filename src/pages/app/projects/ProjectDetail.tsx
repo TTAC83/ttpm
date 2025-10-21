@@ -403,7 +403,7 @@ export const ProjectDetail = () => {
               <TabsTrigger value="audit">Audit</TabsTrigger>
             )}
             {profile?.is_internal && (
-              <TabsTrigger value="product-gaps">Product Gaps</TabsTrigger>
+              <TabsTrigger value="product-gaps">Feature Requirements</TabsTrigger>
             )}
             {profile?.is_internal && ['IoT', 'Vision', 'Hybrid'].includes(project.domain) && (
               <TabsTrigger value="blockers">Escalations</TabsTrigger>

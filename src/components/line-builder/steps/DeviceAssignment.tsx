@@ -32,6 +32,31 @@ interface Equipment {
     lens_type: string;
     light_required?: boolean;
     light_id?: string;
+    light_notes?: string;
+    plc_attached?: boolean;
+    plc_master_id?: string;
+    relay_outputs?: Array<{
+      id: string;
+      output_number: number;
+      type: string;
+      custom_name: string;
+      notes: string;
+    }>;
+    hmi_required?: boolean;
+    hmi_master_id?: string;
+    hmi_notes?: string;
+    horizontal_fov?: string;
+    working_distance?: string;
+    smallest_text?: string;
+    use_case_ids?: string[];
+    use_case_description?: string;
+    attributes?: Array<{
+      id: string;
+      title: string;
+      description: string;
+    }>;
+    product_flow?: string;
+    camera_view_description?: string;
   }>;
   iot_devices: Array<{
     id: string;
@@ -680,7 +705,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                         </div>
                       </div>
 
-                      {/* Cameras */}
+                       {/* Cameras */}
                       <div>
                         <h4 className="font-medium mb-2 flex items-center">
                           <Camera className="mr-1 h-4 w-4" />
@@ -690,35 +715,70 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                           <p className="text-sm text-muted-foreground">No cameras assigned</p>
                         ) : (
                           <div className="space-y-2">
-                            {eq.cameras.map((camera) => (
-                              <div
-                                key={camera.id}
-                                className="flex items-center justify-between bg-muted/50 p-3 rounded-lg"
-                              >
-                                 <div className="flex flex-col gap-1">
-                                   <div className="font-medium text-sm">{camera.name}</div>
-                                   <div className="flex gap-2 flex-wrap">
-                                     <Badge variant="outline">{camera.camera_type}</Badge>
-                                   </div>
-                                 </div>
-                                <div className="flex gap-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => openEditCameraDialog(eq.positionId, eq.id, camera)}
-                                  >
-                                    <Edit className="h-3 w-3" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => removeCamera(eq.positionId, eq.id, camera.id)}
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
+                            {eq.cameras.map((camera) => {
+                              const lightInfo = camera.light_id ? lights.find(l => l.id === camera.light_id) : null;
+                              const plcInfo = camera.plc_master_id ? plcs.find(p => p.id === camera.plc_master_id) : null;
+                              const hmiInfo = camera.hmi_master_id ? hmis.find(h => h.id === camera.hmi_master_id) : null;
+                              
+                              return (
+                                <div
+                                  key={camera.id}
+                                  className="bg-muted/50 p-3 rounded-lg space-y-2"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex flex-col gap-1">
+                                      <div className="font-medium text-sm">{camera.name}</div>
+                                      <div className="flex gap-2 flex-wrap">
+                                        <Badge variant="outline">
+                                          <Camera className="h-3 w-3 mr-1" />
+                                          {cameras.find(c => c.id === camera.camera_type)?.model_number || camera.camera_type}
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-1">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => openEditCameraDialog(eq.positionId, eq.id, camera)}
+                                      >
+                                        <Edit className="h-3 w-3" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => removeCamera(eq.positionId, eq.id, camera.id)}
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Vision Equipment Accessories */}
+                                  {(lightInfo || plcInfo || hmiInfo) && (
+                                    <div className="pl-4 border-l-2 border-primary/20 space-y-1">
+                                      {lightInfo && (
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                          <Lightbulb className="h-3 w-3" />
+                                          <span>{lightInfo.manufacturer} - {lightInfo.model_number}</span>
+                                        </div>
+                                      )}
+                                      {plcInfo && (
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                          <Cpu className="h-3 w-3" />
+                                          <span>{plcInfo.manufacturer} - {plcInfo.model_number}</span>
+                                        </div>
+                                      )}
+                                      {hmiInfo && (
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                          <Monitor className="h-3 w-3" />
+                                          <span>{hmiInfo.sku_no} - {hmiInfo.product_name}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
                       </div>

@@ -1119,33 +1119,45 @@ export type Database = {
           camera_type: string
           created_at: string
           equipment_id: string
+          hmi_master_id: string | null
+          hmi_required: boolean | null
           id: string
           lens_type: string
           light_id: string | null
           light_required: boolean | null
           mac_address: string
+          plc_attached: boolean | null
+          plc_master_id: string | null
           updated_at: string
         }
         Insert: {
           camera_type: string
           created_at?: string
           equipment_id: string
+          hmi_master_id?: string | null
+          hmi_required?: boolean | null
           id?: string
           lens_type: string
           light_id?: string | null
           light_required?: boolean | null
           mac_address: string
+          plc_attached?: boolean | null
+          plc_master_id?: string | null
           updated_at?: string
         }
         Update: {
           camera_type?: string
           created_at?: string
           equipment_id?: string
+          hmi_master_id?: string | null
+          hmi_required?: boolean | null
           id?: string
           lens_type?: string
           light_id?: string | null
           light_required?: boolean | null
           mac_address?: string
+          plc_attached?: boolean | null
+          plc_master_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1157,10 +1169,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "cameras_hmi_master_id_fkey"
+            columns: ["hmi_master_id"]
+            isOneToOne: false
+            referencedRelation: "hardware_master"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "cameras_light_id_fkey"
             columns: ["light_id"]
             isOneToOne: false
             referencedRelation: "lights"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cameras_plc_master_id_fkey"
+            columns: ["plc_master_id"]
+            isOneToOne: false
+            referencedRelation: "hardware_master"
             referencedColumns: ["id"]
           },
         ]
@@ -4449,6 +4475,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_camera_full: {
+        Args: { p_camera_id: string }
+        Returns: Json
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -4584,6 +4614,10 @@ export type Database = {
           p_is_billable?: boolean
         }
         Returns: undefined
+      }
+      save_camera_full: {
+        Args: { p_payload: Json }
+        Returns: Json
       }
       set_bau_weekly_review: {
         Args:

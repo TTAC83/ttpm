@@ -30,9 +30,19 @@ interface Equipment {
     lens_type: string;
     light_required?: boolean;
     light_id?: string;
+    light_notes?: string;
     plc_attached?: boolean;
     plc_master_id?: string;
+    relay_outputs?: Array<{
+      id: string;
+      output_number: number;
+      type: string;
+      custom_name: string;
+      notes: string;
+    }>;
+    hmi_required?: boolean;
     hmi_master_id?: string;
+    hmi_notes?: string;
     horizontal_fov?: string;
     working_distance?: string;
     smallest_text?: string;
@@ -45,12 +55,6 @@ interface Equipment {
     }>;
     product_flow?: string;
     camera_view_description?: string;
-    relay_outputs?: Array<{
-      output_number: number;
-      type: string;
-      custom_name: string;
-      notes: string;
-    }>;
   }>;
   iot_devices: Array<{
     id: string;
@@ -146,7 +150,7 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
                   // Fetch all camera-related data in parallel
                   const [outputs, measurements, useCases, attributes, views] = await Promise.all([
                     supabase.from('camera_plc_outputs')
-                      .select('output_number, type, custom_name, notes')
+                      .select('id, output_number, type, custom_name, notes')
                       .eq('camera_id', cam.id)
                       .order('output_number'),
                     supabase.from('camera_measurements')

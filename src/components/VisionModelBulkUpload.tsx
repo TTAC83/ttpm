@@ -24,7 +24,7 @@ interface ParsedRow {
   product_title: string;
   use_case: string;
   group_name?: string;
-  status: 'Footage Required' | 'Model Training' | 'Model Validation' | 'Complete';
+  status: 'Footage Required' | 'Annotation Required' | 'Processing Required' | 'Deployment Required' | 'Validation Required' | 'Complete';
   start_date?: string;
   end_date?: string;
   product_run_start?: string;

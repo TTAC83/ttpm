@@ -28,7 +28,7 @@ const visionModelSchema = z.object({
   end_date: z.date().optional(),
   product_run_start: z.date().optional(),
   product_run_end: z.date().optional(),
-  status: z.enum(['Footage Required', 'Model Training', 'Model Validation', 'Complete']),
+  status: z.enum(['Footage Required', 'Annotation Required', 'Processing Required', 'Deployment Required', 'Validation Required', 'Complete']),
 });
 
 type VisionModelFormData = z.infer<typeof visionModelSchema>;
@@ -47,7 +47,7 @@ interface VisionModel {
   end_date: string | null;
   product_run_start: string | null;
   product_run_end: string | null;
-  status: 'Footage Required' | 'Model Training' | 'Model Validation' | 'Complete';
+  status: 'Footage Required' | 'Annotation Required' | 'Processing Required' | 'Deployment Required' | 'Validation Required' | 'Complete';
   created_at: string;
   updated_at: string;
 }
@@ -471,8 +471,10 @@ export function VisionModelDialog({
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="Footage Required">Footage Required</SelectItem>
-                      <SelectItem value="Model Training">Model Training</SelectItem>
-                      <SelectItem value="Model Validation">Model Validation</SelectItem>
+                      <SelectItem value="Annotation Required">Annotation Required</SelectItem>
+                      <SelectItem value="Processing Required">Processing Required</SelectItem>
+                      <SelectItem value="Deployment Required">Deployment Required</SelectItem>
+                      <SelectItem value="Validation Required">Validation Required</SelectItem>
                       <SelectItem value="Complete">Complete</SelectItem>
                     </SelectContent>
                   </Select>

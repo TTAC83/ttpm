@@ -31,7 +31,7 @@ interface VisionModel {
   end_date: string | null;
   product_run_start: string | null;
   product_run_end: string | null;
-  status: 'Footage Required' | 'Model Training' | 'Model Validation' | 'Complete';
+  status: 'Footage Required' | 'Annotation Required' | 'Processing Required' | 'Deployment Required' | 'Validation Required' | 'Complete';
   created_at: string;
   updated_at: string;
 }

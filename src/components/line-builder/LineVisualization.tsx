@@ -282,7 +282,7 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
         .eq('hardware_type', 'HMI')
         .order('product_name'),
       supabase
-        .from('vision_use_cases')
+        .from('vision_use_cases_master')
         .select('id, name, description, category')
         .order('category', { ascending: true })
         .order('name', { ascending: true }),

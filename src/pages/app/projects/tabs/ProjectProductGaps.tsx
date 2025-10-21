@@ -34,22 +34,22 @@ export function ProjectProductGaps({ projectId }: ProjectProductGapsProps) {
   };
 
   if (isLoading) {
-    return <div>Loading product gaps...</div>;
+    return <div>Loading feature requirements...</div>;
   }
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">Product Gaps</h3>
+        <h3 className="text-lg font-medium">Feature Requirements</h3>
         <Button onClick={handleCreateNew} size="sm">
           <Plus className="h-4 w-4 mr-2" />
-          Add Product Gap
+          Add Feature Requirement
         </Button>
       </div>
 
       {productGaps.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
-          No product gaps recorded for this project.
+          No feature requirements recorded for this project.
         </div>
       ) : (
         <div className="space-y-2">

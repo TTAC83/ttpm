@@ -25,6 +25,8 @@ export type Database = {
           planned_date: string | null
           project_id: string | null
           project_task_id: string | null
+          project_type: Database["public"]["Enums"]["project_type"] | null
+          solutions_project_id: string | null
           status: Database["public"]["Enums"]["action_status"]
           title: string
         }
@@ -38,6 +40,8 @@ export type Database = {
           planned_date?: string | null
           project_id?: string | null
           project_task_id?: string | null
+          project_type?: Database["public"]["Enums"]["project_type"] | null
+          solutions_project_id?: string | null
           status?: Database["public"]["Enums"]["action_status"]
           title: string
         }
@@ -51,6 +55,8 @@ export type Database = {
           planned_date?: string | null
           project_id?: string | null
           project_task_id?: string | null
+          project_type?: Database["public"]["Enums"]["project_type"] | null
+          solutions_project_id?: string | null
           status?: Database["public"]["Enums"]["action_status"]
           title?: string
         }
@@ -74,6 +80,13 @@ export type Database = {
             columns: ["project_task_id"]
             isOneToOne: false
             referencedRelation: "project_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "actions_solutions_project_id_fkey"
+            columns: ["solutions_project_id"]
+            isOneToOne: false
+            referencedRelation: "solutions_projects"
             referencedColumns: ["id"]
           },
         ]
@@ -1876,9 +1889,11 @@ export type Database = {
           is_critical: boolean
           owner: string
           project_id: string
+          project_type: Database["public"]["Enums"]["project_type"] | null
           raised_at: string
           reason_code: string | null
           resolution_notes: string | null
+          solutions_project_id: string | null
           status: Database["public"]["Enums"]["implementation_blocker_status_enum"]
           title: string
           updated_at: string
@@ -1892,9 +1907,11 @@ export type Database = {
           is_critical?: boolean
           owner: string
           project_id: string
+          project_type?: Database["public"]["Enums"]["project_type"] | null
           raised_at?: string
           reason_code?: string | null
           resolution_notes?: string | null
+          solutions_project_id?: string | null
           status?: Database["public"]["Enums"]["implementation_blocker_status_enum"]
           title: string
           updated_at?: string
@@ -1908,9 +1925,11 @@ export type Database = {
           is_critical?: boolean
           owner?: string
           project_id?: string
+          project_type?: Database["public"]["Enums"]["project_type"] | null
           raised_at?: string
           reason_code?: string | null
           resolution_notes?: string | null
+          solutions_project_id?: string | null
           status?: Database["public"]["Enums"]["implementation_blocker_status_enum"]
           title?: string
           updated_at?: string
@@ -1928,6 +1947,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "implementation_blockers_solutions_project_id_fkey"
+            columns: ["solutions_project_id"]
+            isOneToOne: false
+            referencedRelation: "solutions_projects"
             referencedColumns: ["id"]
           },
         ]
@@ -2381,7 +2407,9 @@ export type Database = {
           id: string
           is_critical: boolean
           project_id: string
+          project_type: Database["public"]["Enums"]["project_type"] | null
           resolution_notes: string | null
+          solutions_project_id: string | null
           status: string
           ticket_link: string | null
           title: string
@@ -2398,7 +2426,9 @@ export type Database = {
           id?: string
           is_critical?: boolean
           project_id: string
+          project_type?: Database["public"]["Enums"]["project_type"] | null
           resolution_notes?: string | null
+          solutions_project_id?: string | null
           status?: string
           ticket_link?: string | null
           title: string
@@ -2415,7 +2445,9 @@ export type Database = {
           id?: string
           is_critical?: boolean
           project_id?: string
+          project_type?: Database["public"]["Enums"]["project_type"] | null
           resolution_notes?: string | null
+          solutions_project_id?: string | null
           status?: string
           ticket_link?: string | null
           title?: string
@@ -2455,6 +2487,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_gaps_solutions_project_id_fkey"
+            columns: ["solutions_project_id"]
+            isOneToOne: false
+            referencedRelation: "solutions_projects"
             referencedColumns: ["id"]
           },
         ]
@@ -2529,6 +2568,8 @@ export type Database = {
           id: string
           is_critical: boolean
           project_id: string
+          project_type: Database["public"]["Enums"]["project_type"] | null
+          solutions_project_id: string | null
           start_date: string
           title: string
           updated_at: string
@@ -2541,6 +2582,8 @@ export type Database = {
           id?: string
           is_critical?: boolean
           project_id: string
+          project_type?: Database["public"]["Enums"]["project_type"] | null
+          solutions_project_id?: string | null
           start_date: string
           title: string
           updated_at?: string
@@ -2553,6 +2596,8 @@ export type Database = {
           id?: string
           is_critical?: boolean
           project_id?: string
+          project_type?: Database["public"]["Enums"]["project_type"] | null
+          solutions_project_id?: string | null
           start_date?: string
           title?: string
           updated_at?: string
@@ -2563,6 +2608,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_events_solutions_project_id_fkey"
+            columns: ["solutions_project_id"]
+            isOneToOne: false
+            referencedRelation: "solutions_projects"
             referencedColumns: ["id"]
           },
         ]
@@ -3850,6 +3902,8 @@ export type Database = {
           product_sku: string
           product_title: string
           project_id: string
+          project_type: Database["public"]["Enums"]["project_type"] | null
+          solutions_project_id: string | null
           start_date: string | null
           status: string
           updated_at: string
@@ -3867,6 +3921,8 @@ export type Database = {
           product_sku: string
           product_title: string
           project_id: string
+          project_type?: Database["public"]["Enums"]["project_type"] | null
+          solutions_project_id?: string | null
           start_date?: string | null
           status?: string
           updated_at?: string
@@ -3884,12 +3940,22 @@ export type Database = {
           product_sku?: string
           product_title?: string
           project_id?: string
+          project_type?: Database["public"]["Enums"]["project_type"] | null
+          solutions_project_id?: string | null
           start_date?: string | null
           status?: string
           updated_at?: string
           use_case?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "vision_models_solutions_project_id_fkey"
+            columns: ["solutions_project_id"]
+            isOneToOne: false
+            referencedRelation: "solutions_projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vision_use_cases: {
         Row: {
@@ -4822,6 +4888,7 @@ export type Database = {
       impl_health_simple: "green" | "red"
       impl_week_status: "on_track" | "off_track"
       implementation_blocker_status_enum: "Live" | "Closed"
+      project_type: "implementation" | "solutions"
       reference_status_enum: "Active" | "Promised" | "Priority" | "N/A"
       task_status: "Planned" | "In Progress" | "Blocked" | "Done"
       ticket_status_enum:
@@ -5005,6 +5072,7 @@ export const Constants = {
       impl_health_simple: ["green", "red"],
       impl_week_status: ["on_track", "off_track"],
       implementation_blocker_status_enum: ["Live", "Closed"],
+      project_type: ["implementation", "solutions"],
       reference_status_enum: ["Active", "Promised", "Priority", "N/A"],
       task_status: ["Planned", "In Progress", "Blocked", "Done"],
       ticket_status_enum: [

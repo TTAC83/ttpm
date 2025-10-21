@@ -2,7 +2,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface ProductGap {
   id: string;
-  project_id: string;
+  project_id?: string;
+  solutions_project_id?: string;
+  project_type?: 'implementation' | 'solutions';
   title: string;
   description?: string;
   ticket_link?: string;
@@ -25,7 +27,8 @@ export interface ProductGap {
 
 export interface DashboardProductGap {
   id: string;
-  project_id: string;
+  project_id?: string;
+  solutions_project_id?: string;
   project_name: string;
   company_name: string;
   title: string;
@@ -37,16 +40,23 @@ export interface DashboardProductGap {
 }
 
 export const productGapsService = {
-  async getProjectProductGaps(projectId: string): Promise<ProductGap[]> {
-    const { data, error } = await supabase
+  async getProjectProductGaps(
+    projectId: string,
+    projectType: 'implementation' | 'solutions' = 'implementation'
+  ): Promise<ProductGap[]> {
+    const column = projectType === 'solutions' ? 'solutions_project_id' : 'project_id';
+    const projectTable = projectType === 'solutions' ? 'solutions_projects' : 'projects';
+    
+    const { data, error} = await supabase
       .from('product_gaps')
       .select(`
         *,
-        projects!inner(name),
+        ${projectTable}!inner(name),
         assigned_to_profile:profiles!assigned_to(name),
         created_by_profile:profiles!created_by(name)
       `)
-      .eq('project_id', projectId)
+      .eq(column, projectId)
+      .eq('project_type', projectType)
       .order('created_at', { ascending: false });
 
     if (error) throw error;

@@ -2,7 +2,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface ProductGap {
   id: string;
-  project_id: string;
+  project_id?: string;
+  solutions_project_id?: string;
+  project_type?: 'implementation' | 'solutions';
   title: string;
   description?: string;
   ticket_link?: string;
@@ -25,7 +27,8 @@ export interface ProductGap {
 
 export interface DashboardProductGap {
   id: string;
-  project_id: string;
+  project_id?: string;
+  solutions_project_id?: string;
   project_name: string;
   company_name: string;
   title: string;
@@ -37,28 +40,32 @@ export interface DashboardProductGap {
 }
 
 export const productGapsService = {
-  async getProjectProductGaps(projectId: string): Promise<ProductGap[]> {
+  async getProjectProductGaps(
+    projectId: string,
+    projectType: 'implementation' | 'solutions' = 'implementation'
+  ): Promise<ProductGap[]> {
+    const column = projectType === 'solutions' ? 'solutions_project_id' : 'project_id';
+    const projectTable = projectType === 'solutions' ? 'solutions_projects' : 'projects';
+    
     const { data, error } = await supabase
       .from('product_gaps')
       .select(`
         *,
-        projects!inner(name),
+        ${projectTable}!inner(name),
         assigned_to_profile:profiles!assigned_to(name),
         created_by_profile:profiles!created_by(name)
       `)
-      .eq('project_id', projectId)
+      .eq(column, projectId)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
 
     return (data || []).map(gap => ({
       ...gap,
-      // Ensure types and derived fields
       status: gap.status as 'Live' | 'Closed',
-      project_name: (gap.projects as any)?.name,
+      project_name: (gap as any)[projectTable]?.name,
       assigned_to_name: (gap.assigned_to_profile as any)?.name,
       created_by_name: (gap.created_by_profile as any)?.name,
-      // Explicitly carry feature_request_id
       feature_request_id: (gap as any).feature_request_id ?? undefined,
     }));
   },
@@ -120,19 +127,21 @@ export const productGapsService = {
     }));
   },
 
-  async createProductGap(productGap: Omit<ProductGap, 'id' | 'created_at' | 'updated_at' | 'created_by'>): Promise<ProductGap> {
+  async createProductGap(productGap: Omit<ProductGap, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'project_name' | 'company_name' | 'assigned_to_name' | 'created_by_name'>): Promise<ProductGap> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
+    const insertData: any = {
+      ...productGap,
+      created_by: user.id
+    };
+
     const { data, error } = await supabase
       .from('product_gaps')
-      .insert({
-        ...productGap,
-        created_by: user.id
-      })
+      .insert(insertData)
       .select(`
         *,
-        projects!inner(name),
+        projects(name),
         assigned_to_profile:profiles!assigned_to(name),
         created_by_profile:profiles!created_by(name)
       `)

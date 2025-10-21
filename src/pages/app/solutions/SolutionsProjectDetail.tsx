@@ -17,6 +17,12 @@ import { FactoryConfigurationTab } from '@/components/shared/FactoryConfiguratio
 import { ProjectHardware } from '../projects/tabs/ProjectHardware';
 import ProjectGantt from '../projects/tabs/ProjectGantt';
 import ProjectTasks from '../projects/tabs/ProjectTasks';
+import { SharedActionsTab } from '@/components/shared/tabs/SharedActionsTab';
+import { SharedCalendarTab } from '@/components/shared/tabs/SharedCalendarTab';
+import { SharedVisionModelsTab } from '@/components/shared/tabs/SharedVisionModelsTab';
+import { SharedAuditTab } from '@/components/shared/tabs/SharedAuditTab';
+import { SharedProductGapsTab } from '@/components/shared/tabs/SharedProductGapsTab';
+import { SharedBlockersTab } from '@/components/shared/tabs/SharedBlockersTab';
 
 interface SolutionsProject {
   id: string;
@@ -193,17 +199,30 @@ export const SolutionsProjectDetail = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-9 lg:w-auto">
-          <TabsTrigger value="overview">Customer Overview</TabsTrigger>
-          <TabsTrigger value="contract">Contract Info</TabsTrigger>
-          <TabsTrigger value="team">Team</TabsTrigger>
-          <TabsTrigger value="account">Account Info</TabsTrigger>
-          <TabsTrigger value="hardware">Factory Hardware</TabsTrigger>
-          <TabsTrigger value="factory">Factory</TabsTrigger>
-          <TabsTrigger value="lines">Lines</TabsTrigger>
-          <TabsTrigger value="wbs">WBS</TabsTrigger>
-          <TabsTrigger value="hardware-summary">Hardware Summary</TabsTrigger>
-        </TabsList>
+        <div className="space-y-2">
+          {/* First row of tabs */}
+          <TabsList className="grid grid-cols-9 lg:w-auto">
+            <TabsTrigger value="overview">Customer Overview</TabsTrigger>
+            <TabsTrigger value="contract">Contract Info</TabsTrigger>
+            <TabsTrigger value="team">Team</TabsTrigger>
+            <TabsTrigger value="account">Account Info</TabsTrigger>
+            <TabsTrigger value="hardware">Factory Hardware</TabsTrigger>
+            <TabsTrigger value="factory">Factory</TabsTrigger>
+            <TabsTrigger value="lines">Lines</TabsTrigger>
+            <TabsTrigger value="wbs">WBS</TabsTrigger>
+            <TabsTrigger value="hardware-summary">Hardware Summary</TabsTrigger>
+          </TabsList>
+
+          {/* Second row of tabs - New unified tabs */}
+          <TabsList className="grid grid-cols-6 lg:w-auto">
+            <TabsTrigger value="actions">Actions</TabsTrigger>
+            <TabsTrigger value="calendar">Calendar</TabsTrigger>
+            <TabsTrigger value="vision-models">Vision Models</TabsTrigger>
+            <TabsTrigger value="audit">Audit</TabsTrigger>
+            <TabsTrigger value="product-gaps">Feature Requirements</TabsTrigger>
+            <TabsTrigger value="blockers">Escalations</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="overview" className="space-y-4">
           <OverviewTab data={project} onUpdate={fetchProject} type="solutions" />
@@ -239,6 +258,30 @@ export const SolutionsProjectDetail = () => {
 
         <TabsContent value="hardware-summary" className="space-y-4">
           <SolutionsHardwareSummary solutionsProjectId={project.id} />
+        </TabsContent>
+
+        <TabsContent value="actions" className="space-y-4">
+          <SharedActionsTab projectId={project.id} projectType="solutions" />
+        </TabsContent>
+
+        <TabsContent value="calendar" className="space-y-4">
+          <SharedCalendarTab projectId={project.id} projectType="solutions" />
+        </TabsContent>
+
+        <TabsContent value="vision-models" className="space-y-4">
+          <SharedVisionModelsTab projectId={project.id} projectType="solutions" />
+        </TabsContent>
+
+        <TabsContent value="audit" className="space-y-4">
+          <SharedAuditTab projectId={project.id} projectType="solutions" />
+        </TabsContent>
+
+        <TabsContent value="product-gaps" className="space-y-4">
+          <SharedProductGapsTab projectId={project.id} projectType="solutions" />
+        </TabsContent>
+
+        <TabsContent value="blockers" className="space-y-4">
+          <SharedBlockersTab projectId={project.id} projectType="solutions" />
         </TabsContent>
       </Tabs>
     </div>

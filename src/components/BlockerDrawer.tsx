@@ -190,6 +190,7 @@ export function BlockerDrawer({
       } else {
         const newBlocker = await blockersService.createBlocker({
           project_id: projectId,
+          project_type: 'implementation',
           title: data.title,
           description: data.description,
           owner: data.owner,

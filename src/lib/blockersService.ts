@@ -2,7 +2,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface ImplementationBlocker {
   id: string;
-  project_id: string;
+  project_id?: string;
+  solutions_project_id?: string;
+  project_type?: 'implementation' | 'solutions';
   title: string;
   description?: string;
   status: 'Live' | 'Closed';
@@ -45,11 +47,17 @@ export interface BlockerAttachment {
 
 export const blockersService = {
   // Get blockers for a project
-  async getProjectBlockers(projectId: string, status?: 'Live' | 'Closed' | 'All') {
+  async getProjectBlockers(
+    projectId: string, 
+    status?: 'Live' | 'Closed' | 'All',
+    projectType: 'implementation' | 'solutions' = 'implementation'
+  ) {
+    const column = projectType === 'solutions' ? 'solutions_project_id' : 'project_id';
+    
     let query = supabase
       .from('implementation_blockers')
       .select('*')
-      .eq('project_id', projectId)
+      .eq(column, projectId)
       .order('raised_at', { ascending: false });
 
     if (status && status !== 'All') {
@@ -178,7 +186,9 @@ export const blockersService = {
 
   // Create blocker
   async createBlocker(blocker: {
-    project_id: string;
+    project_id?: string;
+    solutions_project_id?: string;
+    project_type: 'implementation' | 'solutions';
     title: string;
     description?: string;
     owner: string;
@@ -186,12 +196,14 @@ export const blockersService = {
     reason_code?: string;
     is_critical?: boolean;
   }) {
+    const insertData: any = {
+      ...blocker,
+      created_by: (await supabase.auth.getUser()).data.user?.id
+    };
+
     const { data, error } = await supabase
       .from('implementation_blockers')
-      .insert([{
-        ...blocker,
-        created_by: (await supabase.auth.getUser()).data.user?.id
-      }])
+      .insert([insertData])
       .select()
       .single();
 

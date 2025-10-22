@@ -355,6 +355,7 @@ export default function FeatureRequests() {
                   >
                     Release Date {sortColumn === 'complete_date' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </TableHead>
+                  <TableHead>DevOps Link</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -400,6 +401,21 @@ export default function FeatureRequests() {
                         <span className="text-sm">
                           {new Date(request.complete_date).toLocaleDateString()}
                         </span>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {request.devops_link ? (
+                        <a 
+                          href={request.devops_link} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline text-sm"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          View DevOps
+                        </a>
                       ) : (
                         <span className="text-sm text-muted-foreground">-</span>
                       )}

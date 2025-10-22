@@ -169,6 +169,21 @@ export default function FeatureRequestDetail() {
             </div>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* DevOps Link Section */}
+          {featureRequest.devops_link && (
+            <div>
+              <h3 className="font-semibold mb-2">DevOps Feature Request</h3>
+              <a 
+                href={featureRequest.devops_link} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                {featureRequest.devops_link}
+              </a>
+            </div>
+          )}
+
           {/* Date Fields Section */}
           <div>
             <h3 className="font-semibold mb-3">Timeline</h3>

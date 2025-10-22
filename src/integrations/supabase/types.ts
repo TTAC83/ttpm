@@ -1517,6 +1517,7 @@ export type Database = {
           date_raised: string
           design_start_date: string | null
           dev_start_date: string | null
+          devops_link: string | null
           id: string
           problem_statement: string | null
           required_date: string | null
@@ -1536,6 +1537,7 @@ export type Database = {
           date_raised?: string
           design_start_date?: string | null
           dev_start_date?: string | null
+          devops_link?: string | null
           id?: string
           problem_statement?: string | null
           required_date?: string | null
@@ -1555,6 +1557,7 @@ export type Database = {
           date_raised?: string
           design_start_date?: string | null
           dev_start_date?: string | null
+          devops_link?: string | null
           id?: string
           problem_statement?: string | null
           required_date?: string | null
@@ -4563,10 +4566,7 @@ export type Database = {
         Args: { company_name?: string; new_role: string; target_email: string }
         Returns: undefined
       }
-      auth_user_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      auth_user_id: { Args: never; Returns: string }
       bau_create_customer: {
         Args: {
           p_company_id: string
@@ -4624,12 +4624,12 @@ export type Database = {
         Args: { subtask_task_id: string }
         Returns: boolean
       }
-      copy_wbs_layout_for_project: {
-        Args:
-          | { p_is_solutions?: boolean; p_project_id: string }
-          | { p_project_id: string }
-        Returns: undefined
-      }
+      copy_wbs_layout_for_project:
+        | {
+            Args: { p_is_solutions?: boolean; p_project_id: string }
+            Returns: undefined
+          }
+        | { Args: { p_project_id: string }; Returns: undefined }
       expense_admin_signoff: {
         Args: { p_approved: boolean; p_assignment_id: string }
         Returns: undefined
@@ -4656,7 +4656,7 @@ export type Database = {
         Returns: string
       }
       get_all_users_with_profiles: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           avatar_url: string
           company_id: string
@@ -4672,14 +4672,8 @@ export type Database = {
           user_id: string
         }[]
       }
-      get_camera_full: {
-        Args: { p_camera_id: string }
-        Returns: Json
-      }
-      get_current_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_camera_full: { Args: { p_camera_id: string }; Returns: Json }
+      get_current_user_role: { Args: never; Returns: string }
       get_item_predecessors: {
         Args: { p_item_id: number; p_item_type: string }
         Returns: {
@@ -4710,34 +4704,19 @@ export type Database = {
           user_id: string
         }[]
       }
-      get_user_company_id: {
-        Args: { user_email: string }
-        Returns: string
-      }
+      get_user_company_id: { Args: { user_email: string }; Returns: string }
       get_user_company_id_by_email: {
         Args: { user_email: string }
         Returns: string
       }
-      get_user_company_projects: {
-        Args: Record<PropertyKey, never>
-        Returns: string[]
-      }
-      get_user_primary_role: {
-        Args: { _user_id: string }
-        Returns: string
-      }
+      get_user_company_projects: { Args: never; Returns: string[] }
+      get_user_primary_role: { Args: { _user_id: string }; Returns: string }
       get_user_roles: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"][]
       }
-      has_expense_access: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      has_expense_admin_access: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      has_expense_access: { Args: never; Returns: boolean }
+      has_expense_admin_access: { Args: never; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -4745,13 +4724,45 @@ export type Database = {
         }
         Returns: boolean
       }
-      impl_generate_weeks: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      impl_set_weekly_review: {
-        Args:
-          | {
+      impl_generate_weeks: { Args: never; Returns: undefined }
+      impl_set_weekly_review:
+        | {
+            Args: {
+              p_company_id: string
+              p_customer_health: Database["public"]["Enums"]["impl_health_simple"]
+              p_notes?: string
+              p_project_status: Database["public"]["Enums"]["impl_week_status"]
+              p_week_start: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_company_id: string
+              p_customer_health: Database["public"]["Enums"]["impl_health_simple"]
+              p_notes?: string
+              p_project_status: Database["public"]["Enums"]["impl_week_status"]
+              p_reason_code?: string
+              p_week_start: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_company_id: string
+              p_current_status?: string
+              p_customer_health: Database["public"]["Enums"]["impl_health_simple"]
+              p_notes?: string
+              p_planned_go_live_date?: string
+              p_project_status: Database["public"]["Enums"]["impl_week_status"]
+              p_reason_code?: string
+              p_week_start: string
+              p_weekly_summary?: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
               p_churn_risk?: Database["public"]["Enums"]["churn_risk_level"]
               p_company_id: string
               p_current_status?: string
@@ -4763,62 +4774,18 @@ export type Database = {
               p_week_start: string
               p_weekly_summary?: string
             }
-          | {
-              p_company_id: string
-              p_current_status?: string
-              p_customer_health: Database["public"]["Enums"]["impl_health_simple"]
-              p_notes?: string
-              p_planned_go_live_date?: string
-              p_project_status: Database["public"]["Enums"]["impl_week_status"]
-              p_reason_code?: string
-              p_week_start: string
-              p_weekly_summary?: string
-            }
-          | {
-              p_company_id: string
-              p_customer_health: Database["public"]["Enums"]["impl_health_simple"]
-              p_notes?: string
-              p_project_status: Database["public"]["Enums"]["impl_week_status"]
-              p_reason_code?: string
-              p_week_start: string
-            }
-          | {
-              p_company_id: string
-              p_customer_health: Database["public"]["Enums"]["impl_health_simple"]
-              p_notes?: string
-              p_project_status: Database["public"]["Enums"]["impl_week_status"]
-              p_week_start: string
-            }
-        Returns: undefined
-      }
-      is_current_user_internal: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_current_user_internal_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_impl_lead_for: {
-        Args: { project_id: string }
-        Returns: boolean
-      }
-      is_internal: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_project_impl_lead: {
-        Args: { p_project_id: string }
-        Returns: boolean
-      }
+            Returns: undefined
+          }
+      is_current_user_internal: { Args: never; Returns: boolean }
+      is_current_user_internal_admin: { Args: never; Returns: boolean }
+      is_impl_lead_for: { Args: { project_id: string }; Returns: boolean }
+      is_internal: { Args: never; Returns: boolean }
+      is_project_impl_lead: { Args: { p_project_id: string }; Returns: boolean }
       is_project_member: {
         Args: { project_id: string; user_id?: string }
         Returns: boolean
       }
-      is_working_day: {
-        Args: { d: string }
-        Returns: boolean
-      }
+      is_working_day: { Args: { d: string }; Returns: boolean }
       link_expense_to_bau: {
         Args: {
           p_bau_customer_id: string
@@ -4827,22 +4794,21 @@ export type Database = {
         }
         Returns: undefined
       }
-      save_camera_full: {
-        Args: { p_payload: Json }
-        Returns: Json
-      }
-      set_bau_weekly_review: {
-        Args:
-          | {
+      save_camera_full: { Args: { p_payload: Json }; Returns: Json }
+      set_bau_weekly_review:
+        | {
+            Args: {
               p_bau_customer_id: string
-              p_churn_risk?: Database["public"]["Enums"]["churn_risk_level"]
               p_date_from: string
               p_date_to: string
               p_escalation?: string
               p_health: Database["public"]["Enums"]["bau_health_simple"]
               p_reason_code?: string
             }
-          | {
+            Returns: undefined
+          }
+        | {
+            Args: {
               p_bau_customer_id: string
               p_churn_risk?: Database["public"]["Enums"]["churn_risk_level"]
               p_date_from: string
@@ -4852,23 +4818,30 @@ export type Database = {
               p_reason_code?: string
               p_status?: string
             }
-          | {
+            Returns: undefined
+          }
+        | {
+            Args: {
               p_bau_customer_id: string
-              p_date_from: string
-              p_date_to: string
-              p_escalation: string
-              p_health: Database["public"]["Enums"]["bau_health_simple"]
-            }
-          | {
-              p_bau_customer_id: string
+              p_churn_risk?: Database["public"]["Enums"]["churn_risk_level"]
               p_date_from: string
               p_date_to: string
               p_escalation?: string
               p_health: Database["public"]["Enums"]["bau_health_simple"]
               p_reason_code?: string
             }
-        Returns: undefined
-      }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_bau_customer_id: string
+              p_date_from: string
+              p_date_to: string
+              p_escalation: string
+              p_health: Database["public"]["Enums"]["bau_health_simple"]
+            }
+            Returns: undefined
+          }
       snapshot_project_tasks: {
         Args: { p_project_id: string }
         Returns: undefined
@@ -4901,10 +4874,7 @@ export type Database = {
         }
         Returns: undefined
       }
-      user_company_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      user_company_id: { Args: never; Returns: string }
     }
     Enums: {
       action_status: "Open" | "In Progress" | "Done"

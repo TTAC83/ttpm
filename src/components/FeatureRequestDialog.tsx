@@ -58,6 +58,7 @@ const formSchema = z.object({
   design_start_date: z.string().optional(),
   dev_start_date: z.string().optional(),
   complete_date: z.string().optional(),
+  devops_link: z.string().optional(),
   status: z.enum(['Requested', 'Rejected', 'In Design', 'In Dev', 'Complete'] as const).default('Requested'),
 });
 
@@ -93,6 +94,7 @@ export function FeatureRequestDialog({
       design_start_date: "",
       dev_start_date: "",
       complete_date: "",
+      devops_link: "",
       status: 'Requested',
     },
   });
@@ -112,6 +114,7 @@ export function FeatureRequestDialog({
         design_start_date: featureRequest.design_start_date || "",
         dev_start_date: featureRequest.dev_start_date || "",
         complete_date: featureRequest.complete_date || "",
+        devops_link: featureRequest.devops_link || "",
         status: (featureRequest.status as FeatureRequestStatus) || 'Requested',
       });
     } else {
@@ -128,6 +131,7 @@ export function FeatureRequestDialog({
         design_start_date: "",
         dev_start_date: "",
         complete_date: "",
+        devops_link: "",
         status: 'Requested',
       });
     }
@@ -380,6 +384,24 @@ export function FeatureRequestDialog({
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="devops_link"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>DevOps Feature Request Link</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="https://..." 
+                      type="url"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}

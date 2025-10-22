@@ -17,6 +17,7 @@ export interface FeatureRequest {
   design_start_date?: string;
   dev_start_date?: string;
   complete_date?: string;
+  devops_link?: string;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -43,6 +44,7 @@ export interface CreateFeatureRequestInput {
   design_start_date?: string;
   dev_start_date?: string;
   complete_date?: string;
+  devops_link?: string;
   status?: FeatureRequestStatus;
 }
 

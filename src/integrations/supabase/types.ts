@@ -1685,6 +1685,63 @@ export type Database = {
         }
         Relationships: []
       }
+      hardware_status_tracking: {
+        Row: {
+          complete_date: string | null
+          created_at: string
+          created_by: string
+          equipment_name: string | null
+          hardware_reference: string
+          hardware_type: string
+          id: string
+          line_name: string | null
+          notes: string | null
+          project_id: string
+          sku_model: string | null
+          stage: Database["public"]["Enums"]["hardware_stage_enum"]
+          start_date: string | null
+          status: Database["public"]["Enums"]["hardware_status_enum"]
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          complete_date?: string | null
+          created_at?: string
+          created_by: string
+          equipment_name?: string | null
+          hardware_reference: string
+          hardware_type: string
+          id?: string
+          line_name?: string | null
+          notes?: string | null
+          project_id: string
+          sku_model?: string | null
+          stage: Database["public"]["Enums"]["hardware_stage_enum"]
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["hardware_status_enum"]
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          complete_date?: string | null
+          created_at?: string
+          created_by?: string
+          equipment_name?: string | null
+          hardware_reference?: string
+          hardware_type?: string
+          id?: string
+          line_name?: string | null
+          notes?: string | null
+          project_id?: string
+          sku_model?: string | null
+          stage?: Database["public"]["Enums"]["hardware_stage_enum"]
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["hardware_status_enum"]
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: []
+      }
       impl_weekly_reviews: {
         Row: {
           churn_risk: Database["public"]["Enums"]["churn_risk_level"] | null
@@ -4888,6 +4945,14 @@ export type Database = {
         | "In Design"
         | "In Dev"
         | "Complete"
+      hardware_stage_enum:
+        | "ordered"
+        | "configured"
+        | "bench_tested"
+        | "shipped"
+        | "installed"
+        | "validated"
+      hardware_status_enum: "open" | "overdue" | "complete"
       impl_health_simple: "green" | "red"
       impl_week_status: "on_track" | "off_track"
       implementation_blocker_status_enum: "Live" | "Closed"
@@ -5072,6 +5137,15 @@ export const Constants = {
         "In Dev",
         "Complete",
       ],
+      hardware_stage_enum: [
+        "ordered",
+        "configured",
+        "bench_tested",
+        "shipped",
+        "installed",
+        "validated",
+      ],
+      hardware_status_enum: ["open", "overdue", "complete"],
       impl_health_simple: ["green", "red"],
       impl_week_status: ["on_track", "off_track"],
       implementation_blocker_status_enum: ["Live", "Closed"],

@@ -880,11 +880,14 @@ export const MasterDataGanttView = ({
                         if (isSubtask && collapseState.globalLevel !== 'all') return null;
                         if (isSubtask && task.parent_task_id && !isTaskExpanded(task.parent_task_id)) return null;
                         
-                        const duration = task.planned_end_offset_days - task.planned_start_offset_days;
                         const dayWidth = 32;
                         const itemType = task.parent_task_id ? 'subtask' : 'task';
                         const leftOffset = task.planned_start_offset_days * dayWidth;
-                        const barWidth = Math.max(duration * dayWidth, dayWidth * 0.5);
+                        const durationDays = Math.max(
+                          task.duration_days ?? (task.planned_end_offset_days - task.planned_start_offset_days),
+                          1
+                        );
+                        const barWidth = durationDays * dayWidth;
 
                         return (
                           <div key={task.id} className="relative border-b border-border/30 hover:bg-muted/20 h-12">
@@ -915,7 +918,7 @@ export const MasterDataGanttView = ({
                                 cursor: dragState.type === 'none' ? 'grab' : dragState.type === 'task' && dragState.taskId === task.id ? 'grabbing' : 'default',
                                 transition: dragState.type === 'task' && dragState.taskId === task.id ? 'none' : 'all 150ms ease',
                               }}
-                              title={`${task.title}: Days ${task.planned_start_offset_days}-${task.planned_end_offset_days} (${duration} days)\nDrag to move • Drag handles to link • Double-click to edit`}
+                              title={`${task.title}: Days ${task.planned_start_offset_days}-${task.planned_end_offset_days} (${durationDays} days)\nDrag to move • Drag handles to link • Double-click to edit`}
                               onMouseDown={(e) => handleTaskBarMouseDown(e, task, step.id)}
                               onDoubleClick={() => setEditSidebar({ open: true, task, type: itemType })}
                             >

@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Check, X, AlertCircle } from 'lucide-react';
+import { Check, X, AlertCircle, Upload } from 'lucide-react';
 import { parseUKDate, toISODateString } from '@/lib/dateUtils';
+import * as XLSX from 'xlsx';
 
 interface ExcelRow {
   customer: string;
@@ -21,50 +22,67 @@ interface ProjectMatch {
   manualOverride?: string;
 }
 
-const excelData: ExcelRow[] = [
-  { customer: "Aquascot Phase 1 Label Validation Riverside", goLiveStatus: "Not live", projectStatus: "All models required Retraining due to camera move.", estimatedGoLiveDate: "1/11/2025" },
-  { customer: "Becketts Foods Ltd - Vision AI Label Validation & Meat Quality 13 Lines", goLiveStatus: "Implementation Phase", projectStatus: "New Project", estimatedGoLiveDate: "21/01/2025" },
-  { customer: "Berry Ardeer +3 machines", goLiveStatus: "Churn", projectStatus: "", estimatedGoLiveDate: "" },
-  { customer: "Butlers Farmhouse Cheeses - FRD Consultancy", goLiveStatus: "Complete", projectStatus: "", estimatedGoLiveDate: "" },
-  { customer: "Butlers Farmhouse Cheeses Vision AI - 2 Lines", goLiveStatus: "Not live", projectStatus: "All models required Retraining due to camera move and Brownie (Angled Product)", estimatedGoLiveDate: "30/01/2025" },
-  { customer: "Butternut Box - Label Validation + Core 2 Lines", goLiveStatus: "Implementation Phase", projectStatus: "Installation", estimatedGoLiveDate: "30/01/2025" },
-  { customer: "Cranswick Watton Site - Label Validation 1 Line", goLiveStatus: "Semi Live - testing", projectStatus: "(Multi products in a basket resolved)", estimatedGoLiveDate: "10/11/2025" },
-  { customer: "Delifrance (UK) Ltd Vision AI - 1 x M&S Sour Dough Ball Line", goLiveStatus: "Semi live -Counts, Length, Width & Height active", projectStatus: "Pending Features", estimatedGoLiveDate: "23/11/2025" },
-  { customer: "Finsbury Foods Vision Project: 2 Camera Caterpillar Line Memory Lane Cakes Cardiff", goLiveStatus: "Not Live", projectStatus: "MwH (3rd party building Robot. All models were trained, but require retraining for Brownie", estimatedGoLiveDate: "1/12/2025" },
-  { customer: "Hilton Foods Meat - Vision - Label Validation - 32 Lines", goLiveStatus: "Semi Live", projectStatus: "All models require retraining for Brownie", estimatedGoLiveDate: "15/01/2025" },
-  { customer: "Kendal - Core - Phase 1 Main Canning Line", goLiveStatus: "Live", projectStatus: "", estimatedGoLiveDate: "" },
-  { customer: "Kernow Coatings Core System", goLiveStatus: "Churn", projectStatus: "", estimatedGoLiveDate: "" },
-  { customer: "Kettle Produce Ltd - Label Validation Phase 1 - 7 Lines (28 Lines phase 2)", goLiveStatus: "Implementation Phase", projectStatus: "Go live for 1 line & 6 product mid december", estimatedGoLiveDate: "15/01/2025" },
-  { customer: "McColgans Core & Vision", goLiveStatus: "Core is live - Vision in implementation", projectStatus: "Vision installation", estimatedGoLiveDate: "1/1/2025" },
-  { customer: "Oldershaw Group (Moulton Bulb Co) Site Core and Vision Lines 14 / 15 / 16 Phase 1", goLiveStatus: "Live with IoT and Grader Solution. Line 14, 15 & 16 vision solution in implementation", projectStatus: "Proceding with phase 3 of implementation", estimatedGoLiveDate: "15/12/2025" },
-  { customer: "Park Cakes (Caterpillar Cake Spec Check) 4 Lines", goLiveStatus: "Implementation Phase", projectStatus: "", estimatedGoLiveDate: "15/01/2025" },
-  { customer: "Quin Global UK 8 Lines Core & Vision 1 Camera", goLiveStatus: "Live (Energy monitoring & mixing solutions still required, pending customer information)", projectStatus: "(Energy monitoring & mixing solutions still required, pending customer information)", estimatedGoLiveDate: "" },
-  { customer: "R & G Herbs Herb Dimensions and Label Validation", goLiveStatus: "Customer ERP project over running - no resource available for implementation.", projectStatus: "", estimatedGoLiveDate: "1/3/2026" },
-  { customer: "Radnor Hills 2 x Site Core System", goLiveStatus: "Live", projectStatus: "", estimatedGoLiveDate: "" },
-  { customer: "Silafrica Kenya Renewal Uplift", goLiveStatus: "Live", projectStatus: "", estimatedGoLiveDate: "" },
-  { customer: "Silafrica Tanzania", goLiveStatus: "Live", projectStatus: "", estimatedGoLiveDate: "" },
-  { customer: "Sofina Foods - Allergen label validation - 12 Lines", goLiveStatus: "Sofina Hull live by next friday, Malton being rescoped, Fraserborough yet to be scoped", projectStatus: "", estimatedGoLiveDate: "31/10/2025" },
-  { customer: "Stonegate Farmers (Vision Phase 2) - 4 additional cameras", goLiveStatus: "", projectStatus: "", estimatedGoLiveDate: "" },
-  { customer: "Stonegate Farmers Ltd PS for X Ray trial", goLiveStatus: "", projectStatus: "", estimatedGoLiveDate: "" },
-  { customer: "Stonegate Farmers Ltd Vision (Phase 1)", goLiveStatus: "Testing/Acceptance phase", projectStatus: "", estimatedGoLiveDate: "" },
-  { customer: "The Village Bakery Ltd - Vision & Core", goLiveStatus: "Live - (just tablets require from customer side for pancake line adoption/DT entry)", projectStatus: "", estimatedGoLiveDate: "" },
-  { customer: "Vitacress Herbs 16 Lines Core Chichester Site", goLiveStatus: "Live", projectStatus: "", estimatedGoLiveDate: "" },
-  { customer: "Yorkshire Premier Meat Ltd Label Validation and OEE Vision", goLiveStatus: "Live", projectStatus: "", estimatedGoLiveDate: "" },
-  { customer: "Zertus Group - Vision & Core Opp", goLiveStatus: "Project being rescoped", projectStatus: "", estimatedGoLiveDate: "" },
-];
 
 const BulkUpdateAccountInfo = () => {
   const [projects, setProjects] = useState<any[]>([]);
   const [matches, setMatches] = useState<ProjectMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [excelData, setExcelData] = useState<ExcelRow[]>([]);
+  const [fileUploaded, setFileUploaded] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetchProjectsAndMatch();
+    fetchProjects();
   }, []);
 
-  const fetchProjectsAndMatch = async () => {
+  useEffect(() => {
+    if (excelData.length > 0 && projects.length > 0) {
+      performMatching(projects);
+    }
+  }, [excelData, projects]);
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }) as any[][];
+
+        // Skip header rows and parse data
+        const parsedData: ExcelRow[] = [];
+        for (let i = 2; i < jsonData.length; i++) {
+          const row = jsonData[i];
+          if (row[0]) { // Only process rows with customer name
+            parsedData.push({
+              customer: String(row[0] || '').trim(),
+              goLiveStatus: String(row[1] || '').trim(),
+              projectStatus: String(row[2] || '').trim(),
+              estimatedGoLiveDate: String(row[3] || '').trim(),
+            });
+          }
+        }
+
+        setExcelData(parsedData);
+        setFileUploaded(true);
+        toast.success(`Loaded ${parsedData.length} rows from Excel`);
+      } catch (error) {
+        console.error('Error parsing Excel:', error);
+        toast.error('Failed to parse Excel file');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const fetchProjects = async () => {
     try {
+      setLoading(true);
+      
       const { data, error } = await supabase
         .from('projects')
         .select('id, name, customer_name, planned_go_live_date, current_status, churn_risk')
@@ -73,7 +91,6 @@ const BulkUpdateAccountInfo = () => {
       if (error) throw error;
 
       setProjects(data || []);
-      performMatching(data || []);
     } catch (error) {
       console.error('Error fetching projects:', error);
       toast.error('Failed to fetch projects');
@@ -193,7 +210,7 @@ const BulkUpdateAccountInfo = () => {
 
     setUpdating(false);
     toast.success(`Updated ${successCount} projects${errorCount > 0 ? `, ${errorCount} errors` : ''}`);
-    fetchProjectsAndMatch();
+    fetchProjects();
   };
 
   const getConfidenceBadge = (confidence: string) => {
@@ -210,6 +227,43 @@ const BulkUpdateAccountInfo = () => {
     return <div className="p-8">Loading projects...</div>;
   }
 
+  if (!fileUploaded) {
+    return (
+      <div className="container mx-auto p-8">
+        <h1 className="text-3xl font-bold mb-6">Bulk Update Account Info</h1>
+        <Card>
+          <CardHeader>
+            <CardTitle>Upload Excel File</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">
+              Upload an Excel file with the following columns:
+            </p>
+            <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+              <li>Column A: Customer Contracts (project name)</li>
+              <li>Column B: Go Live Status</li>
+              <li>Column C: Project Status</li>
+              <li>Column D: Estimated Go Live Date</li>
+            </ul>
+            <div className="flex items-center gap-4">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              <Button onClick={() => fileInputRef.current?.click()}>
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Excel File
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const highConfidenceMatches = matches.filter(m => m.confidence === 'high' && m.matchedProject);
   const needsReview = matches.filter(m => m.confidence !== 'high' || !m.matchedProject);
 
@@ -219,16 +273,28 @@ const BulkUpdateAccountInfo = () => {
         <div>
           <h1 className="text-3xl font-bold">Bulk Update Account Info</h1>
           <p className="text-muted-foreground mt-2">
-            Review and apply account info updates from Excel data
+            Review and apply account info updates from Excel data ({excelData.length} rows loaded)
           </p>
         </div>
-        <Button
-          onClick={handleApplyUpdates}
-          disabled={updating || highConfidenceMatches.length === 0}
-          size="lg"
-        >
-          {updating ? 'Updating...' : `Apply ${highConfidenceMatches.length} Updates`}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => {
+              setFileUploaded(false);
+              setExcelData([]);
+              setMatches([]);
+            }}
+            variant="outline"
+          >
+            Upload Different File
+          </Button>
+          <Button
+            onClick={handleApplyUpdates}
+            disabled={updating || highConfidenceMatches.length === 0}
+            size="lg"
+          >
+            {updating ? 'Updating...' : `Apply ${highConfidenceMatches.length} Updates`}
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">

@@ -875,8 +875,6 @@ const DetailSidebar = ({ node, onClose, onUpdate }: DetailSidebarProps) => {
           title: formData.title,
           details: formData.details,
           duration_days: formData.duration_days,
-          planned_start_offset_days: formData.planned_start_offset_days,
-          planned_end_offset_days: formData.planned_end_offset_days,
           position: formData.position,
           technology_scope: formData.technology_scope,
           assigned_role: formData.assigned_role || null

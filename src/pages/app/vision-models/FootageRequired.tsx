@@ -194,14 +194,16 @@ export default function FootageRequired() {
                   filteredAndSortedModels.map((model) => {
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
+                    const runStartDate = model.product_run_start ? new Date(model.product_run_start) : null;
                     const runEndDate = model.product_run_end ? new Date(model.product_run_end) : null;
+                    if (runStartDate) runStartDate.setHours(0, 0, 0, 0);
                     if (runEndDate) runEndDate.setHours(0, 0, 0, 0);
                     
-                    const isToday = runEndDate && runEndDate.getTime() === today.getTime();
-                    const isOverdue = runEndDate && runEndDate < today;
+                    const isInProductionWindow = runStartDate && runEndDate && today >= runStartDate && today <= runEndDate;
+                    const isOverdue = runEndDate && today > runEndDate;
                     
                     return (
-                      <TableRow key={model.id} className={isToday ? "bg-green-500/10" : isOverdue ? "bg-destructive/10" : ""}>
+                      <TableRow key={model.id} className={isInProductionWindow ? "bg-green-500/10" : isOverdue ? "bg-destructive/10" : ""}>
                       <TableCell className="font-medium">{model.customer_name}</TableCell>
                       <TableCell className="font-medium">{model.project_name}</TableCell>
                       <TableCell>{model.line_name}</TableCell>
@@ -211,7 +213,7 @@ export default function FootageRequired() {
                       <TableCell>{model.use_case}</TableCell>
                       <TableCell>{model.group_name || '-'}</TableCell>
                       <TableCell>{formatDateUK(model.product_run_start!)}</TableCell>
-                      <TableCell className={isToday ? "text-green-600 font-semibold" : isOverdue ? "text-destructive font-semibold" : ""}>
+                      <TableCell className={isInProductionWindow ? "text-green-600 font-semibold" : isOverdue ? "text-destructive font-semibold" : ""}>
                         {formatDateUK(model.product_run_end!)}
                       </TableCell>
                       <TableCell className="text-right">

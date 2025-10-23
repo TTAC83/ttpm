@@ -147,13 +147,24 @@ class WBSService {
         .single();
       
       const itemType = task?.parent_task_id ? 'subtask' : 'task';
-      
-      // Recalculate this task's dates based on its dependencies and new duration
-      await this.recalculateDatesWithDependencies(itemType, taskId);
+
+      // Get dependencies to decide how to update dates
+      const deps = await this.getDependenciesForItem(itemType, taskId);
+
+      if ((deps.predecessors?.length || 0) === 0) {
+        // No predecessors: keep start, adjust end to match new duration
+        const current = await this.getItemDates(itemType, taskId);
+        const start = current.planned_start_offset_days;
+        const dur = updates.duration_days ?? current.duration_days ?? 1;
+        const newEnd = start + dur;
+        await this.updateItemDates(itemType, taskId, start, newEnd, 0);
+      } else {
+        // Has predecessors: recalc based on dependency rules
+        await this.recalculateDatesWithDependencies(itemType, taskId);
+      }
       
       // Cascade to all successors
-      const deps = await this.getDependenciesForItem(itemType, taskId);
-      for (const succ of deps.successors) {
+      for (const succ of deps.successors || []) {
         await this.recalculateDatesWithDependencies(succ.successor_type, succ.successor_id);
       }
       
@@ -619,8 +630,11 @@ class WBSService {
     // Get duration (tasks/subtasks only - steps don't have duration)
     const duration = itemDates.duration_days || 1;
     
-    // If no dependencies, keep existing dates - don't recalculate
+    // If no dependencies, align end date to start + duration and exit
     if (deps.predecessors.length === 0) {
+      const start = itemDates.planned_start_offset_days;
+      const newEnd = start + duration;
+      await this.updateItemDates(itemType, itemId, start, newEnd, 0);
       return;
     }
     

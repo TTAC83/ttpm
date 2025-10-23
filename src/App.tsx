@@ -16,6 +16,7 @@ import UserManagement from "./pages/app/admin/UserManagement";
 import ProjectsList from "./pages/app/projects/ProjectsList";
 import NewProject from "./pages/app/projects/NewProject";
 import BulkProjectCreation from "./pages/app/projects/BulkProjectCreation";
+import BulkUpdateAccountInfo from "./pages/app/projects/BulkUpdateAccountInfo";
 import { UpdateProjectDates } from "./pages/app/projects/UpdateProjectDates";
 import ProjectDetail from "./pages/app/projects/ProjectDetail";
 import MasterDataManagement from "./pages/app/admin/MasterDataManagement";
@@ -122,6 +123,14 @@ const App = () => (
                 element={
                   <AuthGuard requiredRole="internal_admin">
                     <BulkProjectCreation />
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="projects/bulk-update-account-info" 
+                element={
+                  <AuthGuard requiredRole="internal_admin">
+                    <BulkUpdateAccountInfo />
                   </AuthGuard>
                 } 
               />

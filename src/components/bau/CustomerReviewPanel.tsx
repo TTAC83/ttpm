@@ -32,7 +32,6 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
   hasNext
 }) => {
   const [health, setHealth] = useState<'green' | 'red' | ''>('');
-  const [churnRisk, setChurnRisk] = useState<'Low' | 'Medium' | 'High' | 'Certain' | ''>('');
   const [status, setStatus] = useState('');
   const [reasonCode, setReasonCode] = useState('');
   const [escalation, setEscalation] = useState('');
@@ -101,7 +100,6 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
     // Always reset state when customer changes
     if (customer?.id !== previousCustomerId.current) {
       setHealth('');
-      setChurnRisk('');
       setStatus('');
       setReasonCode('');
       setEscalation('');
@@ -110,7 +108,6 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
     // Then populate from existing review if available
     if (existingReview) {
       setHealth(existingReview.health);
-      setChurnRisk(existingReview.churn_risk || '');
       setStatus(existingReview.status || '');
       // Only update reason code if it exists in the review
       if (existingReview.reason_code) {
@@ -122,7 +119,7 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
 
   // Auto-save with debouncing
   const autoSave = useCallback(
-    async (healthValue: 'green' | 'red' | '', churnRiskValue: 'Low' | 'Medium' | 'High' | 'Certain' | '', statusValue: string, reasonCodeValue: string, escalationValue: string) => {
+    async (healthValue: 'green' | 'red' | '', statusValue: string, reasonCodeValue: string, escalationValue: string) => {
       if (!customer || !selectedWeek || !healthValue) return; // Don't save if no health selected
 
       // Validate required fields when health is red
@@ -138,7 +135,6 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
           weekFrom: selectedWeek.date_from,
           weekTo: selectedWeek.date_to,
           health: healthValue as 'green' | 'red',
-          churnRisk: churnRiskValue || undefined,
           status: statusValue,
           reasonCode: reasonCodeValue,
           escalation: escalationValue
@@ -153,12 +149,12 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
   // Debounced auto-save for text fields
   const debouncedAutoSave = useRef<NodeJS.Timeout>();
   const triggerAutoSave = useCallback(
-    (healthValue: 'green' | 'red' | '', churnRiskValue: 'Low' | 'Medium' | 'High' | 'Certain' | '', statusValue: string, reasonCodeValue: string, escalationValue: string) => {
+    (healthValue: 'green' | 'red' | '', statusValue: string, reasonCodeValue: string, escalationValue: string) => {
       if (debouncedAutoSave.current) {
         clearTimeout(debouncedAutoSave.current);
       }
       debouncedAutoSave.current = setTimeout(() => {
-        autoSave(healthValue, churnRiskValue, statusValue, reasonCodeValue, escalationValue);
+        autoSave(healthValue, statusValue, reasonCodeValue, escalationValue);
       }, 1000); // 1 second delay for text fields
     },
     [autoSave]
@@ -167,35 +163,28 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
   // Auto-save when health changes (immediate)
   useEffect(() => {
     if (customer && selectedWeek && health) { // Only save if health is selected
-      autoSave(health, churnRisk, status, reasonCode, escalation);
+      autoSave(health, status, reasonCode, escalation);
     }
   }, [health]); // Only trigger on health changes
-
-  // Auto-save when churn risk changes (immediate)
-  useEffect(() => {
-    if (customer && selectedWeek && health) {
-      autoSave(health, churnRisk, status, reasonCode, escalation);
-    }
-  }, [churnRisk]); // Only trigger on churn risk changes
 
   // Auto-save when status changes (debounced)
   useEffect(() => {
     if (customer && selectedWeek && health) {
-      triggerAutoSave(health, churnRisk, status, reasonCode, escalation);
+      triggerAutoSave(health, status, reasonCode, escalation);
     }
   }, [status]); // Only trigger on status changes
 
   // Auto-save when reason code changes (immediate, since it's a select)
   useEffect(() => {
     if (customer && selectedWeek && health && reasonCode) {
-      autoSave(health, churnRisk, status, reasonCode, escalation);
+      autoSave(health, status, reasonCode, escalation);
     }
   }, [reasonCode]); // Only trigger on reason code changes
 
   // Auto-save when escalation changes (debounced)
   useEffect(() => {
     if (customer && selectedWeek && health && escalation) {
-      triggerAutoSave(health, churnRisk, status, reasonCode, escalation);
+      triggerAutoSave(health, status, reasonCode, escalation);
     }
   }, [escalation]); // Only trigger on escalation changes
 
@@ -389,22 +378,6 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
                     Red
                   </ToggleGroupItem>
                 </ToggleGroup>
-
-                {/* Churn Risk */}
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Churn Risk</label>
-                  <Select value={churnRisk || ''} onValueChange={(value) => setChurnRisk(value as any)}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Select churn risk" />
-                    </SelectTrigger>
-                    <SelectContent className="z-50 bg-popover text-popover-foreground shadow-md">
-                      <SelectItem value="Low">Low</SelectItem>
-                      <SelectItem value="Medium">Medium</SelectItem>
-                      <SelectItem value="High">High</SelectItem>
-                      <SelectItem value="Certain">Certain</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
 
                 {/* Status */}
                 <div>

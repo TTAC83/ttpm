@@ -8,8 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Edit, Save, X } from 'lucide-react';
+import { format } from 'date-fns';
 
 interface AccountInfoTabProps {
   data: any;
@@ -38,6 +40,9 @@ export const AccountInfoTab = ({ data, onUpdate, type }: AccountInfoTabProps) =>
     short_term_estimated_lines: data.short_term_estimated_lines?.toString() || '',
     short_term_arr_min: data.short_term_arr_min?.toString() || '',
     short_term_arr_max: data.short_term_arr_max?.toString() || '',
+    churn_risk: data.churn_risk || '',
+    planned_go_live_date: data.planned_go_live_date || '',
+    current_status: data.current_status || '',
   });
 
   const canEdit = profile?.is_internal;
@@ -63,6 +68,9 @@ export const AccountInfoTab = ({ data, onUpdate, type }: AccountInfoTabProps) =>
         short_term_estimated_lines: formData.short_term_estimated_lines ? parseInt(formData.short_term_estimated_lines) : null,
         short_term_arr_min: formData.short_term_arr_min ? parseFloat(formData.short_term_arr_min) : null,
         short_term_arr_max: formData.short_term_arr_max ? parseFloat(formData.short_term_arr_max) : null,
+        churn_risk: formData.churn_risk || null,
+        planned_go_live_date: formData.planned_go_live_date || null,
+        current_status: formData.current_status || null,
       };
 
       const { error } = await supabase
@@ -106,6 +114,9 @@ export const AccountInfoTab = ({ data, onUpdate, type }: AccountInfoTabProps) =>
       short_term_estimated_lines: data.short_term_estimated_lines?.toString() || '',
       short_term_arr_min: data.short_term_arr_min?.toString() || '',
       short_term_arr_max: data.short_term_arr_max?.toString() || '',
+      churn_risk: data.churn_risk || '',
+      planned_go_live_date: data.planned_go_live_date || '',
+      current_status: data.current_status || '',
     });
     setEditing(false);
   };
@@ -450,6 +461,86 @@ export const AccountInfoTab = ({ data, onUpdate, type }: AccountInfoTabProps) =>
                       </div>
                     )}
                   </div>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Project Health & Go Live</CardTitle>
+          <CardDescription>Manage customer churn risk and go-live planning</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {editing ? (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="churn_risk">Churn Risk</Label>
+                <Select value={formData.churn_risk} onValueChange={(value) => setFormData(prev => ({ ...prev, churn_risk: value }))}>
+                  <SelectTrigger id="churn_risk">
+                    <SelectValue placeholder="Select churn risk level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Low">Low</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="High">High</SelectItem>
+                    <SelectItem value="Certain">Certain</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="planned_go_live_date">Planned Go Live Date</Label>
+                <Input
+                  id="planned_go_live_date"
+                  type="date"
+                  value={formData.planned_go_live_date}
+                  onChange={(e) => setFormData(prev => ({ ...prev, planned_go_live_date: e.target.value }))}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="current_status">Current Status</Label>
+                <Textarea
+                  id="current_status"
+                  value={formData.current_status}
+                  onChange={(e) => setFormData(prev => ({ ...prev, current_status: e.target.value }))}
+                  placeholder="Enter current project status..."
+                  rows={4}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {data.churn_risk && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Churn Risk</p>
+                    <p className="font-medium">
+                      <Badge variant={
+                        data.churn_risk === 'Low' ? 'default' : 
+                        data.churn_risk === 'Medium' ? 'secondary' : 
+                        data.churn_risk === 'High' ? 'destructive' : 
+                        'destructive'
+                      }>
+                        {data.churn_risk}
+                      </Badge>
+                    </p>
+                  </div>
+                )}
+                {data.planned_go_live_date && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Planned Go Live Date</p>
+                    <p className="font-medium">{format(new Date(data.planned_go_live_date), 'dd MMM yyyy')}</p>
+                  </div>
+                )}
+              </div>
+              {data.current_status && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Current Status</p>
+                  <p className="font-medium whitespace-pre-wrap">{data.current_status}</p>
                 </div>
               )}
             </div>

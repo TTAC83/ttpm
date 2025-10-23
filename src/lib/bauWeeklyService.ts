@@ -25,7 +25,6 @@ export interface WeeklyReview {
   date_from: string;
   date_to: string;
   health: 'green' | 'red';
-  churn_risk?: 'Low' | 'Medium' | 'High' | 'Certain' | null;
   status?: string | null;
   reason_code?: string | null;
   escalation: string | null;
@@ -150,13 +149,12 @@ export const getMetricTrend = async (
   return data.reverse(); // Return in chronological order for chart
 };
 
-// Save weekly review (health + churn_risk + status + escalation + reason_code)
+// Save weekly review (health + status + escalation + reason_code)
 export const saveReview = async ({
   customerId,
   weekFrom,
   weekTo,
   health,
-  churnRisk,
   status,
   reasonCode,
   escalation
@@ -165,7 +163,6 @@ export const saveReview = async ({
   weekFrom: string;
   weekTo: string;
   health: 'green' | 'red';
-  churnRisk?: 'Low' | 'Medium' | 'High' | 'Certain';
   status?: string;
   reasonCode?: string;
   escalation?: string;
@@ -176,7 +173,7 @@ export const saveReview = async ({
     p_date_to: weekTo,
     p_health: health,
     p_reason_code: reasonCode || null,
-    p_churn_risk: churnRisk || null,
+    p_churn_risk: null, // No longer using churn_risk in weekly reviews
     p_status: status || null,
     p_escalation: escalation || null
   });
@@ -265,53 +262,55 @@ export interface BoardSummaryRow {
 }
 
 export const getBauBoardSummary = async (): Promise<BoardSummaryRow[]> => {
-  // First, get the most recent week
-  const { data: weeks } = await supabase
-    .from('bau_weekly_metrics')
-    .select('date_from, date_to')
-    .order('date_to', { ascending: false })
-    .limit(1);
-
-  if (!weeks || weeks.length === 0) {
-    return [];
-  }
-
-  const mostRecentWeek = weeks[0];
-
-  // Get all BAU customers with their reviews for the most recent week
+  // Get all BAU customers with their churn risk and status from the base table
   const { data, error } = await supabase
     .from('bau_customers')
     .select(`
       id,
       name,
-      companies!inner(name),
-      bau_weekly_reviews!left(
-        health,
-        churn_risk,
-        status,
-        date_from,
-        date_to
-      )
+      churn_risk,
+      current_status,
+      companies!inner(name)
     `)
     .eq('customer_type', 'bau')
     .order('name');
 
   if (error) throw error;
 
-  // Transform the data to match the board summary structure
-  return data.map(customer => {
-    // Find the review for the most recent week
-    const review = customer.bau_weekly_reviews?.find(
-      r => r.date_from === mostRecentWeek.date_from && r.date_to === mostRecentWeek.date_to
-    );
+  // Get the most recent week to fetch health status
+  const { data: weeks } = await supabase
+    .from('bau_weekly_metrics')
+    .select('date_from, date_to')
+    .order('date_to', { ascending: false })
+    .limit(1);
 
-    return {
-      id: customer.id,
-      customer_name: customer.name,
-      health: review?.health || null,
-      churn_risk: review?.churn_risk || null,
-      status: review?.status || null,
-      company_name: customer.companies?.name || ''
-    };
-  });
+  let healthByCustomer: Record<string, 'green' | 'red' | null> = {};
+
+  if (weeks && weeks.length > 0) {
+    const mostRecentWeek = weeks[0];
+    
+    // Get health status from weekly reviews for the most recent week
+    const { data: reviews } = await supabase
+      .from('bau_weekly_reviews')
+      .select('bau_customer_id, health')
+      .eq('date_from', mostRecentWeek.date_from)
+      .eq('date_to', mostRecentWeek.date_to);
+
+    if (reviews) {
+      healthByCustomer = reviews.reduce((acc, review) => {
+        acc[review.bau_customer_id] = review.health;
+        return acc;
+      }, {} as Record<string, 'green' | 'red' | null>);
+    }
+  }
+
+  // Transform the data to match the board summary structure
+  return data.map(customer => ({
+    id: customer.id,
+    customer_name: customer.name,
+    health: healthByCustomer[customer.id] || null,
+    churn_risk: customer.churn_risk as 'Low' | 'Medium' | 'High' | 'Certain' | null,
+    status: customer.current_status,
+    company_name: customer.companies?.name || ''
+  }));
 };

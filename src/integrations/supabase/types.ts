@@ -361,9 +361,11 @@ export type Database = {
         Row: {
           arr_potential_max: number | null
           arr_potential_min: number | null
+          churn_risk: string | null
           company_id: string
           created_at: string
           created_by: string
+          current_status: string | null
           customer_project_lead: string | null
           customer_type: string
           devices_deployed: number | null
@@ -379,6 +381,7 @@ export type Database = {
           modules_and_features: string | null
           name: string
           notes: string | null
+          planned_go_live_date: string | null
           primary_contact: string | null
           project_goals: string | null
           receivers_required: number | null
@@ -405,9 +408,11 @@ export type Database = {
         Insert: {
           arr_potential_max?: number | null
           arr_potential_min?: number | null
+          churn_risk?: string | null
           company_id: string
           created_at?: string
           created_by: string
+          current_status?: string | null
           customer_project_lead?: string | null
           customer_type?: string
           devices_deployed?: number | null
@@ -423,6 +428,7 @@ export type Database = {
           modules_and_features?: string | null
           name: string
           notes?: string | null
+          planned_go_live_date?: string | null
           primary_contact?: string | null
           project_goals?: string | null
           receivers_required?: number | null
@@ -449,9 +455,11 @@ export type Database = {
         Update: {
           arr_potential_max?: number | null
           arr_potential_min?: number | null
+          churn_risk?: string | null
           company_id?: string
           created_at?: string
           created_by?: string
+          current_status?: string | null
           customer_project_lead?: string | null
           customer_type?: string
           devices_deployed?: number | null
@@ -467,6 +475,7 @@ export type Database = {
           modules_and_features?: string | null
           name?: string
           notes?: string | null
+          planned_go_live_date?: string | null
           primary_contact?: string | null
           project_goals?: string | null
           receivers_required?: number | null
@@ -2970,6 +2979,7 @@ export type Database = {
           break_clause_key_points_md: string | null
           break_clause_project_date: string | null
           case_study: boolean | null
+          churn_risk: string | null
           company_id: string
           contract_end_date: string | null
           contract_signed_date: string
@@ -2977,6 +2987,7 @@ export type Database = {
           contracted_days: number | null
           contracted_lines: number | null
           created_at: string
+          current_status: string | null
           customer_project_lead: string | null
           deviation_of_terms: string | null
           domain: Database["public"]["Enums"]["work_domain"]
@@ -2994,6 +3005,7 @@ export type Database = {
           mrr: number | null
           name: string
           payment_terms_days: number | null
+          planned_go_live_date: string | null
           product_description: string | null
           project_coordinator: string | null
           project_goals: string | null
@@ -3041,6 +3053,7 @@ export type Database = {
           break_clause_key_points_md?: string | null
           break_clause_project_date?: string | null
           case_study?: boolean | null
+          churn_risk?: string | null
           company_id: string
           contract_end_date?: string | null
           contract_signed_date: string
@@ -3048,6 +3061,7 @@ export type Database = {
           contracted_days?: number | null
           contracted_lines?: number | null
           created_at?: string
+          current_status?: string | null
           customer_project_lead?: string | null
           deviation_of_terms?: string | null
           domain: Database["public"]["Enums"]["work_domain"]
@@ -3065,6 +3079,7 @@ export type Database = {
           mrr?: number | null
           name: string
           payment_terms_days?: number | null
+          planned_go_live_date?: string | null
           product_description?: string | null
           project_coordinator?: string | null
           project_goals?: string | null
@@ -3112,6 +3127,7 @@ export type Database = {
           break_clause_key_points_md?: string | null
           break_clause_project_date?: string | null
           case_study?: boolean | null
+          churn_risk?: string | null
           company_id?: string
           contract_end_date?: string | null
           contract_signed_date?: string
@@ -3119,6 +3135,7 @@ export type Database = {
           contracted_days?: number | null
           contracted_lines?: number | null
           created_at?: string
+          current_status?: string | null
           customer_project_lead?: string | null
           deviation_of_terms?: string | null
           domain?: Database["public"]["Enums"]["work_domain"]
@@ -3136,6 +3153,7 @@ export type Database = {
           mrr?: number | null
           name?: string
           payment_terms_days?: number | null
+          planned_go_live_date?: string | null
           product_description?: string | null
           project_coordinator?: string | null
           project_goals?: string | null

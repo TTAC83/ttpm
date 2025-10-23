@@ -22,10 +22,10 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
   
   console.log('🔍 Fetching executive summary for week:', mondayISO);
 
-  // Fetch all implementation projects with company info
+  // Fetch all implementation projects with company info and go-live data from projects table
   const { data: projects, error: projectsError } = await supabase
     .from('projects')
-    .select('id, name, company_id, segment, expansion_opportunity, reference_status, domain, companies(name)')
+    .select('id, name, company_id, segment, expansion_opportunity, reference_status, domain, planned_go_live_date, current_status, churn_risk, companies(name)')
     .in('domain', ['IoT', 'Vision', 'Hybrid'])
     .order('name');
 
@@ -34,10 +34,10 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
   
   console.log('🔍 Found projects:', projects.length);
 
-  // Fetch weekly reviews for current week
+  // Fetch weekly reviews for current week (only for customer health and project status)
   const { data: reviews, error: reviewsError } = await supabase
     .from('impl_weekly_reviews')
-    .select('company_id, customer_health, project_status, week_start, planned_go_live_date, current_status')
+    .select('company_id, customer_health, project_status, week_start')
     .eq('week_start', mondayISO);
 
   if (reviewsError) throw reviewsError;
@@ -52,15 +52,13 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
 
   if (gapsError) throw gapsError;
 
-  // Create a map of company reviews
+  // Create a map of company reviews (only for health and project status)
   const reviewMap = new Map(
     (reviews || []).map(r => [
       r.company_id,
       {
         health: r.customer_health,
-        status: r.project_status,
-        planned_go_live_date: r.planned_go_live_date,
-        current_status: r.current_status
+        status: r.project_status
       }
     ])
   );
@@ -77,7 +75,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
 
   // Build the summary rows
   return projects.map(project => {
-    // Get project's company review by company_id
+    // Get project's company review by company_id (for health and status only)
     const review = reviewMap.get(project.company_id);
     const gaps = gapsMap.get(project.id);
     
@@ -100,8 +98,9 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       segment: project.segment,
       expansion_opportunity: project.expansion_opportunity,
       reference_status: project.reference_status || null,
-      planned_go_live_date: review?.planned_go_live_date || null,
-      current_status: review?.current_status || null
+      // Get planned_go_live_date and current_status from projects table instead of weekly reviews
+      planned_go_live_date: project.planned_go_live_date || null,
+      current_status: project.current_status || null
     };
   });
 }

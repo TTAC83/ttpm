@@ -192,9 +192,16 @@ export default function FootageRequired() {
                   </TableRow>
                 ) : (
                   filteredAndSortedModels.map((model) => {
-                    const isOverdue = model.product_run_end && new Date(model.product_run_end) < new Date();
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const runEndDate = model.product_run_end ? new Date(model.product_run_end) : null;
+                    if (runEndDate) runEndDate.setHours(0, 0, 0, 0);
+                    
+                    const isToday = runEndDate && runEndDate.getTime() === today.getTime();
+                    const isOverdue = runEndDate && runEndDate < today;
+                    
                     return (
-                      <TableRow key={model.id} className={isOverdue ? "bg-destructive/10" : ""}>
+                      <TableRow key={model.id} className={isToday ? "bg-green-500/10" : isOverdue ? "bg-destructive/10" : ""}>
                       <TableCell className="font-medium">{model.customer_name}</TableCell>
                       <TableCell className="font-medium">{model.project_name}</TableCell>
                       <TableCell>{model.line_name}</TableCell>
@@ -204,7 +211,7 @@ export default function FootageRequired() {
                       <TableCell>{model.use_case}</TableCell>
                       <TableCell>{model.group_name || '-'}</TableCell>
                       <TableCell>{formatDateUK(model.product_run_start!)}</TableCell>
-                      <TableCell className={isOverdue ? "text-destructive font-semibold" : ""}>
+                      <TableCell className={isToday ? "text-green-600 font-semibold" : isOverdue ? "text-destructive font-semibold" : ""}>
                         {formatDateUK(model.product_run_end!)}
                       </TableCell>
                       <TableCell className="text-right">

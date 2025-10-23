@@ -191,8 +191,10 @@ export default function FootageRequired() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredAndSortedModels.map((model) => (
-                    <TableRow key={model.id}>
+                  filteredAndSortedModels.map((model) => {
+                    const isOverdue = model.product_run_end && new Date(model.product_run_end) < new Date();
+                    return (
+                      <TableRow key={model.id} className={isOverdue ? "bg-destructive/10" : ""}>
                       <TableCell className="font-medium">{model.customer_name}</TableCell>
                       <TableCell className="font-medium">{model.project_name}</TableCell>
                       <TableCell>{model.line_name}</TableCell>
@@ -202,7 +204,9 @@ export default function FootageRequired() {
                       <TableCell>{model.use_case}</TableCell>
                       <TableCell>{model.group_name || '-'}</TableCell>
                       <TableCell>{formatDateUK(model.product_run_start!)}</TableCell>
-                      <TableCell>{formatDateUK(model.product_run_end!)}</TableCell>
+                      <TableCell className={isOverdue ? "text-destructive font-semibold" : ""}>
+                        {formatDateUK(model.product_run_end!)}
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button
                           variant="ghost"
@@ -213,7 +217,8 @@ export default function FootageRequired() {
                         </Button>
                       </TableCell>
                     </TableRow>
-                  ))
+                    );
+                  })
                 )}
               </TableBody>
             </Table>

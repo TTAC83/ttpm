@@ -939,7 +939,7 @@ export const MasterDataGanttView = ({
                               </div>
                               
                               <div className="px-2 py-1 text-xs font-medium text-white truncate pointer-events-none">
-                                {duration}d
+                                {durationDays}d
                                 {dragState.type === 'task' && dragState.taskId === task.id && (
                                   <span className="ml-1">
                                     → Day {(dragState.originalStartDays ?? 0) + Math.round((dragState.currentX - dragState.startX) / 32)}

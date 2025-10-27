@@ -35,7 +35,7 @@ export function DeleteFeatureRequestDialog({
   const { toast } = useToast();
 
   const handleDelete = async () => {
-    if (password !== "thingtrax2025") {
+    if (password !== "Office365") {
       toast({
         title: "Error",
         description: "Incorrect password",

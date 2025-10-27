@@ -14,8 +14,8 @@ type SortDirection = 'asc' | 'desc' | null;
 
 export default function FootageRequired() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortColumn, setSortColumn] = useState<SortColumn>(null);
-  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+  const [sortColumn, setSortColumn] = useState<SortColumn>('product_run_start');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [editingModel, setEditingModel] = useState<VisionModel | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 

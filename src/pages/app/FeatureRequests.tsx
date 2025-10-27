@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +20,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Search, Filter, FileDown, FileSpreadsheet } from "lucide-react";
+import { Plus, Search, Filter, FileDown, FileSpreadsheet, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format, formatDistanceToNow } from "date-fns";
 import jsPDF from "jspdf";
@@ -32,12 +32,15 @@ import {
   featureRequestsService 
 } from "@/lib/featureRequestsService";
 import { FeatureRequestDialog } from "@/components/FeatureRequestDialog";
+import { DeleteFeatureRequestDialog } from "@/components/DeleteFeatureRequestDialog";
 
 export default function FeatureRequests() {
   const [featureRequests, setFeatureRequests] = useState<FeatureRequestWithProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<FeatureRequestWithProfile | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [requestToDelete, setRequestToDelete] = useState<{ id: string; title: string } | null>(null);
   const [filters, setFilters] = useState<FeatureRequestFilters>({
     search: '',
     statuses: [],
@@ -78,6 +81,15 @@ export default function FeatureRequests() {
   };
 
   const handleDialogSuccess = () => {
+    loadFeatureRequests();
+  };
+
+  const handleDeleteClick = (request: FeatureRequestWithProfile) => {
+    setRequestToDelete({ id: request.id, title: request.title });
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteSuccess = () => {
     loadFeatureRequests();
   };
 
@@ -356,6 +368,7 @@ export default function FeatureRequests() {
                     Release Date {sortColumn === 'complete_date' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </TableHead>
                   <TableHead>DevOps Link</TableHead>
+                  <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -420,6 +433,15 @@ export default function FeatureRequests() {
                         <span className="text-sm text-muted-foreground">-</span>
                       )}
                     </TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteClick(request)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -433,6 +455,13 @@ export default function FeatureRequests() {
         onOpenChange={setDialogOpen}
         featureRequest={selectedRequest}
         onSuccess={handleDialogSuccess}
+      />
+
+      <DeleteFeatureRequestDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        featureRequest={requestToDelete}
+        onSuccess={handleDeleteSuccess}
       />
     </div>
   );

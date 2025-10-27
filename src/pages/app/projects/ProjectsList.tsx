@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateUK } from '@/lib/dateUtils';
-import { Search, Plus, Building, Calendar, Upload, Trash2, Smile, Frown, CheckCircle, AlertCircle, TrendingDown, TrendingUp, Minus, FileSpreadsheet } from 'lucide-react';
+import { Search, Plus, Building, Calendar, Upload, Trash2, Smile, Frown, CheckCircle, AlertCircle, TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import { DeleteProjectDialog } from '@/components/DeleteProjectDialog';
 
 interface Project {
@@ -224,12 +224,6 @@ export const ProjectsList = () => {
         
         {(profile?.is_internal === true && profile?.role === 'internal_admin') && (
           <div className="flex gap-2">
-            <Button asChild variant="outline">
-              <Link to="/app/projects/bulk-update-account-info">
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Bulk Update
-              </Link>
-            </Button>
             <Button asChild>
               <Link to="/app/projects/new">
                 <Plus className="h-4 w-4 mr-2" />

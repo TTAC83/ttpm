@@ -48,6 +48,7 @@ export default function FeatureRequests() {
     page: 0,
     pageSize: 20
   });
+  const [criticalGapsOnly, setCriticalGapsOnly] = useState(false);
   const [sortColumn, setSortColumn] = useState<string>('product_gaps_critical');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
@@ -117,6 +118,7 @@ export default function FeatureRequests() {
       page: 0,
       pageSize: 20
     });
+    setCriticalGapsOnly(false);
   };
 
   const handleSort = (column: string) => {
@@ -128,7 +130,11 @@ export default function FeatureRequests() {
     }
   };
 
-  const sortedRequests = [...featureRequests].sort((a, b) => {
+  const filteredRequests = criticalGapsOnly 
+    ? featureRequests.filter(req => req.product_gaps_critical && req.product_gaps_critical > 0)
+    : featureRequests;
+
+  const sortedRequests = [...filteredRequests].sort((a, b) => {
     let aVal: any = a[sortColumn as keyof FeatureRequestWithProfile];
     let bVal: any = b[sortColumn as keyof FeatureRequestWithProfile];
 
@@ -301,16 +307,27 @@ export default function FeatureRequests() {
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="mine-only"
-                checked={filters.mineOnly}
-                onCheckedChange={handleMineOnlyChange}
-              />
-              <Label htmlFor="mine-only">Show only my requests</Label>
+            <div className="flex flex-wrap gap-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="mine-only"
+                  checked={filters.mineOnly}
+                  onCheckedChange={handleMineOnlyChange}
+                />
+                <Label htmlFor="mine-only">Show only my requests</Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="critical-gaps-only"
+                  checked={criticalGapsOnly}
+                  onCheckedChange={setCriticalGapsOnly}
+                />
+                <Label htmlFor="critical-gaps-only">Show only requests with critical product gaps</Label>
+              </div>
             </div>
             
-            {(filters.search || filters.statuses?.length || filters.mineOnly) && (
+            {(filters.search || filters.statuses?.length || filters.mineOnly || criticalGapsOnly) && (
               <Button variant="outline" size="sm" onClick={clearFilters}>
                 Clear filters
               </Button>
@@ -328,11 +345,11 @@ export default function FeatureRequests() {
           ) : featureRequests.length === 0 ? (
             <div className="p-8 text-center">
               <p className="text-muted-foreground mb-4">
-                {filters.search || filters.statuses?.length || filters.mineOnly
+                {filters.search || filters.statuses?.length || filters.mineOnly || criticalGapsOnly
                   ? "No feature requests match your filters."
                   : "No feature requests yet — create the first one."}
               </p>
-              {!filters.search && !filters.statuses?.length && !filters.mineOnly && (
+              {!filters.search && !filters.statuses?.length && !filters.mineOnly && !criticalGapsOnly && (
                 <Button onClick={handleNewRequest}>
                   <Plus className="h-4 w-4 mr-2" />
                   Create First Request

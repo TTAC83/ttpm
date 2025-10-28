@@ -26,11 +26,16 @@ export default function BoardSummary() {
     queryFn: fetchExecutiveSummaryData,
   });
 
-  // Filter data based on search
-  const filteredData = summaryData.filter(row => 
-    row.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    row.project_name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter data based on search and exclude specific customers
+  const excludedCustomers = ['vitacress', 'village bakery', 'quin'];
+  const filteredData = summaryData.filter(row => {
+    const customerNameLower = row.customer_name.toLowerCase();
+    const isExcluded = excludedCustomers.some(excluded => customerNameLower.includes(excluded));
+    if (isExcluded) return false;
+    
+    return row.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           row.project_name.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   // Sort data
   const [sortColumn, setSortColumn] = useState<string | null>(null);

@@ -175,7 +175,15 @@ export default function ImplementationWeeklyReviewPage() {
       {/* Header */}
       <Card className="p-3 sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex gap-3 items-center flex-wrap">
-          <h1 className="text-lg font-semibold">Implementation — Weekly Review</h1>
+          <h1 className="text-lg font-semibold">
+            Implementation — Weekly Review
+            {selectedCompanyId && (
+              <span className="text-muted-foreground">
+                {" — "}
+                {filteredCompanies.find(c => c.company_id === selectedCompanyId)?.company_name}
+              </span>
+            )}
+          </h1>
           <div className="ml-auto flex gap-2 items-center">
             {/* Week selector */}
             <select

@@ -14,8 +14,8 @@ type SortDirection = 'asc' | 'desc' | null;
 
 export default function FootageRequired() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortColumn, setSortColumn] = useState<SortColumn>('product_run_start');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [sortColumn, setSortColumn] = useState<SortColumn>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [editingModel, setEditingModel] = useState<VisionModel | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -65,23 +65,55 @@ export default function FootageRequired() {
       );
     })
     .sort((a, b) => {
-      if (!sortColumn || !sortDirection) return 0;
+      // Calculate status for both items
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
       
-      const aVal = a[sortColumn];
-      const bVal = b[sortColumn];
+      const getStatus = (model: VisionModel) => {
+        const runStartDate = model.product_run_start ? new Date(model.product_run_start) : null;
+        const runEndDate = model.product_run_end ? new Date(model.product_run_end) : null;
+        if (runStartDate) runStartDate.setHours(0, 0, 0, 0);
+        if (runEndDate) runEndDate.setHours(0, 0, 0, 0);
+        
+        const isOverdue = runEndDate && today > runEndDate;
+        const isInProductionWindow = runStartDate && runEndDate && today >= runStartDate && today <= runEndDate;
+        
+        if (isOverdue) return 0; // Red - highest priority
+        if (isInProductionWindow) return 1; // Green - medium priority
+        return 2; // Grey - lowest priority
+      };
       
-      if (aVal === null || aVal === undefined) return sortDirection === 'asc' ? 1 : -1;
-      if (bVal === null || bVal === undefined) return sortDirection === 'asc' ? -1 : 1;
+      const aStatus = getStatus(a);
+      const bStatus = getStatus(b);
       
-      if (typeof aVal === 'string' && typeof bVal === 'string') {
+      // If using custom sorting, apply it
+      if (sortColumn && sortDirection) {
+        const aVal = a[sortColumn];
+        const bVal = b[sortColumn];
+        
+        if (aVal === null || aVal === undefined) return sortDirection === 'asc' ? 1 : -1;
+        if (bVal === null || bVal === undefined) return sortDirection === 'asc' ? -1 : 1;
+        
+        if (typeof aVal === 'string' && typeof bVal === 'string') {
+          return sortDirection === 'asc' 
+            ? aVal.localeCompare(bVal) 
+            : bVal.localeCompare(aVal);
+        }
+        
         return sortDirection === 'asc' 
-          ? aVal.localeCompare(bVal) 
-          : bVal.localeCompare(aVal);
+          ? (aVal > bVal ? 1 : -1) 
+          : (aVal < bVal ? 1 : -1);
       }
       
-      return sortDirection === 'asc' 
-        ? (aVal > bVal ? 1 : -1) 
-        : (aVal < bVal ? 1 : -1);
+      // Default sorting by status priority
+      if (aStatus !== bStatus) {
+        return aStatus - bStatus;
+      }
+      
+      // Within same status, sort by start date
+      const aStart = a.product_run_start ? new Date(a.product_run_start).getTime() : 0;
+      const bStart = b.product_run_start ? new Date(b.product_run_start).getTime() : 0;
+      return aStart - bStart;
     });
 
   const handleEdit = (model: VisionModel) => {

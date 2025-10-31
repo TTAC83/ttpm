@@ -124,11 +124,11 @@ export const blockersService = {
         };
       });
       
-      // Sort by overdue first, then by age
+      // Sort alphabetically by customer name
       result.sort((a, b) => {
-        if (a.is_overdue && !b.is_overdue) return -1;
-        if (!a.is_overdue && b.is_overdue) return 1;
-        return (b.age_days || 0) - (a.age_days || 0);
+        const nameA = a.customer_name || '';
+        const nameB = b.customer_name || '';
+        return nameA.localeCompare(nameB);
       });
       
       return result;

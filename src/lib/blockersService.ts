@@ -91,26 +91,50 @@ export const blockersService = {
   // Get open blockers for dashboard
   async getDashboardBlockers() {
     const { data, error } = await supabase
-      .from('v_impl_open_blockers')
+      .from('implementation_blockers')
       .select('*')
+      .eq('status', 'Live')
       .order('raised_at', { ascending: false });
 
     if (error) throw error;
     
-    // Calculate is_overdue client-side and sort
-    const result = (data || []).map(blocker => ({
-      ...blocker,
-      is_overdue: blocker.estimated_complete_date && new Date() > new Date(blocker.estimated_complete_date)
-    }));
+    // Get related data for display
+    if (data && data.length > 0) {
+      const userIds = [...new Set(data.map(b => b.owner))];
+      const projectIds = [...new Set(data.map(b => b.project_id).filter(Boolean))];
+      
+      const [profiles, projects] = await Promise.all([
+        supabase.from('profiles').select('user_id, name').in('user_id', userIds),
+        supabase.from('projects').select('id, name, company:companies(name)').in('id', projectIds)
+      ]);
+      
+      const profileMap = new Map(profiles.data?.map(p => [p.user_id, p.name]) || []);
+      const projectMap = new Map(projects.data?.map(p => [p.id, { name: p.name, company: p.company }]) || []);
+      
+      // Calculate is_overdue client-side and add related data
+      const result = data.map(blocker => {
+        const project = projectMap.get(blocker.project_id);
+        return {
+          ...blocker,
+          project_name: project?.name,
+          customer_name: project?.company?.name,
+          owner_name: profileMap.get(blocker.owner) || 'Unknown',
+          age_days: Math.floor((new Date().getTime() - new Date(blocker.raised_at).getTime()) / (1000 * 60 * 60 * 24)),
+          is_overdue: blocker.estimated_complete_date && new Date() > new Date(blocker.estimated_complete_date)
+        };
+      });
+      
+      // Sort by overdue first, then by age
+      result.sort((a, b) => {
+        if (a.is_overdue && !b.is_overdue) return -1;
+        if (!a.is_overdue && b.is_overdue) return 1;
+        return (b.age_days || 0) - (a.age_days || 0);
+      });
+      
+      return result;
+    }
     
-    // Sort by overdue first, then by raised_at
-    result.sort((a, b) => {
-      if (a.is_overdue && !b.is_overdue) return -1;
-      if (!a.is_overdue && b.is_overdue) return 1;
-      return new Date(b.raised_at).getTime() - new Date(a.raised_at).getTime();
-    });
-    
-    return result;
+    return [];
   },
 
   // Get all blockers with filters

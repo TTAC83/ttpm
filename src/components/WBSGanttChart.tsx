@@ -11,6 +11,8 @@ import { BarChart } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { supabase } from '@/integrations/supabase/client';
+import { TaskEditDialog } from '@/components/TaskEditDialog';
+import { SubtaskEditSidebar } from '@/components/SubtaskEditSidebar';
 
 interface WBSGanttChartProps {
   projectId?: string;
@@ -57,9 +59,13 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
   const [isExporting, setIsExporting] = useState(false);
   const [collapsedItems, setCollapsedItems] = useState<CollapsibleState>({});
   const [expandAll, setExpandAll] = useState(false);
+  const [editingTask, setEditingTask] = useState<any>(null);
+  const [editingSubtask, setEditingSubtask] = useState<any>(null);
+  const [profiles, setProfiles] = useState<any[]>([]);
 
   useEffect(() => {
     loadWBSData();
+    loadProfiles();
 
     // Setup realtime subscription for subtasks changes
     const channel = supabase
@@ -104,6 +110,18 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
       window.removeEventListener('subtask-updated', handleSubtaskUpdate);
     };
   }, [projectId]);
+
+  const loadProfiles = async () => {
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('user_id, name')
+        .order('name');
+      setProfiles(data || []);
+    } catch (error) {
+      console.error('Failed to load profiles:', error);
+    }
+  };
 
   const loadWBSData = async () => {
     setLoading(true);
@@ -540,6 +558,126 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
     setExpandAll(false);
   };
 
+  const handleTaskClick = async (taskId: string) => {
+    if (!projectId) return; // Only allow editing for project-specific view
+    
+    try {
+      const { data } = await supabase
+        .from('project_tasks')
+        .select('*, profiles:assignee(name)')
+        .eq('id', taskId)
+        .single();
+      
+      if (data) {
+        setEditingTask(data);
+      }
+    } catch (error) {
+      console.error('Failed to load task:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load task details",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSubtaskClick = async (subtaskId: string) => {
+    if (!projectId) return; // Only allow editing for project-specific view
+    
+    try {
+      const { data } = await supabase
+        .from('subtasks')
+        .select('*, profiles:assignee(name)')
+        .eq('id', subtaskId)
+        .single();
+      
+      if (data) {
+        setEditingSubtask(data);
+      }
+    } catch (error) {
+      console.error('Failed to load subtask:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load subtask details",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleTaskSave = async (updatedTask: any) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No active session');
+
+      const { error } = await supabase.functions.invoke('update-task', {
+        body: {
+          id: updatedTask.id,
+          task_title: updatedTask.task_title,
+          task_details: updatedTask.task_details,
+          planned_start: updatedTask.planned_start,
+          planned_end: updatedTask.planned_end,
+          actual_start: updatedTask.actual_start,
+          actual_end: updatedTask.actual_end,
+          status: updatedTask.status,
+          assignee: updatedTask.assignee,
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Task Updated",
+        description: "Task has been updated successfully",
+      });
+
+      setEditingTask(null);
+      loadWBSData();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update task",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSubtaskSave = async (updatedSubtask: any) => {
+    try {
+      const { error } = await supabase
+        .from('subtasks')
+        .update({
+          title: updatedSubtask.title,
+          details: updatedSubtask.details,
+          planned_start: updatedSubtask.planned_start,
+          planned_end: updatedSubtask.planned_end,
+          actual_start: updatedSubtask.actual_start,
+          actual_end: updatedSubtask.actual_end,
+          status: updatedSubtask.status,
+          assignee: updatedSubtask.assignee,
+        })
+        .eq('id', updatedSubtask.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Subtask Updated",
+        description: "Subtask has been updated successfully",
+      });
+
+      setEditingSubtask(null);
+      loadWBSData();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update subtask",
+        variant: "destructive",
+      });
+    }
+  };
+
   // PDF Export functionality
   const exportToPDF = async () => {
     setIsExporting(true);
@@ -857,6 +995,7 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
               const isStep = 'step_name' in item && 'tasks' in item;
               const isTask = !isStep && 'level' in item && item.level === 1;
               const isSubtask = !isStep && 'level' in item && item.level === 2;
+              const canEdit = projectId && (isTask || isSubtask); // Only allow editing tasks/subtasks in project view
               
               let indentLevel = 0;
               let hasChildren = false;
@@ -890,7 +1029,15 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
 
               return (
                 <div key={`${item.id}-${index}`} className={`border-b border-border/50 ${bgColorClass}`}>
-                  <div className={`flex items-center ${hoverClass} transition-colors animate-fade-in`}>
+                  <div 
+                    className={`flex items-center ${hoverClass} transition-colors animate-fade-in ${canEdit ? 'cursor-pointer' : ''}`}
+                    onClick={() => {
+                      if (canEdit) {
+                        if (isTask) handleTaskClick(item.id);
+                        if (isSubtask) handleSubtaskClick(item.id);
+                      }
+                    }}
+                  >
                     {/* Item Info with Hierarchy */}
                     <div className="w-80 p-2 border-r flex items-center gap-2">
                       <div style={{ marginLeft: `${indentLevel * 16}px` }} className="flex items-center gap-1">
@@ -1014,10 +1161,32 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
           .wbs-gantt-print * {
             color-adjust: exact !important;
             -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
+          print-color-adjust: exact !important;
         }
+      }
       `}</style>
+
+      {/* Task Edit Dialog */}
+      {editingTask && (
+        <TaskEditDialog
+          task={editingTask}
+          profiles={profiles}
+          open={!!editingTask}
+          onOpenChange={(open) => !open && setEditingTask(null)}
+          onSave={handleTaskSave}
+        />
+      )}
+
+      {/* Subtask Edit Sidebar */}
+      {editingSubtask && (
+        <SubtaskEditSidebar
+          open={!!editingSubtask}
+          onOpenChange={(open) => !open && setEditingSubtask(null)}
+          subtask={editingSubtask}
+          profiles={profiles}
+          onSave={handleSubtaskSave}
+        />
+      )}
     </Card>
   );
 }

@@ -224,6 +224,7 @@ export default function ImplementationEscalations() {
                   <TableHead>Project</TableHead>
                   <TableHead>Title</TableHead>
                   <TableHead>Owner</TableHead>
+                  <TableHead>Account Manager</TableHead>
                   <TableHead>Raised</TableHead>
                   <TableHead>Est. Complete</TableHead>
                   <TableHead>Age (days)</TableHead>
@@ -261,6 +262,7 @@ export default function ImplementationEscalations() {
                       </div>
                     </TableCell>
                     <TableCell>{escalation.owner_name}</TableCell>
+                    <TableCell>{escalation.account_manager_name || '-'}</TableCell>
                     <TableCell>{formatDateUK(escalation.raised_at)}</TableCell>
                     <TableCell>
                       {escalation.estimated_complete_date

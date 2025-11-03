@@ -23,6 +23,8 @@ export interface ImplementationBlocker {
   age_days?: number;
   is_overdue?: boolean;
   owner_name?: string;
+  account_manager_id?: string;
+  account_manager_name?: string;
 }
 
 export interface BlockerUpdate {
@@ -105,11 +107,11 @@ export const blockersService = {
       
       const [profiles, projects] = await Promise.all([
         supabase.from('profiles').select('user_id, name').in('user_id', userIds),
-        supabase.from('projects').select('id, name, company:companies(name)').in('id', projectIds)
+        supabase.from('projects').select('id, name, implementation_lead, company:companies(name)').in('id', projectIds)
       ]);
       
       const profileMap = new Map(profiles.data?.map(p => [p.user_id, p.name]) || []);
-      const projectMap = new Map(projects.data?.map(p => [p.id, { name: p.name, company: p.company }]) || []);
+      const projectMap = new Map(projects.data?.map(p => [p.id, { name: p.name, company: p.company, implementation_lead: p.implementation_lead }]) || []);
       
       // Calculate is_overdue client-side and add related data
       const result = data.map(blocker => {
@@ -118,6 +120,8 @@ export const blockersService = {
           ...blocker,
           project_name: project?.name,
           customer_name: project?.company?.name,
+          account_manager_id: project?.implementation_lead,
+          account_manager_name: profileMap.get(project?.implementation_lead) || null,
           owner_name: profileMap.get(blocker.owner) || 'Unknown',
           age_days: Math.floor((new Date().getTime() - new Date(blocker.raised_at).getTime()) / (1000 * 60 * 60 * 24)),
           is_overdue: blocker.estimated_complete_date && new Date() > new Date(blocker.estimated_complete_date)
@@ -173,11 +177,11 @@ export const blockersService = {
       
       const [profiles, projects] = await Promise.all([
         supabase.from('profiles').select('user_id, name').in('user_id', userIds),
-        supabase.from('projects').select('id, name, company:companies(name)').in('id', projectIds)
+        supabase.from('projects').select('id, name, implementation_lead, company:companies(name)').in('id', projectIds)
       ]);
       
       const profileMap = new Map(profiles.data?.map(p => [p.user_id, p.name]) || []);
-      const projectMap = new Map(projects.data?.map(p => [p.id, { name: p.name, company: p.company }]) || []);
+      const projectMap = new Map(projects.data?.map(p => [p.id, { name: p.name, company: p.company, implementation_lead: p.implementation_lead }]) || []);
       
       let result = data?.map(blocker => {
         const project = projectMap.get(blocker.project_id);
@@ -185,6 +189,8 @@ export const blockersService = {
           ...blocker,
           project_name: project?.name,
           customer_name: project?.company?.name,
+          account_manager_id: project?.implementation_lead,
+          account_manager_name: profileMap.get(project?.implementation_lead) || null,
           owner_name: profileMap.get(blocker.owner) || 'Unknown',
           age_days: Math.floor((new Date().getTime() - new Date(blocker.raised_at).getTime()) / (1000 * 60 * 60 * 24)),
           is_overdue: blocker.estimated_complete_date && new Date() > new Date(blocker.estimated_complete_date)

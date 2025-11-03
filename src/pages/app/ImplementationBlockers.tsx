@@ -32,7 +32,7 @@ export default function ImplementationEscalations() {
   const [filters, setFilters] = useState({
     customer: "",
     project: "",
-    status: "All" as 'Live' | 'Closed' | 'All',
+    status: "Live" as 'Live' | 'Closed' | 'All',
     overdue: false,
     dateFrom: "",
     dateTo: "",

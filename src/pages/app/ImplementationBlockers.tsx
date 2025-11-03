@@ -107,6 +107,15 @@ export default function ImplementationEscalations() {
             View escalations across all projects. To add new ones, go to the specific project.
           </p>
         </div>
+        <Button 
+          variant={filters.status === 'Live' ? 'default' : 'outline'}
+          onClick={() => setFilters(prev => ({ 
+            ...prev, 
+            status: prev.status === 'Live' ? 'All' : 'Live' 
+          }))}
+        >
+          {filters.status === 'Live' ? 'Show All' : 'Show Open Only'}
+        </Button>
       </div>
 
       {/* Filters */}

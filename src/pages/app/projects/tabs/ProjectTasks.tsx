@@ -68,6 +68,7 @@ const ProjectTasks = ({ projectId, solutionsProjectId }: ProjectTasksProps) => {
     step_name: 'all',
     status: 'all',
     assignee: 'all',
+    openOnly: false,
   });
 
   useEffect(() => {
@@ -273,6 +274,7 @@ const ProjectTasks = ({ projectId, solutionsProjectId }: ProjectTasksProps) => {
     if (filters.step_name && filters.step_name !== 'all' && task.step_name !== filters.step_name) return false;
     if (filters.status && filters.status !== 'all' && !task.computedStatus.status.toLowerCase().includes(filters.status.toLowerCase())) return false;
     if (filters.assignee && filters.assignee !== 'all' && task.assignee !== filters.assignee) return false;
+    if (filters.openOnly && task.computedStatus.status.toLowerCase().includes('complete')) return false;
     return true;
   });
 
@@ -286,10 +288,19 @@ const ProjectTasks = ({ projectId, solutionsProjectId }: ProjectTasksProps) => {
       {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            Filters
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="h-4 w-4" />
+              Filters
+            </CardTitle>
+            <Button
+              variant={filters.openOnly ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFilters(prev => ({ ...prev, openOnly: !prev.openOnly }))}
+            >
+              {filters.openOnly ? 'Show All' : 'Show Open Only'}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">

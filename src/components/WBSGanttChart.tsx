@@ -108,14 +108,69 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
   const loadWBSData = async () => {
     setLoading(true);
     try {
-      const stepData = await wbsService.getMasterSteps();
-      setSteps(stepData);
-
-      // Load tasks for each step
+      let stepData: MasterStep[];
       const tasksData: Record<number, MasterTask[]> = {};
-      for (const step of stepData) {
-        tasksData[step.id] = await wbsService.getStepTasks(step.id);
+
+      if (projectId) {
+        // Load project-specific data
+        stepData = await wbsService.getProjectSteps(projectId);
+        
+        // Load actual project tasks with subtasks
+        for (const step of stepData) {
+          const { data: projectTasks } = await supabase
+            .from('project_tasks')
+            .select(`
+              *,
+              subtasks (
+                *
+              )
+            `)
+            .eq('project_id', projectId)
+            .eq('master_task_id', step.id);
+          
+          // Convert project tasks to MasterTask format
+          tasksData[step.id] = (projectTasks || []).map((pt, idx) => ({
+            id: parseInt(pt.id),
+            step_id: step.id,
+            title: pt.task_title,
+            details: pt.task_details,
+            planned_start_offset_days: 0,
+            planned_end_offset_days: 0,
+            duration_days: 1,
+            position: idx,
+            technology_scope: 'both',
+            assigned_role: '',
+            parent_task_id: null,
+            subtasks: (pt.subtasks || []).map((st: any, stIdx: number) => ({
+              id: parseInt(st.id),
+              step_id: step.id,
+              title: st.title,
+              details: st.details || null,
+              planned_start_offset_days: 0,
+              planned_end_offset_days: 0,
+              duration_days: 1,
+              position: stIdx,
+              technology_scope: 'both',
+              assigned_role: '',
+              parent_task_id: parseInt(pt.id),
+              // Include actual dates for project-specific view
+              planned_start: st.planned_start,
+              planned_end: st.planned_end,
+            })) as MasterTask[],
+            // Use actual planned dates from project tasks
+            planned_start: pt.planned_start,
+            planned_end: pt.planned_end,
+          })) as MasterTask[];
+        }
+      } else {
+        // Load master template data
+        stepData = await wbsService.getMasterSteps();
+        for (const step of stepData) {
+          tasksData[step.id] = await wbsService.getStepTasks(step.id);
+        }
       }
+      
+      setSteps(stepData);
       setStepTasks(tasksData);
     } catch (error) {
       console.error('Failed to load WBS data:', error);
@@ -142,29 +197,49 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
       let allDates: Date[] = [];
 
       tasks.forEach((task, taskIndex) => {
-        // Calculate start date based on step order and task sequence using offset fields
-        const taskStartOffset = task.planned_start_offset_days || (taskIndex * 7); // Default 1 week apart
-        const taskDuration = (task.planned_end_offset_days || 0) - (task.planned_start_offset_days || 0) + 1; // Duration based on offsets
-        const actualDuration = Math.max(1, taskDuration); // Ensure at least 1 day
-        
-        const taskStart = new Date(contractStartDate);
-        taskStart.setDate(taskStart.getDate() + taskStartOffset);
-        
-        const taskEnd = new Date(taskStart);
-        taskEnd.setDate(taskEnd.getDate() + actualDuration - 1);
+        let taskStart: Date;
+        let taskEnd: Date;
+
+        // Check if we have actual planned dates (project-specific view)
+        if ((task as any).planned_start && (task as any).planned_end) {
+          taskStart = new Date((task as any).planned_start);
+          taskEnd = new Date((task as any).planned_end);
+        } else {
+          // Use offset-based calculation for master template
+          const taskStartOffset = task.planned_start_offset_days || (taskIndex * 7);
+          const taskDuration = (task.planned_end_offset_days || 0) - (task.planned_start_offset_days || 0) + 1;
+          const actualDuration = Math.max(1, taskDuration);
+          
+          taskStart = new Date(contractStartDate);
+          taskStart.setDate(taskStart.getDate() + taskStartOffset);
+          
+          taskEnd = new Date(taskStart);
+          taskEnd.setDate(taskEnd.getDate() + actualDuration - 1);
+        }
 
         allDates.push(taskStart, taskEnd);
 
         const processedSubtasks: TaskWithDates[] = task.subtasks?.map((subtask, subtaskIndex) => {
-          const subtaskStartOffset = subtask.planned_start_offset_days || taskStartOffset + subtaskIndex;
-          const subtaskDuration = (subtask.planned_end_offset_days || subtaskStartOffset) - subtaskStartOffset + 1;
-          
-          const subtaskStart = new Date(contractStartDate);
-          subtaskStart.setDate(subtaskStart.getDate() + subtaskStartOffset);
-          const subtaskEnd = new Date(subtaskStart);
-          subtaskEnd.setDate(subtaskEnd.getDate() + Math.max(1, subtaskDuration) - 1);
+          let subtaskStart: Date;
+          let subtaskEnd: Date;
+
+          // Check if subtask has actual planned dates
+          if ((subtask as any).planned_start && (subtask as any).planned_end) {
+            subtaskStart = new Date((subtask as any).planned_start);
+            subtaskEnd = new Date((subtask as any).planned_end);
+          } else {
+            const subtaskStartOffset = subtask.planned_start_offset_days || stepStartOffset + subtaskIndex;
+            const subtaskDuration = (subtask.planned_end_offset_days || subtaskStartOffset) - subtaskStartOffset + 1;
+            
+            subtaskStart = new Date(contractStartDate);
+            subtaskStart.setDate(subtaskStart.getDate() + subtaskStartOffset);
+            subtaskEnd = new Date(subtaskStart);
+            subtaskEnd.setDate(subtaskEnd.getDate() + Math.max(1, subtaskDuration) - 1);
+          }
 
           allDates.push(subtaskStart, subtaskEnd);
+
+          const subtaskDurationDays = Math.max(1, Math.ceil((subtaskEnd.getTime() - subtaskStart.getTime()) / (1000 * 60 * 60 * 24)) + 1);
 
           return {
             id: subtask.id.toString(),
@@ -172,12 +247,14 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
             step_name: step.step_name,
             planned_start: subtaskStart.toISOString().split('T')[0],
             planned_end: subtaskEnd.toISOString().split('T')[0],
-            duration_days: Math.max(1, subtaskDuration),
-            is_milestone: Math.max(1, subtaskDuration) === 1,
+            duration_days: subtaskDurationDays,
+            is_milestone: subtaskDurationDays === 1,
             level: 2,
             parent_id: task.id.toString(),
           };
         }) || [];
+
+        const taskDurationDays = Math.max(1, Math.ceil((taskEnd.getTime() - taskStart.getTime()) / (1000 * 60 * 60 * 24)) + 1);
 
         const processedTask: TaskWithDates = {
           id: task.id.toString(),
@@ -185,8 +262,8 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
           step_name: step.step_name,
           planned_start: taskStart.toISOString().split('T')[0],
           planned_end: taskEnd.toISOString().split('T')[0],
-          duration_days: actualDuration,
-          is_milestone: actualDuration === 1,
+          duration_days: taskDurationDays,
+          is_milestone: taskDurationDays === 1,
           subtasks: processedSubtasks,
           level: 1,
           parent_id: step.id.toString(),
@@ -194,11 +271,15 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
 
         processedTasks.push(processedTask);
         
-        // Update step start offset for next task (don't overlap, use end + 1)
-        stepStartOffset = Math.max(stepStartOffset, taskStartOffset + actualDuration);
+        // Update step start offset for next task (only used for offset-based calculation)
+        if (!((task as any).planned_start)) {
+          const taskStartOffset = task.planned_start_offset_days || (taskIndex * 7);
+          const actualDuration = Math.max(1, (task.planned_end_offset_days || 0) - (task.planned_start_offset_days || 0) + 1);
+          stepStartOffset = Math.max(stepStartOffset, taskStartOffset + actualDuration);
+        }
       });
 
-      // Calculate aggregated step dates (earliest start, latest end)
+      // Calculate aggregated step dates (earliest start from all tasks/subtasks, latest end)
       const stepAggregatedStart = allDates.length > 0 
         ? new Date(Math.min(...allDates.map(d => d.getTime())))
         : null;
@@ -210,8 +291,8 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
         id: step.id.toString(),
         step_name: step.step_name,
         tasks: processedTasks,
-        planned_start: processedTasks.length > 0 ? processedTasks[0].planned_start : null,
-        planned_end: processedTasks.length > 0 ? processedTasks[processedTasks.length - 1].planned_end : null,
+        planned_start: stepAggregatedStart?.toISOString().split('T')[0] || null,
+        planned_end: stepAggregatedEnd?.toISOString().split('T')[0] || null,
         aggregated_start: stepAggregatedStart?.toISOString().split('T')[0] || null,
         aggregated_end: stepAggregatedEnd?.toISOString().split('T')[0] || null,
         step_order: stepIndex,

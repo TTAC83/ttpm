@@ -1044,7 +1044,10 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
                         {/* Expand/Collapse Button */}
                         {hasChildren && (
                           <button
-                            onClick={() => toggleItem(item.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleItem(item.id);
+                            }}
                             className="p-1 hover:bg-muted rounded transition-colors"
                             title={isExpanded ? 'Collapse' : 'Expand'}
                           >
@@ -1080,7 +1083,10 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
                       {/* Expand/Collapse Button on Timeline Side */}
                       {hasChildren && (
                         <button
-                          onClick={() => toggleItem(item.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleItem(item.id);
+                          }}
                           className="p-1 hover:bg-muted rounded transition-colors ml-auto"
                           title={isExpanded ? 'Collapse' : 'Expand'}
                         >

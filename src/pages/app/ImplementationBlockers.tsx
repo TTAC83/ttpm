@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Filter, AlertTriangle } from "lucide-react";
+import { Search, Filter, AlertTriangle, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +25,7 @@ import { BlockerDrawer } from "@/components/BlockerDrawer";
 import { blockersService, ImplementationBlocker } from "@/lib/blockersService";
 import { formatDateUK } from "@/lib/dateUtils";
 import { toast } from "sonner";
+import * as XLSX from 'xlsx';
 
 export default function ImplementationEscalations() {
   const [escalations, setEscalations] = useState<ImplementationBlocker[]>([]);
@@ -97,6 +98,39 @@ export default function ImplementationEscalations() {
     return "";
   };
 
+  const handleExportToExcel = () => {
+    try {
+      const exportData = escalations.map(esc => ({
+        'Customer': esc.customer_name || '',
+        'Project': esc.project_name || '',
+        'Title': esc.title,
+        'Description': esc.description || '',
+        'Owner': esc.owner_name,
+        'Account Manager': esc.account_manager_name || '',
+        'Status': esc.status,
+        'Critical': esc.is_critical ? 'Yes' : 'No',
+        'Raised': formatDateUK(esc.raised_at),
+        'Est. Complete': esc.estimated_complete_date ? formatDateUK(esc.estimated_complete_date) : '',
+        'Age (days)': esc.age_days,
+        'Overdue': esc.is_overdue ? 'Yes' : 'No',
+        'Reason Code': esc.reason_code || '',
+        'Resolution Notes': esc.resolution_notes || ''
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Escalations');
+      
+      const fileName = `escalations_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      
+      toast.success('Escalations exported to Excel');
+    } catch (error) {
+      console.error('Failed to export:', error);
+      toast.error('Failed to export escalations');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -107,15 +141,25 @@ export default function ImplementationEscalations() {
             View escalations across all projects. To add new ones, go to the specific project.
           </p>
         </div>
-        <Button 
-          variant={filters.status === 'Live' ? 'default' : 'outline'}
-          onClick={() => setFilters(prev => ({ 
-            ...prev, 
-            status: prev.status === 'Live' ? 'All' : 'Live' 
-          }))}
-        >
-          {filters.status === 'Live' ? 'Show All' : 'Show Open Only'}
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={handleExportToExcel}
+            disabled={escalations.length === 0}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export to Excel
+          </Button>
+          <Button 
+            variant={filters.status === 'Live' ? 'default' : 'outline'}
+            onClick={() => setFilters(prev => ({ 
+              ...prev, 
+              status: prev.status === 'Live' ? 'All' : 'Live' 
+            }))}
+          >
+            {filters.status === 'Live' ? 'Show All' : 'Show Open Only'}
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}

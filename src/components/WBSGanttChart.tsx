@@ -146,12 +146,13 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
             .eq('project_id', projectId)
             .eq('master_task_id', step.id);
           
-          // Convert project tasks to MasterTask format
-          tasksData[step.id] = (projectTasks || []).map((pt, idx) => ({
-            id: parseInt(pt.id),
+          // Convert project tasks to MasterTask-like objects (augmented with UUIDs)
+          tasksData[step.id] = ((projectTasks || []).map((pt: any, idx: number) => ({
+            // Use a numeric surrogate id to satisfy MasterTask typing, but keep the real UUID separately
+            id: idx + 1,
             step_id: step.id,
             title: pt.task_title,
-            details: pt.task_details,
+            details: pt.task_details || null,
             planned_start_offset_days: 0,
             planned_end_offset_days: 0,
             duration_days: 1,
@@ -159,8 +160,12 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
             technology_scope: 'both',
             assigned_role: '',
             parent_task_id: null,
+            // Real identifiers and dates for project view
+            project_task_uuid: pt.id,
+            planned_start: pt.planned_start,
+            planned_end: pt.planned_end,
             subtasks: (pt.subtasks || []).map((st: any, stIdx: number) => ({
-              id: parseInt(st.id),
+              id: stIdx + 1,
               step_id: step.id,
               title: st.title,
               details: st.details || null,
@@ -170,15 +175,13 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
               position: stIdx,
               technology_scope: 'both',
               assigned_role: '',
-              parent_task_id: parseInt(pt.id),
-              // Include actual dates for project-specific view
+              parent_task_id: idx + 1,
+              // Real identifiers and dates for project view
+              subtask_uuid: st.id,
               planned_start: st.planned_start,
               planned_end: st.planned_end,
-            })) as MasterTask[],
-            // Use actual planned dates from project tasks
-            planned_start: pt.planned_start,
-            planned_end: pt.planned_end,
-          })) as MasterTask[];
+            })),
+          })) as unknown) as MasterTask[];
         }
       } else {
         // Load master template data
@@ -260,7 +263,7 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
           const subtaskDurationDays = Math.max(1, Math.ceil((subtaskEnd.getTime() - subtaskStart.getTime()) / (1000 * 60 * 60 * 24)) + 1);
 
           return {
-            id: subtask.id.toString(),
+            id: (((subtask as any).subtask_uuid ?? subtask.id)).toString(),
             title: subtask.title,
             step_name: step.step_name,
             planned_start: subtaskStart.toISOString().split('T')[0],
@@ -268,14 +271,14 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
             duration_days: subtaskDurationDays,
             is_milestone: subtaskDurationDays === 1,
             level: 2,
-            parent_id: task.id.toString(),
+            parent_id: (((task as any).project_task_uuid ?? task.id)).toString(),
           };
         }) || [];
 
         const taskDurationDays = Math.max(1, Math.ceil((taskEnd.getTime() - taskStart.getTime()) / (1000 * 60 * 60 * 24)) + 1);
 
         const processedTask: TaskWithDates = {
-          id: task.id.toString(),
+          id: (((task as any).project_task_uuid ?? task.id)).toString(),
           title: task.title,
           step_name: step.step_name,
           planned_start: taskStart.toISOString().split('T')[0],
@@ -560,6 +563,7 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
 
   const handleTaskClick = async (taskId: string) => {
     if (!projectId) return; // Only allow editing for project-specific view
+    console.log('WBSGanttChart: handleTaskClick', taskId);
     
     try {
       const { data } = await supabase
@@ -570,6 +574,8 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
       
       if (data) {
         setEditingTask(data);
+      } else {
+        console.warn('WBSGanttChart: No task found for id', taskId);
       }
     } catch (error) {
       console.error('Failed to load task:', error);
@@ -583,6 +589,7 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
 
   const handleSubtaskClick = async (subtaskId: string) => {
     if (!projectId) return; // Only allow editing for project-specific view
+    console.log('WBSGanttChart: handleSubtaskClick', subtaskId);
     
     try {
       const { data } = await supabase
@@ -593,6 +600,8 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
       
       if (data) {
         setEditingSubtask(data);
+      } else {
+        console.warn('WBSGanttChart: No subtask found for id', subtaskId);
       }
     } catch (error) {
       console.error('Failed to load subtask:', error);

@@ -34,7 +34,13 @@ export function SharedBlockersTab({ projectId, projectType }: SharedBlockersTabP
     try {
       setLoading(true);
       const data = await blockersService.getProjectBlockers(projectId, statusFilter, projectType);
-      setBlockers(data);
+      // Sort alphabetically by title (customer name not available in project-specific view)
+      const sortedData = data.sort((a, b) => {
+        const titleA = (a.title || '').toLowerCase();
+        const titleB = (b.title || '').toLowerCase();
+        return titleA.localeCompare(titleB);
+      });
+      setBlockers(sortedData);
     } catch (error: any) {
       toast({
         title: "Error",

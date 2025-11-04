@@ -49,21 +49,11 @@ export default function ImplementationEscalations() {
     setLoading(true);
     try {
       const data = await blockersService.getAllBlockers(filters);
-      // Sort critical items to the top, then by status, then by overdue status
+      // Sort alphabetically by customer name
       const sortedData = data.sort((a, b) => {
-        // Critical items first
-        if (a.is_critical && !b.is_critical) return -1;
-        if (!a.is_critical && b.is_critical) return 1;
-        
-        // Then by status (Live before Closed)
-        if (a.status === 'Live' && b.status === 'Closed') return -1;
-        if (a.status === 'Closed' && b.status === 'Live') return 1;
-        
-        // Then by overdue status
-        if (a.is_overdue && !b.is_overdue) return -1;
-        if (!a.is_overdue && b.is_overdue) return 1;
-        
-        return 0;
+        const customerA = (a.customer_name || '').toLowerCase();
+        const customerB = (b.customer_name || '').toLowerCase();
+        return customerA.localeCompare(customerB);
       });
       setEscalations(sortedData);
     } catch (error) {

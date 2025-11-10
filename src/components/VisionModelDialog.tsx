@@ -184,6 +184,13 @@ export function VisionModelDialog({
         return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
       };
 
+      console.log('📖 Loading Vision Model:', {
+        product_run_start: model.product_run_start,
+        product_run_start_has_time: model.product_run_start_has_time,
+        product_run_end: model.product_run_end,
+        product_run_end_has_time: model.product_run_end_has_time,
+      });
+
       form.reset({
         line_name: model.line_name,
         position: model.position,
@@ -256,6 +263,14 @@ export function VisionModelDialog({
         product_run_end_has_time: !!(data.product_run_end_time && data.product_run_end_time.trim()),
         status: data.status,
       };
+
+      console.log('🔍 Saving Vision Model:', {
+        product_run_start_time: data.product_run_start_time,
+        product_run_start_has_time: formattedData.product_run_start_has_time,
+        product_run_end_time: data.product_run_end_time,
+        product_run_end_has_time: formattedData.product_run_end_has_time,
+        fullData: formattedData
+      });
 
       if (mode === 'create') {
         const { error } = await supabase

@@ -707,6 +707,12 @@ export function VisionModelDialog({
                 name="product_run_start"
                 render={({ field }) => {
                   const timeValue = form.watch('product_run_start_time');
+                  
+                  const handleClear = () => {
+                    field.onChange(undefined);
+                    form.setValue('product_run_start_time', '');
+                  };
+
                   return (
                     <FormItem className="flex flex-col">
                       <FormLabel>Product Run Start</FormLabel>
@@ -771,12 +777,7 @@ export function VisionModelDialog({
                             variant="ghost"
                             size="icon"
                             className="text-destructive hover:text-destructive/90"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              form.resetField('product_run_start', { defaultValue: undefined });
-                              form.resetField('product_run_start_time', { defaultValue: '' });
-                            }}
+                            onClick={handleClear}
                           >
                             <span className="sr-only">Clear date</span>
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -794,6 +795,12 @@ export function VisionModelDialog({
                 name="product_run_end"
                 render={({ field }) => {
                   const timeValue = form.watch('product_run_end_time');
+                  
+                  const handleClear = () => {
+                    field.onChange(undefined);
+                    form.setValue('product_run_end_time', '');
+                  };
+
                   return (
                     <FormItem className="flex flex-col">
                       <FormLabel>Product Run End</FormLabel>
@@ -858,12 +865,7 @@ export function VisionModelDialog({
                             variant="ghost"
                             size="icon"
                             className="text-destructive hover:text-destructive/90"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              form.resetField('product_run_end', { defaultValue: undefined });
-                              form.resetField('product_run_end_time', { defaultValue: '' });
-                            }}
+                            onClick={handleClear}
                           >
                             <span className="sr-only">Clear date</span>
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>

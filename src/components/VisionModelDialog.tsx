@@ -774,9 +774,8 @@ export function VisionModelDialog({
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              field.onChange(undefined);
-                              form.setValue('product_run_start_time', '');
-                              form.trigger('product_run_start');
+                              form.resetField('product_run_start', { defaultValue: undefined });
+                              form.resetField('product_run_start_time', { defaultValue: '' });
                             }}
                           >
                             <span className="sr-only">Clear date</span>
@@ -862,9 +861,8 @@ export function VisionModelDialog({
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              field.onChange(undefined);
-                              form.setValue('product_run_end_time', '');
-                              form.trigger('product_run_end');
+                              form.resetField('product_run_end', { defaultValue: undefined });
+                              form.resetField('product_run_end_time', { defaultValue: '' });
                             }}
                           >
                             <span className="sr-only">Clear date</span>

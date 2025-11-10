@@ -224,16 +224,27 @@ export function VisionModelDialog({
     try {
       setLoading(true);
 
+      // Debug: Log form data
+      console.log('📝 Form data being submitted:', {
+        product_run_start: data.product_run_start,
+        product_run_start_time: data.product_run_start_time,
+        product_run_end: data.product_run_end,
+        product_run_end_time: data.product_run_end_time,
+      });
+
       // Helper function to combine date and time
       const formatDateTime = (date?: Date, time?: string) => {
         if (!date) return null;
         if (time && time.trim()) {
           // Create date in UTC to avoid timezone issues
           const dateStr = date.toISOString().split('T')[0];
-          return `${dateStr}T${time}:00.000Z`;
+          const result = `${dateStr}T${time}:00.000Z`;
+          console.log(`📅 Formatting date ${dateStr} with time ${time} -> ${result}`);
+          return result;
         }
         // If no time provided, save as date-only (will be interpreted as midnight UTC)
         const dateStr = date.toISOString().split('T')[0];
+        console.log(`📅 Formatting date ${dateStr} without time -> ${dateStr}T00:00:00.000Z`);
         return `${dateStr}T00:00:00.000Z`;
       };
 
@@ -255,6 +266,8 @@ export function VisionModelDialog({
         product_run_end: formatDateTime(data.product_run_end, data.product_run_end_time),
         status: data.status,
       };
+
+      console.log('💾 Data being sent to database:', formattedData);
 
       if (mode === 'create') {
         const { error } = await supabase

@@ -1,0 +1,226 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { VisionModel } from "@/lib/visionModelsService";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ArrowUpDown, ArrowUp, ArrowDown, Pencil } from "lucide-react";
+import { VisionModelDialog } from "@/components/VisionModelDialog";
+import { VisionModelsTableConfig } from "./types";
+
+type SortColumn = keyof VisionModel | null;
+type SortDirection = 'asc' | 'desc' | null;
+
+interface VisionModelsTableProps {
+  config: VisionModelsTableConfig;
+}
+
+export function VisionModelsTable({ config }: VisionModelsTableProps) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortColumn, setSortColumn] = useState<SortColumn>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+  const [editingModel, setEditingModel] = useState<VisionModel | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const { data: models = [], isLoading, refetch } = useQuery({
+    queryKey: config.queryKey,
+    queryFn: config.queryFn,
+  });
+
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else if (sortDirection === 'desc') {
+        setSortColumn(null);
+        setSortDirection(null);
+      } else {
+        setSortDirection('asc');
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortIcon = (column: SortColumn) => {
+    if (sortColumn !== column) {
+      return <ArrowUpDown className="ml-2 h-4 w-4" />;
+    }
+    return sortDirection === 'asc' ? 
+      <ArrowUp className="ml-2 h-4 w-4" /> : 
+      <ArrowDown className="ml-2 h-4 w-4" />;
+  };
+
+  const filteredAndSortedModels = models
+    .filter(model => {
+      if (!searchTerm) return true;
+      const search = searchTerm.toLowerCase();
+      return (
+        model.customer_name?.toLowerCase().includes(search) ||
+        model.project_name?.toLowerCase().includes(search) ||
+        model.line_name?.toLowerCase().includes(search) ||
+        model.equipment?.toLowerCase().includes(search) ||
+        model.product_sku?.toLowerCase().includes(search) ||
+        model.product_title?.toLowerCase().includes(search) ||
+        model.use_case?.toLowerCase().includes(search) ||
+        model.group_name?.toLowerCase().includes(search) ||
+        model.product_run_start?.toLowerCase().includes(search) ||
+        model.product_run_end?.toLowerCase().includes(search)
+      );
+    })
+    .sort((a, b) => {
+      // Use custom sort if provided
+      if (config.customSort) {
+        return config.customSort(a, b, sortColumn, sortDirection);
+      }
+
+      // Default sort logic
+      if (!sortColumn || !sortDirection) return 0;
+      
+      const aVal = a[sortColumn];
+      const bVal = b[sortColumn];
+      
+      if (aVal === null || aVal === undefined) return sortDirection === 'asc' ? 1 : -1;
+      if (bVal === null || bVal === undefined) return sortDirection === 'asc' ? -1 : 1;
+      
+      if (typeof aVal === 'string' && typeof bVal === 'string') {
+        return sortDirection === 'asc' 
+          ? aVal.localeCompare(bVal) 
+          : bVal.localeCompare(aVal);
+      }
+      
+      return sortDirection === 'asc' 
+        ? (aVal > bVal ? 1 : -1) 
+        : (aVal < bVal ? 1 : -1);
+    });
+
+  const handleEdit = (model: VisionModel) => {
+    setEditingModel(model);
+    setIsDialogOpen(true);
+  };
+
+  const handleClose = async () => {
+    await refetch();
+    setIsDialogOpen(false);
+    setEditingModel(null);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p className="text-muted-foreground">Loading {config.title.toLowerCase()}...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {config.title} <span className="text-muted-foreground">({models.length})</span>
+        </h1>
+        <p className="text-muted-foreground mt-2">
+          {config.description}
+        </p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{config.cardTitle}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Input
+            placeholder="Search by customer, project, line, equipment, SKU, title, use case, or group..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="max-w-md"
+          />
+
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {config.columns.map((column) => (
+                    <TableHead key={column.key}>
+                      {column.sortable !== false ? (
+                        <Button 
+                          variant="ghost" 
+                          onClick={() => handleSort(column.key)} 
+                          className="h-8 p-0 font-semibold hover:bg-transparent"
+                        >
+                          {column.label} {getSortIcon(column.key)}
+                        </Button>
+                      ) : (
+                        <span className="font-semibold">{column.label}</span>
+                      )}
+                    </TableHead>
+                  ))}
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredAndSortedModels.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={config.columns.length + 1} className="text-center text-muted-foreground py-8">
+                      {config.emptyMessage}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredAndSortedModels.map((model) => (
+                    <TableRow 
+                      key={model.id}
+                      className={config.rowClassName ? config.rowClassName(model) : ""}
+                    >
+                      {config.columns.map((column) => (
+                        <TableCell 
+                          key={column.key}
+                          className={
+                            column.key === 'customer_name' || column.key === 'project_name' 
+                              ? "font-medium" 
+                              : ""
+                          }
+                        >
+                          {column.render 
+                            ? column.render(model) 
+                            : model[column.key] || '-'
+                          }
+                        </TableCell>
+                      ))}
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(model)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          <div className="text-sm text-muted-foreground">
+            Showing {filteredAndSortedModels.length} of {models.length} model{models.length !== 1 ? 's' : ''}
+          </div>
+        </CardContent>
+      </Card>
+
+      {editingModel && editingModel.project_id && (
+        <VisionModelDialog
+          open={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          onClose={handleClose}
+          model={editingModel as any}
+          projectId={editingModel.project_id}
+          projectType={editingModel.project_type || 'implementation'}
+          mode="edit"
+        />
+      )}
+    </div>
+  );
+}

@@ -772,7 +772,7 @@ export function VisionModelDialog({
                             size="icon"
                             className="text-destructive hover:text-destructive/90"
                             onClick={() => {
-                              field.onChange(undefined);
+                              form.setValue('product_run_start', undefined);
                               form.setValue('product_run_start_time', '');
                             }}
                           >
@@ -857,7 +857,7 @@ export function VisionModelDialog({
                             size="icon"
                             className="text-destructive hover:text-destructive/90"
                             onClick={() => {
-                              field.onChange(undefined);
+                              form.setValue('product_run_end', undefined);
                               form.setValue('product_run_end_time', '');
                             }}
                           >

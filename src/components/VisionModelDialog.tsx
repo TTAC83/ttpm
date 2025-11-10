@@ -179,10 +179,21 @@ export function VisionModelDialog({
         const d = new Date(dateStr);
         const hours = d.getUTCHours();
         const minutes = d.getUTCMinutes();
+        console.log(`⏰ Extracting time from ${dateStr}: ${hours}:${minutes}`);
         // Only return time if it's not midnight
         if (hours === 0 && minutes === 0) return '';
         return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
       };
+
+      const runStartTime = extractTime(model.product_run_start);
+      const runEndTime = extractTime(model.product_run_end);
+
+      console.log('📖 Loading model data:', {
+        product_run_start: model.product_run_start,
+        product_run_start_time: runStartTime,
+        product_run_end: model.product_run_end,
+        product_run_end_time: runEndTime,
+      });
 
       form.reset({
         line_name: model.line_name,
@@ -197,9 +208,9 @@ export function VisionModelDialog({
         end_date: model.end_date ? new Date(model.end_date) : undefined,
         end_time: extractTime(model.end_date),
         product_run_start: model.product_run_start ? new Date(model.product_run_start) : undefined,
-        product_run_start_time: extractTime(model.product_run_start),
+        product_run_start_time: runStartTime,
         product_run_end: model.product_run_end ? new Date(model.product_run_end) : undefined,
-        product_run_end_time: extractTime(model.product_run_end),
+        product_run_end_time: runEndTime,
         status: model.status,
       });
     } else if (mode === 'create') {
@@ -224,12 +235,10 @@ export function VisionModelDialog({
     try {
       setLoading(true);
 
-      // Debug: Log form data
-      console.log('📝 Form data being submitted:', {
-        product_run_start: data.product_run_start,
-        product_run_start_time: data.product_run_start_time,
-        product_run_end: data.product_run_end,
-        product_run_end_time: data.product_run_end_time,
+      // Show what we captured
+      toast({
+        title: "Debug: Form Data Captured",
+        description: `Run Start Time: "${data.product_run_start_time}" | Run End Time: "${data.product_run_end_time}"`,
       });
 
       // Helper function to combine date and time
@@ -238,13 +247,10 @@ export function VisionModelDialog({
         if (time && time.trim()) {
           // Create date in UTC to avoid timezone issues
           const dateStr = date.toISOString().split('T')[0];
-          const result = `${dateStr}T${time}:00.000Z`;
-          console.log(`📅 Formatting date ${dateStr} with time ${time} -> ${result}`);
-          return result;
+          return `${dateStr}T${time}:00.000Z`;
         }
         // If no time provided, save as date-only (will be interpreted as midnight UTC)
         const dateStr = date.toISOString().split('T')[0];
-        console.log(`📅 Formatting date ${dateStr} without time -> ${dateStr}T00:00:00.000Z`);
         return `${dateStr}T00:00:00.000Z`;
       };
 
@@ -267,7 +273,7 @@ export function VisionModelDialog({
         status: data.status,
       };
 
-      console.log('💾 Data being sent to database:', formattedData);
+      console.log('💾 Saving to database:', formattedData);
 
       if (mode === 'create') {
         const { error } = await supabase

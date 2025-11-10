@@ -50,7 +50,9 @@ interface VisionModel {
   start_date: string | null;
   end_date: string | null;
   product_run_start: string | null;
+  product_run_start_has_time?: boolean;
   product_run_end: string | null;
+  product_run_end_has_time?: boolean;
   status: 'Footage Required' | 'Annotation Required' | 'Processing Required' | 'Deployment Required' | 'Validation Required' | 'Complete';
   created_at: string;
   updated_at: string;
@@ -173,27 +175,14 @@ export function VisionModelDialog({
         // We'll need to load equipment after positions are loaded
       }
 
-      // Helper to extract time from timestamp (returns empty string if midnight)
-      const extractTime = (dateStr: string | null) => {
-        if (!dateStr) return '';
+      // Helper to extract time from timestamp - only if has_time flag is true
+      const extractTime = (dateStr: string | null, hasTime: boolean) => {
+        if (!dateStr || !hasTime) return '';
         const d = new Date(dateStr);
         const hours = d.getUTCHours();
         const minutes = d.getUTCMinutes();
-        console.log(`⏰ Extracting time from ${dateStr}: ${hours}:${minutes}`);
-        // Only return time if it's not midnight
-        if (hours === 0 && minutes === 0) return '';
         return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
       };
-
-      const runStartTime = extractTime(model.product_run_start);
-      const runEndTime = extractTime(model.product_run_end);
-
-      console.log('📖 Loading model data:', {
-        product_run_start: model.product_run_start,
-        product_run_start_time: runStartTime,
-        product_run_end: model.product_run_end,
-        product_run_end_time: runEndTime,
-      });
 
       form.reset({
         line_name: model.line_name,
@@ -204,13 +193,13 @@ export function VisionModelDialog({
         use_case: model.use_case,
         group_name: model.group_name || '',
         start_date: model.start_date ? new Date(model.start_date) : undefined,
-        start_time: extractTime(model.start_date),
+        start_time: extractTime(model.start_date, true), // Assuming start_date always has time if set
         end_date: model.end_date ? new Date(model.end_date) : undefined,
-        end_time: extractTime(model.end_date),
+        end_time: extractTime(model.end_date, true), // Assuming end_date always has time if set
         product_run_start: model.product_run_start ? new Date(model.product_run_start) : undefined,
-        product_run_start_time: runStartTime,
+        product_run_start_time: extractTime(model.product_run_start, model.product_run_start_has_time ?? false),
         product_run_end: model.product_run_end ? new Date(model.product_run_end) : undefined,
-        product_run_end_time: runEndTime,
+        product_run_end_time: extractTime(model.product_run_end, model.product_run_end_has_time ?? false),
         status: model.status,
       });
     } else if (mode === 'create') {
@@ -235,22 +224,15 @@ export function VisionModelDialog({
     try {
       setLoading(true);
 
-      // Show what we captured
-      toast({
-        title: "Debug: Form Data Captured",
-        description: `Run Start Time: "${data.product_run_start_time}" | Run End Time: "${data.product_run_end_time}"`,
-      });
-
       // Helper function to combine date and time
       const formatDateTime = (date?: Date, time?: string) => {
         if (!date) return null;
+        const dateStr = date.toISOString().split('T')[0];
         if (time && time.trim()) {
-          // Create date in UTC to avoid timezone issues
-          const dateStr = date.toISOString().split('T')[0];
+          // User entered a time - save the timestamp
           return `${dateStr}T${time}:00.000Z`;
         }
-        // If no time provided, save as date-only (will be interpreted as midnight UTC)
-        const dateStr = date.toISOString().split('T')[0];
+        // No time provided - save as midnight
         return `${dateStr}T00:00:00.000Z`;
       };
 
@@ -269,11 +251,11 @@ export function VisionModelDialog({
         start_date: formatDateTime(data.start_date, data.start_time),
         end_date: formatDateTime(data.end_date, data.end_time),
         product_run_start: formatDateTime(data.product_run_start, data.product_run_start_time),
+        product_run_start_has_time: !!(data.product_run_start_time && data.product_run_start_time.trim()),
         product_run_end: formatDateTime(data.product_run_end, data.product_run_end_time),
+        product_run_end_has_time: !!(data.product_run_end_time && data.product_run_end_time.trim()),
         status: data.status,
       };
-
-      console.log('💾 Saving to database:', formattedData);
 
       if (mode === 'create') {
         const { error } = await supabase

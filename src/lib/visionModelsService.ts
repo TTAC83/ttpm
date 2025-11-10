@@ -15,7 +15,9 @@ export interface VisionModel {
   start_date: string | null;
   end_date: string | null;
   product_run_start: string | null;
+  product_run_start_has_time?: boolean;
   product_run_end: string | null;
+  product_run_end_has_time?: boolean;
   status: 'Footage Required' | 'Annotation Required' | 'Processing Required' | 'Deployment Required' | 'Validation Required' | 'Complete';
   created_at: string;
   updated_at: string;

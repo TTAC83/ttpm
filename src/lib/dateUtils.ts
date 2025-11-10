@@ -44,6 +44,17 @@ export const formatDateTimeSmartUK = (date: string | Date | null): string => {
   return formatDateTimeUK(date);
 };
 
+// Format date with optional time display based on a boolean flag
+export const formatDateWithOptionalTime = (date: string | Date | null, showTime: boolean = false): string => {
+  if (!date) return '';
+  
+  if (showTime) {
+    return formatDateTimeUK(date);
+  }
+  
+  return formatDateUK(date);
+};
+
 export const parseUKDate = (dateStr: string): Date | null => {
   if (!dateStr) return null;
   

@@ -1,7 +1,7 @@
 import { visionModelsService } from "@/lib/visionModelsService";
 import { VisionModelsTable } from "@/components/vision-models/VisionModelsTable";
 import { VisionModelsTableConfig } from "@/components/vision-models/types";
-import { formatDateTimeSmartUK } from "@/lib/dateUtils";
+import { formatDateWithOptionalTime } from "@/lib/dateUtils";
 
 const config: VisionModelsTableConfig = {
   title: "Schedule Required",
@@ -22,14 +22,14 @@ const config: VisionModelsTableConfig = {
     { 
       key: 'product_run_start', 
       label: 'Run Start',
-      render: (model) => model.product_run_start ? formatDateTimeSmartUK(model.product_run_start) : (
+      render: (model) => model.product_run_start ? formatDateWithOptionalTime(model.product_run_start, model.product_run_start_has_time) : (
         <span className="text-destructive font-medium">Not set</span>
       )
     },
     { 
       key: 'product_run_end', 
       label: 'Run End',
-      render: (model) => model.product_run_end ? formatDateTimeSmartUK(model.product_run_end) : (
+      render: (model) => model.product_run_end ? formatDateWithOptionalTime(model.product_run_end, model.product_run_end_has_time) : (
         <span className="text-destructive font-medium">Not set</span>
       )
     },

@@ -3977,7 +3977,9 @@ export type Database = {
           line_name: string
           position: string
           product_run_end: string | null
+          product_run_end_has_time: boolean | null
           product_run_start: string | null
+          product_run_start_has_time: boolean | null
           product_sku: string
           product_title: string
           project_id: string | null
@@ -3997,7 +3999,9 @@ export type Database = {
           line_name: string
           position: string
           product_run_end?: string | null
+          product_run_end_has_time?: boolean | null
           product_run_start?: string | null
+          product_run_start_has_time?: boolean | null
           product_sku: string
           product_title: string
           project_id?: string | null
@@ -4017,7 +4021,9 @@ export type Database = {
           line_name?: string
           position?: string
           product_run_end?: string | null
+          product_run_end_has_time?: boolean | null
           product_run_start?: string | null
+          product_run_start_has_time?: boolean | null
           product_sku?: string
           product_title?: string
           project_id?: string | null

@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths } from 'date-fns';
-import { VisionModelDialog } from '@/components/VisionModelDialog';
+import { VisionModelDialog } from '@/components/vision-models/VisionModelDialog';
 
 interface VisionModel {
   id: string;

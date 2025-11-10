@@ -6,7 +6,7 @@ import { TaskEditDialog } from "@/components/TaskEditDialog";
 import { EditActionDialog } from "@/components/EditActionDialog";
 import CreateEventDialog from "@/components/CreateEventDialog";
 import { ProductGapDrawer } from "@/components/ProductGapDrawer";
-import { VisionModelDialog } from "@/components/VisionModelDialog";
+import { VisionModelDialog } from "@/components/vision-models/VisionModelDialog";
 import { FeatureRequestDialog } from "@/components/FeatureRequestDialog";
 import TaskList from "@/components/TaskList";
 import { useNavigate } from "react-router-dom";

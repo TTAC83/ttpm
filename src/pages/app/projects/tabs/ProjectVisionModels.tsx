@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatDateUK } from '@/lib/dateUtils';
 import { Plus, Pencil, Trash2, Eye, AlertCircle, Calendar as CalendarIcon, Table as TableIcon, Download, FileDown, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { VisionModelDialog } from '@/components/VisionModelDialog';
+import { VisionModelDialog } from '@/components/vision-models/VisionModelDialog';
 import { VisionModelBulkUpload } from '@/components/VisionModelBulkUpload';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths } from 'date-fns';

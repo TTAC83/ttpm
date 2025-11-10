@@ -21,7 +21,7 @@ import { toast } from "sonner";
 import { computeTaskStatus } from "@/lib/taskStatus";
 import { supabase } from "@/integrations/supabase/client";
 import CreateEventDialog from "@/components/CreateEventDialog";
-import { VisionModelDialog } from "@/components/VisionModelDialog";
+import { VisionModelDialog } from "@/components/vision-models/VisionModelDialog";
 import { BlockerDrawer } from "@/components/BlockerDrawer";
 import { blockersService } from "@/lib/blockersService";
 import { DatePicker } from "@/components/ui/date-picker";

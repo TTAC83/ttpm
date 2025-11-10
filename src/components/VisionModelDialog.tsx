@@ -505,301 +505,337 @@ export function VisionModelDialog({
               <FormField
                 control={form.control}
                 name="start_date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Start Date</FormLabel>
-                    <div className="flex gap-2">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "flex-1 pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
+                render={({ field }) => {
+                  const timeValue = form.watch('start_time');
+                  return (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Start Date</FormLabel>
+                      <div className="flex gap-2">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "flex-1 pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                                disabled={mode === 'view'}
+                              >
+                                {field.value ? (
+                                  <>
+                                    {format(field.value, "PPP")}
+                                    {timeValue && timeValue.trim() && (
+                                      <span className="ml-2 text-muted-foreground">at {timeValue}</span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
                               disabled={mode === 'view'}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={mode === 'view'}
-                            initialFocus
-                            className="pointer-events-auto"
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      {field.value && mode !== 'view' && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="text-destructive hover:text-destructive/90"
-                          onClick={() => field.onChange(undefined)}
-                        >
-                          <span className="sr-only">Clear date</span>
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                        </Button>
-                      )}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="start_time"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Start Time (Optional)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="time" 
-                        {...field} 
-                        disabled={mode === 'view'}
-                        className="w-full"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                              initialFocus
+                              className="pointer-events-auto"
+                            />
+                            <div className="p-3 border-t">
+                              <FormField
+                                control={form.control}
+                                name="start_time"
+                                render={({ field: timeField }) => (
+                                  <div className="flex flex-col gap-2">
+                                    <label className="text-sm font-medium">Time (Optional)</label>
+                                    <Input 
+                                      type="time" 
+                                      {...timeField} 
+                                      disabled={mode === 'view'}
+                                      className="w-full"
+                                    />
+                                  </div>
+                                )}
+                              />
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                        {field.value && mode !== 'view' && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive/90"
+                            onClick={() => {
+                              field.onChange(undefined);
+                              form.setValue('start_time', '');
+                            }}
+                          >
+                            <span className="sr-only">Clear date</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                          </Button>
+                        )}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
 
               <FormField
                 control={form.control}
                 name="end_date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>End Date</FormLabel>
-                    <div className="flex gap-2">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "flex-1 pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
+                render={({ field }) => {
+                  const timeValue = form.watch('end_time');
+                  return (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>End Date</FormLabel>
+                      <div className="flex gap-2">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "flex-1 pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                                disabled={mode === 'view'}
+                              >
+                                {field.value ? (
+                                  <>
+                                    {format(field.value, "PPP")}
+                                    {timeValue && timeValue.trim() && (
+                                      <span className="ml-2 text-muted-foreground">at {timeValue}</span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
                               disabled={mode === 'view'}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={mode === 'view'}
-                            initialFocus
-                            className="pointer-events-auto"
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      {field.value && mode !== 'view' && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="text-destructive hover:text-destructive/90"
-                          onClick={() => field.onChange(undefined)}
-                        >
-                          <span className="sr-only">Clear date</span>
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                        </Button>
-                      )}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="end_time"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>End Time (Optional)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="time" 
-                        {...field} 
-                        disabled={mode === 'view'}
-                        className="w-full"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                              initialFocus
+                              className="pointer-events-auto"
+                            />
+                            <div className="p-3 border-t">
+                              <FormField
+                                control={form.control}
+                                name="end_time"
+                                render={({ field: timeField }) => (
+                                  <div className="flex flex-col gap-2">
+                                    <label className="text-sm font-medium">Time (Optional)</label>
+                                    <Input 
+                                      type="time" 
+                                      {...timeField} 
+                                      disabled={mode === 'view'}
+                                      className="w-full"
+                                    />
+                                  </div>
+                                )}
+                              />
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                        {field.value && mode !== 'view' && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive/90"
+                            onClick={() => {
+                              field.onChange(undefined);
+                              form.setValue('end_time', '');
+                            }}
+                          >
+                            <span className="sr-only">Clear date</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                          </Button>
+                        )}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
 
               <FormField
                 control={form.control}
                 name="product_run_start"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Product Run Start</FormLabel>
-                    <div className="flex gap-2">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "flex-1 pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
+                render={({ field }) => {
+                  const timeValue = form.watch('product_run_start_time');
+                  return (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Product Run Start</FormLabel>
+                      <div className="flex gap-2">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "flex-1 pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                                disabled={mode === 'view'}
+                              >
+                                {field.value ? (
+                                  <>
+                                    {format(field.value, "PPP")}
+                                    {timeValue && timeValue.trim() && (
+                                      <span className="ml-2 text-muted-foreground">at {timeValue}</span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
                               disabled={mode === 'view'}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={mode === 'view'}
-                            initialFocus
-                            className="pointer-events-auto"
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      {field.value && mode !== 'view' && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="text-destructive hover:text-destructive/90"
-                          onClick={() => field.onChange(undefined)}
-                        >
-                          <span className="sr-only">Clear date</span>
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                        </Button>
-                      )}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="product_run_start_time"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Product Run Start Time (Optional)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="time" 
-                        {...field} 
-                        disabled={mode === 'view'}
-                        className="w-full"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                              initialFocus
+                              className="pointer-events-auto"
+                            />
+                            <div className="p-3 border-t">
+                              <FormField
+                                control={form.control}
+                                name="product_run_start_time"
+                                render={({ field: timeField }) => (
+                                  <div className="flex flex-col gap-2">
+                                    <label className="text-sm font-medium">Time (Optional)</label>
+                                    <Input 
+                                      type="time" 
+                                      {...timeField} 
+                                      disabled={mode === 'view'}
+                                      className="w-full"
+                                    />
+                                  </div>
+                                )}
+                              />
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                        {field.value && mode !== 'view' && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive/90"
+                            onClick={() => {
+                              field.onChange(undefined);
+                              form.setValue('product_run_start_time', '');
+                            }}
+                          >
+                            <span className="sr-only">Clear date</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                          </Button>
+                        )}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
 
               <FormField
                 control={form.control}
                 name="product_run_end"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Product Run End</FormLabel>
-                    <div className="flex gap-2">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "flex-1 pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
+                render={({ field }) => {
+                  const timeValue = form.watch('product_run_end_time');
+                  return (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Product Run End</FormLabel>
+                      <div className="flex gap-2">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "flex-1 pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                                disabled={mode === 'view'}
+                              >
+                                {field.value ? (
+                                  <>
+                                    {format(field.value, "PPP")}
+                                    {timeValue && timeValue.trim() && (
+                                      <span className="ml-2 text-muted-foreground">at {timeValue}</span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
                               disabled={mode === 'view'}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={mode === 'view'}
-                            initialFocus
-                            className="pointer-events-auto"
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      {field.value && mode !== 'view' && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="text-destructive hover:text-destructive/90"
-                          onClick={() => field.onChange(undefined)}
-                        >
-                          <span className="sr-only">Clear date</span>
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                        </Button>
-                      )}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="product_run_end_time"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Product Run End Time (Optional)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="time" 
-                        {...field} 
-                        disabled={mode === 'view'}
-                        className="w-full"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                              initialFocus
+                              className="pointer-events-auto"
+                            />
+                            <div className="p-3 border-t">
+                              <FormField
+                                control={form.control}
+                                name="product_run_end_time"
+                                render={({ field: timeField }) => (
+                                  <div className="flex flex-col gap-2">
+                                    <label className="text-sm font-medium">Time (Optional)</label>
+                                    <Input 
+                                      type="time" 
+                                      {...timeField} 
+                                      disabled={mode === 'view'}
+                                      className="w-full"
+                                    />
+                                  </div>
+                                )}
+                              />
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                        {field.value && mode !== 'view' && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive/90"
+                            onClick={() => {
+                              field.onChange(undefined);
+                              form.setValue('product_run_end_time', '');
+                            }}
+                          >
+                            <span className="sr-only">Clear date</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                          </Button>
+                        )}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
             </div>
 

@@ -25,9 +25,13 @@ const visionModelSchema = z.object({
   use_case: z.string().min(1, 'Use Case is required'),
   group_name: z.string().optional(),
   start_date: z.date().optional(),
+  start_time: z.string().optional(),
   end_date: z.date().optional(),
+  end_time: z.string().optional(),
   product_run_start: z.date().optional(),
+  product_run_start_time: z.string().optional(),
   product_run_end: z.date().optional(),
+  product_run_end_time: z.string().optional(),
   status: z.enum(['Footage Required', 'Annotation Required', 'Processing Required', 'Deployment Required', 'Validation Required', 'Complete']),
 });
 
@@ -178,9 +182,13 @@ export function VisionModelDialog({
         use_case: model.use_case,
         group_name: model.group_name || '',
         start_date: model.start_date ? new Date(model.start_date) : undefined,
+        start_time: model.start_date ? new Date(model.start_date).toTimeString().slice(0, 5) : '',
         end_date: model.end_date ? new Date(model.end_date) : undefined,
+        end_time: model.end_date ? new Date(model.end_date).toTimeString().slice(0, 5) : '',
         product_run_start: model.product_run_start ? new Date(model.product_run_start) : undefined,
+        product_run_start_time: model.product_run_start ? new Date(model.product_run_start).toTimeString().slice(0, 5) : '',
         product_run_end: model.product_run_end ? new Date(model.product_run_end) : undefined,
+        product_run_end_time: model.product_run_end ? new Date(model.product_run_end).toTimeString().slice(0, 5) : '',
         status: model.status,
       });
     } else if (mode === 'create') {
@@ -205,6 +213,16 @@ export function VisionModelDialog({
     try {
       setLoading(true);
 
+      // Helper function to combine date and time
+      const formatDateTime = (date?: Date, time?: string) => {
+        if (!date) return null;
+        if (time && time.trim()) {
+          const dateStr = date.toISOString().split('T')[0];
+          return `${dateStr}T${time}:00`;
+        }
+        return date.toISOString().split('T')[0];
+      };
+
       const formattedData: any = {
         ...(projectType === 'solutions' 
           ? { solutions_project_id: projectId, project_type: 'solutions' as const }
@@ -217,10 +235,10 @@ export function VisionModelDialog({
         product_title: data.product_title,
         use_case: data.use_case,
         group_name: data.group_name || null,
-        start_date: data.start_date?.toISOString().split('T')[0] || null,
-        end_date: data.end_date?.toISOString().split('T')[0] || null,
-        product_run_start: data.product_run_start?.toISOString().split('T')[0] || null,
-        product_run_end: data.product_run_end?.toISOString().split('T')[0] || null,
+        start_date: formatDateTime(data.start_date, data.start_time),
+        end_date: formatDateTime(data.end_date, data.end_time),
+        product_run_start: formatDateTime(data.product_run_start, data.product_run_start_time),
+        product_run_end: formatDateTime(data.product_run_end, data.product_run_end_time),
         status: data.status,
       };
 
@@ -528,6 +546,25 @@ export function VisionModelDialog({
 
               <FormField
                 control={form.control}
+                name="start_time"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Start Time (Optional)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="time" 
+                        {...field} 
+                        disabled={mode === 'view'}
+                        className="w-full"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="end_date"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
@@ -563,6 +600,25 @@ export function VisionModelDialog({
                         />
                       </PopoverContent>
                     </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="end_time"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>End Time (Optional)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="time" 
+                        {...field} 
+                        disabled={mode === 'view'}
+                        className="w-full"
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -612,6 +668,25 @@ export function VisionModelDialog({
 
               <FormField
                 control={form.control}
+                name="product_run_start_time"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Product Run Start Time (Optional)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="time" 
+                        {...field} 
+                        disabled={mode === 'view'}
+                        className="w-full"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="product_run_end"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
@@ -647,6 +722,25 @@ export function VisionModelDialog({
                         />
                       </PopoverContent>
                     </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="product_run_end_time"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Product Run End Time (Optional)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="time" 
+                        {...field} 
+                        disabled={mode === 'view'}
+                        className="w-full"
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

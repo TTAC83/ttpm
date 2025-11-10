@@ -173,6 +173,17 @@ export function VisionModelDialog({
         // We'll need to load equipment after positions are loaded
       }
 
+      // Helper to extract time from timestamp (returns empty string if midnight)
+      const extractTime = (dateStr: string | null) => {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        const hours = d.getUTCHours();
+        const minutes = d.getUTCMinutes();
+        // Only return time if it's not midnight
+        if (hours === 0 && minutes === 0) return '';
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+      };
+
       form.reset({
         line_name: model.line_name,
         position: model.position,
@@ -182,13 +193,13 @@ export function VisionModelDialog({
         use_case: model.use_case,
         group_name: model.group_name || '',
         start_date: model.start_date ? new Date(model.start_date) : undefined,
-        start_time: model.start_date ? new Date(model.start_date).toTimeString().slice(0, 5) : '',
+        start_time: extractTime(model.start_date),
         end_date: model.end_date ? new Date(model.end_date) : undefined,
-        end_time: model.end_date ? new Date(model.end_date).toTimeString().slice(0, 5) : '',
+        end_time: extractTime(model.end_date),
         product_run_start: model.product_run_start ? new Date(model.product_run_start) : undefined,
-        product_run_start_time: model.product_run_start ? new Date(model.product_run_start).toTimeString().slice(0, 5) : '',
+        product_run_start_time: extractTime(model.product_run_start),
         product_run_end: model.product_run_end ? new Date(model.product_run_end) : undefined,
-        product_run_end_time: model.product_run_end ? new Date(model.product_run_end).toTimeString().slice(0, 5) : '',
+        product_run_end_time: extractTime(model.product_run_end),
         status: model.status,
       });
     } else if (mode === 'create') {
@@ -217,10 +228,13 @@ export function VisionModelDialog({
       const formatDateTime = (date?: Date, time?: string) => {
         if (!date) return null;
         if (time && time.trim()) {
+          // Create date in UTC to avoid timezone issues
           const dateStr = date.toISOString().split('T')[0];
-          return `${dateStr}T${time}:00`;
+          return `${dateStr}T${time}:00.000Z`;
         }
-        return date.toISOString().split('T')[0];
+        // If no time provided, save as date-only (will be interpreted as midnight UTC)
+        const dateStr = date.toISOString().split('T')[0];
+        return `${dateStr}T00:00:00.000Z`;
       };
 
       const formattedData: any = {
@@ -550,15 +564,16 @@ export function VisionModelDialog({
                                 control={form.control}
                                 name="start_time"
                                 render={({ field: timeField }) => (
-                                  <div className="flex flex-col gap-2">
-                                    <label className="text-sm font-medium">Time (Optional)</label>
-                                    <Input 
-                                      type="time" 
-                                      {...timeField} 
-                                      disabled={mode === 'view'}
-                                      className="w-full"
-                                    />
-                                  </div>
+                                   <div className="flex flex-col gap-2">
+                                     <label className="text-sm font-medium">Time (Optional)</label>
+                                     <Input 
+                                       type="time" 
+                                       {...timeField} 
+                                       disabled={mode === 'view'}
+                                       className="w-full"
+                                       step="60"
+                                     />
+                                   </div>
                                 )}
                               />
                             </div>
@@ -634,15 +649,16 @@ export function VisionModelDialog({
                                 control={form.control}
                                 name="end_time"
                                 render={({ field: timeField }) => (
-                                  <div className="flex flex-col gap-2">
-                                    <label className="text-sm font-medium">Time (Optional)</label>
-                                    <Input 
-                                      type="time" 
-                                      {...timeField} 
-                                      disabled={mode === 'view'}
-                                      className="w-full"
-                                    />
-                                  </div>
+                                   <div className="flex flex-col gap-2">
+                                     <label className="text-sm font-medium">Time (Optional)</label>
+                                     <Input 
+                                       type="time" 
+                                       {...timeField} 
+                                       disabled={mode === 'view'}
+                                       className="w-full"
+                                       step="60"
+                                     />
+                                   </div>
                                 )}
                               />
                             </div>
@@ -718,15 +734,16 @@ export function VisionModelDialog({
                                 control={form.control}
                                 name="product_run_start_time"
                                 render={({ field: timeField }) => (
-                                  <div className="flex flex-col gap-2">
-                                    <label className="text-sm font-medium">Time (Optional)</label>
-                                    <Input 
-                                      type="time" 
-                                      {...timeField} 
-                                      disabled={mode === 'view'}
-                                      className="w-full"
-                                    />
-                                  </div>
+                                   <div className="flex flex-col gap-2">
+                                     <label className="text-sm font-medium">Time (Optional)</label>
+                                     <Input 
+                                       type="time" 
+                                       {...timeField} 
+                                       disabled={mode === 'view'}
+                                       className="w-full"
+                                       step="60"
+                                     />
+                                   </div>
                                 )}
                               />
                             </div>
@@ -802,15 +819,16 @@ export function VisionModelDialog({
                                 control={form.control}
                                 name="product_run_end_time"
                                 render={({ field: timeField }) => (
-                                  <div className="flex flex-col gap-2">
-                                    <label className="text-sm font-medium">Time (Optional)</label>
-                                    <Input 
-                                      type="time" 
-                                      {...timeField} 
-                                      disabled={mode === 'view'}
-                                      className="w-full"
-                                    />
-                                  </div>
+                                   <div className="flex flex-col gap-2">
+                                     <label className="text-sm font-medium">Time (Optional)</label>
+                                     <Input 
+                                       type="time" 
+                                       {...timeField} 
+                                       disabled={mode === 'view'}
+                                       className="w-full"
+                                       step="60"
+                                     />
+                                   </div>
                                 )}
                               />
                             </div>

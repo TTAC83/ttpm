@@ -27,6 +27,23 @@ export const formatDateTimeUK = (date: string | Date | null): string => {
   });
 };
 
+// Smart formatter: shows time only if it's not midnight
+export const formatDateTimeSmartUK = (date: string | Date | null): string => {
+  if (!date) return '';
+  
+  const d = typeof date === 'string' ? new Date(date) : date;
+  const hours = d.getUTCHours();
+  const minutes = d.getUTCMinutes();
+  
+  // If time is midnight (00:00), show only date
+  if (hours === 0 && minutes === 0) {
+    return formatDateUK(date);
+  }
+  
+  // Otherwise show date and time
+  return formatDateTimeUK(date);
+};
+
 export const parseUKDate = (dateStr: string): Date | null => {
   if (!dateStr) return null;
   

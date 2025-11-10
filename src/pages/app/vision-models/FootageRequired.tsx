@@ -1,7 +1,7 @@
 import { visionModelsService, VisionModel } from "@/lib/visionModelsService";
 import { VisionModelsTable } from "@/components/vision-models/VisionModelsTable";
 import { VisionModelsTableConfig } from "@/components/vision-models/types";
-import { formatDateUK } from "@/lib/dateUtils";
+import { formatDateTimeSmartUK } from "@/lib/dateUtils";
 
 const config: VisionModelsTableConfig = {
   title: "Footage Required",
@@ -22,7 +22,7 @@ const config: VisionModelsTableConfig = {
     { 
       key: 'product_run_start', 
       label: 'Run Start',
-      render: (model) => formatDateUK(model.product_run_start!)
+      render: (model) => formatDateTimeSmartUK(model.product_run_start!)
     },
     { 
       key: 'product_run_end', 
@@ -40,7 +40,7 @@ const config: VisionModelsTableConfig = {
         
         return (
           <span className={isInProductionWindow ? "text-green-600 font-semibold" : isOverdue ? "text-destructive font-semibold" : ""}>
-            {formatDateUK(model.product_run_end!)}
+            {formatDateTimeSmartUK(model.product_run_end!)}
           </span>
         );
       }

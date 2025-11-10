@@ -771,9 +771,16 @@ export function VisionModelDialog({
                             variant="ghost"
                             size="icon"
                             className="text-destructive hover:text-destructive/90"
-                            onClick={() => {
-                              field.onChange(undefined);
-                              form.setValue('product_run_start_time', '');
+                            onClick={(e) => {
+                              e.preventDefault();
+                              form.setValue('product_run_start', undefined, { 
+                                shouldValidate: true, 
+                                shouldDirty: true,
+                                shouldTouch: true 
+                              });
+                              form.setValue('product_run_start_time', '', {
+                                shouldValidate: true
+                              });
                             }}
                           >
                             <span className="sr-only">Clear date</span>
@@ -856,9 +863,16 @@ export function VisionModelDialog({
                             variant="ghost"
                             size="icon"
                             className="text-destructive hover:text-destructive/90"
-                            onClick={() => {
-                              field.onChange(undefined);
-                              form.setValue('product_run_end_time', '');
+                            onClick={(e) => {
+                              e.preventDefault();
+                              form.setValue('product_run_end', undefined, { 
+                                shouldValidate: true, 
+                                shouldDirty: true,
+                                shouldTouch: true 
+                              });
+                              form.setValue('product_run_end_time', '', {
+                                shouldValidate: true
+                              });
                             }}
                           >
                             <span className="sr-only">Clear date</span>

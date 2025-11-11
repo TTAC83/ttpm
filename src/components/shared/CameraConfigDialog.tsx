@@ -21,6 +21,7 @@ interface CameraConfigDialogProps {
   cameraData?: CameraFormData;
   masterData: MasterData;
   onSave: (formData: CameraFormData) => void;
+  isLoading?: boolean;
 }
 
 export const CameraConfigDialog: React.FC<CameraConfigDialogProps> = ({
@@ -30,6 +31,7 @@ export const CameraConfigDialog: React.FC<CameraConfigDialogProps> = ({
   cameraData,
   masterData,
   onSave,
+  isLoading = false,
 }) => {
   const { toast } = useToast();
   const {
@@ -140,8 +142,15 @@ export const CameraConfigDialog: React.FC<CameraConfigDialogProps> = ({
         </Tabs>
 
         <DialogFooter className="mt-4">
-          <Button onClick={handleSave} className="w-full">
-            Save Camera Configuration
+          <Button onClick={handleSave} className="w-full" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                Saving...
+              </>
+            ) : (
+              "Save Camera Configuration"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

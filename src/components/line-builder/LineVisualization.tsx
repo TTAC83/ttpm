@@ -95,6 +95,8 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
   const [editingIoT, setEditingIoT] = useState<IoTDevice & { positionName: string; equipmentName: string } | null>(null);
   const [cameraDialogOpen, setCameraDialogOpen] = useState(false);
   const [cameraFormData, setCameraFormData] = useState<any>(null);
+  const [isSavingCamera, setIsSavingCamera] = useState(false);
+  const [isSavingIoT, setIsSavingIoT] = useState(false);
   
   // Use cached master data
   const masterData = useMasterDataCache();
@@ -254,6 +256,12 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
   const handleCameraSave = async (formData: any) => {
     if (!editingCamera) return;
 
+    setIsSavingCamera(true);
+    toast({
+      title: "Saving camera...",
+      description: "Please wait while we update the camera configuration",
+    });
+
     try {
       // Convert empty strings to null for UUID fields
       const cleanFormData = {
@@ -375,14 +383,22 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
       console.error('Error updating camera:', error);
       toast({
         title: "Error",
-        description: "Failed to update camera",
+        description: error instanceof Error ? error.message : "Failed to update camera",
         variant: "destructive",
       });
+    } finally {
+      setIsSavingCamera(false);
     }
   };
 
   const handleUpdateIoT = async () => {
     if (!editingIoT) return;
+
+    setIsSavingIoT(true);
+    toast({
+      title: "Saving IoT device...",
+      description: "Please wait while we update the device",
+    });
 
     try {
       const { error } = await supabase
@@ -406,9 +422,11 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
       console.error('Error updating IoT device:', error);
       toast({
         title: "Error",
-        description: "Failed to update IoT device",
+        description: error instanceof Error ? error.message : "Failed to update IoT device",
         variant: "destructive",
       });
+    } finally {
+      setIsSavingIoT(false);
     }
   };
 
@@ -704,6 +722,7 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
           visionUseCases,
         }}
         onSave={handleCameraSave}
+        isLoading={isSavingCamera}
       />
 
       {/* Edit IoT Device Dialog */}
@@ -723,8 +742,19 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingIoT(null)}>Cancel</Button>
-            <Button onClick={handleUpdateIoT}>Save Changes</Button>
+            <Button variant="outline" onClick={() => setEditingIoT(null)} disabled={isSavingIoT}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateIoT} disabled={isSavingIoT}>
+              {isSavingIoT ? (
+                <>
+                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

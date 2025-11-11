@@ -45,7 +45,6 @@ interface Equipment {
 
 interface Camera {
   id: string;
-  name: string;
   camera_type: string;
   lens_type: string;
   light_required?: boolean;
@@ -649,19 +648,9 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
                       <div key={camera.id} className="bg-muted/50 p-3 rounded border">
                         <div className="flex justify-between items-center">
                           <div className="flex-1">
-                            <p className="font-medium">{camera.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {camera.equipmentName} • Position: {camera.positionName}
-                            </p>
-                            {(() => {
-                              const cameraModel = masterData.cameras.find(c => c.id === camera.camera_type);
-                              return cameraModel && (
-                                <Badge variant="outline" className="mt-2">
-                                  {cameraModel.manufacturer} - {cameraModel.model_number}
-                                  {cameraModel.camera_type && ` (${cameraModel.camera_type})`}
-                                </Badge>
-                              );
-                            })()}
+                            <p className="font-medium">{camera.equipmentName}</p>
+                            <p className="text-sm text-muted-foreground">Position: {camera.positionName}</p>
+                            <Badge variant="outline" className="mt-2">{camera.camera_type}</Badge>
                             {(camera.light_id || camera.plc_master_id || camera.hmi_master_id) && (
                               <div className="mt-2 flex flex-wrap gap-1">
                                 {camera.light_id && <Badge variant="secondary" className="text-xs">Light attached</Badge>}

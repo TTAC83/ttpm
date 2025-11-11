@@ -25,14 +25,26 @@ export function CameraUseCaseTab({
   updateAttribute,
   deleteAttribute
 }: CameraUseCaseTabProps) {
+  console.log('🔍 CameraUseCaseTab formData.use_case_ids:', formData.use_case_ids);
+  console.log('🔍 CameraUseCaseTab masterData.visionUseCases:', masterData.visionUseCases);
+  
   // Filter out any invalid use case IDs that might be in formData
-  const validUseCaseIds = formData.use_case_ids.filter(id => 
-    masterData.visionUseCases.some(uc => uc.id === id)
-  );
+  const validUseCaseIds = formData.use_case_ids.filter(id => {
+    const exists = masterData.visionUseCases.some(uc => uc.id === id);
+    console.log(`🔍 Checking use case ID ${id}: exists=${exists}`);
+    return exists;
+  });
+
+  console.log('🔍 Valid use case IDs after filtering:', validUseCaseIds);
 
   // Update if we filtered out any invalid IDs
   React.useEffect(() => {
     if (validUseCaseIds.length !== formData.use_case_ids.length) {
+      console.warn('⚠️ Filtering out invalid use case IDs!', {
+        original: formData.use_case_ids,
+        valid: validUseCaseIds,
+        removed: formData.use_case_ids.filter(id => !validUseCaseIds.includes(id))
+      });
       updateField('use_case_ids', validUseCaseIds);
     }
   }, [formData.use_case_ids, validUseCaseIds, updateField]);

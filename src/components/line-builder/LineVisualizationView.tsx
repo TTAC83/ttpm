@@ -17,6 +17,26 @@ interface Camera {
   light_id?: string;
   plc_master_id?: string;
   hmi_master_id?: string;
+  use_cases?: Array<{
+    id: string;
+    vision_use_case_id: string;
+    use_case_name?: string;
+    description?: string;
+  }>;
+  measurements?: {
+    horizontal_fov?: string;
+    working_distance?: string;
+    smallest_text?: string;
+  };
+  attributes?: Array<{
+    id: string;
+    title: string;
+    description?: string;
+  }>;
+  camera_view?: {
+    product_flow?: string;
+    description?: string;
+  };
 }
 
 interface IoTDevice {
@@ -298,6 +318,21 @@ export const LineVisualizationView: React.FC<LineVisualizationViewProps> = ({
                                 {camera.light_id && <Badge variant="secondary" className="text-xs">Light attached</Badge>}
                                 {camera.plc_master_id && <Badge variant="secondary" className="text-xs">PLC attached</Badge>}
                                 {camera.hmi_master_id && <Badge variant="secondary" className="text-xs">HMI attached</Badge>}
+                              </div>
+                            )}
+                            {camera.use_cases && camera.use_cases.length > 0 && (
+                              <div className="mt-2">
+                                <p className="text-xs text-muted-foreground mb-1">Use Cases:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {camera.use_cases.map((uc: any) => {
+                                    const visionUseCase = masterData.visionUseCases.find((v: any) => v.id === uc.vision_use_case_id);
+                                    return visionUseCase ? (
+                                      <Badge key={uc.id} variant="outline" className="text-xs">
+                                        {visionUseCase.name}
+                                      </Badge>
+                                    ) : null;
+                                  })}
+                                </div>
                               </div>
                             )}
                           </div>

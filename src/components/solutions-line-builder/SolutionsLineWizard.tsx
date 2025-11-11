@@ -25,6 +25,8 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
   onComplete,
   editLineId,
 }) => {
+  const [isSaving, setIsSaving] = React.useState(false);
+  
   const {
     currentStep,
     lineData,
@@ -47,10 +49,17 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
   const CurrentStepComponent = steps[currentStep - 1].component;
 
   const onCompleteWizard = async () => {
-    const success = await handleComplete();
-    if (success) {
-      onComplete();
-      onOpenChange(false);
+    if (isSaving) return; // Prevent double submission
+    
+    setIsSaving(true);
+    try {
+      const success = await handleComplete();
+      if (success) {
+        onComplete();
+        onOpenChange(false);
+      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -90,8 +99,9 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
           </Button>
           <Button
             onClick={currentStep === steps.length ? onCompleteWizard : handleNext}
+            disabled={isSaving}
           >
-            {currentStep === steps.length ? "Complete Setup" : "Next"}
+            {isSaving ? "Saving..." : currentStep === steps.length ? "Complete Setup" : "Next"}
             {currentStep < steps.length && <ChevronRight className="h-4 w-4 ml-2" />}
           </Button>
         </DialogFooter>

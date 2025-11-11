@@ -103,6 +103,7 @@ export function useLineData(config: WizardConfig) {
           iot_device_count: totalIotDevices,
           line_description: lineData.line_description || null,
           product_description: lineData.product_description || null,
+          photos_url: lineData.photos_url || null,
         })
         .eq('id', editLineId);
 
@@ -160,6 +161,7 @@ export function useLineData(config: WizardConfig) {
         iot_device_count: totalIotDevices,
         line_description: lineData.line_description || null,
         product_description: lineData.product_description || null,
+        photos_url: lineData.photos_url || null,
       };
 
       if (config.tableName === 'lines') {

@@ -218,6 +218,10 @@ export const useLineVisualization = (lineId: string) => {
   };
 
   const handleEditCamera = (camera: any, positionName: string, equipmentName: string) => {
+    console.log('📸 Editing camera:', camera);
+    console.log('📸 Camera use_cases:', camera.use_cases);
+    console.log('📸 Mapped use_case_ids:', camera.use_cases?.map((uc: any) => uc.vision_use_case_id));
+    
     setCameraFormData({
       name: camera.name || "",
       camera_type: camera.camera_type || "",

@@ -15,5 +15,5 @@ export const solutionsLineWizardConfig: WizardConfig = {
   equipmentTable: 'equipment',
   camerasTable: 'cameras',
   iotDevicesTable: 'iot_devices',
-  projectIdField: 'line_id',
+  projectIdField: 'solutions_line_id',
 };

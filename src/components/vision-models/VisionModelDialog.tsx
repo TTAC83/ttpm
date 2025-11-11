@@ -131,7 +131,7 @@ export function VisionModelDialog({
                 <FormItem>
                   <FormLabel>Product SKU</FormLabel>
                   <FormControl>
-                    <Input {...field} disabled={isDisabled} />
+                    <Input {...field} value={field.value || ""} disabled={isDisabled} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -145,7 +145,7 @@ export function VisionModelDialog({
                 <FormItem>
                   <FormLabel>Product Title</FormLabel>
                   <FormControl>
-                    <Input {...field} disabled={isDisabled} />
+                    <Input {...field} value={field.value || ""} disabled={isDisabled} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -159,7 +159,7 @@ export function VisionModelDialog({
                 <FormItem>
                   <FormLabel>Use Case</FormLabel>
                   <FormControl>
-                    <Input {...field} disabled={isDisabled} />
+                    <Input {...field} value={field.value || ""} disabled={isDisabled} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -173,7 +173,7 @@ export function VisionModelDialog({
                 <FormItem>
                   <FormLabel>Group Name</FormLabel>
                   <FormControl>
-                    <Input {...field} disabled={isDisabled} />
+                    <Input {...field} value={field.value || ""} disabled={isDisabled} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

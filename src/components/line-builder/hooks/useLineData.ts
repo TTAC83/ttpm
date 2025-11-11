@@ -8,130 +8,65 @@ export function useLineData(config: WizardConfig) {
   const loadData = async (lineId: string) => {
     setIsLoading(true);
     try {
-      // Load line data
-      const { data: existingLine, error: lineError } = await supabase
-        .from(config.tableName)
-        .select('*')
-        .eq('id', lineId)
-        .single();
+      // Use optimized RPC function to fetch all data in a single query
+      const { data, error } = await supabase
+        .rpc('get_line_full_data', {
+          p_line_id: lineId,
+          p_table_name: config.tableName
+        });
 
-      if (lineError) throw lineError;
+      if (error) throw error;
+      if (!data) throw new Error('Line not found');
 
-      const lineData: LineData = {
-        name: existingLine.line_name,
-        min_speed: existingLine.min_speed || 0,
-        max_speed: existingLine.max_speed || 0,
-        line_description: existingLine.line_description || "",
-        product_description: existingLine.product_description || "",
-        photos_url: existingLine.photos_url || "",
-      };
-
-      // Load positions with titles
-      const positionsResponse = await (supabase as any)
-        .from('positions')
-        .select('*, position_titles(id, title)')
-        .eq(config.projectIdField, lineId)
-        .order('position_x');
+      // Parse the returned JSON structure
+      const result = data as any;
+      const lineData: LineData = result.lineData;
       
-      const positionsData = positionsResponse.data;
-      const positionsError = positionsResponse.error;
-
-      if (positionsError) throw positionsError;
-
-      // Load equipment with cameras and IoT devices for each position
-      const positions: Position[] = await Promise.all(
-        (positionsData || []).map(async (pos: any) => {
-          const equipmentResponse = await (supabase as any)
-            .from('equipment')
-            .select('*, cameras(*), iot_devices(*)')
-            .eq('position_id', pos.id);
-          
-          const equipmentData = equipmentResponse.data;
-
-          const equipmentWithFullData = await Promise.all(
-            (equipmentData || []).map(async (eq: any) => {
-              const camerasWithData = await Promise.all(
-                (eq.cameras || []).map(async (cam: any) => {
-                  const [outputs, measurements, useCases, attributes, views] = await Promise.all([
-                    supabase.from('camera_plc_outputs')
-                      .select('id, output_number, type, custom_name, notes')
-                      .eq('camera_id', cam.id)
-                      .order('output_number'),
-                    supabase.from('camera_measurements')
-                      .select('*')
-                      .eq('camera_id', cam.id)
-                      .maybeSingle(),
-                    supabase.from('camera_use_cases')
-                      .select('vision_use_case_id, description')
-                      .eq('camera_id', cam.id),
-                    supabase.from('camera_attributes')
-                      .select('*')
-                      .eq('camera_id', cam.id)
-                      .order('order_index'),
-                    supabase.from('camera_views')
-                      .select('*')
-                      .eq('camera_id', cam.id)
-                      .maybeSingle(),
-                  ]);
-
-                  return {
-                    id: cam.id,
-                    name: cam.mac_address || "Unnamed Camera",
-                    camera_type: cam.camera_type,
-                    lens_type: cam.lens_type,
-                    light_required: cam.light_required || false,
-                    light_id: cam.light_id || undefined,
-                    light_notes: cam.light_notes || "",
-                    plc_attached: cam.plc_attached || false,
-                    plc_master_id: cam.plc_master_id || undefined,
-                    hmi_required: cam.hmi_required || false,
-                    hmi_master_id: cam.hmi_master_id || undefined,
-                    hmi_notes: cam.hmi_notes || "",
-                    relay_outputs: outputs.data || [],
-                    horizontal_fov: measurements.data?.horizontal_fov?.toString() || "",
-                    working_distance: measurements.data?.working_distance?.toString() || "",
-                    smallest_text: measurements.data?.smallest_text || "",
-                    use_case_ids: useCases.data?.map((uc: any) => uc.vision_use_case_id) || [],
-                    use_case_description: useCases.data?.[0]?.description || "",
-                    attributes: attributes.data?.map((attr: any) => ({
-                      id: attr.id,
-                      title: attr.title,
-                      description: attr.description || ""
-                    })) || [],
-                    product_flow: views.data?.product_flow || "",
-                    camera_view_description: views.data?.description || "",
-                  };
-                })
-              );
-
-              return {
-                id: eq.id,
-                name: eq.name,
-                equipment_type: eq.equipment_type || "",
-                cameras: camerasWithData,
-                iot_devices: (eq.iot_devices || []).map((iot: any) => ({
-                  id: iot.id,
-                  name: iot.name,
-                  hardware_master_id: iot.hardware_master_id,
-                  receiver_master_id: iot.receiver_master_id || undefined,
-                })),
-              };
-            })
-          );
-
-          return {
-            id: pos.id,
-            name: pos.name,
-            position_x: pos.position_x,
-            position_y: pos.position_y,
-            titles: (pos.position_titles || []).map((pt: any) => ({
-              id: pt.id,
-              title: pt.title as "RLE" | "OP"
-            })),
-            equipment: equipmentWithFullData,
-          };
-        })
-      );
+      // Transform positions to match expected structure
+      const positions: Position[] = (result.positions || []).map((pos: any) => ({
+        id: pos.id,
+        name: pos.name,
+        position_x: pos.position_x,
+        position_y: pos.position_y,
+        titles: (pos.position_titles || []).map((pt: any) => ({
+          id: pt.id,
+          title: pt.title as "RLE" | "OP"
+        })),
+        equipment: (pos.equipment || []).map((eq: any) => ({
+          id: eq.id,
+          name: eq.name,
+          equipment_type: eq.equipment_type || "",
+          cameras: (eq.cameras || []).map((cam: any) => ({
+            id: cam.id,
+            name: cam.name || "Unnamed Camera",
+            camera_type: cam.camera_type,
+            lens_type: cam.lens_type,
+            light_required: cam.light_required || false,
+            light_id: cam.light_id || undefined,
+            light_notes: cam.light_notes || "",
+            plc_attached: cam.plc_attached || false,
+            plc_master_id: cam.plc_master_id || undefined,
+            hmi_required: cam.hmi_required || false,
+            hmi_master_id: cam.hmi_master_id || undefined,
+            hmi_notes: cam.hmi_notes || "",
+            relay_outputs: cam.relay_outputs || [],
+            horizontal_fov: cam.horizontal_fov || "",
+            working_distance: cam.working_distance || "",
+            smallest_text: cam.smallest_text || "",
+            use_case_ids: cam.use_case_ids || [],
+            use_case_description: cam.use_case_description || "",
+            attributes: cam.attributes || [],
+            product_flow: cam.product_flow || "",
+            camera_view_description: cam.camera_view_description || "",
+          })),
+          iot_devices: (eq.iot_devices || []).map((iot: any) => ({
+            id: iot.id,
+            name: iot.name,
+            hardware_master_id: iot.hardware_master_id,
+            receiver_master_id: iot.receiver_master_id || undefined,
+          })),
+        })),
+      }));
 
       return { lineData, positions };
     } finally {

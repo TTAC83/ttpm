@@ -4724,6 +4724,10 @@ export type Database = {
           successor_type: string
         }[]
       }
+      get_line_full_data: {
+        Args: { p_line_id: string; p_table_name: string }
+        Returns: Json
+      }
       get_safe_profile_info: {
         Args: { target_user_id: string }
         Returns: {

@@ -246,7 +246,9 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     fetchData();
   }, [solutionsProjectId]);
 
-  const addCamera = (formData: typeof cameraForm) => {
+  const addCamera = (formData: any) => {
+    console.log("addCamera called with formData:", formData);
+    
     if (!selectedPosition || !selectedEquipment) {
       toast({
         title: "Error",
@@ -316,27 +318,29 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       // Add new camera
       const newCamera = {
         id: Math.random().toString(36).substring(7),
-        name: cameraForm.name,
-        camera_type: cameraForm.camera_type,
-        lens_type: cameraForm.lens_type,
-        light_required: cameraForm.light_required,
-        light_id: cameraForm.light_id,
-        light_notes: cameraForm.light_notes,
-        plc_attached: cameraForm.plc_attached,
-        plc_master_id: cameraForm.plc_master_id,
-        relay_outputs: cameraForm.relay_outputs,
-        hmi_required: cameraForm.hmi_required,
-        hmi_master_id: cameraForm.hmi_master_id,
-        hmi_notes: cameraForm.hmi_notes,
-        horizontal_fov: cameraForm.horizontal_fov,
-        working_distance: cameraForm.working_distance,
-        smallest_text: cameraForm.smallest_text,
-        use_case_ids: cameraForm.use_case_ids,
-        use_case_description: cameraForm.use_case_description,
-        attributes: cameraForm.attributes,
-        product_flow: cameraForm.product_flow,
-        camera_view_description: cameraForm.camera_view_description,
+        name: formData.name,
+        camera_type: formData.camera_type,
+        lens_type: formData.lens_type,
+        light_required: formData.light_required,
+        light_id: formData.light_id,
+        light_notes: formData.light_notes,
+        plc_attached: formData.plc_attached,
+        plc_master_id: formData.plc_master_id,
+        relay_outputs: formData.relay_outputs,
+        hmi_required: formData.hmi_required,
+        hmi_master_id: formData.hmi_master_id,
+        hmi_notes: formData.hmi_notes,
+        horizontal_fov: formData.horizontal_fov,
+        working_distance: formData.working_distance,
+        smallest_text: formData.smallest_text,
+        use_case_ids: formData.use_case_ids,
+        use_case_description: formData.use_case_description,
+        attributes: formData.attributes,
+        product_flow: formData.product_flow,
+        camera_view_description: formData.camera_view_description,
       };
+
+      console.log("Adding new camera:", newCamera);
 
       setPositions(
         positions.map((position) =>

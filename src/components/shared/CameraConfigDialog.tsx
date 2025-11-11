@@ -22,6 +22,7 @@ interface CameraConfigDialogProps {
   masterData: MasterData;
   onSave: (formData: CameraFormData) => void;
   isLoading?: boolean;
+  retryCount?: number;
 }
 
 export const CameraConfigDialog: React.FC<CameraConfigDialogProps> = ({
@@ -32,6 +33,7 @@ export const CameraConfigDialog: React.FC<CameraConfigDialogProps> = ({
   masterData,
   onSave,
   isLoading = false,
+  retryCount = 0,
 }) => {
   const { toast } = useToast();
   const {
@@ -146,7 +148,7 @@ export const CameraConfigDialog: React.FC<CameraConfigDialogProps> = ({
             {isLoading ? (
               <>
                 <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                Saving...
+                {retryCount > 0 ? `Retrying (${retryCount}/3)...` : "Saving..."}
               </>
             ) : (
               "Save Camera Configuration"

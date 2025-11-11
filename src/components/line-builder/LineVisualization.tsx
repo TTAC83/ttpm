@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { CameraConfigDialog } from "@/components/shared/CameraConfigDialog";
 import { useMasterDataCache } from "@/hooks/useMasterDataCache";
 import { LineUseCasesTable } from "./LineUseCasesTable";
+import { useSaveWithRetry } from "./useSaveWithRetry";
 
 interface LineData {
   id: string;
@@ -95,8 +96,6 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
   const [editingIoT, setEditingIoT] = useState<IoTDevice & { positionName: string; equipmentName: string } | null>(null);
   const [cameraDialogOpen, setCameraDialogOpen] = useState(false);
   const [cameraFormData, setCameraFormData] = useState<any>(null);
-  const [isSavingCamera, setIsSavingCamera] = useState(false);
-  const [isSavingIoT, setIsSavingIoT] = useState(false);
   
   // Use cached master data
   const masterData = useMasterDataCache();
@@ -104,6 +103,19 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
   
   const [receivers, setReceivers] = useState<Array<{ id: string; name: string }>>([]);
   const { toast } = useToast();
+  
+  // Use save with retry hook
+  const { 
+    isSaving: isSavingCamera, 
+    executeTransactionalSave: saveCamera,
+    retryCount: cameraRetryCount
+  } = useSaveWithRetry();
+  
+  const { 
+    isSaving: isSavingIoT, 
+    executeWithRetry: saveIoT,
+    retryCount: iotRetryCount
+  } = useSaveWithRetry();
 
   // Fetch line data with TanStack Query caching
   const { data: lineData, isLoading: loading, refetch: refetchLineData } = useQuery({
@@ -256,177 +268,306 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
   const handleCameraSave = async (formData: any) => {
     if (!editingCamera) return;
 
-    setIsSavingCamera(true);
-    toast({
-      title: "Saving camera...",
-      description: "Please wait while we update the camera configuration",
+    // Convert empty strings to null for UUID fields
+    const cleanFormData = {
+      ...formData,
+      light_id: formData.light_id || null,
+      plc_master_id: formData.plc_master_id || null,
+      hmi_master_id: formData.hmi_master_id || null,
+    };
+
+    // Validate use case IDs
+    let validatedUseCaseIds: string[] = [];
+    if (cleanFormData.use_case_ids && cleanFormData.use_case_ids.length > 0) {
+      const { data: validUseCases, error: validateError } = await supabase
+        .from('vision_use_cases_master')
+        .select('id')
+        .in('id', cleanFormData.use_case_ids);
+
+      if (validateError) {
+        toast({
+          title: "Validation Error",
+          description: `Failed to validate use cases: ${validateError.message}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const validIds = new Set(validUseCases?.map(uc => uc.id) || []);
+      validatedUseCaseIds = cleanFormData.use_case_ids.filter((id: string) => validIds.has(id));
+    }
+
+    // Capture original state for rollback
+    const { data: originalCamera } = await supabase
+      .from('cameras')
+      .select('*')
+      .eq('id', editingCamera.id)
+      .maybeSingle();
+
+    const { data: originalMeasurements } = await supabase
+      .from('camera_measurements')
+      .select('*')
+      .eq('camera_id', editingCamera.id)
+      .maybeSingle();
+
+    const { data: originalView } = await supabase
+      .from('camera_views')
+      .select('*')
+      .eq('camera_id', editingCamera.id)
+      .maybeSingle();
+
+    const { data: originalUseCases } = await supabase
+      .from('camera_use_cases')
+      .select('*')
+      .eq('camera_id', editingCamera.id);
+
+    const { data: originalAttributes } = await supabase
+      .from('camera_attributes')
+      .select('*')
+      .eq('camera_id', editingCamera.id);
+
+    // Define transactional operations with rollback
+    const operations = [
+      // 1. Update main camera record
+      {
+        description: "Update camera details",
+        execute: async () => {
+          const { error } = await supabase
+            .from('cameras')
+            .update({
+              mac_address: cleanFormData.name || '',
+              camera_type: cleanFormData.camera_type,
+              lens_type: cleanFormData.lens_type || '',
+              light_required: cleanFormData.light_required,
+              light_id: cleanFormData.light_id,
+              light_notes: cleanFormData.light_notes || null,
+              plc_attached: cleanFormData.plc_attached,
+              plc_master_id: cleanFormData.plc_master_id,
+              hmi_required: cleanFormData.hmi_required,
+              hmi_master_id: cleanFormData.hmi_master_id,
+              hmi_notes: cleanFormData.hmi_notes || null,
+            })
+            .eq('id', editingCamera.id);
+
+          if (error) throw error;
+          return { success: true };
+        },
+        rollback: originalCamera ? async () => {
+          await supabase
+            .from('cameras')
+            .update(originalCamera)
+            .eq('id', editingCamera.id);
+        } : undefined,
+      },
+
+      // 2. Update camera measurements
+      {
+        description: "Update camera measurements",
+        execute: async () => {
+          const { error } = await supabase
+            .from('camera_measurements')
+            .upsert({
+              camera_id: editingCamera.id,
+              horizontal_fov: parseFloat(cleanFormData.horizontal_fov) || null,
+              working_distance: parseFloat(cleanFormData.working_distance) || null,
+              smallest_text: cleanFormData.smallest_text || null,
+            }, { onConflict: 'camera_id' });
+
+          if (error) throw error;
+          return { success: true };
+        },
+        rollback: async () => {
+          if (originalMeasurements) {
+            await supabase
+              .from('camera_measurements')
+              .upsert(originalMeasurements, { onConflict: 'camera_id' });
+          } else {
+            await supabase
+              .from('camera_measurements')
+              .delete()
+              .eq('camera_id', editingCamera.id);
+          }
+        },
+      },
+
+      // 3. Update camera view
+      {
+        description: "Update camera view",
+        execute: async () => {
+          const { error } = await supabase
+            .from('camera_views')
+            .upsert({
+              camera_id: editingCamera.id,
+              product_flow: cleanFormData.product_flow || null,
+              description: cleanFormData.camera_view_description || null,
+            }, { onConflict: 'camera_id' });
+
+          if (error) throw error;
+          return { success: true };
+        },
+        rollback: async () => {
+          if (originalView) {
+            await supabase
+              .from('camera_views')
+              .upsert(originalView, { onConflict: 'camera_id' });
+          } else {
+            await supabase
+              .from('camera_views')
+              .delete()
+              .eq('camera_id', editingCamera.id);
+          }
+        },
+      },
+
+      // 4. Update use cases
+      {
+        description: "Update camera use cases",
+        execute: async () => {
+          // Delete existing
+          await supabase
+            .from('camera_use_cases')
+            .delete()
+            .eq('camera_id', editingCamera.id);
+
+          // Insert new
+          if (validatedUseCaseIds.length > 0) {
+            const useCases = validatedUseCaseIds.map((useCaseId: string) => ({
+              camera_id: editingCamera.id,
+              vision_use_case_id: useCaseId,
+              description: cleanFormData.use_case_description || null,
+            }));
+
+            const { error } = await supabase
+              .from('camera_use_cases')
+              .insert(useCases);
+
+            if (error) throw error;
+          }
+          return { success: true };
+        },
+        rollback: async () => {
+          await supabase
+            .from('camera_use_cases')
+            .delete()
+            .eq('camera_id', editingCamera.id);
+
+          if (originalUseCases && originalUseCases.length > 0) {
+            await supabase
+              .from('camera_use_cases')
+              .insert(originalUseCases);
+          }
+        },
+      },
+
+      // 5. Update attributes
+      {
+        description: "Update camera attributes",
+        execute: async () => {
+          // Delete existing
+          await supabase
+            .from('camera_attributes')
+            .delete()
+            .eq('camera_id', editingCamera.id);
+
+          // Insert new
+          if (cleanFormData.attributes && cleanFormData.attributes.length > 0) {
+            const attributes = cleanFormData.attributes.map((attr: any, index: number) => ({
+              camera_id: editingCamera.id,
+              title: attr.title,
+              description: attr.description,
+              order_index: index,
+            }));
+
+            const { error } = await supabase
+              .from('camera_attributes')
+              .insert(attributes);
+
+            if (error) throw error;
+          }
+          return { success: true };
+        },
+        rollback: async () => {
+          await supabase
+            .from('camera_attributes')
+            .delete()
+            .eq('camera_id', editingCamera.id);
+
+          if (originalAttributes && originalAttributes.length > 0) {
+            await supabase
+              .from('camera_attributes')
+              .insert(originalAttributes);
+          }
+        },
+      },
+    ];
+
+    // Execute all operations with automatic rollback on failure
+    const result = await saveCamera(operations, {
+      maxRetries: 3,
+      retryDelay: 1000,
+      onSuccess: () => {
+        setCameraDialogOpen(false);
+        setEditingCamera(null);
+        refetchLineData();
+      },
+      onError: (error) => {
+        console.error('Camera save failed:', error);
+      },
     });
 
-    try {
-      // Convert empty strings to null for UUID fields
-      const cleanFormData = {
-        ...formData,
-        light_id: formData.light_id || null,
-        plc_master_id: formData.plc_master_id || null,
-        hmi_master_id: formData.hmi_master_id || null,
-      };
-
-      // Update main camera record
-      const { error: cameraError } = await supabase
-        .from('cameras')
-        .update({
-          mac_address: cleanFormData.name || '',
-          camera_type: cleanFormData.camera_type,
-          lens_type: cleanFormData.lens_type || '',
-          light_required: cleanFormData.light_required,
-          light_id: cleanFormData.light_id,
-          light_notes: cleanFormData.light_notes || null,
-          plc_attached: cleanFormData.plc_attached,
-          plc_master_id: cleanFormData.plc_master_id,
-          hmi_required: cleanFormData.hmi_required,
-          hmi_master_id: cleanFormData.hmi_master_id,
-          hmi_notes: cleanFormData.hmi_notes || null,
-        })
-        .eq('id', editingCamera.id);
-
-      if (cameraError) throw cameraError;
-
-      // Update or insert camera measurements
-      const { error: measurementsError } = await supabase
-        .from('camera_measurements')
-        .upsert({
-          camera_id: editingCamera.id,
-          horizontal_fov: parseFloat(cleanFormData.horizontal_fov) || null,
-          working_distance: parseFloat(cleanFormData.working_distance) || null,
-          smallest_text: cleanFormData.smallest_text || null,
-        }, { onConflict: 'camera_id' });
-
-      if (measurementsError) throw measurementsError;
-
-      // Update camera view
-      const { error: viewError } = await supabase
-        .from('camera_views')
-        .upsert({
-          camera_id: editingCamera.id,
-          product_flow: cleanFormData.product_flow || null,
-          description: cleanFormData.camera_view_description || null,
-        }, { onConflict: 'camera_id' });
-
-      if (viewError) throw viewError;
-
-      // Delete existing use cases and insert new ones
-      await supabase
-        .from('camera_use_cases')
-        .delete()
-        .eq('camera_id', editingCamera.id);
-
-      if (cleanFormData.use_case_ids && cleanFormData.use_case_ids.length > 0) {
-        // Validate use case IDs exist in vision_use_cases_master
-        const { data: validUseCases, error: validateError } = await supabase
-          .from('vision_use_cases_master')
-          .select('id')
-          .in('id', cleanFormData.use_case_ids);
-
-        if (validateError) {
-          console.error('Error validating use cases:', validateError);
-          throw new Error(`Failed to validate use cases: ${validateError.message}`);
-        }
-
-        const validIds = new Set(validUseCases?.map(uc => uc.id) || []);
-        const filteredUseCaseIds = cleanFormData.use_case_ids.filter((id: string) => validIds.has(id));
-
-        if (filteredUseCaseIds.length > 0) {
-          const useCases = filteredUseCaseIds.map((useCaseId: string) => ({
-            camera_id: editingCamera.id,
-            vision_use_case_id: useCaseId,
-            description: cleanFormData.use_case_description || null,
-          }));
-
-          const { error: useCasesError } = await supabase
-            .from('camera_use_cases')
-            .insert(useCases);
-
-          if (useCasesError) throw useCasesError;
-        }
-      }
-
-      // Delete existing attributes and insert new ones
-      await supabase
-        .from('camera_attributes')
-        .delete()
-        .eq('camera_id', editingCamera.id);
-
-      if (cleanFormData.attributes && cleanFormData.attributes.length > 0) {
-        const attributes = cleanFormData.attributes.map((attr: any, index: number) => ({
-          camera_id: editingCamera.id,
-          title: attr.title,
-          description: attr.description,
-          order_index: index,
-        }));
-
-        const { error: attributesError } = await supabase
-          .from('camera_attributes')
-          .insert(attributes);
-
-        if (attributesError) throw attributesError;
-      }
-
-      toast({
-        title: "Success",
-        description: "Camera updated successfully",
-      });
-
-      setCameraDialogOpen(false);
-      setEditingCamera(null);
-      refetchLineData();
-    } catch (error) {
-      console.error('Error updating camera:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update camera",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSavingCamera(false);
+    // Result will be null if save failed after retries and rollback
+    if (!result) {
+      // Error handling already done by useSaveWithRetry
+      return;
     }
   };
 
   const handleUpdateIoT = async () => {
     if (!editingIoT) return;
 
-    setIsSavingIoT(true);
-    toast({
-      title: "Saving IoT device...",
-      description: "Please wait while we update the device",
+    // Capture original state for rollback
+    const { data: originalIoT } = await supabase
+      .from('iot_devices')
+      .select('*')
+      .eq('id', editingIoT.id)
+      .maybeSingle();
+
+    // Execute with retry and rollback
+    const result = await saveIoT({
+      description: "Update IoT device",
+      execute: async () => {
+        const { error } = await supabase
+          .from('iot_devices')
+          .update({
+            name: editingIoT.name,
+            hardware_master_id: editingIoT.hardware_master_id,
+          })
+          .eq('id', editingIoT.id);
+
+        if (error) throw error;
+        return { success: true };
+      },
+      rollback: originalIoT ? async () => {
+        await supabase
+          .from('iot_devices')
+          .update(originalIoT)
+          .eq('id', editingIoT.id);
+      } : undefined,
+    }, {
+      maxRetries: 3,
+      retryDelay: 1000,
+      onSuccess: () => {
+        setEditingIoT(null);
+        refetchLineData();
+      },
+      onError: (error) => {
+        console.error('IoT device save failed:', error);
+      },
     });
 
-    try {
-      const { error } = await supabase
-        .from('iot_devices')
-        .update({
-          name: editingIoT.name,
-          hardware_master_id: editingIoT.hardware_master_id,
-        })
-        .eq('id', editingIoT.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "IoT device updated successfully",
-      });
-
-      setEditingIoT(null);
-      refetchLineData();
-    } catch (error) {
-      console.error('Error updating IoT device:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update IoT device",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSavingIoT(false);
+    if (!result) {
+      // Error handling already done by useSaveWithRetry
+      return;
     }
   };
 
@@ -723,6 +864,7 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
         }}
         onSave={handleCameraSave}
         isLoading={isSavingCamera}
+        retryCount={cameraRetryCount}
       />
 
       {/* Edit IoT Device Dialog */}
@@ -749,7 +891,7 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
               {isSavingIoT ? (
                 <>
                   <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  Saving...
+                  {iotRetryCount > 0 ? `Retrying (${iotRetryCount}/3)...` : "Saving..."}
                 </>
               ) : (
                 "Save Changes"

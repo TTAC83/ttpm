@@ -2445,6 +2445,7 @@ export type Database = {
           name: string
           position_x: number
           position_y: number
+          solutions_line_id: string | null
           titles: string[] | null
           updated_at: string
         }
@@ -2455,6 +2456,7 @@ export type Database = {
           name: string
           position_x?: number
           position_y?: number
+          solutions_line_id?: string | null
           titles?: string[] | null
           updated_at?: string
         }
@@ -2465,10 +2467,19 @@ export type Database = {
           name?: string
           position_x?: number
           position_y?: number
+          solutions_line_id?: string | null
           titles?: string[] | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "positions_solutions_line_id_fkey"
+            columns: ["solutions_line_id"]
+            isOneToOne: false
+            referencedRelation: "solutions_lines"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       product_gaps: {
         Row: {

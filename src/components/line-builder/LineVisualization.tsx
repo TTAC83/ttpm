@@ -300,7 +300,7 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
 
   const handleEditCamera = (camera: any, positionName: string, equipmentName: string) => {
     setCameraFormData({
-      name: camera.name || "",
+      name: camera.mac_address || "",
       camera_type: camera.camera_type || "",
       lens_type: camera.lens_type || "",
       light_required: camera.light_required || false,

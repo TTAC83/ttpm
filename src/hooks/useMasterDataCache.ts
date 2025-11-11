@@ -48,15 +48,18 @@ export function useMasterDataCache() {
   });
 
   const visionUseCasesQuery = useQuery({
-    queryKey: ['vision-use-cases'],
+    queryKey: ['vision-use-cases-master'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('vision_use_cases')
+        .from('vision_use_cases_master')
         .select('id, name, description, category')
         .order('category', { ascending: true })
         .order('name', { ascending: true });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching vision use cases:', error);
+        throw error;
+      }
       return data || [];
     },
     staleTime: 5 * 60 * 1000,

@@ -52,14 +52,32 @@ export const CameraConfigDialog: React.FC<CameraConfigDialogProps> = ({
   }, [open, cameraData, resetForm]);
 
   const handleSave = () => {
+    // Validate required fields
     if (!formData.name || !formData.camera_type) {
       toast({
-        title: "Error",
-        description: "Please fill in all required fields",
+        title: "Validation Error",
+        description: "Camera name and type are required",
         variant: "destructive",
       });
       return;
     }
+
+    // Validate use cases exist in master data
+    if (formData.use_case_ids.length > 0) {
+      const validUseCaseIds = new Set(masterData.visionUseCases.map(uc => uc.id));
+      const invalidUseCases = formData.use_case_ids.filter(id => !validUseCaseIds.has(id));
+      
+      if (invalidUseCases.length > 0) {
+        toast({
+          title: "Invalid Use Cases",
+          description: "Some selected use cases are no longer valid. Please refresh and try again.",
+          variant: "destructive",
+        });
+        console.error('Invalid use case IDs:', invalidUseCases);
+        return;
+      }
+    }
+
     onSave(formData);
   };
 

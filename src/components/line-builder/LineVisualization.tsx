@@ -387,17 +387,33 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
         .eq('camera_id', editingCamera.id);
 
       if (cleanFormData.use_case_ids && cleanFormData.use_case_ids.length > 0) {
-        const useCases = cleanFormData.use_case_ids.map((useCaseId: string) => ({
-          camera_id: editingCamera.id,
-          vision_use_case_id: useCaseId,
-          description: cleanFormData.use_case_description || null,
-        }));
+        // Validate use case IDs exist in vision_use_cases_master
+        const { data: validUseCases, error: validateError } = await supabase
+          .from('vision_use_cases_master')
+          .select('id')
+          .in('id', cleanFormData.use_case_ids);
 
-        const { error: useCasesError } = await supabase
-          .from('camera_use_cases')
-          .insert(useCases);
+        if (validateError) {
+          console.error('Error validating use cases:', validateError);
+          throw new Error(`Failed to validate use cases: ${validateError.message}`);
+        }
 
-        if (useCasesError) throw useCasesError;
+        const validIds = new Set(validUseCases?.map(uc => uc.id) || []);
+        const filteredUseCaseIds = cleanFormData.use_case_ids.filter((id: string) => validIds.has(id));
+
+        if (filteredUseCaseIds.length > 0) {
+          const useCases = filteredUseCaseIds.map((useCaseId: string) => ({
+            camera_id: editingCamera.id,
+            vision_use_case_id: useCaseId,
+            description: cleanFormData.use_case_description || null,
+          }));
+
+          const { error: useCasesError } = await supabase
+            .from('camera_use_cases')
+            .insert(useCases);
+
+          if (useCasesError) throw useCasesError;
+        }
       }
 
       // Delete existing attributes and insert new ones

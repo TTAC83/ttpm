@@ -1,3 +1,4 @@
+import React from "react";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,6 +25,18 @@ export function CameraUseCaseTab({
   updateAttribute,
   deleteAttribute
 }: CameraUseCaseTabProps) {
+  // Filter out any invalid use case IDs that might be in formData
+  const validUseCaseIds = formData.use_case_ids.filter(id => 
+    masterData.visionUseCases.some(uc => uc.id === id)
+  );
+
+  // Update if we filtered out any invalid IDs
+  React.useEffect(() => {
+    if (validUseCaseIds.length !== formData.use_case_ids.length) {
+      updateField('use_case_ids', validUseCaseIds);
+    }
+  }, [formData.use_case_ids, validUseCaseIds, updateField]);
+
   // Group use cases by category
   const groupedUseCases = masterData.visionUseCases.reduce((acc, useCase) => {
     const category = useCase.category || 'Other';

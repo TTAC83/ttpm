@@ -263,13 +263,38 @@ export function useLineData(config: WizardConfig) {
           }
 
           if (camera.use_case_ids && camera.use_case_ids.length > 0) {
-            await supabase.from('camera_use_cases').insert(
-              camera.use_case_ids.map(useCaseId => ({
-                camera_id: cameraData.id,
-                vision_use_case_id: useCaseId,
-                description: camera.use_case_description || null,
-              }))
-            );
+            // Validate use case IDs exist in vision_use_cases_master
+            const { data: validUseCases, error: validateError } = await supabase
+              .from('vision_use_cases_master')
+              .select('id')
+              .in('id', camera.use_case_ids);
+
+            if (validateError) {
+              console.error('Error validating use cases:', validateError);
+              throw new Error(`Failed to validate use cases: ${validateError.message}`);
+            }
+
+            const validIds = new Set(validUseCases?.map(uc => uc.id) || []);
+            const filteredUseCaseIds = camera.use_case_ids.filter(id => validIds.has(id));
+
+            if (filteredUseCaseIds.length === 0) {
+              console.warn('No valid use case IDs found, skipping use case insert');
+            } else {
+              const { error: useCaseError } = await supabase
+                .from('camera_use_cases')
+                .insert(
+                  filteredUseCaseIds.map(useCaseId => ({
+                    camera_id: cameraData.id,
+                    vision_use_case_id: useCaseId,
+                    description: camera.use_case_description || null,
+                  }))
+                );
+
+              if (useCaseError) {
+                console.error('Error inserting camera use cases:', useCaseError);
+                throw new Error(`Failed to save camera use cases: ${useCaseError.message}`);
+              }
+            }
           }
 
           if (camera.attributes && camera.attributes.length > 0) {

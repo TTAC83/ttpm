@@ -219,7 +219,7 @@ export const useLineVisualization = (lineId: string) => {
 
   const handleEditCamera = (camera: any, positionName: string, equipmentName: string) => {
     setCameraFormData({
-      name: camera.mac_address || "",
+      name: camera.name || "",
       camera_type: camera.camera_type || "",
       lens_type: camera.lens_type || "",
       light_required: camera.light_required || false,

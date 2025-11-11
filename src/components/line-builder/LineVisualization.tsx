@@ -300,8 +300,9 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
 
   const handleEditCamera = (camera: any, positionName: string, equipmentName: string) => {
     setCameraFormData({
-      name: camera.id,
-      camera_master_id: camera.camera_type || "",
+      name: camera.name || "",
+      camera_type: camera.camera_type || "",
+      lens_type: camera.lens_type || "",
       light_required: camera.light_required || false,
       light_id: camera.light_id || "",
       light_notes: camera.light_notes || "",
@@ -310,7 +311,7 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
       relay_outputs: [],
       hmi_required: !!camera.hmi_master_id,
       hmi_master_id: camera.hmi_master_id || "",
-      hmi_notes: "",
+      hmi_notes: camera.hmi_notes || "",
       horizontal_fov: camera.measurements?.horizontal_fov || "",
       working_distance: camera.measurements?.working_distance || "",
       smallest_text: camera.measurements?.smallest_text || "",
@@ -340,13 +341,17 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
       const { error: cameraError } = await supabase
         .from('cameras')
         .update({
-          camera_type: cleanFormData.camera_master_id,
+          mac_address: cleanFormData.name || '',
+          camera_type: cleanFormData.camera_type,
+          lens_type: cleanFormData.lens_type || '',
           light_required: cleanFormData.light_required,
           light_id: cleanFormData.light_id,
+          light_notes: cleanFormData.light_notes || null,
           plc_attached: cleanFormData.plc_attached,
           plc_master_id: cleanFormData.plc_master_id,
           hmi_required: cleanFormData.hmi_required,
           hmi_master_id: cleanFormData.hmi_master_id,
+          hmi_notes: cleanFormData.hmi_notes || null,
         })
         .eq('id', editingCamera.id);
 

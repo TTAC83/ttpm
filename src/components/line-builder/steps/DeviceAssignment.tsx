@@ -553,12 +553,12 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     setCameraEditMode(true);
     setEditingCameraId(camera.id);
     
-    // Find camera master by selected hardware id stored in camera_type
-    const cameraMaster = cameras.find(c => c.id === (camera as any).camera_type);
+    // camera_type should be a UUID, if not, try to find by model
+    const cameraMaster = cameras.find(c => c.id === camera.camera_type);
     
     setCameraForm({
-      name: camera.name,
-      camera_type: cameraMaster?.id || "",
+      name: camera.name || "",
+      camera_type: camera.camera_type || "",
       lens_type: camera.lens_type || "",
       light_required: camera.light_required || false,
       light_id: camera.light_id || "",

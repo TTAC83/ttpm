@@ -2,7 +2,8 @@ import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { LineBasicInfo } from "./steps/LineBasicInfo";
 import { ProcessFlowBuilder } from "./steps/ProcessFlowBuilder";
 import { EquipmentTitles } from "./steps/EquipmentTitles";
@@ -34,6 +35,7 @@ export const LineWizard: React.FC<LineWizardProps> = ({
     handleComplete,
     handleNext,
     handlePrevious,
+    isLoading,
   } = useLineWizard(lineWizardConfig, projectId, editLineId, open);
 
   const steps = [
@@ -70,26 +72,34 @@ export const LineWizard: React.FC<LineWizardProps> = ({
           </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto py-4">
-          <CurrentStepComponent
-            lineData={lineData}
-            setLineData={setLineData}
-            positions={positions}
-            setPositions={setPositions}
-          />
+        <div className="flex-1 overflow-y-auto py-4 relative">
+          {isLoading ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm z-50">
+              <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+              <p className="text-sm text-muted-foreground">Loading line data...</p>
+            </div>
+          ) : (
+            <CurrentStepComponent
+              lineData={lineData}
+              setLineData={setLineData}
+              positions={positions}
+              setPositions={setPositions}
+            />
+          )}
         </div>
 
         <DialogFooter className="flex items-center justify-between border-t pt-4">
           <Button
             variant="outline"
             onClick={handlePrevious}
-            disabled={currentStep === 1}
+            disabled={currentStep === 1 || isLoading}
           >
             <ChevronLeft className="h-4 w-4 mr-2" />
             Previous
           </Button>
           <Button
             onClick={currentStep === steps.length ? onCompleteWizard : handleNext}
+            disabled={isLoading}
           >
             {currentStep === steps.length ? "Complete Setup" : "Next"}
             {currentStep < steps.length && <ChevronRight className="h-4 w-4 ml-2" />}

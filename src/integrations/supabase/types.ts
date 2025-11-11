@@ -2441,7 +2441,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          line_id: string
+          line_id: string | null
           name: string
           position_x: number
           position_y: number
@@ -2452,7 +2452,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          line_id: string
+          line_id?: string | null
           name: string
           position_x?: number
           position_y?: number
@@ -2463,7 +2463,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          line_id?: string
+          line_id?: string | null
           name?: string
           position_x?: number
           position_y?: number

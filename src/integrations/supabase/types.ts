@@ -4736,7 +4736,7 @@ export type Database = {
         }[]
       }
       get_line_full_data: {
-        Args: { p_line_id: string; p_table_name: string }
+        Args: { p_input_line_id: string; p_table_name: string }
         Returns: Json
       }
       get_safe_profile_info: {

@@ -11,7 +11,7 @@ export function useLineData(config: WizardConfig) {
       // Use optimized RPC function to fetch all data in a single query
       const { data, error } = await supabase
         .rpc('get_line_full_data', {
-          p_line_id: lineId,
+          p_input_line_id: lineId,
           p_table_name: config.tableName
         });
 

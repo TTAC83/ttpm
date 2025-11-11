@@ -130,6 +130,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   const [editingIotId, setEditingIotId] = useState<string>("");
   const [lights, setLights] = useState<Light[]>([]);
   const [cameras, setCameras] = useState<CameraMaster[]>([]);
+  const [lenses, setLenses] = useState<LensMaster[]>([]);
   const [plcs, setPlcs] = useState<PlcMaster[]>([]);
   const [hmis, setHmis] = useState<HardwareMaster[]>([]);
   const [iotDevices, setIotDevices] = useState<HardwareMaster[]>([]);
@@ -140,6 +141,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   const [cameraForm, setCameraForm] = useState({
     name: "",
     camera_master_id: "",
+    lens_master_id: "",
     light_required: false,
     light_id: "",
     light_notes: "",
@@ -184,11 +186,12 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     ct_master_id: "",
   });
 
-  // Fetch lights, cameras, PLCs, HMIs, IoT devices, receivers, CTs, and vision use cases from unified hardware catalog
+  // Fetch lights, cameras, lenses, PLCs, HMIs, IoT devices, receivers, CTs, and vision use cases from unified hardware catalog
   useEffect(() => {
     const fetchData = async () => {
-      const [camerasList, lightsList, plcsList, hmisData, iotDevicesData, ctsData, useCasesData] = await Promise.all([
+      const [camerasList, lensesList, lightsList, plcsList, hmisData, iotDevicesData, ctsData, useCasesData] = await Promise.all([
         hardwareCatalog.getCameras(),
+        hardwareCatalog.getLenses(),
         hardwareCatalog.getLights(),
         hardwareCatalog.getPlcs(),
         supabase
@@ -214,6 +217,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       ]);
       
       setCameras(camerasList);
+      setLenses(lensesList);
       setLights(lightsList);
       setPlcs(plcsList);
       if (hmisData.data) {
@@ -292,6 +296,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                                 ...cam,
                                 name: formData.name,
                                 camera_type: formData.camera_master_id,
+                                lens_type: formData.lens_master_id,
                                 light_required: formData.light_required,
                                 light_id: formData.light_id,
                                 light_notes: formData.light_notes,
@@ -325,7 +330,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
         id: Math.random().toString(36).substring(7),
         name: cameraForm.name,
         camera_type: cameraForm.camera_master_id,
-        lens_type: "",
+        lens_type: cameraForm.lens_master_id,
         light_required: cameraForm.light_required,
         light_id: cameraForm.light_id,
         light_notes: cameraForm.light_notes,
@@ -368,6 +373,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     setCameraForm({
       name: "",
       camera_master_id: "",
+      lens_master_id: "",
       light_required: false,
       light_id: "",
       light_notes: "",
@@ -581,6 +587,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     setCameraForm({
       name: camera.name,
       camera_master_id: cameraMaster?.id || "",
+      lens_master_id: camera.lens_type || "",
       light_required: camera.light_required || false,
       light_id: camera.light_id || "",
       light_notes: camera.light_notes || "",
@@ -812,6 +819,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
         cameraData={cameraForm}
         masterData={{
           cameras,
+          lenses,
           lights,
           plcs,
           hmis,

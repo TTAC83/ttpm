@@ -25,6 +25,14 @@ export interface PlcItem {
   plc_type?: string; // mapped from description
 }
 
+export interface LensItem {
+  id: string;
+  manufacturer: string;
+  model_number: string;
+  lens_type?: string;
+  focal_length?: string;
+}
+
 const mapCamera = (row: any): CameraItem => ({
   id: row.id,
   manufacturer: row.product_name,
@@ -44,6 +52,14 @@ const mapPlc = (row: any): PlcItem => ({
   manufacturer: row.product_name,
   model_number: row.sku_no,
   plc_type: row.description || undefined,
+});
+
+const mapLens = (row: any): LensItem => ({
+  id: row.id,
+  manufacturer: row.manufacturer,
+  model_number: row.model_number,
+  lens_type: row.lens_type || undefined,
+  focal_length: row.focal_length || undefined,
 });
 
 export const hardwareCatalog = {
@@ -78,5 +94,15 @@ export const hardwareCatalog = {
       .order('product_name', { ascending: true });
     if (error) throw error;
     return (data || []).map(mapPlc);
+  },
+
+  // Returns lenses from lens_master table
+  async getLenses(): Promise<LensItem[]> {
+    const { data, error } = await supabase
+      .from('lens_master')
+      .select('id, manufacturer, model_number, lens_type, focal_length')
+      .order('manufacturer', { ascending: true });
+    if (error) throw error;
+    return (data || []).map(mapLens);
   },
 };

@@ -81,10 +81,12 @@ export function useLineData(config: WizardConfig) {
                     lens_type: cam.lens_type,
                     light_required: cam.light_required || false,
                     light_id: cam.light_id || undefined,
+                    light_notes: cam.light_notes || "",
                     plc_attached: cam.plc_attached || false,
                     plc_master_id: cam.plc_master_id || undefined,
                     hmi_required: cam.hmi_required || false,
                     hmi_master_id: cam.hmi_master_id || undefined,
+                    hmi_notes: cam.hmi_notes || "",
                     relay_outputs: outputs.data || [],
                     horizontal_fov: measurements.data?.horizontal_fov?.toString() || "",
                     working_distance: measurements.data?.working_distance?.toString() || "",
@@ -297,14 +299,16 @@ export function useLineData(config: WizardConfig) {
             .insert({
               equipment_id: equipmentData.id,
               camera_type: camera.camera_type,
-              lens_type: camera.lens_type,
+              lens_type: camera.lens_type || '',
               mac_address: camera.name || '',
               light_required: camera.light_required || false,
               light_id: camera.light_id || null,
+              light_notes: camera.light_notes || null,
               plc_attached: camera.plc_attached || false,
               plc_master_id: camera.plc_master_id || null,
               hmi_required: camera.hmi_required || false,
               hmi_master_id: camera.hmi_master_id || null,
+              hmi_notes: camera.hmi_notes || null,
             })
             .select()
             .single();

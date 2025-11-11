@@ -1,6 +1,7 @@
 export interface CameraFormData {
   name: string;
   camera_master_id: string;
+  lens_master_id: string;
   light_required: boolean;
   light_id: string;
   light_notes: string;
@@ -32,6 +33,7 @@ export interface CameraFormData {
 
 export interface MasterData {
   cameras: Array<{ id: string; manufacturer: string; model_number: string; camera_type?: string }>;
+  lenses: Array<{ id: string; manufacturer: string; model_number: string; lens_type?: string; focal_length?: string }>;
   lights: Array<{ id: string; manufacturer: string; model_number: string; description?: string }>;
   plcs: Array<{ id: string; manufacturer: string; model_number: string; plc_type?: string }>;
   hmis: Array<{ id: string; sku_no: string; product_name: string }>;
@@ -41,6 +43,7 @@ export interface MasterData {
 export const emptyFormData: CameraFormData = {
   name: "",
   camera_master_id: "",
+  lens_master_id: "",
   light_required: false,
   light_id: "",
   light_notes: "",

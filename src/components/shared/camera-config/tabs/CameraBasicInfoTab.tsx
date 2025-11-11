@@ -41,6 +41,25 @@ export function CameraBasicInfoTab({ formData, masterData, updateField }: Camera
           </SelectContent>
         </Select>
       </div>
+      <div>
+        <Label htmlFor="lens-model">Lens Model</Label>
+        <Select
+          value={formData.lens_master_id}
+          onValueChange={(value) => updateField("lens_master_id", value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Choose lens model (optional)" />
+          </SelectTrigger>
+          <SelectContent>
+            {masterData.lenses.map((lens) => (
+              <SelectItem key={lens.id} value={lens.id}>
+                {lens.manufacturer} - {lens.model_number}
+                {lens.focal_length && ` (${lens.focal_length})`}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     </TabsContent>
   );
 }

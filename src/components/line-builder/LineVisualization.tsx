@@ -98,6 +98,7 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
   
   // Master data for camera configuration
   const [cameras, setCameras] = useState<Array<{ id: string; manufacturer: string; model_number: string; camera_type?: string }>>([]);
+  const [lenses, setLenses] = useState<Array<{ id: string; manufacturer: string; model_number: string; lens_type?: string; focal_length?: string }>>([]);
   const [lights, setLights] = useState<Array<{ id: string; manufacturer: string; model_number: string; description?: string }>>([]);
   const [plcs, setPlcs] = useState<Array<{ id: string; manufacturer: string; model_number: string; plc_type?: string }>>([]);
   const [hmis, setHmis] = useState<Array<{ id: string; sku_no: string; product_name: string }>>([]);
@@ -282,8 +283,9 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
 
   const fetchMasterData = async () => {
     // IMPORTANT: Always use unified hardware_master via hardwareCatalog service
-    const [camerasList, lightsList, plcsList, hmisData, useCasesData] = await Promise.all([
+    const [camerasList, lensesList, lightsList, plcsList, hmisData, useCasesData] = await Promise.all([
       hardwareCatalog.getCameras(),
+      hardwareCatalog.getLenses(),
       hardwareCatalog.getLights(),
       hardwareCatalog.getPlcs(),
       supabase
@@ -299,6 +301,7 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
     ]);
 
     setCameras(camerasList);
+    setLenses(lensesList);
     setLights(lightsList);
     setPlcs(plcsList);
     if (hmisData.data) {
@@ -771,6 +774,7 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
         cameraData={cameraFormData}
         masterData={{
           cameras,
+          lenses,
           lights,
           plcs,
           hmis,

@@ -52,7 +52,7 @@ export const CameraConfigDialog: React.FC<CameraConfigDialogProps> = ({
   }, [open, cameraData, resetForm]);
 
   const handleSave = () => {
-    if (!formData.name || !formData.camera_master_id) {
+    if (!formData.name || !formData.camera_type) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",

@@ -25,8 +25,8 @@ export function CameraBasicInfoTab({ formData, masterData, updateField }: Camera
       <div>
         <Label htmlFor="camera-model">Camera Model *</Label>
         <Select
-          value={formData.camera_master_id}
-          onValueChange={(value) => updateField("camera_master_id", value)}
+          value={formData.camera_type}
+          onValueChange={(value) => updateField("camera_type", value)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Choose camera model" />
@@ -44,8 +44,8 @@ export function CameraBasicInfoTab({ formData, masterData, updateField }: Camera
       <div>
         <Label htmlFor="lens-model">Lens Model</Label>
         <Select
-          value={formData.lens_master_id}
-          onValueChange={(value) => updateField("lens_master_id", value)}
+          value={formData.lens_type}
+          onValueChange={(value) => updateField("lens_type", value)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Choose lens model (optional)" />

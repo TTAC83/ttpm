@@ -139,8 +139,8 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   // Camera form state
   const [cameraForm, setCameraForm] = useState({
     name: "",
-    camera_master_id: "",
-    lens_master_id: "",
+    camera_type: "",
+    lens_type: "",
     light_required: false,
     light_id: "",
     light_notes: "",
@@ -245,11 +245,11 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   }, [solutionsProjectId]);
 
   const addCamera = (formData: typeof cameraForm) => {
-    if (!selectedPosition || !selectedEquipment || !formData.name || !formData.camera_master_id) {
+    if (!selectedPosition || !selectedEquipment || !formData.name || !formData.camera_type) {
       return;
     }
 
-    const selectedCamera = cameras.find(c => c.id === formData.camera_master_id);
+    const selectedCamera = cameras.find(c => c.id === formData.camera_type);
     
     if (cameraEditMode && editingCameraId) {
       // Update existing camera
@@ -267,8 +267,8 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
                             ? {
                                 ...cam,
                                 name: formData.name,
-                                camera_type: formData.camera_master_id,
-                                lens_type: formData.lens_master_id,
+                                camera_type: formData.camera_type,
+                                lens_type: formData.lens_type,
                                 light_required: formData.light_required,
                                 light_id: formData.light_id,
                                 light_notes: formData.light_notes,
@@ -301,8 +301,8 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       const newCamera = {
         id: Math.random().toString(36).substring(7),
         name: cameraForm.name,
-        camera_type: cameraForm.camera_master_id,
-        lens_type: cameraForm.lens_master_id,
+        camera_type: cameraForm.camera_type,
+        lens_type: cameraForm.lens_type,
         light_required: cameraForm.light_required,
         light_id: cameraForm.light_id,
         light_notes: cameraForm.light_notes,
@@ -344,8 +344,8 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   const resetCameraForm = () => {
     setCameraForm({
       name: "",
-      camera_master_id: "",
-      lens_master_id: "",
+      camera_type: "",
+      lens_type: "",
       light_required: false,
       light_id: "",
       light_notes: "",
@@ -558,8 +558,8 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     
     setCameraForm({
       name: camera.name,
-      camera_master_id: cameraMaster?.id || "",
-      lens_master_id: camera.lens_type || "",
+      camera_type: cameraMaster?.id || "",
+      lens_type: camera.lens_type || "",
       light_required: camera.light_required || false,
       light_id: camera.light_id || "",
       light_notes: camera.light_notes || "",

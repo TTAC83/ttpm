@@ -53,20 +53,25 @@ export function formatDateTime(date: Date | undefined, time: string, hasTime: bo
  * Prepare form data for database submission
  */
 export function transformFormData(data: any) {
+  const { 
+    product_run_start_time, 
+    product_run_end_time, 
+    product_run_start_has_time, 
+    product_run_end_has_time,
+    ...dbData 
+  } = data;
+
   return {
-    ...data,
+    ...dbData,
     product_run_start: formatDateTime(
       data.product_run_start,
-      data.product_run_start_time,
-      data.product_run_start_has_time
+      product_run_start_time,
+      product_run_start_has_time
     ),
     product_run_end: formatDateTime(
       data.product_run_end,
-      data.product_run_end_time,
-      data.product_run_end_has_time
+      product_run_end_time,
+      product_run_end_has_time
     ),
-    // Remove temporary UI fields
-    product_run_start_time: undefined,
-    product_run_end_time: undefined,
   };
 }

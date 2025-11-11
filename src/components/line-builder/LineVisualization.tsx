@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -90,8 +91,6 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
   lineId,
   onBack,
 }) => {
-  const [lineData, setLineData] = useState<LineData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [editingCamera, setEditingCamera] = useState<(Camera & { positionName: string; equipmentName: string }) | null>(null);
   const [editingIoT, setEditingIoT] = useState<IoTDevice & { positionName: string; equipmentName: string } | null>(null);
   const [cameraDialogOpen, setCameraDialogOpen] = useState(false);
@@ -104,13 +103,10 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
   const [receivers, setReceivers] = useState<Array<{ id: string; name: string }>>([]);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchLineData();
-    fetchReceivers();
-  }, [lineId]);
-
-  const fetchLineData = async () => {
-    try {
+  // Fetch line data with TanStack Query caching
+  const { data: lineData, isLoading: loading, refetch: refetchLineData } = useQuery({
+    queryKey: ['line-visualization', lineId],
+    queryFn: async () => {
       // First, determine if this is a solutions line or implementation line
       const { data: solutionsLine } = await supabase
         .from('solutions_lines')
@@ -192,25 +188,21 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
         }))
       }));
 
-      setLineData({
+      return {
         id: lineId,
         line_name: lineInfo.name,
         min_speed: lineInfo.min_speed,
         max_speed: lineInfo.max_speed,
         positions: transformedPositions
-      });
+      };
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes - same as master data cache
+    gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache after stale
+  });
 
-    } catch (error) {
-      console.error('Error fetching line data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load line data",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    fetchReceivers();
+  }, [lineId, lineData]);
 
   const fetchReceivers = async () => {
     if (!lineData) return;
@@ -378,7 +370,7 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
 
       setCameraDialogOpen(false);
       setEditingCamera(null);
-      fetchLineData();
+      refetchLineData();
     } catch (error) {
       console.error('Error updating camera:', error);
       toast({
@@ -409,7 +401,7 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
       });
 
       setEditingIoT(null);
-      fetchLineData();
+      refetchLineData();
     } catch (error) {
       console.error('Error updating IoT device:', error);
       toast({
@@ -600,7 +592,7 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
                           }))
                         )
                       ).map(camera => [camera.id, camera])
-                    ).values()).map((camera) => (
+                    ).values()).map((camera: Camera & { positionName: string; equipmentName: string }) => (
                       <div key={camera.id} className="bg-muted/50 p-3 rounded border">
                         <div className="flex justify-between items-center">
                           <div className="flex-1">

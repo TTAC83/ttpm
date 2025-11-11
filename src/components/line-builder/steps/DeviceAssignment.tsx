@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, Camera, Cpu, Edit, Lightbulb, Monitor } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CameraConfigDialog } from "@/components/shared/CameraConfigDialog";
-import { hardwareCatalog } from "@/lib/hardwareCatalogService"; // Use unified hardware catalog
+import { useMasterDataCache } from "@/hooks/useMasterDataCache";
 
 interface Position {
   id: string;
@@ -128,14 +128,13 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   const [cameraEditMode, setCameraEditMode] = useState(false);
   const [editingCameraId, setEditingCameraId] = useState<string>("");
   const [editingIotId, setEditingIotId] = useState<string>("");
-  const [lights, setLights] = useState<Light[]>([]);
-  const [cameras, setCameras] = useState<CameraMaster[]>([]);
-  const [lenses, setLenses] = useState<LensMaster[]>([]);
-  const [plcs, setPlcs] = useState<PlcMaster[]>([]);
-  const [hmis, setHmis] = useState<HardwareMaster[]>([]);
   const [iotDevices, setIotDevices] = useState<HardwareMaster[]>([]);
   const [receivers, setReceivers] = useState<ReceiverMaster[]>([]);
   const [cts, setCts] = useState<HardwareMaster[]>([]);
+  
+  // Use cached master data
+  const masterData = useMasterDataCache();
+  const { cameras, lenses, lights, plcs, hmis, visionUseCases } = masterData;
 
   // Camera form state
   const [cameraForm, setCameraForm] = useState({
@@ -175,8 +174,6 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     camera_view_description: "",
   });
   
-  const [visionUseCases, setVisionUseCases] = useState<Array<{ id: string; name: string; description?: string; category?: string }>>([]);
-
   // IoT form state
   const [iotForm, setIotForm] = useState({
     name: "",
@@ -186,19 +183,10 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     ct_master_id: "",
   });
 
-  // Fetch lights, cameras, lenses, PLCs, HMIs, IoT devices, receivers, CTs, and vision use cases from unified hardware catalog
+  // Fetch IoT devices, receivers, and CTs (non-cached data)
   useEffect(() => {
     const fetchData = async () => {
-      const [camerasList, lensesList, lightsList, plcsList, hmisData, iotDevicesData, ctsData, useCasesData] = await Promise.all([
-        hardwareCatalog.getCameras(),
-        hardwareCatalog.getLenses(),
-        hardwareCatalog.getLights(),
-        hardwareCatalog.getPlcs(),
-        supabase
-          .from('hardware_master')
-          .select('id, sku_no, product_name, hardware_type, description')
-          .eq('hardware_type', 'HMI')
-          .order('product_name', { ascending: true }),
+      const [iotDevicesData, ctsData] = await Promise.all([
         supabase
           .from('hardware_master')
           .select('id, sku_no, product_name, hardware_type, description')
@@ -209,28 +197,12 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
           .select('id, sku_no, product_name, hardware_type, description')
           .eq('hardware_type', 'CTs')
           .order('product_name', { ascending: true }),
-        supabase
-          .from('vision_use_cases')
-          .select('id, name, description, category')
-          .order('category', { ascending: true })
-          .order('name', { ascending: true })
       ]);
-      
-      setCameras(camerasList);
-      setLenses(lensesList);
-      setLights(lightsList);
-      setPlcs(plcsList);
-      if (hmisData.data) {
-        setHmis(hmisData.data);
-      }
       if (iotDevicesData.data) {
         setIotDevices(iotDevicesData.data);
       }
       if (ctsData.data) {
         setCts(ctsData.data);
-      }
-      if (useCasesData.data) {
-        setVisionUseCases(useCasesData.data as any);
       }
 
       // Fetch receivers from project_iot_requirements based on project type

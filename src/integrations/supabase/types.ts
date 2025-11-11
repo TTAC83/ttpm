@@ -1142,10 +1142,12 @@ export type Database = {
           created_at: string
           equipment_id: string
           hmi_master_id: string | null
+          hmi_notes: string | null
           hmi_required: boolean | null
           id: string
           lens_type: string
           light_id: string | null
+          light_notes: string | null
           light_required: boolean | null
           mac_address: string
           plc_attached: boolean | null
@@ -1157,10 +1159,12 @@ export type Database = {
           created_at?: string
           equipment_id: string
           hmi_master_id?: string | null
+          hmi_notes?: string | null
           hmi_required?: boolean | null
           id?: string
           lens_type: string
           light_id?: string | null
+          light_notes?: string | null
           light_required?: boolean | null
           mac_address: string
           plc_attached?: boolean | null
@@ -1172,10 +1176,12 @@ export type Database = {
           created_at?: string
           equipment_id?: string
           hmi_master_id?: string | null
+          hmi_notes?: string | null
           hmi_required?: boolean | null
           id?: string
           lens_type?: string
           light_id?: string | null
+          light_notes?: string | null
           light_required?: boolean | null
           mac_address?: string
           plc_attached?: boolean | null

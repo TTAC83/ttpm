@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { CameraConfigDialog } from "@/components/shared/CameraConfigDialog";
-import { hardwareCatalog } from "@/lib/hardwareCatalogService"; // Use unified hardware catalog
+import { useMasterDataCache } from "@/hooks/useMasterDataCache";
 import { LineUseCasesTable } from "./LineUseCasesTable";
 
 interface LineData {
@@ -96,19 +96,15 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
   const [cameraDialogOpen, setCameraDialogOpen] = useState(false);
   const [cameraFormData, setCameraFormData] = useState<any>(null);
   
-  // Master data for camera configuration
-  const [cameras, setCameras] = useState<Array<{ id: string; manufacturer: string; model_number: string; camera_type?: string }>>([]);
-  const [lenses, setLenses] = useState<Array<{ id: string; manufacturer: string; model_number: string; lens_type?: string; focal_length?: string }>>([]);
-  const [lights, setLights] = useState<Array<{ id: string; manufacturer: string; model_number: string; description?: string }>>([]);
-  const [plcs, setPlcs] = useState<Array<{ id: string; manufacturer: string; model_number: string; plc_type?: string }>>([]);
-  const [hmis, setHmis] = useState<Array<{ id: string; sku_no: string; product_name: string }>>([]);
-  const [visionUseCases, setVisionUseCases] = useState<Array<{ id: string; name: string; description?: string; category?: string }>>([]);
+  // Use cached master data
+  const masterData = useMasterDataCache();
+  const { cameras, lenses, lights, plcs, hmis, visionUseCases } = masterData;
+  
   const [receivers, setReceivers] = useState<Array<{ id: string; name: string }>>([]);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchLineData();
-    fetchMasterData();
     fetchReceivers();
   }, [lineId]);
 
@@ -278,37 +274,6 @@ export const LineVisualization: React.FC<LineVisualizationProps> = ({
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchMasterData = async () => {
-    // IMPORTANT: Always use unified hardware_master via hardwareCatalog service
-    const [camerasList, lensesList, lightsList, plcsList, hmisData, useCasesData] = await Promise.all([
-      hardwareCatalog.getCameras(),
-      hardwareCatalog.getLenses(),
-      hardwareCatalog.getLights(),
-      hardwareCatalog.getPlcs(),
-      supabase
-        .from('hardware_master')
-        .select('id, sku_no, product_name')
-        .eq('hardware_type', 'HMI')
-        .order('product_name'),
-      supabase
-        .from('vision_use_cases_master')
-        .select('id, name, description, category')
-        .order('category', { ascending: true })
-        .order('name', { ascending: true }),
-    ]);
-
-    setCameras(camerasList);
-    setLenses(lensesList);
-    setLights(lightsList);
-    setPlcs(plcsList);
-    if (hmisData.data) {
-      setHmis(hmisData.data);
-    }
-    if (useCasesData.data) {
-      setVisionUseCases(useCasesData.data as any);
     }
   };
 

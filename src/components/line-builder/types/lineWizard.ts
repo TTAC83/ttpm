@@ -57,7 +57,7 @@ export interface IoTDevice {
   id: string;
   name: string;
   hardware_master_id: string;
-  receiver_master_id?: string;
+  receiver_mac_address?: string;
 }
 
 export interface LineData {

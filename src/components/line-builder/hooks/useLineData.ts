@@ -308,9 +308,8 @@ export function useLineData(config: WizardConfig) {
             equipment_id: equipmentData.id,
             name: iot.name,
             hardware_master_id: iot.hardware_master_id,
-            receiver_master_id: iot.receiver_master_id || null,
+            receiver_mac_address: iot.receiver_mac_address || '',
             mac_address: '',
-            receiver_mac_address: '',
           });
         }
       }

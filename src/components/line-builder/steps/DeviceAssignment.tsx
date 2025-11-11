@@ -11,6 +11,7 @@ import { Plus, Trash2, Camera, Cpu, Edit, Lightbulb, Monitor } from "lucide-reac
 import { supabase } from "@/integrations/supabase/client";
 import { CameraConfigDialog } from "@/components/shared/CameraConfigDialog";
 import { useMasterDataCache } from "@/hooks/useMasterDataCache";
+import { useToast } from "@/hooks/use-toast";
 
 interface Position {
   id: string;
@@ -131,6 +132,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   const [iotDevices, setIotDevices] = useState<HardwareMaster[]>([]);
   const [receivers, setReceivers] = useState<ReceiverMaster[]>([]);
   const [cts, setCts] = useState<HardwareMaster[]>([]);
+  const { toast } = useToast();
   
   // Use cached master data
   const masterData = useMasterDataCache();
@@ -245,7 +247,21 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   }, [solutionsProjectId]);
 
   const addCamera = (formData: typeof cameraForm) => {
-    if (!selectedPosition || !selectedEquipment || !formData.name || !formData.camera_type) {
+    if (!selectedPosition || !selectedEquipment) {
+      toast({
+        title: "Error",
+        description: "Please select equipment first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.name || !formData.camera_type) {
+      toast({
+        title: "Error",
+        description: "Camera name and type are required",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -339,6 +355,12 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     }
 
     resetCameraForm();
+    setCameraDialogOpen(false);
+    
+    toast({
+      title: "Success",
+      description: cameraEditMode ? "Camera updated successfully" : "Camera added successfully",
+    });
   };
 
   const resetCameraForm = () => {

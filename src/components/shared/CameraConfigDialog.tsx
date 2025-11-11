@@ -61,7 +61,6 @@ export const CameraConfigDialog: React.FC<CameraConfigDialogProps> = ({
       return;
     }
     onSave(formData);
-    onOpenChange(false);
   };
 
   return (

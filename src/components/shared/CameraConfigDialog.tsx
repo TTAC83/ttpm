@@ -51,9 +51,7 @@ export const CameraConfigDialog: React.FC<CameraConfigDialogProps> = ({
 
   useEffect(() => {
     if (open) {
-      console.log('🔧 CameraConfigDialog resetting form with cameraData:', cameraData);
       resetForm(cameraData);
-      console.log('🔧 Form reset complete');
     }
   }, [open, cameraData, resetForm]);
 

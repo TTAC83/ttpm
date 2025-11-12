@@ -897,11 +897,11 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
         });
       }
 
-      // Use A1 for full export, A4 for fit
+      // Use A3 landscape for both - full export uses multiple pages
       const pdf = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',
-        format: exportFormat === 'pdf-full' ? 'a1' : 'a4'
+        format: 'a3'
       });
 
       const pageWidth = pdf.internal.pageSize.getWidth();

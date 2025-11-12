@@ -742,11 +742,11 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
         });
       }
 
-      // Use A1 for full export, A4 for fit
+      // Use A3 landscape for both - full export uses multiple pages
       const pdf = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',
-        format: exportFormat === 'pdf-full' ? 'a1' : 'a4'
+        format: 'a3'
       });
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -838,9 +838,9 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
         }
         
       } else {
-        // Multi-page export for full resolution
-        const contentHeight = pdfHeight - headerHeight - (2 * margin);
-        const totalPages = Math.ceil(finalHeight / contentHeight);
+        // Multi-page horizontal export for full timeline - split chart across width
+        const contentWidth = pdfWidth - (2 * margin);
+        const totalPages = Math.ceil(finalWidth / contentWidth);
         
         for (let page = 0; page < totalPages; page++) {
           if (page > 0) pdf.addPage();
@@ -860,41 +860,42 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
           pdf.setFontSize(8);
           pdf.text(`Page ${page + 1} of ${totalPages}`, pdfWidth / 2 - 10, pdfHeight - 10);
 
-          // Calculate the source area for this page
-          const pageContentHeight = contentHeight;
-          const sourceY = (page * pageContentHeight * canvas.height) / finalHeight;
-          const sourceHeight = Math.min((pageContentHeight * canvas.height) / finalHeight, canvas.height - sourceY);
+          // Calculate the source area for this page (horizontal slice)
+          const sourceX = (page * contentWidth * canvas.width) / finalWidth;
+          const sourceWidth = Math.min((contentWidth * canvas.width) / finalWidth, canvas.width - sourceX);
           
           // Create a section of the canvas for this page
           const sectionCanvas = document.createElement('canvas');
-          sectionCanvas.width = canvas.width;
-          sectionCanvas.height = sourceHeight;
+          sectionCanvas.width = sourceWidth;
+          sectionCanvas.height = canvas.height;
           const sectionCtx = sectionCanvas.getContext('2d');
           
           if (sectionCtx) {
             sectionCtx.drawImage(
               canvas,
-              0, sourceY, canvas.width, sourceHeight,
-              0, 0, canvas.width, sourceHeight
+              sourceX, 0, sourceWidth, canvas.height,
+              0, 0, sourceWidth, canvas.height
             );
             
-            // Calculate dimensions for this section
+            // Calculate dimensions for this section to fit page
             const sectionAspectRatio = sectionCanvas.width / sectionCanvas.height;
-            let sectionWidth = availableWidth;
-            let sectionHeight = availableWidth / sectionAspectRatio;
+            let sectionWidth = contentWidth;
+            let sectionHeight = contentWidth / sectionAspectRatio;
             
-            if (sectionHeight > pageContentHeight) {
-              sectionHeight = pageContentHeight;
-              sectionWidth = pageContentHeight * sectionAspectRatio;
+            // If height exceeds available space, scale by height
+            if (sectionHeight > availableHeight) {
+              sectionHeight = availableHeight;
+              sectionWidth = availableHeight * sectionAspectRatio;
             }
             
-            const xOffset = margin + (availableWidth - sectionWidth) / 2;
+            const xOffset = margin;
+            const yOffset = headerHeight + margin;
             
             pdf.addImage(
               sectionCanvas.toDataURL('image/png', 1.0),
               'PNG',
               xOffset,
-              headerHeight + margin,
+              yOffset,
               sectionWidth,
               sectionHeight,
               undefined,

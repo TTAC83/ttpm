@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from '@/components/ui/label';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import * as XLSX from 'xlsx';
 
 interface Task {
   id: string;
@@ -81,7 +82,7 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
   const [presentationMode, setPresentationMode] = useState(false);
   const [project, setProject] = useState<any>(null);
   const [exportModalOpen, setExportModalOpen] = useState(false);
-  const [exportType, setExportType] = useState<'single' | 'multi'>('single');
+  const [exportFormat, setExportFormat] = useState<'pdf-full' | 'pdf-fit' | 'excel'>('pdf-full');
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
@@ -507,6 +508,131 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
 
   const handleTogglePresentationMode = () => {
     setPresentationMode(!presentationMode);
+  };
+
+  // Excel Export functionality
+  const exportToExcel = () => {
+    if (!project) {
+      toast({
+        title: "Error",
+        description: "Project details not available for export",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsExporting(true);
+    setExportModalOpen(false);
+
+    try {
+      toast({
+        title: "Exporting...",
+        description: "Generating Excel file...",
+      });
+
+      // Prepare data for Excel
+      const excelData: any[] = [];
+      
+      // Add events first
+      events.forEach(event => {
+        excelData.push({
+          'Type': 'Event',
+          'Step': '',
+          'Task/Event': event.title,
+          'Subtask': '',
+          'Start Date': formatDateUK(event.start_date),
+          'End Date': formatDateUK(event.end_date),
+          'Status': event.is_critical ? 'Critical' : 'Normal',
+          'Actual Start': '',
+          'Actual End': '',
+        });
+      });
+
+      // Add tasks and subtasks by step
+      const stepGroups = groupTasksByStep(tasks);
+      stepGroups.forEach(step => {
+        // Add step header
+        excelData.push({
+          'Type': 'Step',
+          'Step': step.step_name,
+          'Task/Event': '',
+          'Subtask': '',
+          'Start Date': step.planned_start ? formatDateUK(step.planned_start) : '',
+          'End Date': step.planned_end ? formatDateUK(step.planned_end) : '',
+          'Status': step.status,
+          'Actual Start': step.actual_start ? formatDateUK(step.actual_start) : '',
+          'Actual End': step.actual_end ? formatDateUK(step.actual_end) : '',
+        });
+
+        // Add tasks
+        step.tasks.forEach(task => {
+          excelData.push({
+            'Type': 'Task',
+            'Step': step.step_name,
+            'Task/Event': task.task_title,
+            'Subtask': '',
+            'Start Date': task.planned_start ? formatDateUK(task.planned_start) : '',
+            'End Date': task.planned_end ? formatDateUK(task.planned_end) : '',
+            'Status': task.status,
+            'Actual Start': task.actual_start ? formatDateUK(task.actual_start) : '',
+            'Actual End': task.actual_end ? formatDateUK(task.actual_end) : '',
+          });
+
+          // Add subtasks
+          const taskSubtasks = subtasks.filter(st => st.task_id === task.id);
+          taskSubtasks.forEach(subtask => {
+            excelData.push({
+              'Type': 'Subtask',
+              'Step': step.step_name,
+              'Task/Event': task.task_title,
+              'Subtask': subtask.title,
+              'Start Date': subtask.planned_start ? formatDateUK(subtask.planned_start) : '',
+              'End Date': subtask.planned_end ? formatDateUK(subtask.planned_end) : '',
+              'Status': subtask.status,
+              'Actual Start': subtask.actual_start ? formatDateUK(subtask.actual_start) : '',
+              'Actual End': subtask.actual_end ? formatDateUK(subtask.actual_end) : '',
+            });
+          });
+        });
+      });
+
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+
+      // Set column widths
+      ws['!cols'] = [
+        { wch: 10 },  // Type
+        { wch: 25 },  // Step
+        { wch: 35 },  // Task/Event
+        { wch: 30 },  // Subtask
+        { wch: 12 },  // Start Date
+        { wch: 12 },  // End Date
+        { wch: 15 },  // Status
+        { wch: 12 },  // Actual Start
+        { wch: 12 },  // Actual End
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Project Gantt Data');
+      
+      // Generate filename
+      const filename = `project-gantt-${project.project_name?.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, filename);
+
+      toast({
+        title: "Export Complete",
+        description: "Excel file has been downloaded successfully",
+      });
+    } catch (error) {
+      console.error('Excel export error:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to export Excel file. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   // PDF Export functionality

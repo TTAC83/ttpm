@@ -12,27 +12,31 @@ import { dateCalculationService } from '../services/dateCalculationService';
 interface GanttTimelineProps {
   items: GanttItem[];
   viewMode: GanttViewMode;
-  showWorkingDaysOnly: boolean;
   dayWidth: number;
   timelineStart: Date;
   timelineEnd: Date;
   dateMarkers: DateMarker[];
-  selectedItemId?: string;
+  showWorkingDaysOnly?: boolean;
+  selectedItemId?: string | null;
   onItemClick?: (item: GanttItem) => void;
   onItemDoubleClick?: (item: GanttItem) => void;
+  setSvgRef?: (element: SVGSVGElement | null) => void;
+  getItemProps?: (item: GanttItem) => any;
 }
 
 export const GanttTimeline: React.FC<GanttTimelineProps> = ({
   items,
   viewMode,
-  showWorkingDaysOnly,
   dayWidth,
   timelineStart,
   timelineEnd,
   dateMarkers,
-  selectedItemId,
+  showWorkingDaysOnly = false,
+  selectedItemId = null,
   onItemClick,
   onItemDoubleClick,
+  setSvgRef,
+  getItemProps,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -129,9 +133,12 @@ export const GanttTimeline: React.FC<GanttTimelineProps> = ({
         style={{ height: 'calc(100% - 60px)' }}
       >
         <svg
+          ref={setSvgRef}
           width={SIDEBAR_WIDTH + timelineWidth}
           height={totalHeight}
-          style={{ display: 'block' }}
+          className="block"
+          role="img"
+          aria-label="Gantt chart timeline"
         >
           {/* Grid background */}
           <g transform={`translate(${SIDEBAR_WIDTH}, 0)`}>
@@ -195,8 +202,10 @@ export const GanttTimeline: React.FC<GanttTimelineProps> = ({
                 barWidth={barWidth}
                 rowIndex={virtualRow.index}
                 isSelected={selectedItemId === item.id}
+                isHovered={false}
                 onItemClick={onItemClick}
                 onItemDoubleClick={onItemDoubleClick}
+                ariaProps={getItemProps?.(item)}
               />
             );
           })}

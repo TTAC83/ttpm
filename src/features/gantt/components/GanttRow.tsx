@@ -16,6 +16,7 @@ interface GanttRowProps {
   isHovered?: boolean;
   onItemClick?: (item: GanttItem) => void;
   onItemDoubleClick?: (item: GanttItem) => void;
+  ariaProps?: any;
 }
 
 export const GanttRow: React.FC<GanttRowProps> = ({
@@ -27,11 +28,12 @@ export const GanttRow: React.FC<GanttRowProps> = ({
   isHovered = false,
   onItemClick,
   onItemDoubleClick,
+  ariaProps,
 }) => {
   const yPosition = rowIndex * ROW_HEIGHT;
 
   return (
-    <g transform={`translate(0, ${yPosition})`}>
+    <g transform={`translate(0, ${yPosition})`} {...ariaProps}>
       {/* Sidebar - Task name */}
       <foreignObject x={0} y={0} width={SIDEBAR_WIDTH} height={ROW_HEIGHT}>
         <div

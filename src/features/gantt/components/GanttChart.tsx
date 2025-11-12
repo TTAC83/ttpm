@@ -3,14 +3,18 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { GanttTimeline } from './GanttTimeline';
-import { useGanttData } from '../hooks/useGanttData';
-import { GanttProjectType, GanttViewMode, GanttItem } from '../types/gantt.types';
-import { dateCalculationService } from '../services/dateCalculationService';
-import { DEFAULT_DAY_WIDTH, DEFAULT_ZOOM_LEVEL } from '../utils/ganttConstants';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+import { GanttTimeline } from './GanttTimeline';
+import { GanttControls } from './GanttControls';
+import { GanttExportDialog } from './GanttExportDialog';
+import { useGanttData } from '../hooks/useGanttData';
+import { useGanttExport } from '../hooks/useGanttExport';
+import { useGanttAccessibility } from '../hooks/useGanttAccessibility';
+import { GanttItem, GanttProjectType, GanttViewMode } from '../types/gantt.types';
+import { dateCalculationService } from '../services/dateCalculationService';
+import { DEFAULT_ZOOM_LEVEL, ZOOM_LEVELS } from '../utils/ganttConstants';
 import { AlertCircle } from 'lucide-react';
 
 interface GanttChartProps {
@@ -19,16 +23,59 @@ interface GanttChartProps {
 }
 
 export const GanttChart: React.FC<GanttChartProps> = ({ projectId, projectType }) => {
-  const [viewMode, setViewMode] = useState<GanttViewMode>('task');
+  const [viewMode, setViewMode] = useState<GanttViewMode>('step');
   const [showWorkingDaysOnly, setShowWorkingDaysOnly] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState(DEFAULT_ZOOM_LEVEL);
-  const [selectedItemId, setSelectedItemId] = useState<string | undefined>();
+  const [zoomLevel, setZoomLevel] = useState<typeof ZOOM_LEVELS[number]>(DEFAULT_ZOOM_LEVEL);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   // Fetch data
   const { data, isLoading, error } = useGanttData({ projectId, projectType });
 
-  // Calculate day width based on zoom
-  const dayWidth = DEFAULT_DAY_WIDTH * zoomLevel;
+  // Event handlers - defined early to avoid hoisting issues
+  const handleItemClick = (item: GanttItem) => {
+    setSelectedItemId(item.id);
+  };
+
+  const handleItemDoubleClick = (item: GanttItem) => {
+    // TODO: Open edit dialog
+    console.log('Double clicked:', item);
+  };
+
+  const handleZoomIn = () => {
+    const currentIndex = ZOOM_LEVELS.indexOf(zoomLevel);
+    if (currentIndex >= 0 && currentIndex < ZOOM_LEVELS.length - 1) {
+      setZoomLevel(ZOOM_LEVELS[currentIndex + 1]);
+    }
+  };
+
+  const handleZoomOut = () => {
+    const currentIndex = ZOOM_LEVELS.indexOf(zoomLevel);
+    if (currentIndex > 0) {
+      setZoomLevel(ZOOM_LEVELS[currentIndex - 1]);
+    }
+  };
+
+  // Export functionality
+  const { isExporting, executeExport, setSvgRef } = useGanttExport({
+    projectName: data?.projectName || 'Project',
+    customerName: data?.customerName || 'Customer',
+    items: data?.steps || [],
+    events: data?.events,
+  });
+
+  // Accessibility
+  const { getContainerProps, getItemProps } = useGanttAccessibility({
+    items: data?.steps || [],
+    selectedItemId,
+    onItemSelect: setSelectedItemId,
+    onItemActivate: handleItemDoubleClick,
+  });
+
+  // Calculate day width based on zoom level
+  const dayWidth = useMemo(() => {
+    return (zoomLevel / 100) * 20; // Base width of 20px at 100% zoom
+  }, [zoomLevel]);
 
   // Calculate timeline bounds
   const timelineBounds = useMemo(() => {
@@ -74,15 +121,6 @@ export const GanttChart: React.FC<GanttChartProps> = ({ projectId, projectType }
     }
   }, [data, viewMode]);
 
-  const handleItemClick = (item: GanttItem) => {
-    setSelectedItemId(item.id);
-  };
-
-  const handleItemDoubleClick = (item: GanttItem) => {
-    console.log('Double clicked item:', item);
-    // TODO: Open edit dialog
-  };
-
   if (isLoading) {
     return (
       <Card>
@@ -124,49 +162,46 @@ export const GanttChart: React.FC<GanttChartProps> = ({ projectId, projectType }
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>{data.projectName}</CardTitle>
-        <CardDescription>{data.customerName}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {/* TODO: Add GanttControls component here */}
-        <div className="mb-4 flex gap-2">
-          <button
-            onClick={() => setViewMode('step')}
-            className={`px-4 py-2 rounded ${viewMode === 'step' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
-          >
-            Steps
-          </button>
-          <button
-            onClick={() => setViewMode('task')}
-            className={`px-4 py-2 rounded ${viewMode === 'task' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
-          >
-            Tasks
-          </button>
-          <button
-            onClick={() => setShowWorkingDaysOnly(!showWorkingDaysOnly)}
-            className={`px-4 py-2 rounded ${showWorkingDaysOnly ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
-          >
-            Working Days Only
-          </button>
-        </div>
+    <>
+      <Card className="overflow-hidden" {...getContainerProps()}>
+        {/* Controls */}
+        <GanttControls
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          showWorkingDaysOnly={showWorkingDaysOnly}
+          onWorkingDaysToggle={setShowWorkingDaysOnly}
+          zoomLevel={zoomLevel}
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          onExportClick={() => setExportDialogOpen(true)}
+        />
 
-        <div style={{ height: '600px' }}>
+        {/* Timeline */}
+        {timelineBounds && (
           <GanttTimeline
             items={allItems}
             viewMode={viewMode}
-            showWorkingDaysOnly={showWorkingDaysOnly}
             dayWidth={dayWidth}
             timelineStart={timelineBounds.start}
             timelineEnd={timelineBounds.end}
             dateMarkers={dateMarkers}
+            showWorkingDaysOnly={showWorkingDaysOnly}
             selectedItemId={selectedItemId}
             onItemClick={handleItemClick}
             onItemDoubleClick={handleItemDoubleClick}
+            setSvgRef={setSvgRef}
+            getItemProps={getItemProps}
           />
-        </div>
-      </CardContent>
-    </Card>
+        )}
+      </Card>
+
+      {/* Export Dialog */}
+      <GanttExportDialog
+        open={exportDialogOpen}
+        onOpenChange={setExportDialogOpen}
+        onExport={executeExport}
+        isExporting={isExporting}
+      />
+    </>
   );
 };

@@ -650,33 +650,82 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
     setExportModalOpen(false);
 
     try {
-      // Target the entire card element instead of just the content
-      const element = document.querySelector('.gantt-print') as HTMLElement;
-      if (!element) {
-        throw new Error('Gantt chart element not found');
-      }
-
       toast({
         title: "Exporting...",
         description: "Generating high-quality PDF, please wait...",
       });
 
-      // Create high-quality canvas from the chart
-      const canvas = await html2canvas(element, {
-        useCORS: true,
-        allowTaint: true,
-        scale: 2,
-        scrollX: 0,
-        scrollY: 0,
-        width: element.scrollWidth,
-        height: element.scrollHeight,
-        windowWidth: element.scrollWidth,
-        windowHeight: element.scrollHeight,
-        backgroundColor: '#ffffff',
-        removeContainer: false,
-        foreignObjectRendering: false,
-        logging: false
-      });
+      let element = document.querySelector('.gantt-print') as HTMLElement;
+      if (!element) {
+        throw new Error('Gantt chart element not found');
+      }
+
+      let canvas: HTMLCanvasElement;
+
+      if (exportFormat === 'pdf-full') {
+        // Full timeline export - capture entire chart without scroll
+        const originalElement = element;
+        
+        // Create a hidden container for full rendering
+        const fullContainer = document.createElement('div');
+        fullContainer.style.position = 'absolute';
+        fullContainer.style.left = '-9999px';
+        fullContainer.style.top = '0';
+        fullContainer.style.overflow = 'visible';
+        fullContainer.style.width = 'max-content';
+        fullContainer.style.backgroundColor = '#ffffff';
+        document.body.appendChild(fullContainer);
+
+        // Clone the gantt content
+        const ganttContent = originalElement.cloneNode(true) as HTMLElement;
+        
+        // Remove scroll containers from clone
+        const scrollContainers = ganttContent.querySelectorAll('[style*="overflow"]');
+        scrollContainers.forEach(container => {
+          (container as HTMLElement).style.overflow = 'visible';
+          (container as HTMLElement).style.maxHeight = 'none';
+          (container as HTMLElement).style.height = 'auto';
+        });
+
+        fullContainer.appendChild(ganttContent);
+
+        // Wait for render
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        canvas = await html2canvas(ganttContent, {
+          useCORS: true,
+          allowTaint: true,
+          scale: 2,
+          scrollX: 0,
+          scrollY: 0,
+          backgroundColor: '#ffffff',
+          removeContainer: false,
+          foreignObjectRendering: false,
+          logging: false,
+          width: ganttContent.scrollWidth,
+          height: ganttContent.scrollHeight,
+        });
+
+        // Clean up
+        document.body.removeChild(fullContainer);
+      } else {
+        // Fit to page export - use existing visible area
+        canvas = await html2canvas(element, {
+          useCORS: true,
+          allowTaint: true,
+          scale: 2,
+          scrollX: 0,
+          scrollY: 0,
+          width: element.scrollWidth,
+          height: element.scrollHeight,
+          windowWidth: element.scrollWidth,
+          windowHeight: element.scrollHeight,
+          backgroundColor: '#ffffff',
+          removeContainer: false,
+          foreignObjectRendering: false,
+          logging: false
+        });
+      }
 
       // Use A3 landscape for better space utilization
       const pdf = new jsPDF({
@@ -705,7 +754,7 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
         finalWidth = availableHeight * canvasAspectRatio;
       }
 
-      if (exportType === 'single') {
+      if (exportFormat === 'pdf-fit') {
         // Single page with optimized sizing
         
         // Add professional header
@@ -774,7 +823,7 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
         }
         
       } else {
-        // Multi-page export with proper sectioning
+        // Multi-page export for full resolution
         const contentHeight = pdfHeight - headerHeight - (2 * margin);
         const totalPages = Math.ceil(finalHeight / contentHeight);
         
@@ -846,7 +895,7 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
 
       toast({
         title: "Success",
-        description: `High-quality PDF exported successfully (${exportType === 'single' ? '1 page' : 'multi-page'})`,
+        description: `High-quality PDF exported successfully`,
       });
     } catch (error) {
       console.error('Export error:', error);
@@ -857,6 +906,14 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
       });
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handleExport = () => {
+    if (exportFormat === 'excel') {
+      exportToExcel();
+    } else {
+      exportToPDF();
     }
   };
 

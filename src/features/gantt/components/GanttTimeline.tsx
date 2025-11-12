@@ -48,6 +48,7 @@ export const GanttTimeline: React.FC<GanttTimelineProps> = ({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const headerScrollRef = useRef<HTMLDivElement>(null);
   const timelineScrollRef = useRef<HTMLDivElement>(null);
+  const isSyncingScroll = useRef(false);
 
   // Sync header scroll with timeline scroll
   useEffect(() => {
@@ -57,11 +58,21 @@ export const GanttTimeline: React.FC<GanttTimelineProps> = ({
     if (!headerEl || !timelineEl) return;
 
     const syncFromTimeline = () => {
+      if (isSyncingScroll.current) return;
+      isSyncingScroll.current = true;
       headerEl.scrollLeft = timelineEl.scrollLeft;
+      requestAnimationFrame(() => {
+        isSyncingScroll.current = false;
+      });
     };
 
     const syncFromHeader = () => {
+      if (isSyncingScroll.current) return;
+      isSyncingScroll.current = true;
       timelineEl.scrollLeft = headerEl.scrollLeft;
+      requestAnimationFrame(() => {
+        isSyncingScroll.current = false;
+      });
     };
 
     timelineEl.addEventListener('scroll', syncFromTimeline);

@@ -99,8 +99,9 @@ export const GanttTimeline: React.FC<GanttTimelineProps> = ({
 
   return (
     <div className="relative w-full h-full flex flex-col border border-border rounded-lg overflow-hidden">
-      {/* Fixed task name header */}
+      {/* Fixed header row */}
       <div className="flex border-b border-border bg-background" style={{ height: HEADER_HEIGHT }}>
+        {/* Task name label */}
         <div 
           className="flex-shrink-0 flex items-center justify-center border-r border-border bg-muted"
           style={{ width: SIDEBAR_WIDTH }}
@@ -108,6 +109,55 @@ export const GanttTimeline: React.FC<GanttTimelineProps> = ({
           <span className="text-sm font-semibold">
             {viewMode === 'step' ? 'Steps' : 'Tasks'}
           </span>
+        </div>
+        
+        {/* Date headers */}
+        <div 
+          ref={headerScrollRef}
+          className="flex-1 overflow-x-auto overflow-y-hidden"
+        >
+          <svg width={timelineWidth} height={HEADER_HEIGHT}>
+            {dateMarkers.map((marker, index) => {
+              const markerWidth = index < dateMarkers.length - 1 
+                ? dateMarkers[index + 1].position - marker.position 
+                : dayWidth * 7;
+              
+              return (
+                <g key={index} transform={`translate(${marker.position}, 0)`}>
+                  {(marker.isWeekend || marker.isHoliday) && (
+                    <rect
+                      x={0}
+                      y={0}
+                      width={markerWidth}
+                      height={HEADER_HEIGHT}
+                      fill={marker.isHoliday ? 'hsl(var(--accent) / 0.2)' : GRID_WEEKEND_COLOR}
+                    />
+                  )}
+                  
+                  <text
+                    x={markerWidth / 2}
+                    y={HEADER_HEIGHT / 2}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fontSize={FONT_SIZE.small}
+                    fill="hsl(var(--muted-foreground))"
+                    fontWeight={marker.isToday ? 600 : 400}
+                  >
+                    {marker.label}
+                  </text>
+
+                  <line
+                    x1={0}
+                    y1={0}
+                    x2={0}
+                    y2={HEADER_HEIGHT}
+                    stroke={GRID_LINE_COLOR}
+                    strokeWidth={1}
+                  />
+                </g>
+              );
+            })}
+          </svg>
         </div>
       </div>
 
@@ -145,62 +195,7 @@ export const GanttTimeline: React.FC<GanttTimelineProps> = ({
         </div>
 
         {/* Scrollable timeline container */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Date headers - scrollable horizontally */}
-          <div 
-            ref={headerScrollRef}
-            className="overflow-x-auto overflow-y-hidden border-b border-border"
-            style={{ height: HEADER_HEIGHT }}
-          >
-            <svg width={timelineWidth} height={HEADER_HEIGHT}>
-              {dateMarkers.map((marker, index) => {
-                const markerWidth = index < dateMarkers.length - 1 
-                  ? dateMarkers[index + 1].position - marker.position 
-                  : dayWidth * 7;
-                
-                return (
-                  <g key={index} transform={`translate(${marker.position}, 0)`}>
-                    {(marker.isWeekend || marker.isHoliday) && (
-                      <rect
-                        x={0}
-                        y={0}
-                        width={markerWidth}
-                        height={HEADER_HEIGHT}
-                        fill={marker.isHoliday ? 'hsl(var(--accent) / 0.2)' : GRID_WEEKEND_COLOR}
-                      />
-                    )}
-                    
-                    <text
-                      x={markerWidth / 2}
-                      y={HEADER_HEIGHT / 2}
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      fontSize={FONT_SIZE.small}
-                      fill="hsl(var(--muted-foreground))"
-                      fontWeight={marker.isToday ? 600 : 400}
-                    >
-                      {marker.label}
-                    </text>
-
-                    <line
-                      x1={0}
-                      y1={0}
-                      x2={0}
-                      y2={HEADER_HEIGHT}
-                      stroke={GRID_LINE_COLOR}
-                      strokeWidth={1}
-                    />
-                  </g>
-                );
-              })}
-            </svg>
-          </div>
-
-          {/* Timeline content - scrollable */}
-          <div 
-            ref={timelineScrollRef}
-            className="flex-1 overflow-auto"
-          >
+        <div className="flex-1 overflow-auto" ref={timelineScrollRef}>
             <svg
               ref={setSvgRef}
               width={timelineWidth}
@@ -296,7 +291,6 @@ export const GanttTimeline: React.FC<GanttTimelineProps> = ({
                 );
               })}
             </svg>
-          </div>
         </div>
       </div>
     </div>

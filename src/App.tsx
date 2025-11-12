@@ -1,3 +1,9 @@
+// ========================================
+// RESTORE POINT - Before schema migration
+// Date: 2025-01-12
+// Purpose: Safe restore point before database schema redesign for project lifecycle transitions
+// ========================================
+
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";

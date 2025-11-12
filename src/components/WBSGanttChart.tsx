@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { BarChart } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import * as XLSX from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
 import { TaskEditDialog } from '@/components/TaskEditDialog';
 import { SubtaskEditSidebar } from '@/components/SubtaskEditSidebar';
@@ -55,7 +56,7 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
   const [zoomLevel, setZoomLevel] = useState(1);
   const [presentationMode, setPresentationMode] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
-  const [exportType, setExportType] = useState<'single' | 'multi'>('single');
+  const [exportFormat, setExportFormat] = useState<'pdf-full' | 'pdf-fit' | 'excel'>('pdf-full');
   const [isExporting, setIsExporting] = useState(false);
   const [collapsedItems, setCollapsedItems] = useState<CollapsibleState>({});
   const [expandAll, setExpandAll] = useState(false);
@@ -687,37 +688,188 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
     }
   };
 
+  // Excel Export functionality
+  const exportToExcel = () => {
+    setIsExporting(true);
+    setExportModalOpen(false);
+
+    try {
+      toast({
+        title: "Exporting...",
+        description: "Generating Excel file...",
+      });
+
+      // Prepare data for Excel
+      const excelData: any[] = [];
+      
+      stepGroups.forEach(step => {
+        // Add step row
+        excelData.push({
+          'Level': 'Step',
+          'Step Name': step.step_name,
+          'Task Title': '',
+          'Subtask Title': '',
+          'Start Date': step.planned_start ? formatDateUK(step.planned_start) : '',
+          'End Date': step.planned_end ? formatDateUK(step.planned_end) : '',
+          'Duration (Days)': step.planned_start && step.planned_end 
+            ? Math.ceil((new Date(step.planned_end).getTime() - new Date(step.planned_start).getTime()) / (1000 * 60 * 60 * 24)) + 1
+            : '',
+          'Status': '',
+          'Assignee': '',
+        });
+
+        // Add task rows
+        step.tasks.forEach(task => {
+          excelData.push({
+            'Level': 'Task',
+            'Step Name': step.step_name,
+            'Task Title': task.title,
+            'Subtask Title': '',
+            'Start Date': task.planned_start ? formatDateUK(task.planned_start) : '',
+            'End Date': task.planned_end ? formatDateUK(task.planned_end) : '',
+            'Duration (Days)': task.duration_days || '',
+            'Status': task.is_milestone ? 'Milestone' : '',
+            'Assignee': '',
+          });
+
+          // Add subtask rows
+          task.subtasks?.forEach(subtask => {
+            excelData.push({
+              'Level': 'Subtask',
+              'Step Name': step.step_name,
+              'Task Title': task.title,
+              'Subtask Title': subtask.title,
+              'Start Date': subtask.planned_start ? formatDateUK(subtask.planned_start) : '',
+              'End Date': subtask.planned_end ? formatDateUK(subtask.planned_end) : '',
+              'Duration (Days)': subtask.duration_days || '',
+              'Status': subtask.is_milestone ? 'Milestone' : '',
+              'Assignee': '',
+            });
+          });
+        });
+      });
+
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+
+      // Set column widths
+      ws['!cols'] = [
+        { wch: 10 },  // Level
+        { wch: 25 },  // Step Name
+        { wch: 30 },  // Task Title
+        { wch: 30 },  // Subtask Title
+        { wch: 12 },  // Start Date
+        { wch: 12 },  // End Date
+        { wch: 15 },  // Duration
+        { wch: 12 },  // Status
+        { wch: 20 },  // Assignee
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, 'WBS Gantt Data');
+      
+      // Generate filename
+      const filename = `wbs-gantt-data-${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, filename);
+
+      toast({
+        title: "Export Complete",
+        description: "Excel file has been downloaded successfully",
+      });
+    } catch (error) {
+      console.error('Excel export error:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to export Excel file. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   // PDF Export functionality
   const exportToPDF = async () => {
     setIsExporting(true);
     setExportModalOpen(false);
 
     try {
-      const element = document.querySelector('.wbs-gantt-print') as HTMLElement;
-      if (!element) {
-        throw new Error('Gantt chart element not found');
-      }
-
       toast({
         title: "Exporting...",
         description: "Generating high-quality PDF, please wait...",
       });
 
-      const canvas = await html2canvas(element, {
-        useCORS: true,
-        allowTaint: true,
-        scale: 2,
-        scrollX: 0,
-        scrollY: 0,
-        width: element.scrollWidth,
-        height: element.scrollHeight,
-        windowWidth: element.scrollWidth,
-        windowHeight: element.scrollHeight,
-        backgroundColor: '#ffffff',
-        removeContainer: false,
-        foreignObjectRendering: false,
-        logging: false
-      });
+      let element = document.querySelector('.wbs-gantt-print') as HTMLElement;
+      if (!element) {
+        throw new Error('Gantt chart element not found');
+      }
+
+      let canvas: HTMLCanvasElement;
+
+      if (exportFormat === 'pdf-full') {
+        // Full timeline export - capture entire chart without scroll
+        const originalElement = element;
+        
+        // Create a hidden container for full rendering
+        const fullContainer = document.createElement('div');
+        fullContainer.style.position = 'absolute';
+        fullContainer.style.left = '-9999px';
+        fullContainer.style.top = '0';
+        fullContainer.style.overflow = 'visible';
+        fullContainer.style.width = 'max-content';
+        fullContainer.style.backgroundColor = '#ffffff';
+        document.body.appendChild(fullContainer);
+
+        // Clone the gantt content
+        const ganttContent = originalElement.cloneNode(true) as HTMLElement;
+        
+        // Remove scroll containers from clone
+        const scrollContainers = ganttContent.querySelectorAll('[style*="overflow"]');
+        scrollContainers.forEach(container => {
+          (container as HTMLElement).style.overflow = 'visible';
+          (container as HTMLElement).style.maxHeight = 'none';
+          (container as HTMLElement).style.height = 'auto';
+        });
+
+        fullContainer.appendChild(ganttContent);
+
+        // Wait for render
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        canvas = await html2canvas(ganttContent, {
+          useCORS: true,
+          allowTaint: true,
+          scale: 2,
+          scrollX: 0,
+          scrollY: 0,
+          backgroundColor: '#ffffff',
+          removeContainer: false,
+          foreignObjectRendering: false,
+          logging: false,
+          width: ganttContent.scrollWidth,
+          height: ganttContent.scrollHeight,
+        });
+
+        // Clean up
+        document.body.removeChild(fullContainer);
+      } else {
+        // Fit to page export - use existing visible area
+        canvas = await html2canvas(element, {
+          useCORS: true,
+          allowTaint: true,
+          scale: 2,
+          scrollX: 0,
+          scrollY: 0,
+          width: element.scrollWidth,
+          height: element.scrollHeight,
+          windowWidth: element.scrollWidth,
+          windowHeight: element.scrollHeight,
+          backgroundColor: '#ffffff',
+          removeContainer: false,
+          foreignObjectRendering: false,
+          logging: false
+        });
+      }
 
       const pdf = new jsPDF({
         orientation: 'landscape',
@@ -729,7 +881,7 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
       const pageHeight = pdf.internal.pageSize.getHeight();
       const margin = 10;
 
-      if (exportType === 'single') {
+      if (exportFormat === 'pdf-fit') {
         // Single page export - scale to fit
         const imgWidth = pageWidth - 2 * margin;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
@@ -810,6 +962,14 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
       });
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handleExport = () => {
+    if (exportFormat === 'excel') {
+      exportToExcel();
+    } else {
+      exportToPDF();
     }
   };
 
@@ -912,35 +1072,70 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="export-type">Export Type</Label>
-                    <div className="flex gap-4">
-                      <label className="flex items-center space-x-2">
+                  <div className="space-y-3">
+                    <Label htmlFor="export-format">Export Format</Label>
+                    <div className="space-y-3">
+                      <label className="flex items-start space-x-3 cursor-pointer p-3 rounded-lg border hover:bg-accent/50 transition-colors">
                         <input
                           type="radio"
-                          value="single"
-                          checked={exportType === 'single'}
-                          onChange={(e) => setExportType(e.target.value as 'single' | 'multi')}
+                          name="export-format"
+                          value="pdf-full"
+                          checked={exportFormat === 'pdf-full'}
+                          onChange={(e) => setExportFormat(e.target.value as 'pdf-full' | 'pdf-fit' | 'excel')}
+                          className="mt-1"
                         />
-                        <span>Single page (scaled to fit)</span>
+                        <div className="flex-1">
+                          <div className="font-medium">PDF - Full Timeline</div>
+                          <div className="text-sm text-muted-foreground">Complete Gantt chart with all tasks/steps visible. Multi-page if needed.</div>
+                        </div>
                       </label>
-                      <label className="flex items-center space-x-2">
+                      
+                      <label className="flex items-start space-x-3 cursor-pointer p-3 rounded-lg border hover:bg-accent/50 transition-colors">
                         <input
                           type="radio"
-                          value="multi"
-                          checked={exportType === 'multi'}
-                          onChange={(e) => setExportType(e.target.value as 'single' | 'multi')}
+                          name="export-format"
+                          value="pdf-fit"
+                          checked={exportFormat === 'pdf-fit'}
+                          onChange={(e) => setExportFormat(e.target.value as 'pdf-full' | 'pdf-fit' | 'excel')}
+                          className="mt-1"
                         />
-                        <span>Multi-page (full resolution)</span>
+                        <div className="flex-1">
+                          <div className="font-medium">PDF - Fit to Page</div>
+                          <div className="text-sm text-muted-foreground">Quick overview scaled to fit a single page. Best for presentations.</div>
+                        </div>
+                      </label>
+                      
+                      <label className="flex items-start space-x-3 cursor-pointer p-3 rounded-lg border hover:bg-accent/50 transition-colors">
+                        <input
+                          type="radio"
+                          name="export-format"
+                          value="excel"
+                          checked={exportFormat === 'excel'}
+                          onChange={(e) => setExportFormat(e.target.value as 'pdf-full' | 'pdf-fit' | 'excel')}
+                          className="mt-1"
+                        />
+                        <div className="flex-1">
+                          <div className="font-medium">Excel - Data Export</div>
+                          <div className="text-sm text-muted-foreground">Structured data table with all steps, tasks, and dates. Perfect for analysis.</div>
+                        </div>
                       </label>
                     </div>
                   </div>
+                  
+                  {exportFormat === 'pdf-full' && (
+                    <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                      <p className="text-sm text-amber-800 dark:text-amber-200">
+                        ⚠️ Large projects may take longer to export and could use significant memory.
+                      </p>
+                    </div>
+                  )}
+                  
                   <div className="flex justify-end gap-2">
                     <Button variant="outline" onClick={() => setExportModalOpen(false)}>
                       Cancel
                     </Button>
-                    <Button onClick={exportToPDF} disabled={isExporting}>
-                      {isExporting ? 'Exporting...' : 'Export PDF'}
+                    <Button onClick={handleExport} disabled={isExporting}>
+                      {isExporting ? 'Exporting...' : exportFormat === 'excel' ? 'Export Excel' : 'Export PDF'}
                     </Button>
                   </div>
                 </div>

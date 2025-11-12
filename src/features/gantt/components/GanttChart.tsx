@@ -16,7 +16,7 @@ import { useGanttAccessibility } from '../hooks/useGanttAccessibility';
 import { useDragAndDrop } from '../hooks/useDragAndDrop';
 import { GanttItem, GanttProjectType, GanttViewMode } from '../types/gantt.types';
 import { dateCalculationService } from '../services/dateCalculationService';
-import { DEFAULT_ZOOM_LEVEL, ZOOM_LEVELS } from '../utils/ganttConstants';
+import { DEFAULT_ZOOM_LEVEL, DEFAULT_DAY_WIDTH, ZOOM_LEVELS } from '../utils/ganttConstants';
 import { AlertCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -204,9 +204,9 @@ export const GanttChart: React.FC<GanttChartProps> = ({ projectId, projectType }
     }
   }, [data, viewMode]);
 
-  // Calculate day width based on zoom level
+  // Calculate day width based on zoom level (multiplier: 0.5x to 2x)
   const dayWidth = useMemo(() => {
-    return (zoomLevel / 100) * 20; // Base width of 20px at 100% zoom
+    return zoomLevel * DEFAULT_DAY_WIDTH; // e.g., 1 * 30 = 30px
   }, [zoomLevel]);
 
   // Calculate timeline bounds

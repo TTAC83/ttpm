@@ -115,7 +115,7 @@ export const GanttControls: React.FC<GanttControlsProps> = ({
           )}
         </div>
         <span className="text-sm text-muted-foreground">
-          {zoomLevel}%
+          {Math.round(zoomLevel * 100)}%
         </span>
       </div>
 

@@ -57,6 +57,7 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
   const [presentationMode, setPresentationMode] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [exportFormat, setExportFormat] = useState<'pdf-full' | 'pdf-fit' | 'excel'>('pdf-full');
+  const [exportDetailLevel, setExportDetailLevel] = useState<'steps' | 'tasks'>('tasks');
   const [isExporting, setIsExporting] = useState(false);
   const [collapsedItems, setCollapsedItems] = useState<CollapsibleState>({});
   const [expandAll, setExpandAll] = useState(false);
@@ -795,7 +796,8 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
 
     // For full export, temporarily expand all items to capture complete data
     const originalCollapsedState = { ...collapsedItems };
-    const needsExpansion = exportFormat === 'pdf-full';
+    const needsExpansion = exportFormat === 'pdf-full' && exportDetailLevel === 'tasks';
+    const needsCollapseForStepsOnly = exportFormat !== 'excel' && exportDetailLevel === 'steps';
     
     if (needsExpansion) {
       // Expand all items
@@ -811,6 +813,15 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
       });
       setCollapsedItems(newState);
       // Wait for React to re-render with all items expanded
+      await new Promise(resolve => setTimeout(resolve, 300));
+    } else if (needsCollapseForStepsOnly) {
+      // Collapse all tasks to show only steps
+      const newState: CollapsibleState = {};
+      stepGroups.forEach(step => {
+        newState[step.id] = false; // Collapse all steps
+      });
+      setCollapsedItems(newState);
+      // Wait for React to re-render with only steps visible
       await new Promise(resolve => setTimeout(resolve, 300));
     }
 
@@ -989,7 +1000,7 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
       });
     } finally {
       // Restore original collapsed state if it was changed
-      if (needsExpansion) {
+      if (needsExpansion || needsCollapseForStepsOnly) {
         setCollapsedItems(originalCollapsedState);
       }
       setIsExporting(false);
@@ -1152,6 +1163,43 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
                       </label>
                     </div>
                   </div>
+                  
+                  {exportFormat !== 'excel' && (
+                    <div className="space-y-3">
+                      <Label>Detail Level</Label>
+                      <div className="space-y-3">
+                        <label className="flex items-start space-x-3 cursor-pointer p-3 rounded-lg border hover:bg-accent/50 transition-colors">
+                          <input
+                            type="radio"
+                            name="export-detail"
+                            value="steps"
+                            checked={exportDetailLevel === 'steps'}
+                            onChange={(e) => setExportDetailLevel(e.target.value as 'steps' | 'tasks')}
+                            className="mt-1"
+                          />
+                          <div className="flex-1">
+                            <div className="font-medium">Steps Only</div>
+                            <div className="text-sm text-muted-foreground">High-level view showing only steps. Ideal for executive summaries.</div>
+                          </div>
+                        </label>
+                        
+                        <label className="flex items-start space-x-3 cursor-pointer p-3 rounded-lg border hover:bg-accent/50 transition-colors">
+                          <input
+                            type="radio"
+                            name="export-detail"
+                            value="tasks"
+                            checked={exportDetailLevel === 'tasks'}
+                            onChange={(e) => setExportDetailLevel(e.target.value as 'steps' | 'tasks')}
+                            className="mt-1"
+                          />
+                          <div className="flex-1">
+                            <div className="font-medium">Steps with Tasks</div>
+                            <div className="text-sm text-muted-foreground">Detailed view including all tasks and subtasks. Shows complete project breakdown.</div>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+                  )}
                   
                   {exportFormat === 'pdf-full' && (
                     <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">

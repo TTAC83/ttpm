@@ -83,6 +83,7 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
   const [project, setProject] = useState<any>(null);
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [exportFormat, setExportFormat] = useState<'pdf-full' | 'pdf-fit' | 'excel'>('pdf-full');
+  const [exportDetailLevel, setExportDetailLevel] = useState<'steps' | 'tasks'>('tasks');
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
@@ -651,11 +652,16 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
 
     // For full export, temporarily switch to task view to capture all data
     const originalViewMode = viewMode;
-    const needsViewModeChange = exportFormat === 'pdf-full' && viewMode === 'step';
+    const needsViewModeChange = exportFormat === 'pdf-full' && exportDetailLevel === 'tasks' && viewMode === 'step';
+    const needsStepViewForExport = exportFormat !== 'excel' && exportDetailLevel === 'steps' && viewMode === 'task';
     
     if (needsViewModeChange) {
       setViewMode('task');
       // Wait for React to re-render with all tasks visible
+      await new Promise(resolve => setTimeout(resolve, 200));
+    } else if (needsStepViewForExport) {
+      setViewMode('step');
+      // Wait for React to re-render to show only steps
       await new Promise(resolve => setTimeout(resolve, 200));
     }
 
@@ -922,7 +928,7 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
       });
     } finally {
       // Restore original view mode if it was changed
-      if (needsViewModeChange) {
+      if (needsViewModeChange || needsStepViewForExport) {
         setViewMode(originalViewMode);
       }
       setIsExporting(false);
@@ -1194,6 +1200,43 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
                             </label>
                           </div>
                         </div>
+                        
+                        {exportFormat !== 'excel' && (
+                          <div className="space-y-3">
+                            <Label>Detail Level</Label>
+                            <div className="space-y-3">
+                              <label className="flex items-start space-x-3 cursor-pointer p-3 rounded-lg border hover:bg-accent/50 transition-colors">
+                                <input
+                                  type="radio"
+                                  name="export-detail"
+                                  value="steps"
+                                  checked={exportDetailLevel === 'steps'}
+                                  onChange={(e) => setExportDetailLevel(e.target.value as 'steps' | 'tasks')}
+                                  className="mt-1"
+                                />
+                                <div className="flex-1">
+                                  <div className="font-medium">Steps Only</div>
+                                  <div className="text-sm text-muted-foreground">High-level view showing only steps. Ideal for executive summaries.</div>
+                                </div>
+                              </label>
+                              
+                              <label className="flex items-start space-x-3 cursor-pointer p-3 rounded-lg border hover:bg-accent/50 transition-colors">
+                                <input
+                                  type="radio"
+                                  name="export-detail"
+                                  value="tasks"
+                                  checked={exportDetailLevel === 'tasks'}
+                                  onChange={(e) => setExportDetailLevel(e.target.value as 'steps' | 'tasks')}
+                                  className="mt-1"
+                                />
+                                <div className="flex-1">
+                                  <div className="font-medium">Steps with Tasks</div>
+                                  <div className="text-sm text-muted-foreground">Detailed view including all tasks. Shows complete project breakdown.</div>
+                                </div>
+                              </label>
+                            </div>
+                          </div>
+                        )}
                         
                         {exportFormat === 'pdf-full' && (
                           <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">

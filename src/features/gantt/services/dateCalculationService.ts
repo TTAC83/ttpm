@@ -63,8 +63,8 @@ export function generateDateMarkers(
   dayWidth: number,
   zoomLevel: number = 1
 ): DateMarker[] {
-  // Switch to week view when zoomed out (below 100%)
-  const useWeekView = zoomLevel < 1;
+  // Switch to week view when zoomed out (125% and below)
+  const useWeekView = zoomLevel <= 1.25;
   
   if (useWeekView) {
     return generateWeekMarkers(start, end, dayWidth);

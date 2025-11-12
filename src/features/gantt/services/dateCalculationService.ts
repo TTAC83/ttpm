@@ -54,13 +54,22 @@ export function getLatestDate(dates: (Date | null)[]): Date | null {
 
 /**
  * Generate date markers for the timeline axis
+ * Automatically switches between day and week view based on zoom level
  */
 export function generateDateMarkers(
   start: Date,
   end: Date,
   showWorkingDaysOnly: boolean,
-  dayWidth: number
+  dayWidth: number,
+  zoomLevel: number = 1
 ): DateMarker[] {
+  // Switch to week view when zoomed out (below 100%)
+  const useWeekView = zoomLevel < 1;
+  
+  if (useWeekView) {
+    return generateWeekMarkers(start, end, dayWidth);
+  }
+  
   const allDates = eachDayOfInterval({ start, end });
   
   // Filter to working days if requested
@@ -76,6 +85,53 @@ export function generateDateMarkers(
     isWeekend: !workingCalendarService.isWorkingDay(date),
     isHoliday: workingCalendarService.isHoliday(date),
   }));
+}
+
+/**
+ * Generate week markers for zoomed-out view
+ */
+function generateWeekMarkers(
+  start: Date,
+  end: Date,
+  dayWidth: number
+): DateMarker[] {
+  const allDates = eachDayOfInterval({ start, end });
+  const markers: DateMarker[] = [];
+  let weekStart = start;
+  let weekIndex = 0;
+  
+  for (let i = 0; i < allDates.length; i++) {
+    const currentDate = allDates[i];
+    const dayOfWeek = currentDate.getDay();
+    
+    // Start of week (Monday) or first day
+    if (dayOfWeek === 1 || i === 0) {
+      weekStart = currentDate;
+    }
+    
+    // End of week (Sunday) or last day
+    if (dayOfWeek === 0 || i === allDates.length - 1) {
+      const weekEnd = currentDate;
+      const position = differenceInDays(startOfDay(weekStart), startOfDay(start)) * dayWidth;
+      
+      // Check if this week contains today
+      const today = new Date();
+      const containsToday = weekStart <= today && today <= weekEnd;
+      
+      markers.push({
+        date: weekStart,
+        position,
+        label: `${format(weekStart, 'dd MMM')} - ${format(weekEnd, 'dd MMM')}`,
+        isToday: containsToday,
+        isWeekend: false,
+        isHoliday: false,
+      });
+      
+      weekIndex++;
+    }
+  }
+  
+  return markers;
 }
 
 /**

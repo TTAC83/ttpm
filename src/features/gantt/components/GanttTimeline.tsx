@@ -73,7 +73,7 @@ export const GanttTimeline: React.FC<GanttTimelineProps> = ({
 
   return (
     <div className="relative w-full h-full overflow-hidden border border-border rounded-lg">
-      {/* Date axis header */}
+          {/* Date axis header */}
       <div className="sticky top-0 z-10 bg-background border-b border-border" style={{ height: HEADER_HEIGHT }}>
         <svg width="100%" height={HEADER_HEIGHT}>
           {/* Sidebar header */}
@@ -92,43 +92,49 @@ export const GanttTimeline: React.FC<GanttTimelineProps> = ({
 
           {/* Date markers */}
           <g transform={`translate(${SIDEBAR_WIDTH}, 0)`}>
-            {dateMarkers.map((marker, index) => (
-              <g key={index} transform={`translate(${marker.position}, 0)`}>
-                {/* Weekend/holiday background */}
-                {(marker.isWeekend || marker.isHoliday) && (
-                  <rect
-                    x={0}
-                    y={0}
-                    width={dayWidth}
-                    height={HEADER_HEIGHT}
-                    fill={marker.isHoliday ? 'hsl(var(--accent) / 0.2)' : GRID_WEEKEND_COLOR}
-                  />
-                )}
-                
-                {/* Date label */}
-                <text
-                  x={dayWidth / 2}
-                  y={HEADER_HEIGHT / 2}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fontSize={FONT_SIZE.small}
-                  fill="hsl(var(--muted-foreground))"
-                  fontWeight={marker.isToday ? 600 : 400}
-                >
-                  {marker.label}
-                </text>
+            {dateMarkers.map((marker, index) => {
+              const markerWidth = index < dateMarkers.length - 1 
+                ? dateMarkers[index + 1].position - marker.position 
+                : dayWidth * 7; // Default to week width for last marker
+              
+              return (
+                <g key={index} transform={`translate(${marker.position}, 0)`}>
+                  {/* Weekend/holiday background */}
+                  {(marker.isWeekend || marker.isHoliday) && (
+                    <rect
+                      x={0}
+                      y={0}
+                      width={markerWidth}
+                      height={HEADER_HEIGHT}
+                      fill={marker.isHoliday ? 'hsl(var(--accent) / 0.2)' : GRID_WEEKEND_COLOR}
+                    />
+                  )}
+                  
+                  {/* Date label */}
+                  <text
+                    x={markerWidth / 2}
+                    y={HEADER_HEIGHT / 2}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fontSize={FONT_SIZE.small}
+                    fill="hsl(var(--muted-foreground))"
+                    fontWeight={marker.isToday ? 600 : 400}
+                  >
+                    {marker.label}
+                  </text>
 
-                {/* Grid line */}
-                <line
-                  x1={0}
-                  y1={0}
-                  x2={0}
-                  y2={HEADER_HEIGHT}
-                  stroke={GRID_LINE_COLOR}
-                  strokeWidth={1}
-                />
-              </g>
-            ))}
+                  {/* Grid line */}
+                  <line
+                    x1={0}
+                    y1={0}
+                    x2={0}
+                    y2={HEADER_HEIGHT}
+                    stroke={GRID_LINE_COLOR}
+                    strokeWidth={1}
+                  />
+                </g>
+              );
+            })}
           </g>
         </svg>
       </div>
@@ -149,43 +155,49 @@ export const GanttTimeline: React.FC<GanttTimelineProps> = ({
         >
           {/* Grid background */}
           <g transform={`translate(${SIDEBAR_WIDTH}, 0)`}>
-            {dateMarkers.map((marker, index) => (
-              <g key={`grid-${index}`}>
-                {/* Weekend/holiday column background */}
-                {(marker.isWeekend || marker.isHoliday) && (
-                  <rect
-                    x={marker.position}
-                    y={0}
-                    width={dayWidth}
-                    height={totalHeight}
-                    fill={marker.isHoliday ? 'hsl(var(--accent) / 0.1)' : GRID_WEEKEND_COLOR}
-                  />
-                )}
+            {dateMarkers.map((marker, index) => {
+              const markerWidth = index < dateMarkers.length - 1 
+                ? dateMarkers[index + 1].position - marker.position 
+                : dayWidth * 7; // Default to week width
+              
+              return (
+                <g key={`grid-${index}`}>
+                  {/* Weekend/holiday column background */}
+                  {(marker.isWeekend || marker.isHoliday) && (
+                    <rect
+                      x={marker.position}
+                      y={0}
+                      width={markerWidth}
+                      height={totalHeight}
+                      fill={marker.isHoliday ? 'hsl(var(--accent) / 0.1)' : GRID_WEEKEND_COLOR}
+                    />
+                  )}
 
-                {/* Vertical grid line */}
-                <line
-                  x1={marker.position}
-                  y1={0}
-                  x2={marker.position}
-                  y2={totalHeight}
-                  stroke={GRID_LINE_COLOR}
-                  strokeWidth={1}
-                />
-
-                {/* Today line */}
-                {marker.isToday && (
+                  {/* Vertical grid line */}
                   <line
                     x1={marker.position}
                     y1={0}
                     x2={marker.position}
                     y2={totalHeight}
-                    stroke="hsl(var(--destructive))"
-                    strokeWidth={2}
-                    strokeDasharray="4 4"
+                    stroke={GRID_LINE_COLOR}
+                    strokeWidth={1}
                   />
-                )}
-              </g>
-            ))}
+
+                  {/* Today line */}
+                  {marker.isToday && (
+                    <line
+                      x1={marker.position}
+                      y1={0}
+                      x2={marker.position}
+                      y2={totalHeight}
+                      stroke="hsl(var(--destructive))"
+                      strokeWidth={2}
+                      strokeDasharray="4 4"
+                    />
+                  )}
+                </g>
+              );
+            })}
           </g>
 
           {/* Dependency lines */}

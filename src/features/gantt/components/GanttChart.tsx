@@ -217,7 +217,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({ projectId, projectType }
     return dateCalculationService.calculateTimelineBounds(allItems, data.events);
   }, [data]);
 
-  // Generate date markers
+  // Generate date markers with zoom-aware grouping
   const dateMarkers = useMemo(() => {
     if (!timelineBounds) return [];
     
@@ -225,9 +225,10 @@ export const GanttChart: React.FC<GanttChartProps> = ({ projectId, projectType }
       timelineBounds.start,
       timelineBounds.end,
       showWorkingDaysOnly,
-      dayWidth
+      dayWidth,
+      zoomLevel // Pass zoom level to switch between day/week view
     );
-  }, [timelineBounds, showWorkingDaysOnly, dayWidth]);
+  }, [timelineBounds, showWorkingDaysOnly, dayWidth, zoomLevel]);
 
   // Drag and drop
   const {

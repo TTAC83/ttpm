@@ -1072,35 +1072,70 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="export-type">Export Type</Label>
-                    <div className="flex gap-4">
-                      <label className="flex items-center space-x-2">
+                  <div className="space-y-3">
+                    <Label htmlFor="export-format">Export Format</Label>
+                    <div className="space-y-3">
+                      <label className="flex items-start space-x-3 cursor-pointer p-3 rounded-lg border hover:bg-accent/50 transition-colors">
                         <input
                           type="radio"
-                          value="single"
-                          checked={exportType === 'single'}
-                          onChange={(e) => setExportType(e.target.value as 'single' | 'multi')}
+                          name="export-format"
+                          value="pdf-full"
+                          checked={exportFormat === 'pdf-full'}
+                          onChange={(e) => setExportFormat(e.target.value as 'pdf-full' | 'pdf-fit' | 'excel')}
+                          className="mt-1"
                         />
-                        <span>Single page (scaled to fit)</span>
+                        <div className="flex-1">
+                          <div className="font-medium">PDF - Full Timeline</div>
+                          <div className="text-sm text-muted-foreground">Complete Gantt chart with all tasks/steps visible. Multi-page if needed.</div>
+                        </div>
                       </label>
-                      <label className="flex items-center space-x-2">
+                      
+                      <label className="flex items-start space-x-3 cursor-pointer p-3 rounded-lg border hover:bg-accent/50 transition-colors">
                         <input
                           type="radio"
-                          value="multi"
-                          checked={exportType === 'multi'}
-                          onChange={(e) => setExportType(e.target.value as 'single' | 'multi')}
+                          name="export-format"
+                          value="pdf-fit"
+                          checked={exportFormat === 'pdf-fit'}
+                          onChange={(e) => setExportFormat(e.target.value as 'pdf-full' | 'pdf-fit' | 'excel')}
+                          className="mt-1"
                         />
-                        <span>Multi-page (full resolution)</span>
+                        <div className="flex-1">
+                          <div className="font-medium">PDF - Fit to Page</div>
+                          <div className="text-sm text-muted-foreground">Quick overview scaled to fit a single page. Best for presentations.</div>
+                        </div>
+                      </label>
+                      
+                      <label className="flex items-start space-x-3 cursor-pointer p-3 rounded-lg border hover:bg-accent/50 transition-colors">
+                        <input
+                          type="radio"
+                          name="export-format"
+                          value="excel"
+                          checked={exportFormat === 'excel'}
+                          onChange={(e) => setExportFormat(e.target.value as 'pdf-full' | 'pdf-fit' | 'excel')}
+                          className="mt-1"
+                        />
+                        <div className="flex-1">
+                          <div className="font-medium">Excel - Data Export</div>
+                          <div className="text-sm text-muted-foreground">Structured data table with all steps, tasks, and dates. Perfect for analysis.</div>
+                        </div>
                       </label>
                     </div>
                   </div>
+                  
+                  {exportFormat === 'pdf-full' && (
+                    <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                      <p className="text-sm text-amber-800 dark:text-amber-200">
+                        ⚠️ Large projects may take longer to export and could use significant memory.
+                      </p>
+                    </div>
+                  )}
+                  
                   <div className="flex justify-end gap-2">
                     <Button variant="outline" onClick={() => setExportModalOpen(false)}>
                       Cancel
                     </Button>
-                    <Button onClick={exportToPDF} disabled={isExporting}>
-                      {isExporting ? 'Exporting...' : 'Export PDF'}
+                    <Button onClick={handleExport} disabled={isExporting}>
+                      {isExporting ? 'Exporting...' : exportFormat === 'excel' ? 'Export Excel' : 'Export PDF'}
                     </Button>
                   </div>
                 </div>

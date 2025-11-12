@@ -2,7 +2,7 @@
  * SVG timeline component with virtual scrolling
  */
 
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { GanttItem, GanttViewMode, DateMarker } from '../types/gantt.types';
 import { GanttBar } from './GanttBar';
@@ -46,6 +46,32 @@ export const GanttTimeline: React.FC<GanttTimelineProps> = ({
   getItemProps,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const headerScrollRef = useRef<HTMLDivElement>(null);
+  const timelineScrollRef = useRef<HTMLDivElement>(null);
+
+  // Sync header scroll with timeline scroll
+  useEffect(() => {
+    const headerEl = headerScrollRef.current;
+    const timelineEl = timelineScrollRef.current;
+    
+    if (!headerEl || !timelineEl) return;
+
+    const syncFromTimeline = () => {
+      headerEl.scrollLeft = timelineEl.scrollLeft;
+    };
+
+    const syncFromHeader = () => {
+      timelineEl.scrollLeft = headerEl.scrollLeft;
+    };
+
+    timelineEl.addEventListener('scroll', syncFromTimeline);
+    headerEl.addEventListener('scroll', syncFromHeader);
+
+    return () => {
+      timelineEl.removeEventListener('scroll', syncFromTimeline);
+      headerEl.removeEventListener('scroll', syncFromHeader);
+    };
+  }, []);
 
   // Filter items based on view mode
   const visibleItems = useMemo(() => {
@@ -71,81 +97,23 @@ export const GanttTimeline: React.FC<GanttTimelineProps> = ({
 
   const totalHeight = visibleItems.length * ROW_HEIGHT;
 
-  // Sync header scroll with content scroll
-  const handleTimelineScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const headerScroll = e.currentTarget.parentElement?.querySelector('.gantt-header-scroll') as HTMLDivElement;
-    if (headerScroll) {
-      headerScroll.scrollLeft = e.currentTarget.scrollLeft;
-    }
-  };
-
   return (
     <div className="relative w-full h-full flex flex-col border border-border rounded-lg overflow-hidden">
-      {/* Header row */}
+      {/* Fixed task name header */}
       <div className="flex border-b border-border bg-background" style={{ height: HEADER_HEIGHT }}>
-        {/* Fixed sidebar header */}
         <div 
           className="flex-shrink-0 flex items-center justify-center border-r border-border bg-muted"
-          style={{ width: SIDEBAR_WIDTH, height: HEADER_HEIGHT }}
+          style={{ width: SIDEBAR_WIDTH }}
         >
           <span className="text-sm font-semibold">
             {viewMode === 'step' ? 'Steps' : 'Tasks'}
           </span>
         </div>
-
-        {/* Scrollable date headers */}
-        <div className="flex-1 overflow-x-auto overflow-y-hidden gantt-header-scroll" style={{ height: HEADER_HEIGHT }}>
-          <svg width={timelineWidth} height={HEADER_HEIGHT}>
-            {dateMarkers.map((marker, index) => {
-              const markerWidth = index < dateMarkers.length - 1 
-                ? dateMarkers[index + 1].position - marker.position 
-                : dayWidth * 7;
-              
-              return (
-                <g key={index} transform={`translate(${marker.position}, 0)`}>
-                  {/* Weekend/holiday background */}
-                  {(marker.isWeekend || marker.isHoliday) && (
-                    <rect
-                      x={0}
-                      y={0}
-                      width={markerWidth}
-                      height={HEADER_HEIGHT}
-                      fill={marker.isHoliday ? 'hsl(var(--accent) / 0.2)' : GRID_WEEKEND_COLOR}
-                    />
-                  )}
-                  
-                  {/* Date label */}
-                  <text
-                    x={markerWidth / 2}
-                    y={HEADER_HEIGHT / 2}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    fontSize={FONT_SIZE.small}
-                    fill="hsl(var(--muted-foreground))"
-                    fontWeight={marker.isToday ? 600 : 400}
-                  >
-                    {marker.label}
-                  </text>
-
-                  {/* Grid line */}
-                  <line
-                    x1={0}
-                    y1={0}
-                    x2={0}
-                    y2={HEADER_HEIGHT}
-                    stroke={GRID_LINE_COLOR}
-                    strokeWidth={1}
-                  />
-                </g>
-              );
-            })}
-          </svg>
-        </div>
       </div>
 
-      {/* Content row - scrollable timeline */}
+      {/* Content area */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Fixed sidebar for task names */}
+        {/* Fixed task names sidebar */}
         <div 
           className="flex-shrink-0 overflow-y-auto border-r border-border bg-background"
           style={{ width: SIDEBAR_WIDTH }}
@@ -176,110 +144,159 @@ export const GanttTimeline: React.FC<GanttTimelineProps> = ({
           })}
         </div>
 
-        {/* Scrollable timeline area */}
-        <div 
-          className="flex-1 overflow-auto"
-          style={{ height: '100%' }}
-          onScroll={handleTimelineScroll}
-        >
-          <svg
-            ref={setSvgRef}
-            width={timelineWidth}
-            height={totalHeight}
-            className="block"
-            role="img"
-            aria-label="Gantt chart timeline"
+        {/* Scrollable timeline container */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Date headers - scrollable horizontally */}
+          <div 
+            ref={headerScrollRef}
+            className="overflow-x-auto overflow-y-hidden border-b border-border"
+            style={{ height: HEADER_HEIGHT }}
           >
-            {/* Grid background */}
-            {dateMarkers.map((marker, index) => {
-              const markerWidth = index < dateMarkers.length - 1 
-                ? dateMarkers[index + 1].position - marker.position 
-                : dayWidth * 7;
-              
-              return (
-                <g key={`grid-${index}`}>
-                  {/* Weekend/holiday column background */}
-                  {(marker.isWeekend || marker.isHoliday) && (
-                    <rect
-                      x={marker.position}
-                      y={0}
-                      width={markerWidth}
-                      height={totalHeight}
-                      fill={marker.isHoliday ? 'hsl(var(--accent) / 0.1)' : GRID_WEEKEND_COLOR}
+            <svg width={timelineWidth} height={HEADER_HEIGHT}>
+              {dateMarkers.map((marker, index) => {
+                const markerWidth = index < dateMarkers.length - 1 
+                  ? dateMarkers[index + 1].position - marker.position 
+                  : dayWidth * 7;
+                
+                return (
+                  <g key={index} transform={`translate(${marker.position}, 0)`}>
+                    {(marker.isWeekend || marker.isHoliday) && (
+                      <rect
+                        x={0}
+                        y={0}
+                        width={markerWidth}
+                        height={HEADER_HEIGHT}
+                        fill={marker.isHoliday ? 'hsl(var(--accent) / 0.2)' : GRID_WEEKEND_COLOR}
+                      />
+                    )}
+                    
+                    <text
+                      x={markerWidth / 2}
+                      y={HEADER_HEIGHT / 2}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fontSize={FONT_SIZE.small}
+                      fill="hsl(var(--muted-foreground))"
+                      fontWeight={marker.isToday ? 600 : 400}
+                    >
+                      {marker.label}
+                    </text>
+
+                    <line
+                      x1={0}
+                      y1={0}
+                      x2={0}
+                      y2={HEADER_HEIGHT}
+                      stroke={GRID_LINE_COLOR}
+                      strokeWidth={1}
                     />
-                  )}
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
 
-                  {/* Vertical grid line */}
-                  <line
-                    x1={marker.position}
-                    y1={0}
-                    x2={marker.position}
-                    y2={totalHeight}
-                    stroke={GRID_LINE_COLOR}
-                    strokeWidth={1}
-                  />
+          {/* Timeline content - scrollable */}
+          <div 
+            ref={timelineScrollRef}
+            className="flex-1 overflow-auto"
+          >
+            <svg
+              ref={setSvgRef}
+              width={timelineWidth}
+              height={totalHeight}
+              className="block"
+              role="img"
+              aria-label="Gantt chart timeline"
+            >
+              {/* Grid background */}
+              {dateMarkers.map((marker, index) => {
+                const markerWidth = index < dateMarkers.length - 1 
+                  ? dateMarkers[index + 1].position - marker.position 
+                  : dayWidth * 7;
+                
+                return (
+                  <g key={`grid-${index}`}>
+                    {(marker.isWeekend || marker.isHoliday) && (
+                      <rect
+                        x={marker.position}
+                        y={0}
+                        width={markerWidth}
+                        height={totalHeight}
+                        fill={marker.isHoliday ? 'hsl(var(--accent) / 0.1)' : GRID_WEEKEND_COLOR}
+                      />
+                    )}
 
-                  {/* Today line */}
-                  {marker.isToday && (
                     <line
                       x1={marker.position}
                       y1={0}
                       x2={marker.position}
                       y2={totalHeight}
-                      stroke="hsl(var(--destructive))"
-                      strokeWidth={2}
-                      strokeDasharray="4 4"
+                      stroke={GRID_LINE_COLOR}
+                      strokeWidth={1}
                     />
-                  )}
-                </g>
-              );
-            })}
 
-            {/* Dependency lines */}
-            {showDependencies && (
-              <GanttDependencyLines
-                items={visibleItems}
-                timelineStart={timelineStart}
-                showWorkingDaysOnly={showWorkingDaysOnly}
-                dayWidth={dayWidth}
-              />
-            )}
+                    {marker.isToday && (
+                      <line
+                        x1={marker.position}
+                        y1={0}
+                        x2={marker.position}
+                        y2={totalHeight}
+                        stroke="hsl(var(--destructive))"
+                        strokeWidth={2}
+                        strokeDasharray="4 4"
+                      />
+                    )}
+                  </g>
+                );
+              })}
 
-            {/* Task bars */}
-            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-              const item = visibleItems[virtualRow.index];
-              
-              const barX = item.plannedStart
-                ? dateCalculationService.getDatePosition(item.plannedStart, timelineStart, showWorkingDaysOnly, dayWidth)
-                : 0;
-              
-              const barWidth = item.plannedStart && item.plannedEnd
-                ? dateCalculationService.getBarWidth(item.plannedStart, item.plannedEnd, showWorkingDaysOnly, dayWidth)
-                : dayWidth;
+              {/* Dependency lines */}
+              {showDependencies && (
+                <GanttDependencyLines
+                  items={visibleItems}
+                  timelineStart={timelineStart}
+                  showWorkingDaysOnly={showWorkingDaysOnly}
+                  dayWidth={dayWidth}
+                />
+              )}
 
-              return (
-                <g 
-                  key={virtualRow.key}
-                  transform={`translate(${barX}, ${virtualRow.index * ROW_HEIGHT})`}
-                >
-                  <GanttBar
-                    id={item.id}
-                    name={item.name}
-                    width={barWidth}
-                    status={item.status}
-                    plannedEnd={item.plannedEnd}
-                    actualEnd={item.actualEnd}
-                    isSelected={selectedItemId === item.id}
-                    isHovered={false}
-                    isDragging={draggedItemId === item.id}
-                    onClick={() => onItemClick?.(item)}
-                    onDoubleClick={() => onItemDoubleClick?.(item)}
-                    onDragStart={(event) => onDragStart?.(item, event)}
-                  />
-                </g>
-              );
-            })}
-          </svg>
+              {/* Task bars */}
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                const item = visibleItems[virtualRow.index];
+                
+                const barX = item.plannedStart
+                  ? dateCalculationService.getDatePosition(item.plannedStart, timelineStart, showWorkingDaysOnly, dayWidth)
+                  : 0;
+                
+                const barWidth = item.plannedStart && item.plannedEnd
+                  ? dateCalculationService.getBarWidth(item.plannedStart, item.plannedEnd, showWorkingDaysOnly, dayWidth)
+                  : dayWidth;
+
+                return (
+                  <g 
+                    key={virtualRow.key}
+                    transform={`translate(${barX}, ${virtualRow.index * ROW_HEIGHT})`}
+                  >
+                    <GanttBar
+                      id={item.id}
+                      name={item.name}
+                      width={barWidth}
+                      status={item.status}
+                      plannedEnd={item.plannedEnd}
+                      actualEnd={item.actualEnd}
+                      isSelected={selectedItemId === item.id}
+                      isHovered={false}
+                      isDragging={draggedItemId === item.id}
+                      onClick={() => onItemClick?.(item)}
+                      onDoubleClick={() => onItemDoubleClick?.(item)}
+                      onDragStart={(event) => onDragStart?.(item, event)}
+                    />
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
         </div>
       </div>
     </div>

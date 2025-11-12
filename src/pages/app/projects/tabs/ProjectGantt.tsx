@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from '@/components/ui/label';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import * as XLSX from 'xlsx';
 
 interface Task {
   id: string;
@@ -81,7 +82,7 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
   const [presentationMode, setPresentationMode] = useState(false);
   const [project, setProject] = useState<any>(null);
   const [exportModalOpen, setExportModalOpen] = useState(false);
-  const [exportType, setExportType] = useState<'single' | 'multi'>('single');
+  const [exportFormat, setExportFormat] = useState<'pdf-full' | 'pdf-fit' | 'excel'>('pdf-full');
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
@@ -509,6 +510,131 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
     setPresentationMode(!presentationMode);
   };
 
+  // Excel Export functionality
+  const exportToExcel = () => {
+    if (!project) {
+      toast({
+        title: "Error",
+        description: "Project details not available for export",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsExporting(true);
+    setExportModalOpen(false);
+
+    try {
+      toast({
+        title: "Exporting...",
+        description: "Generating Excel file...",
+      });
+
+      // Prepare data for Excel
+      const excelData: any[] = [];
+      
+      // Add events first
+      events.forEach(event => {
+        excelData.push({
+          'Type': 'Event',
+          'Step': '',
+          'Task/Event': event.title,
+          'Subtask': '',
+          'Start Date': formatDateUK(event.start_date),
+          'End Date': formatDateUK(event.end_date),
+          'Status': event.is_critical ? 'Critical' : 'Normal',
+          'Actual Start': '',
+          'Actual End': '',
+        });
+      });
+
+      // Add tasks and subtasks by step
+      const stepGroups = groupTasksByStep(tasks);
+      stepGroups.forEach(step => {
+        // Add step header
+        excelData.push({
+          'Type': 'Step',
+          'Step': step.step_name,
+          'Task/Event': '',
+          'Subtask': '',
+          'Start Date': step.planned_start ? formatDateUK(step.planned_start) : '',
+          'End Date': step.planned_end ? formatDateUK(step.planned_end) : '',
+          'Status': step.status,
+          'Actual Start': step.actual_start ? formatDateUK(step.actual_start) : '',
+          'Actual End': step.actual_end ? formatDateUK(step.actual_end) : '',
+        });
+
+        // Add tasks
+        step.tasks.forEach(task => {
+          excelData.push({
+            'Type': 'Task',
+            'Step': step.step_name,
+            'Task/Event': task.task_title,
+            'Subtask': '',
+            'Start Date': task.planned_start ? formatDateUK(task.planned_start) : '',
+            'End Date': task.planned_end ? formatDateUK(task.planned_end) : '',
+            'Status': task.status,
+            'Actual Start': task.actual_start ? formatDateUK(task.actual_start) : '',
+            'Actual End': task.actual_end ? formatDateUK(task.actual_end) : '',
+          });
+
+          // Add subtasks
+          const taskSubtasks = subtasks.filter(st => st.task_id === task.id);
+          taskSubtasks.forEach(subtask => {
+            excelData.push({
+              'Type': 'Subtask',
+              'Step': step.step_name,
+              'Task/Event': task.task_title,
+              'Subtask': subtask.title,
+              'Start Date': subtask.planned_start ? formatDateUK(subtask.planned_start) : '',
+              'End Date': subtask.planned_end ? formatDateUK(subtask.planned_end) : '',
+              'Status': subtask.status,
+              'Actual Start': subtask.actual_start ? formatDateUK(subtask.actual_start) : '',
+              'Actual End': subtask.actual_end ? formatDateUK(subtask.actual_end) : '',
+            });
+          });
+        });
+      });
+
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+
+      // Set column widths
+      ws['!cols'] = [
+        { wch: 10 },  // Type
+        { wch: 25 },  // Step
+        { wch: 35 },  // Task/Event
+        { wch: 30 },  // Subtask
+        { wch: 12 },  // Start Date
+        { wch: 12 },  // End Date
+        { wch: 15 },  // Status
+        { wch: 12 },  // Actual Start
+        { wch: 12 },  // Actual End
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Project Gantt Data');
+      
+      // Generate filename
+      const filename = `project-gantt-${project.project_name?.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, filename);
+
+      toast({
+        title: "Export Complete",
+        description: "Excel file has been downloaded successfully",
+      });
+    } catch (error) {
+      console.error('Excel export error:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to export Excel file. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   // PDF Export functionality
   const exportToPDF = async () => {
     if (!project) {
@@ -524,33 +650,82 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
     setExportModalOpen(false);
 
     try {
-      // Target the entire card element instead of just the content
-      const element = document.querySelector('.gantt-print') as HTMLElement;
-      if (!element) {
-        throw new Error('Gantt chart element not found');
-      }
-
       toast({
         title: "Exporting...",
         description: "Generating high-quality PDF, please wait...",
       });
 
-      // Create high-quality canvas from the chart
-      const canvas = await html2canvas(element, {
-        useCORS: true,
-        allowTaint: true,
-        scale: 2,
-        scrollX: 0,
-        scrollY: 0,
-        width: element.scrollWidth,
-        height: element.scrollHeight,
-        windowWidth: element.scrollWidth,
-        windowHeight: element.scrollHeight,
-        backgroundColor: '#ffffff',
-        removeContainer: false,
-        foreignObjectRendering: false,
-        logging: false
-      });
+      let element = document.querySelector('.gantt-print') as HTMLElement;
+      if (!element) {
+        throw new Error('Gantt chart element not found');
+      }
+
+      let canvas: HTMLCanvasElement;
+
+      if (exportFormat === 'pdf-full') {
+        // Full timeline export - capture entire chart without scroll
+        const originalElement = element;
+        
+        // Create a hidden container for full rendering
+        const fullContainer = document.createElement('div');
+        fullContainer.style.position = 'absolute';
+        fullContainer.style.left = '-9999px';
+        fullContainer.style.top = '0';
+        fullContainer.style.overflow = 'visible';
+        fullContainer.style.width = 'max-content';
+        fullContainer.style.backgroundColor = '#ffffff';
+        document.body.appendChild(fullContainer);
+
+        // Clone the gantt content
+        const ganttContent = originalElement.cloneNode(true) as HTMLElement;
+        
+        // Remove scroll containers from clone
+        const scrollContainers = ganttContent.querySelectorAll('[style*="overflow"]');
+        scrollContainers.forEach(container => {
+          (container as HTMLElement).style.overflow = 'visible';
+          (container as HTMLElement).style.maxHeight = 'none';
+          (container as HTMLElement).style.height = 'auto';
+        });
+
+        fullContainer.appendChild(ganttContent);
+
+        // Wait for render
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        canvas = await html2canvas(ganttContent, {
+          useCORS: true,
+          allowTaint: true,
+          scale: 2,
+          scrollX: 0,
+          scrollY: 0,
+          backgroundColor: '#ffffff',
+          removeContainer: false,
+          foreignObjectRendering: false,
+          logging: false,
+          width: ganttContent.scrollWidth,
+          height: ganttContent.scrollHeight,
+        });
+
+        // Clean up
+        document.body.removeChild(fullContainer);
+      } else {
+        // Fit to page export - use existing visible area
+        canvas = await html2canvas(element, {
+          useCORS: true,
+          allowTaint: true,
+          scale: 2,
+          scrollX: 0,
+          scrollY: 0,
+          width: element.scrollWidth,
+          height: element.scrollHeight,
+          windowWidth: element.scrollWidth,
+          windowHeight: element.scrollHeight,
+          backgroundColor: '#ffffff',
+          removeContainer: false,
+          foreignObjectRendering: false,
+          logging: false
+        });
+      }
 
       // Use A3 landscape for better space utilization
       const pdf = new jsPDF({
@@ -579,7 +754,7 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
         finalWidth = availableHeight * canvasAspectRatio;
       }
 
-      if (exportType === 'single') {
+      if (exportFormat === 'pdf-fit') {
         // Single page with optimized sizing
         
         // Add professional header
@@ -648,7 +823,7 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
         }
         
       } else {
-        // Multi-page export with proper sectioning
+        // Multi-page export for full resolution
         const contentHeight = pdfHeight - headerHeight - (2 * margin);
         const totalPages = Math.ceil(finalHeight / contentHeight);
         
@@ -720,7 +895,7 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
 
       toast({
         title: "Success",
-        description: `High-quality PDF exported successfully (${exportType === 'single' ? '1 page' : 'multi-page'})`,
+        description: `High-quality PDF exported successfully`,
       });
     } catch (error) {
       console.error('Export error:', error);
@@ -731,6 +906,14 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
       });
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handleExport = () => {
+    if (exportFormat === 'excel') {
+      exportToExcel();
+    } else {
+      exportToPDF();
     }
   };
 
@@ -936,54 +1119,76 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Export Gantt Chart to PDF</DialogTitle>
+                        <DialogTitle>Export Project Gantt Chart</DialogTitle>
                         <DialogDescription>
-                          Choose how you'd like to export the chart
+                          Choose export format for your project Gantt chart
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
                         <div className="space-y-3">
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="radio"
-                              id="single"
-                              name="exportType"
-                              value="single"
-                              checked={exportType === 'single'}
-                              onChange={(e) => setExportType(e.target.value as 'single' | 'multi')}
-                              className="w-4 h-4"
-                            />
-                            <Label htmlFor="single" className="flex-1">
-                              <div className="font-medium">Fit to 1 Page</div>
-                              <div className="text-sm text-muted-foreground">
-                                Scale entire project to fit one A3 landscape page
+                          <Label htmlFor="export-format">Export Format</Label>
+                          <div className="space-y-3">
+                            <label className="flex items-start space-x-3 cursor-pointer p-3 rounded-lg border hover:bg-accent/50 transition-colors">
+                              <input
+                                type="radio"
+                                name="export-format"
+                                value="pdf-full"
+                                checked={exportFormat === 'pdf-full'}
+                                onChange={(e) => setExportFormat(e.target.value as 'pdf-full' | 'pdf-fit' | 'excel')}
+                                className="mt-1"
+                              />
+                              <div className="flex-1">
+                                <div className="font-medium">PDF - Full Timeline</div>
+                                <div className="text-sm text-muted-foreground">Complete Gantt chart with all tasks visible. Multi-page if needed.</div>
                               </div>
-                            </Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="radio"
-                              id="multi"
-                              name="exportType"
-                              value="multi"
-                              checked={exportType === 'multi'}
-                              onChange={(e) => setExportType(e.target.value as 'single' | 'multi')}
-                              className="w-4 h-4"
-                            />
-                            <Label htmlFor="multi" className="flex-1">
-                              <div className="font-medium">Multi-page</div>
-                              <div className="text-sm text-muted-foreground">
-                                Preserve current zoom level across multiple pages
+                            </label>
+                            
+                            <label className="flex items-start space-x-3 cursor-pointer p-3 rounded-lg border hover:bg-accent/50 transition-colors">
+                              <input
+                                type="radio"
+                                name="export-format"
+                                value="pdf-fit"
+                                checked={exportFormat === 'pdf-fit'}
+                                onChange={(e) => setExportFormat(e.target.value as 'pdf-full' | 'pdf-fit' | 'excel')}
+                                className="mt-1"
+                              />
+                              <div className="flex-1">
+                                <div className="font-medium">PDF - Fit to Page</div>
+                                <div className="text-sm text-muted-foreground">Quick overview scaled to fit a single page. Best for presentations.</div>
                               </div>
-                            </Label>
+                            </label>
+                            
+                            <label className="flex items-start space-x-3 cursor-pointer p-3 rounded-lg border hover:bg-accent/50 transition-colors">
+                              <input
+                                type="radio"
+                                name="export-format"
+                                value="excel"
+                                checked={exportFormat === 'excel'}
+                                onChange={(e) => setExportFormat(e.target.value as 'pdf-full' | 'pdf-fit' | 'excel')}
+                                className="mt-1"
+                              />
+                              <div className="flex-1">
+                                <div className="font-medium">Excel - Data Export</div>
+                                <div className="text-sm text-muted-foreground">Structured data table with all steps, tasks, events, and dates. Perfect for analysis.</div>
+                              </div>
+                            </label>
                           </div>
                         </div>
+                        
+                        {exportFormat === 'pdf-full' && (
+                          <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                            <p className="text-sm text-amber-800 dark:text-amber-200">
+                              ⚠️ Large projects may take longer to export and could use significant memory.
+                            </p>
+                          </div>
+                        )}
+                        
                         <div className="flex justify-end gap-2">
                           <Button variant="outline" onClick={() => setExportModalOpen(false)}>
                             Cancel
                           </Button>
-                          <Button onClick={exportToPDF} disabled={isExporting}>
-                            {isExporting ? "Exporting..." : "Export"}
+                          <Button onClick={handleExport} disabled={isExporting}>
+                            {isExporting ? 'Exporting...' : exportFormat === 'excel' ? 'Export Excel' : 'Export PDF'}
                           </Button>
                         </div>
                       </div>

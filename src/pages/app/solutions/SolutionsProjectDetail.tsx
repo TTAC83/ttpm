@@ -23,6 +23,7 @@ import { SharedVisionModelsTab } from '@/components/shared/tabs/SharedVisionMode
 import { SharedAuditTab } from '@/components/shared/tabs/SharedAuditTab';
 import { SharedProductGapsTab } from '@/components/shared/tabs/SharedProductGapsTab';
 import { SharedBlockersTab } from '@/components/shared/tabs/SharedBlockersTab';
+import { GanttChart } from '@/features/gantt/components/GanttChart';
 
 interface SolutionsProject {
   id: string;
@@ -201,7 +202,7 @@ export const SolutionsProjectDetail = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="space-y-2">
           {/* First row of tabs */}
-          <TabsList className="grid grid-cols-9 lg:w-auto">
+          <TabsList className="grid grid-cols-10 lg:w-auto">
             <TabsTrigger value="overview">Customer Overview</TabsTrigger>
             <TabsTrigger value="contract">Contract Info</TabsTrigger>
             <TabsTrigger value="team">Team</TabsTrigger>
@@ -210,6 +211,7 @@ export const SolutionsProjectDetail = () => {
             <TabsTrigger value="factory">Factory</TabsTrigger>
             <TabsTrigger value="lines">Lines</TabsTrigger>
             <TabsTrigger value="wbs">WBS</TabsTrigger>
+            <TabsTrigger value="wbs-v2">WBSv2</TabsTrigger>
             <TabsTrigger value="hardware-summary">Hardware Summary</TabsTrigger>
           </TabsList>
 
@@ -254,6 +256,10 @@ export const SolutionsProjectDetail = () => {
 
         <TabsContent value="wbs" className="space-y-4">
           <ProjectGantt solutionsProjectId={project.id} />
+        </TabsContent>
+
+        <TabsContent value="wbs-v2" className="space-y-4">
+          <GanttChart projectId={project.id} projectType="solutions" />
         </TabsContent>
 
         <TabsContent value="hardware-summary" className="space-y-4">

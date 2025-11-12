@@ -29,6 +29,7 @@ import WBS from '../implementation/WBS';
 import { ProjectHardware } from './tabs/ProjectHardware';
 import { ProjectHardwareSummary } from './tabs/ProjectHardwareSummary';
 import { ProjectHardwareStatus } from './tabs/ProjectHardwareStatus';
+import { GanttChart } from '@/features/gantt/components/GanttChart';
 
 interface Project {
   id: string;
@@ -379,7 +380,7 @@ export const ProjectDetail = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="space-y-2">
           {/* First row of tabs */}
-          <TabsList className="grid w-full grid-cols-11">
+          <TabsList className="grid w-full grid-cols-12">
             <TabsTrigger value="overview">Customer Overview</TabsTrigger>
             <TabsTrigger value="contract">Contract Info</TabsTrigger>
             <TabsTrigger value="team">Team</TabsTrigger>
@@ -391,6 +392,7 @@ export const ProjectDetail = () => {
             <TabsTrigger value="lines">Lines</TabsTrigger>
             <TabsTrigger value="tasks">Tasks</TabsTrigger>
             <TabsTrigger value="wbs">WBS</TabsTrigger>
+            <TabsTrigger value="wbs-v2">WBSv2</TabsTrigger>
           </TabsList>
           
           {/* Second row of tabs */}
@@ -457,6 +459,10 @@ export const ProjectDetail = () => {
 
         <TabsContent value="wbs" className="space-y-4">
           <WBS projectId={project.id} />
+        </TabsContent>
+
+        <TabsContent value="wbs-v2" className="space-y-4">
+          <GanttChart projectId={project.id} projectType="implementation" />
         </TabsContent>
 
         <TabsContent value="actions" className="space-y-4">

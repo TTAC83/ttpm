@@ -793,6 +793,27 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
     setIsExporting(true);
     setExportModalOpen(false);
 
+    // For full export, temporarily expand all items to capture complete data
+    const originalCollapsedState = { ...collapsedItems };
+    const needsExpansion = exportFormat === 'pdf-full';
+    
+    if (needsExpansion) {
+      // Expand all items
+      const newState: CollapsibleState = {};
+      stepGroups.forEach(step => {
+        newState[step.id] = true;
+        step.tasks.forEach(task => {
+          newState[task.id] = true;
+          task.subtasks?.forEach(subtask => {
+            newState[subtask.id] = true;
+          });
+        });
+      });
+      setCollapsedItems(newState);
+      // Wait for React to re-render with all items expanded
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+
     try {
       toast({
         title: "Exporting...",
@@ -961,6 +982,10 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
         variant: "destructive",
       });
     } finally {
+      // Restore original collapsed state if it was changed
+      if (needsExpansion) {
+        setCollapsedItems(originalCollapsedState);
+      }
       setIsExporting(false);
     }
   };

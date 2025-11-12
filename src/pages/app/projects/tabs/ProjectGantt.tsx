@@ -649,6 +649,16 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
     setIsExporting(true);
     setExportModalOpen(false);
 
+    // For full export, temporarily switch to task view to capture all data
+    const originalViewMode = viewMode;
+    const needsViewModeChange = exportFormat === 'pdf-full' && viewMode === 'step';
+    
+    if (needsViewModeChange) {
+      setViewMode('task');
+      // Wait for React to re-render with all tasks visible
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+
     try {
       toast({
         title: "Exporting...",
@@ -905,6 +915,10 @@ const ProjectGantt = ({ projectId, solutionsProjectId }: ProjectGanttProps) => {
         variant: "destructive",
       });
     } finally {
+      // Restore original view mode if it was changed
+      if (needsViewModeChange) {
+        setViewMode(originalViewMode);
+      }
       setIsExporting(false);
     }
   };

@@ -844,12 +844,17 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
         // Clone the gantt content
         const ganttContent = originalElement.cloneNode(true) as HTMLElement;
         
-        // Remove scroll containers from clone
-        const scrollContainers = ganttContent.querySelectorAll('[style*="overflow"]');
-        scrollContainers.forEach(container => {
-          (container as HTMLElement).style.overflow = 'visible';
-          (container as HTMLElement).style.maxHeight = 'none';
-          (container as HTMLElement).style.height = 'auto';
+        // Remove ALL scroll constraints from clone (both inline styles and classes)
+        const allElements = ganttContent.querySelectorAll('*');
+        allElements.forEach(el => {
+          const element = el as HTMLElement;
+          element.style.overflow = 'visible';
+          element.style.maxHeight = 'none';
+          element.style.height = 'auto';
+          element.style.maxWidth = 'none';
+          element.style.width = 'auto';
+          // Remove overflow classes
+          element.classList.remove('overflow-auto', 'overflow-x-auto', 'overflow-y-auto', 'overflow-hidden', 'overflow-scroll');
         });
 
         fullContainer.appendChild(ganttContent);
@@ -892,10 +897,11 @@ export function WBSGanttChart({ projectId }: WBSGanttChartProps) {
         });
       }
 
+      // Use A1 for full export, A4 for fit
       const pdf = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',
-        format: 'a3'
+        format: exportFormat === 'pdf-full' ? 'a1' : 'a4'
       });
 
       const pageWidth = pdf.internal.pageSize.getWidth();

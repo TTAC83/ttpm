@@ -48,8 +48,9 @@ export const GanttTimeline: React.FC<GanttTimelineProps> = ({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const headerScrollRef = useRef<HTMLDivElement>(null);
   const timelineScrollRef = useRef<HTMLDivElement>(null);
+  const sidebarScrollRef = useRef<HTMLDivElement>(null);
 
-  // Sync header scroll with timeline scroll
+  // Sync horizontal scroll between header and timeline
   useEffect(() => {
     const headerEl = headerScrollRef.current;
     const timelineEl = timelineScrollRef.current;
@@ -73,6 +74,30 @@ export const GanttTimeline: React.FC<GanttTimelineProps> = ({
     };
   }, []);
 
+  // Sync vertical scroll between sidebar and timeline
+  useEffect(() => {
+    const sidebarEl = sidebarScrollRef.current;
+    const timelineEl = timelineScrollRef.current;
+    
+    if (!sidebarEl || !timelineEl) return;
+
+    const syncFromTimeline = () => {
+      sidebarEl.scrollTop = timelineEl.scrollTop;
+    };
+
+    const syncFromSidebar = () => {
+      timelineEl.scrollTop = sidebarEl.scrollTop;
+    };
+
+    timelineEl.addEventListener('scroll', syncFromTimeline);
+    sidebarEl.addEventListener('scroll', syncFromSidebar);
+
+    return () => {
+      timelineEl.removeEventListener('scroll', syncFromTimeline);
+      sidebarEl.removeEventListener('scroll', syncFromSidebar);
+    };
+  }, []);
+
   // Filter items based on view mode
   const visibleItems = useMemo(() => {
     if (viewMode === 'step') {
@@ -82,10 +107,10 @@ export const GanttTimeline: React.FC<GanttTimelineProps> = ({
     return items.filter(item => item.type !== 'step');
   }, [items, viewMode]);
 
-  // Virtual scrolling setup
+  // Use virtualizer for sidebar scroll (but don't use getScrollElement)
   const rowVirtualizer = useVirtualizer({
     count: visibleItems.length,
-    getScrollElement: () => scrollContainerRef.current,
+    getScrollElement: () => null, // We'll manage scroll manually
     estimateSize: () => ROW_HEIGHT,
     overscan: 5,
   });
@@ -115,33 +140,35 @@ export const GanttTimeline: React.FC<GanttTimelineProps> = ({
       <div className="flex flex-1 overflow-hidden">
         {/* Fixed task names sidebar */}
         <div 
-          className="flex-shrink-0 overflow-y-auto border-r border-border bg-background"
+          ref={sidebarScrollRef}
+          className="flex-shrink-0 overflow-y-auto overflow-x-hidden border-r border-border bg-background"
           style={{ width: SIDEBAR_WIDTH }}
-          ref={scrollContainerRef}
         >
-          {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-            const item = visibleItems[virtualRow.index];
-            return (
-              <div
-                key={virtualRow.key}
-                className="flex items-center px-4 border-b border-border"
-                style={{
-                  height: ROW_HEIGHT,
-                  backgroundColor: selectedItemId === item.id ? 'hsl(var(--accent))' : 'transparent',
-                }}
-              >
-                <span
-                  className="text-sm truncate"
+          <div style={{ height: totalHeight }}>
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const item = visibleItems[virtualRow.index];
+              return (
+                <div
+                  key={virtualRow.key}
+                  className="flex items-center px-4 border-b border-border"
                   style={{
-                    fontWeight: item.type === 'step' ? 600 : 400,
-                    paddingLeft: item.type === 'subtask' ? '2rem' : item.type === 'task' ? '1rem' : 0,
+                    height: ROW_HEIGHT,
+                    backgroundColor: selectedItemId === item.id ? 'hsl(var(--accent))' : 'transparent',
                   }}
                 >
-                  {item.name}
-                </span>
-              </div>
-            );
-          })}
+                  <span
+                    className="text-sm truncate"
+                    style={{
+                      fontWeight: item.type === 'step' ? 600 : 400,
+                      paddingLeft: item.type === 'subtask' ? '2rem' : item.type === 'task' ? '1rem' : 0,
+                    }}
+                  >
+                    {item.name}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Scrollable timeline container */}

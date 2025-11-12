@@ -14,8 +14,10 @@ interface GanttRowProps {
   rowIndex: number;
   isSelected?: boolean;
   isHovered?: boolean;
+  isDragging?: boolean;
   onItemClick?: (item: GanttItem) => void;
   onItemDoubleClick?: (item: GanttItem) => void;
+  onDragStart?: (item: GanttItem, event: React.MouseEvent) => void;
   ariaProps?: any;
 }
 
@@ -26,8 +28,10 @@ export const GanttRow: React.FC<GanttRowProps> = ({
   rowIndex,
   isSelected = false,
   isHovered = false,
+  isDragging = false,
   onItemClick,
   onItemDoubleClick,
+  onDragStart,
   ariaProps,
 }) => {
   const yPosition = rowIndex * ROW_HEIGHT;
@@ -65,8 +69,10 @@ export const GanttRow: React.FC<GanttRowProps> = ({
           actualEnd={item.actualEnd}
           isSelected={isSelected}
           isHovered={isHovered}
+          isDragging={isDragging}
           onClick={() => onItemClick?.(item)}
           onDoubleClick={() => onItemDoubleClick?.(item)}
+          onDragStart={(event) => onDragStart?.(item, event)}
         />
       </g>
     </g>

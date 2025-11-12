@@ -76,13 +76,19 @@ export class WorkingCalendarService {
   }
 
   /**
+   * Check if a date is a weekend
+   */
+  isWeekend(date: Date): boolean {
+    const day = date.getDay();
+    return day === 0 || day === 6;
+  }
+
+  /**
    * Check if a date is a working day (not weekend, not holiday)
    */
   isWorkingDay(date: Date): boolean {
-    const day = date.getDay();
-    
     // Weekend check
-    if (day === 0 || day === 6) return false;
+    if (this.isWeekend(date)) return false;
     
     // Holiday check
     return !this.isHoliday(date);

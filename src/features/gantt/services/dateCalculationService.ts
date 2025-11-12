@@ -223,4 +223,6 @@ export const dateCalculationService = {
   formatDateRange,
   getTodayPosition,
   snapToWorkingDay,
+  isWeekend: (date: Date) => workingCalendarService.isWeekend(date),
+  getWorkingDaysBetween: (start: Date, end: Date) => workingCalendarService.getWorkingDaysBetween(start, end),
 };

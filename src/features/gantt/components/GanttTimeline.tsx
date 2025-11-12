@@ -6,6 +6,7 @@ import React, { useRef, useMemo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { GanttItem, GanttViewMode, DateMarker } from '../types/gantt.types';
 import { GanttRow } from './GanttRow';
+import { GanttDependencyLines } from './GanttDependencyLines';
 import { ROW_HEIGHT, SIDEBAR_WIDTH, HEADER_HEIGHT, GRID_LINE_COLOR, GRID_WEEKEND_COLOR, FONT_SIZE } from '../utils/ganttConstants';
 import { dateCalculationService } from '../services/dateCalculationService';
 
@@ -17,9 +18,12 @@ interface GanttTimelineProps {
   timelineEnd: Date;
   dateMarkers: DateMarker[];
   showWorkingDaysOnly?: boolean;
+  showDependencies?: boolean;
   selectedItemId?: string | null;
+  draggedItemId?: string | null;
   onItemClick?: (item: GanttItem) => void;
   onItemDoubleClick?: (item: GanttItem) => void;
+  onDragStart?: (item: GanttItem, event: React.MouseEvent) => void;
   setSvgRef?: (element: SVGSVGElement | null) => void;
   getItemProps?: (item: GanttItem) => any;
 }
@@ -32,9 +36,12 @@ export const GanttTimeline: React.FC<GanttTimelineProps> = ({
   timelineEnd,
   dateMarkers,
   showWorkingDaysOnly = false,
+  showDependencies = true,
   selectedItemId = null,
+  draggedItemId = null,
   onItemClick,
   onItemDoubleClick,
+  onDragStart,
   setSvgRef,
   getItemProps,
 }) => {
@@ -181,6 +188,16 @@ export const GanttTimeline: React.FC<GanttTimelineProps> = ({
             ))}
           </g>
 
+          {/* Dependency lines */}
+          {showDependencies && (
+            <GanttDependencyLines
+              items={visibleItems}
+              timelineStart={timelineStart}
+              showWorkingDaysOnly={showWorkingDaysOnly}
+              dayWidth={dayWidth}
+            />
+          )}
+
           {/* Virtual rows */}
           {rowVirtualizer.getVirtualItems().map((virtualRow) => {
             const item = visibleItems[virtualRow.index];
@@ -203,8 +220,10 @@ export const GanttTimeline: React.FC<GanttTimelineProps> = ({
                 rowIndex={virtualRow.index}
                 isSelected={selectedItemId === item.id}
                 isHovered={false}
+                isDragging={draggedItemId === item.id}
                 onItemClick={onItemClick}
                 onItemDoubleClick={onItemDoubleClick}
+                onDragStart={onDragStart}
                 ariaProps={getItemProps?.(item)}
               />
             );

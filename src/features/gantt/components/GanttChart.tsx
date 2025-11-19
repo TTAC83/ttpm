@@ -35,6 +35,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({ projectId, projectType }
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<GanttItem | null>(null);
   const [showDependencies, setShowDependencies] = useState(true);
+  const [showSidebarDetails, setShowSidebarDetails] = useState(false);
 
   // Fetch data
   const { data, isLoading, error } = useGanttData({ projectId, projectType });
@@ -306,6 +307,8 @@ export const GanttChart: React.FC<GanttChartProps> = ({ projectId, projectType }
           onViewModeChange={setViewMode}
           showWorkingDaysOnly={showWorkingDaysOnly}
           onWorkingDaysToggle={setShowWorkingDaysOnly}
+          showSidebarDetails={showSidebarDetails}
+          onSidebarDetailsToggle={setShowSidebarDetails}
           zoomLevel={zoomLevel}
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
@@ -323,6 +326,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({ projectId, projectType }
             dateMarkers={dateMarkers}
             showWorkingDaysOnly={showWorkingDaysOnly}
             showDependencies={showDependencies}
+            showSidebarDetails={showSidebarDetails}
             selectedItemId={selectedItemId}
             draggedItemId={draggedItemId}
             onItemClick={handleItemClick}

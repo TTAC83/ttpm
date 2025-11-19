@@ -24,6 +24,8 @@ interface GanttControlsProps {
   onWorkingDaysToggle: (show: boolean) => void;
   showSidebarDetails: boolean;
   onSidebarDetailsToggle: (show: boolean) => void;
+  showChildTasks: boolean;
+  onChildTasksToggle: (show: boolean) => void;
   zoomLevel: number;
   onZoomIn: () => void;
   onZoomOut: () => void;
@@ -38,6 +40,8 @@ export const GanttControls: React.FC<GanttControlsProps> = ({
   onWorkingDaysToggle,
   showSidebarDetails,
   onSidebarDetailsToggle,
+  showChildTasks,
+  onChildTasksToggle,
   zoomLevel,
   onZoomIn,
   onZoomOut,
@@ -94,6 +98,18 @@ export const GanttControls: React.FC<GanttControlsProps> = ({
         />
         <Label htmlFor="sidebar-details" className="text-sm cursor-pointer">
           Show Details in Sidebar
+        </Label>
+      </div>
+
+      {/* Child Tasks Toggle */}
+      <div className="flex items-center gap-2">
+        <Switch
+          id="child-tasks"
+          checked={showChildTasks}
+          onCheckedChange={onChildTasksToggle}
+        />
+        <Label htmlFor="child-tasks" className="text-sm cursor-pointer">
+          Show Child Tasks
         </Label>
       </div>
 

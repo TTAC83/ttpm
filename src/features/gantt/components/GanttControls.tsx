@@ -22,6 +22,8 @@ interface GanttControlsProps {
   onViewModeChange: (mode: GanttViewMode) => void;
   showWorkingDaysOnly: boolean;
   onWorkingDaysToggle: (show: boolean) => void;
+  showSidebarDetails: boolean;
+  onSidebarDetailsToggle: (show: boolean) => void;
   zoomLevel: number;
   onZoomIn: () => void;
   onZoomOut: () => void;
@@ -34,6 +36,8 @@ export const GanttControls: React.FC<GanttControlsProps> = ({
   onViewModeChange,
   showWorkingDaysOnly,
   onWorkingDaysToggle,
+  showSidebarDetails,
+  onSidebarDetailsToggle,
   zoomLevel,
   onZoomIn,
   onZoomOut,
@@ -78,6 +82,18 @@ export const GanttControls: React.FC<GanttControlsProps> = ({
         />
         <Label htmlFor="working-days" className="text-sm cursor-pointer">
           Working Days Only
+        </Label>
+      </div>
+
+      {/* Sidebar Details Toggle */}
+      <div className="flex items-center gap-2">
+        <Switch
+          id="sidebar-details"
+          checked={showSidebarDetails}
+          onCheckedChange={onSidebarDetailsToggle}
+        />
+        <Label htmlFor="sidebar-details" className="text-sm cursor-pointer">
+          Show Details in Sidebar
         </Label>
       </div>
 

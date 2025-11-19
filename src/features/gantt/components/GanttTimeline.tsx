@@ -9,6 +9,7 @@ import { GanttBar } from './GanttBar';
 import { GanttDependencyLines } from './GanttDependencyLines';
 import { ROW_HEIGHT, SIDEBAR_WIDTH, HEADER_HEIGHT, GRID_LINE_COLOR, GRID_WEEKEND_COLOR, FONT_SIZE } from '../utils/ganttConstants';
 import { dateCalculationService } from '../services/dateCalculationService';
+import { formatDateUK } from '@/lib/dateUtils';
 
 interface GanttTimelineProps {
   items: GanttItem[];
@@ -19,6 +20,7 @@ interface GanttTimelineProps {
   dateMarkers: DateMarker[];
   showWorkingDaysOnly?: boolean;
   showDependencies?: boolean;
+  showSidebarDetails?: boolean;
   selectedItemId?: string | null;
   draggedItemId?: string | null;
   onItemClick?: (item: GanttItem) => void;
@@ -37,6 +39,7 @@ export const GanttTimeline: React.FC<GanttTimelineProps> = ({
   dateMarkers,
   showWorkingDaysOnly = false,
   showDependencies = true,
+  showSidebarDetails = false,
   selectedItemId = null,
   draggedItemId = null,
   onItemClick,
@@ -190,16 +193,29 @@ export const GanttTimeline: React.FC<GanttTimelineProps> = ({
                   height: ROW_HEIGHT,
                   backgroundColor: selectedItemId === item.id ? 'hsl(var(--accent))' : 'transparent',
                 }}
+                title={
+                  item.type === 'step'
+                    ? `${formatDateUK(item.plannedStart)} - ${formatDateUK(item.plannedEnd)}`
+                    : `Step: ${item.stepName}\n${formatDateUK(item.plannedStart)} - ${formatDateUK(item.plannedEnd)}`
+                }
               >
-                <span
-                  className="text-sm truncate"
-                  style={{
-                    fontWeight: item.type === 'step' ? 600 : 400,
-                    paddingLeft: item.type === 'subtask' ? '2rem' : item.type === 'task' ? '1rem' : 0,
-                  }}
-                >
-                  {item.name}
-                </span>
+                <div className="flex flex-col flex-1 min-w-0">
+                  <span
+                    className="text-sm truncate"
+                    style={{
+                      fontWeight: item.type === 'step' ? 600 : 400,
+                      paddingLeft: item.type === 'subtask' ? '2rem' : item.type === 'task' ? '1rem' : 0,
+                    }}
+                  >
+                    {item.name}
+                  </span>
+                  {showSidebarDetails && (
+                    <span className="text-xs text-muted-foreground truncate">
+                      {item.type !== 'step' && item.stepName && `Step: ${item.stepName} • `}
+                      {formatDateUK(item.plannedStart)} - {formatDateUK(item.plannedEnd)}
+                    </span>
+                  )}
+                </div>
               </div>
             );
           })}

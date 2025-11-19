@@ -5,7 +5,7 @@
 /**
  * Row heights
  */
-export const ROW_HEIGHT = 70; // pixels (increased for multi-line sidebar)
+export const ROW_HEIGHT = 40; // pixels
 export const STEP_ROW_HEIGHT = 48; // pixels (slightly taller for emphasis)
 export const EVENT_ROW_HEIGHT = 32; // pixels (compact for events)
 export const ROW_PADDING = 4; // pixels (vertical padding within row)

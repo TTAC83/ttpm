@@ -291,6 +291,10 @@ export const GanttTimeline: React.FC<GanttTimelineProps> = ({
                       status={item.status}
                       plannedEnd={item.plannedEnd}
                       actualEnd={item.actualEnd}
+                      plannedStart={item.plannedStart}
+                      actualStart={item.actualStart}
+                      stepName={item.type !== 'step' ? item.stepName : undefined}
+                      itemType={item.type}
                       isSelected={selectedItemId === item.id}
                       isHovered={false}
                       isDragging={draggedItemId === item.id}

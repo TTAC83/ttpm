@@ -36,6 +36,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({ projectId, projectType }
   const [editingItem, setEditingItem] = useState<GanttItem | null>(null);
   const [showDependencies, setShowDependencies] = useState(true);
   const [showSidebarDetails, setShowSidebarDetails] = useState(false);
+  const [showChildTasks, setShowChildTasks] = useState(false);
 
   // Fetch data
   const { data, isLoading, error } = useGanttData({ projectId, projectType });
@@ -192,18 +193,21 @@ export const GanttChart: React.FC<GanttChartProps> = ({ projectId, projectType }
       return data.steps;
     } else {
       // Show tasks and subtasks
-      data.steps.forEach(step => {
-        step.tasks.forEach(task => {
-          items.push(task);
-          // Add subtasks if task is expanded
-          if (task.subtasks && !task.isCollapsed) {
-            items.push(...task.subtasks);
-          }
-        });
+      // Filter tasks: if showChildTasks is false, exclude tasks with parentTaskId
+      const tasksToShow = showChildTasks 
+        ? data.tasks 
+        : data.tasks.filter(task => !task.parentTaskId);
+
+      tasksToShow.forEach(task => {
+        items.push(task);
+        // Add subtasks if task is expanded
+        if (task.subtasks && !task.isCollapsed) {
+          items.push(...task.subtasks);
+        }
       });
       return items;
     }
-  }, [data, viewMode]);
+  }, [data, viewMode, showChildTasks]);
 
   // Calculate day width based on zoom level (multiplier: 0.5x to 2x)
   const dayWidth = useMemo(() => {
@@ -309,6 +313,8 @@ export const GanttChart: React.FC<GanttChartProps> = ({ projectId, projectType }
           onWorkingDaysToggle={setShowWorkingDaysOnly}
           showSidebarDetails={showSidebarDetails}
           onSidebarDetailsToggle={setShowSidebarDetails}
+          showChildTasks={showChildTasks}
+          onChildTasksToggle={setShowChildTasks}
           zoomLevel={zoomLevel}
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}

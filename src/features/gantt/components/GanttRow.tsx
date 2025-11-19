@@ -67,6 +67,10 @@ export const GanttRow: React.FC<GanttRowProps> = ({
           status={item.status}
           plannedEnd={item.plannedEnd}
           actualEnd={item.actualEnd}
+          plannedStart={item.plannedStart}
+          actualStart={item.actualStart}
+          stepName={item.type !== 'step' ? item.stepName : undefined}
+          itemType={item.type}
           isSelected={isSelected}
           isHovered={isHovered}
           isDragging={isDragging}

@@ -64,8 +64,7 @@ export function useGanttData({ projectId, projectType }: UseGanttDataProps) {
       // Fetch tasks
       const taskQuery = supabase
         .from('project_tasks')
-        .select('*')
-        .order('step_name');
+        .select('*');
 
       if (projectType === 'implementation') {
         taskQuery.eq('project_id', projectId);
@@ -118,7 +117,13 @@ export function useGanttData({ projectId, projectType }: UseGanttDataProps) {
         assigneeName: undefined, // TODO: Fetch from profiles if needed
         subtasks: [],
         dependencies: [],
-      }));
+      })).sort((a, b) => {
+        // Sort by step position first, then by task title
+        if (a.stepPosition !== b.stepPosition) {
+          return a.stepPosition - b.stepPosition;
+        }
+        return a.name.localeCompare(b.name);
+      });
 
       // Transform subtasks and attach to tasks
       const subtasks: GanttSubtask[] = (subtasksData || []).map(subtask => ({

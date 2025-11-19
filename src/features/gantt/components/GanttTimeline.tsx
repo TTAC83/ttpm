@@ -196,7 +196,7 @@ export const GanttTimeline: React.FC<GanttTimelineProps> = ({
                 title={
                   item.type === 'step'
                     ? `${formatDateUK(item.plannedStart)} - ${formatDateUK(item.plannedEnd)}`
-                    : `Step: ${item.stepName}\n${formatDateUK(item.plannedStart)} - ${formatDateUK(item.plannedEnd)}`
+                    : `${item.stepName}\n${formatDateUK(item.plannedStart)} - ${formatDateUK(item.plannedEnd)}`
                 }
               >
                 <div className="flex flex-col flex-1 min-w-0">
@@ -211,7 +211,7 @@ export const GanttTimeline: React.FC<GanttTimelineProps> = ({
                   </span>
                   {showSidebarDetails && (
                     <span className="text-xs text-muted-foreground truncate">
-                      {item.type !== 'step' && item.stepName && `Step: ${item.stepName} • `}
+                      {item.type !== 'step' && item.stepName && `${item.stepName} • `}
                       {formatDateUK(item.plannedStart)} - {formatDateUK(item.plannedEnd)}
                     </span>
                   )}

@@ -392,7 +392,7 @@ export const ProjectDetail = () => {
             <TabsTrigger value="lines">Lines</TabsTrigger>
             <TabsTrigger value="tasks">Tasks</TabsTrigger>
             <TabsTrigger value="wbs">WBS</TabsTrigger>
-            <TabsTrigger value="wbs-v2">WBSv2</TabsTrigger>
+            <TabsTrigger value="wbs-v2">Gantt (Beta)</TabsTrigger>
           </TabsList>
           
           {/* Second row of tabs */}

@@ -211,7 +211,7 @@ export const SolutionsProjectDetail = () => {
             <TabsTrigger value="factory">Factory</TabsTrigger>
             <TabsTrigger value="lines">Lines</TabsTrigger>
             <TabsTrigger value="wbs">WBS</TabsTrigger>
-            <TabsTrigger value="wbs-v2">WBSv2</TabsTrigger>
+            <TabsTrigger value="wbs-v2">Gantt (Beta)</TabsTrigger>
             <TabsTrigger value="hardware-summary">Hardware Summary</TabsTrigger>
           </TabsList>
 

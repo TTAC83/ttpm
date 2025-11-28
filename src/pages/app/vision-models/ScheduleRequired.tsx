@@ -1,7 +1,7 @@
 import { visionModelsService } from "@/lib/visionModelsService";
 import { VisionModelsTable } from "@/components/vision-models/VisionModelsTable";
 import { VisionModelsTableConfig } from "@/components/vision-models/types";
-import { formatDateWithOptionalTime } from "@/lib/dateUtils";
+import { formatDateWithOptionalTime, TimezoneMode } from "@/lib/dateUtils";
 
 const config: VisionModelsTableConfig = {
   title: "Schedule Required",
@@ -10,6 +10,7 @@ const config: VisionModelsTableConfig = {
   emptyMessage: "No models found requiring schedule",
   queryKey: ['schedule-required-models'],
   queryFn: () => visionModelsService.getScheduleRequiredModels(),
+  showTimezoneToggle: true,
   columns: [
     { key: 'customer_name', label: 'Customer' },
     { key: 'project_name', label: 'Project' },
@@ -22,14 +23,14 @@ const config: VisionModelsTableConfig = {
     { 
       key: 'product_run_start', 
       label: 'Run Start',
-      render: (model) => model.product_run_start ? formatDateWithOptionalTime(model.product_run_start, model.product_run_start_has_time) : (
+      render: (model, timezone: TimezoneMode = 'uk') => model.product_run_start ? formatDateWithOptionalTime(model.product_run_start, model.product_run_start_has_time, timezone) : (
         <span className="text-destructive font-medium">Not set</span>
       )
     },
     { 
       key: 'product_run_end', 
       label: 'Run End',
-      render: (model) => model.product_run_end ? formatDateWithOptionalTime(model.product_run_end, model.product_run_end_has_time) : (
+      render: (model, timezone: TimezoneMode = 'uk') => model.product_run_end ? formatDateWithOptionalTime(model.product_run_end, model.product_run_end_has_time, timezone) : (
         <span className="text-destructive font-medium">Not set</span>
       )
     },

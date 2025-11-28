@@ -1,10 +1,11 @@
 import { VisionModel } from "@/lib/visionModelsService";
+import { TimezoneMode } from "@/lib/dateUtils";
 
 export interface VisionModelsTableColumn {
   key: keyof VisionModel;
   label: string;
   sortable?: boolean;
-  render?: (model: VisionModel) => React.ReactNode;
+  render?: (model: VisionModel, timezone?: TimezoneMode) => React.ReactNode;
 }
 
 export interface VisionModelsTableConfig {
@@ -17,4 +18,5 @@ export interface VisionModelsTableConfig {
   columns: VisionModelsTableColumn[];
   customSort?: (a: VisionModel, b: VisionModel, sortColumn: keyof VisionModel | null, sortDirection: 'asc' | 'desc' | null) => number;
   rowClassName?: (model: VisionModel) => string;
+  showTimezoneToggle?: boolean;
 }

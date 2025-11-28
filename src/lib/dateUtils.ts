@@ -73,18 +73,21 @@ export const formatDateTimeSmartUK = (date: string | Date | null): string => {
 };
 
 // Format date with optional time display based on a boolean flag
+// When no time is set (hasTime=false), always show UK date to prevent date shifting
 export const formatDateWithOptionalTime = (
   date: string | Date | null, 
-  showTime: boolean = false,
+  hasTime: boolean = false,
   timezone: TimezoneMode = 'uk'
 ): string => {
   if (!date) return '';
   
-  if (showTime) {
+  // If time exists, apply timezone preference
+  if (hasTime) {
     return timezone === 'uk' ? formatDateTimeUK(date) : formatDateTimeLocal(date);
   }
   
-  return timezone === 'uk' ? formatDateUK(date) : formatDateLocal(date);
+  // Date-only: always show UK date to prevent day shifting across timezones
+  return formatDateUK(date);
 };
 
 export const parseUKDate = (dateStr: string): Date | null => {

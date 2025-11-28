@@ -1,4 +1,6 @@
 // Date formatting utilities for UK/Europe locale
+export type TimezoneMode = 'uk' | 'local';
+
 export const formatDateUK = (date: string | Date | null): string => {
   if (!date) return '';
   
@@ -9,6 +11,18 @@ export const formatDateUK = (date: string | Date | null): string => {
     month: '2-digit',
     year: 'numeric',
     timeZone: 'Europe/London'
+  });
+};
+
+export const formatDateLocal = (date: string | Date | null): string => {
+  if (!date) return '';
+  
+  const d = typeof date === 'string' ? new Date(date) : date;
+  
+  return d.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
   });
 };
 
@@ -24,6 +38,20 @@ export const formatDateTimeUK = (date: string | Date | null): string => {
     hour: '2-digit',
     minute: '2-digit',
     timeZone: 'Europe/London'
+  });
+};
+
+export const formatDateTimeLocal = (date: string | Date | null): string => {
+  if (!date) return '';
+  
+  const d = typeof date === 'string' ? new Date(date) : date;
+  
+  return d.toLocaleString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 };
 
@@ -45,14 +73,18 @@ export const formatDateTimeSmartUK = (date: string | Date | null): string => {
 };
 
 // Format date with optional time display based on a boolean flag
-export const formatDateWithOptionalTime = (date: string | Date | null, showTime: boolean = false): string => {
+export const formatDateWithOptionalTime = (
+  date: string | Date | null, 
+  showTime: boolean = false,
+  timezone: TimezoneMode = 'uk'
+): string => {
   if (!date) return '';
   
   if (showTime) {
-    return formatDateTimeUK(date);
+    return timezone === 'uk' ? formatDateTimeUK(date) : formatDateTimeLocal(date);
   }
   
-  return formatDateUK(date);
+  return timezone === 'uk' ? formatDateUK(date) : formatDateLocal(date);
 };
 
 export const parseUKDate = (dateStr: string): Date | null => {

@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { VisionModel } from "@/lib/visionModelsService";
+import { TimezoneMode } from "@/lib/dateUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { ArrowUpDown, ArrowUp, ArrowDown, Pencil } from "lucide-react";
 import { VisionModelDialog } from "@/components/vision-models/VisionModelDialog";
 import { VisionModelsTableConfig } from "./types";
@@ -22,6 +25,7 @@ export function VisionModelsTable({ config }: VisionModelsTableProps) {
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [editingModel, setEditingModel] = useState<VisionModel | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [timezone, setTimezone] = useState<TimezoneMode>('uk');
 
   const { data: models = [], isLoading, refetch } = useQuery({
     queryKey: config.queryKey,
@@ -131,12 +135,26 @@ export function VisionModelsTable({ config }: VisionModelsTableProps) {
           <CardTitle>{config.cardTitle}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Input
-            placeholder="Search by customer, project, line, equipment, SKU, title, use case, or group..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-md"
-          />
+          <div className="flex items-center justify-between gap-4">
+            <Input
+              placeholder="Search by customer, project, line, equipment, SKU, title, use case, or group..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-md"
+            />
+            {config.showTimezoneToggle !== false && (
+              <div className="flex items-center gap-2">
+                <Label htmlFor="timezone-toggle" className="text-sm text-muted-foreground">
+                  {timezone === 'uk' ? 'UK Time' : 'Local Time'}
+                </Label>
+                <Switch
+                  id="timezone-toggle"
+                  checked={timezone === 'local'}
+                  onCheckedChange={(checked) => setTimezone(checked ? 'local' : 'uk')}
+                />
+              </div>
+            )}
+          </div>
 
           <div className="rounded-md border">
             <Table>
@@ -183,7 +201,7 @@ export function VisionModelsTable({ config }: VisionModelsTableProps) {
                           }
                         >
                           {column.render 
-                            ? column.render(model) 
+                            ? column.render(model, timezone) 
                             : model[column.key] || '-'
                           }
                         </TableCell>

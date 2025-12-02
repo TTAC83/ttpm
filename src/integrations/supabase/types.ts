@@ -4603,11 +4603,11 @@ export type Database = {
     }
     Functions: {
       add_working_days: {
-        Args: { n: number; start_date: string }
+        Args: { start_date: string; working_days: number }
         Returns: string
       }
       admin_set_user_role_and_company: {
-        Args: { company_name?: string; new_role: string; target_email: string }
+        Args: { p_company_name?: string; p_role: string; p_user_email: string }
         Returns: undefined
       }
       auth_user_id: { Args: never; Returns: string }

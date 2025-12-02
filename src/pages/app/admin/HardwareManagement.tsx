@@ -22,6 +22,7 @@ interface HardwareItem {
   product_name: string;
   description?: string;
   price_gbp?: number;
+  rrp_gbp?: number;
   minimum_quantity?: number;
   required_optional?: string;
   tags?: string;
@@ -61,6 +62,7 @@ export default function HardwareManagement() {
     product_name: '',
     description: '',
     price_gbp: '',
+    rrp_gbp: '',
     minimum_quantity: '1',
     required_optional: 'Required',
     tags: '',
@@ -125,6 +127,7 @@ export default function HardwareManagement() {
       product_name: '',
       description: '',
       price_gbp: '',
+      rrp_gbp: '',
       minimum_quantity: '1',
       required_optional: 'Required',
       tags: '',
@@ -142,6 +145,7 @@ export default function HardwareManagement() {
       product_name: item.product_name,
       description: item.description || '',
       price_gbp: item.price_gbp?.toString() || '',
+      rrp_gbp: item.rrp_gbp?.toString() || '',
       minimum_quantity: item.minimum_quantity?.toString() || '1',
       required_optional: item.required_optional || 'Required',
       tags: item.tags || '',
@@ -168,6 +172,7 @@ export default function HardwareManagement() {
         product_name: formData.product_name,
         description: formData.description || null,
         price_gbp: formData.price_gbp ? parseFloat(formData.price_gbp) : null,
+        rrp_gbp: formData.rrp_gbp ? parseFloat(formData.rrp_gbp) : null,
         minimum_quantity: formData.minimum_quantity ? parseInt(formData.minimum_quantity) : 1,
         required_optional: formData.required_optional,
         tags: formData.tags || null,
@@ -251,6 +256,7 @@ export default function HardwareManagement() {
         'Product Name': item.product_name,
         'Description': item.description || '',
         'Price (GBP)': item.price_gbp || '',
+        'RRP (GBP)': item.rrp_gbp || '',
         'Minimum Quantity': item.minimum_quantity || '',
         'Required/Optional': item.required_optional || '',
         'Tags': item.tags || '',
@@ -312,6 +318,7 @@ export default function HardwareManagement() {
             product_name: rowData['Product Name'],
             description: rowData['Description'] || null,
             price_gbp: rowData['Price (GBP)'] ? parseFloat(rowData['Price (GBP)']) : null,
+            rrp_gbp: rowData['RRP (GBP)'] ? parseFloat(rowData['RRP (GBP)']) : null,
             minimum_quantity: rowData['Minimum Quantity'] ? parseInt(rowData['Minimum Quantity']) : 1,
             required_optional: rowData['Required/Optional'] || 'Required',
             tags: rowData['Tags'] || null,
@@ -438,6 +445,7 @@ export default function HardwareManagement() {
                     <TableHead>SKU</TableHead>
                     <TableHead>Product Name</TableHead>
                     <TableHead>Price (GBP)</TableHead>
+                    <TableHead>RRP (GBP)</TableHead>
                     <TableHead>Min Qty</TableHead>
                     <TableHead>Tags</TableHead>
                     <TableHead className="w-[100px]">Actions</TableHead>
@@ -451,6 +459,9 @@ export default function HardwareManagement() {
                       <TableCell>{item.product_name}</TableCell>
                       <TableCell>
                         {item.price_gbp ? `£${item.price_gbp.toFixed(2)}` : '-'}
+                      </TableCell>
+                      <TableCell>
+                        {item.rrp_gbp ? `£${item.rrp_gbp.toFixed(2)}` : '-'}
                       </TableCell>
                       <TableCell>{item.minimum_quantity || 1}</TableCell>
                       <TableCell>
@@ -582,7 +593,7 @@ export default function HardwareManagement() {
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="price_gbp">Price (GBP)</Label>
                 <Input
@@ -594,6 +605,20 @@ export default function HardwareManagement() {
                   placeholder="2100.00"
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="rrp_gbp">RRP (GBP)</Label>
+                <Input
+                  id="rrp_gbp"
+                  type="number"
+                  step="0.01"
+                  value={formData.rrp_gbp}
+                  onChange={(e) => setFormData({ ...formData, rrp_gbp: e.target.value })}
+                  placeholder="2500.00"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="minimum_quantity">Min Quantity</Label>
                 <Input

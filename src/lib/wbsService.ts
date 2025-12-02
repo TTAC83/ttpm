@@ -215,7 +215,8 @@ class WBSService {
         .select("id")
         .eq("step_name", layout.step_name)
         .eq("project_id", projectId)
-        .single();
+        .limit(1)
+        .maybeSingle();
 
       if (existing) {
         // Update existing layout
@@ -250,7 +251,8 @@ class WBSService {
         .select("id")
         .eq("step_name", layout.step_name)
         .is("project_id", null)
-        .single();
+        .limit(1)
+        .maybeSingle();
 
       if (existing) {
         // Update existing layout

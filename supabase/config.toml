@@ -14,10 +14,10 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.update-task]
-verify_jwt = false
+verify_jwt = true
 
 [functions.create-action]
-verify_jwt = false
+verify_jwt = true
 
 [functions.bau-weekly-import]
-verify_jwt = false
+verify_jwt = true

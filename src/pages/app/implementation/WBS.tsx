@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 // removed react-router-dom hook to avoid runtime context issue
 import { Responsive, WidthProvider, Layout } from "react-grid-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -212,6 +212,8 @@ export default function WBS({ projectId }: WBSProps = {}) {
     loadData();
   }, [toast, currentProjectId]);
 
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const handleLayoutChange = useCallback((layout: Layout[]) => {
     if (!canUpdate) return;
 
@@ -224,8 +226,13 @@ export default function WBS({ projectId }: WBSProps = {}) {
 
     setLayouts({ lg: boundedLayout });
 
+    // Clear any existing timeout to prevent duplicate saves
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
     // Debounced save
-    const saveTimeout = setTimeout(async () => {
+    saveTimeoutRef.current = setTimeout(async () => {
       try {
         for (const item of boundedLayout) {
           await wbsService.saveWBSLayout({
@@ -248,10 +255,9 @@ export default function WBS({ projectId }: WBSProps = {}) {
           description: "Failed to save layout"
         });
       }
-    }, 200);
-
-    return () => clearTimeout(saveTimeout);
-  }, [canUpdate, toast]);
+      saveTimeoutRef.current = null;
+    }, 500);
+  }, [canUpdate, toast, currentProjectId]);
 
   const handleResetLayout = async () => {
     try {

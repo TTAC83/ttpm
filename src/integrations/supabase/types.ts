@@ -1666,6 +1666,7 @@ export type Database = {
           price_gbp: number | null
           product_name: string
           required_optional: string | null
+          rrp_gbp: number | null
           sku_no: string
           tags: string | null
           type: string
@@ -1681,6 +1682,7 @@ export type Database = {
           price_gbp?: number | null
           product_name: string
           required_optional?: string | null
+          rrp_gbp?: number | null
           sku_no: string
           tags?: string | null
           type: string
@@ -1696,6 +1698,7 @@ export type Database = {
           price_gbp?: number | null
           product_name?: string
           required_optional?: string | null
+          rrp_gbp?: number | null
           sku_no?: string
           tags?: string | null
           type?: string

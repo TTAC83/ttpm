@@ -19,7 +19,7 @@ interface ProjectHardwareProps {
 
 interface HardwareRequirement {
   id: string;
-  hardware_type: 'gateway' | 'receiver' | 'device' | 'server' | 'sfp_addon' | 'load_balancer' | 'storage' | 'tv_display';
+  hardware_type: 'gateway' | 'receiver' | 'device' | 'server' | 'sfp_addon' | 'load_balancer' | 'storage' | 'vpn' | 'tv_display';
   name: string | null;
   quantity: number;
   notes: string | null;
@@ -53,7 +53,7 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedType, setSelectedType] = useState<'gateway' | 'receiver' | 'server' | 'sfp_addon' | 'load_balancer' | 'storage' | null>(null);
+  const [selectedType, setSelectedType] = useState<'gateway' | 'receiver' | 'server' | 'sfp_addon' | 'load_balancer' | 'storage' | 'vpn' | null>(null);
   const [selectedHardwareId, setSelectedHardwareId] = useState<string>('');
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -243,7 +243,7 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
   const { data: hardwareMaster = [] } = useQuery({
     queryKey: ['hardware-master', selectedType],
     queryFn: async () => {
-      if (!selectedType || !['server', 'sfp_addon', 'load_balancer', 'storage'].includes(selectedType)) {
+      if (!selectedType || !['server', 'sfp_addon', 'load_balancer', 'storage', 'vpn'].includes(selectedType)) {
         return [];
       }
 
@@ -252,7 +252,8 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
         'server': 'Server',
         'sfp_addon': '10G SFP ADDON',
         'load_balancer': 'Load Balancer',
-        'storage': 'Storage'
+        'storage': 'Storage',
+        'vpn': 'VPN'
       };
 
       const dbHardwareType = typeMapping[selectedType];
@@ -266,7 +267,7 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
       if (error) throw error;
       return data;
     },
-    enabled: selectedType !== null && ['server', 'sfp_addon', 'load_balancer', 'storage'].includes(selectedType),
+    enabled: selectedType !== null && ['server', 'sfp_addon', 'load_balancer', 'storage', 'vpn'].includes(selectedType),
   });
 
 
@@ -292,7 +293,7 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
         payload.gateway_id = selectedHardwareId;
       } else if (selectedType === 'receiver') {
         payload.receiver_id = selectedHardwareId;
-      } else if (['server', 'sfp_addon', 'load_balancer', 'storage'].includes(selectedType)) {
+      } else if (['server', 'sfp_addon', 'load_balancer', 'storage', 'vpn'].includes(selectedType)) {
         payload.hardware_master_id = selectedHardwareId;
       }
 
@@ -339,7 +340,7 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
     },
   });
 
-  const handleOpenDialog = (hwType: 'gateway' | 'receiver' | 'server' | 'sfp_addon' | 'load_balancer' | 'storage') => {
+  const handleOpenDialog = (hwType: 'gateway' | 'receiver' | 'server' | 'sfp_addon' | 'load_balancer' | 'storage' | 'vpn') => {
     setSelectedType(hwType);
     setDialogOpen(true);
   };
@@ -371,6 +372,7 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
   const sfpAddonRequirements = requirements.filter(r => r.hardware_type === 'sfp_addon');
   const loadBalancerRequirements = requirements.filter(r => r.hardware_type === 'load_balancer');
   const storageRequirements = requirements.filter(r => r.hardware_type === 'storage');
+  const vpnRequirements = requirements.filter(r => r.hardware_type === 'vpn');
 
   if (isLoading) {
     return (
@@ -388,6 +390,7 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
       case 'sfp_addon': return '10G SFP ADDON';
       case 'load_balancer': return 'Load Balancer';
       case 'storage': return 'Storage';
+      case 'vpn': return 'VPN';
       default: return '';
     }
   };
@@ -408,7 +411,7 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
               </TabsTrigger>
               <TabsTrigger value="vision" className="flex items-center gap-2">
                 <Server className="h-4 w-4" />
-                Vision ({serverRequirements.length + sfpAddonRequirements.length + loadBalancerRequirements.length + storageRequirements.length})
+                Vision ({serverRequirements.length + sfpAddonRequirements.length + loadBalancerRequirements.length + storageRequirements.length + vpnRequirements.length})
               </TabsTrigger>
             </TabsList>
 
@@ -758,6 +761,55 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
                   </div>
                 )}
               </div>
+
+              {/* VPN */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">VPN</h3>
+                  <Button size="sm" onClick={() => handleOpenDialog('vpn')}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add VPN
+                  </Button>
+                </div>
+                {vpnRequirements.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No VPN added yet</p>
+                ) : (
+                  <div className="space-y-2">
+                    {vpnRequirements.map((req) => (
+                      <Card key={req.id}>
+                        <CardContent className="pt-6">
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-1 flex-1">
+                              {req.name && (
+                                <p className="text-lg font-semibold">{req.name}</p>
+                              )}
+                              <p className="font-medium">
+                                {req.hardware_master?.sku_no} - {req.hardware_master?.product_name}
+                              </p>
+                              {req.hardware_master?.description && (
+                                <p className="text-sm text-muted-foreground">{req.hardware_master.description}</p>
+                              )}
+                              <p className="text-sm">
+                                <span className="font-medium">Quantity:</span> {req.quantity}
+                              </p>
+                              {req.notes && (
+                                <p className="text-sm text-muted-foreground">{req.notes}</p>
+                              )}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteMutation.mutate(req.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
             </TabsContent>
 
           </Tabs>
@@ -796,7 +848,7 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
                         {receiver.manufacturer} - {receiver.model_number}
                       </SelectItem>
                     ))}
-                  {['server', 'sfp_addon', 'load_balancer', 'storage'].includes(selectedType || '') &&
+                  {['server', 'sfp_addon', 'load_balancer', 'storage', 'vpn'].includes(selectedType || '') &&
                     hardwareMaster.map((hardware: any) => (
                       <SelectItem key={hardware.id} value={hardware.id}>
                         {hardware.sku_no} - {hardware.product_name}

@@ -4920,6 +4920,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      user_can_access_project: {
+        Args: { p_project_id: string }
+        Returns: boolean
+      }
       user_company_id: { Args: never; Returns: string }
     }
     Enums: {

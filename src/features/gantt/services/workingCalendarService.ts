@@ -135,7 +135,7 @@ export class WorkingCalendarService {
     try {
       const { data, error } = await supabase.rpc('add_working_days', {
         start_date: toISODateString(startDate),
-        n: days
+        working_days: days
       });
       
       if (error) throw error;

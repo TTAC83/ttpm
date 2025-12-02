@@ -4668,12 +4668,10 @@ export type Database = {
         Args: { subtask_task_id: string }
         Returns: boolean
       }
-      copy_wbs_layout_for_project:
-        | {
-            Args: { p_is_solutions?: boolean; p_project_id: string }
-            Returns: undefined
-          }
-        | { Args: { p_project_id: string }; Returns: undefined }
+      copy_wbs_layout_for_project: {
+        Args: { p_is_solutions?: boolean; p_project_id: string }
+        Returns: undefined
+      }
       expense_admin_signoff: {
         Args: { p_approved: boolean; p_assignment_id: string }
         Returns: undefined

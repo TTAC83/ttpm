@@ -331,7 +331,7 @@ export function WBSTaskDialog({ isOpen, onClose, step, tasks, onSave }: WBSTaskD
                 {editingTask?.id !== task.id && (
                   <CardContent className="pt-0">
                     <div className="text-xs text-muted-foreground mb-3">
-                      <strong>Assigned:</strong> {task.assigned_role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      <strong>Assigned:</strong> {task.assigned_role?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Not assigned'}
                     </div>
                      
                     <Separator className="my-3" />

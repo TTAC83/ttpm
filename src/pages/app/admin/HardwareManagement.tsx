@@ -10,7 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Edit, Trash2, Search, Loader2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Loader2, Download, Upload } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface HardwareItem {
@@ -43,7 +44,10 @@ export default function HardwareManagement() {
   const [filteredHardware, setFilteredHardware] = useState<HardwareItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<HardwareItem | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importResults, setImportResults] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
   
   // Filters
   const [filterType, setFilterType] = useState<string>('all');
@@ -238,6 +242,116 @@ export default function HardwareManagement() {
     return tags.split(',').map(t => t.trim()).filter(Boolean);
   };
 
+  const handleExport = () => {
+    try {
+      const exportData = hardware.map(item => ({
+        'Hardware Type': item.hardware_type,
+        'SKU Number': item.sku_no,
+        'Type': item.type,
+        'Product Name': item.product_name,
+        'Description': item.description || '',
+        'Price (GBP)': item.price_gbp || '',
+        'Minimum Quantity': item.minimum_quantity || '',
+        'Required/Optional': item.required_optional || '',
+        'Tags': item.tags || '',
+        'Comments': item.comments || '',
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Hardware Catalog');
+      
+      const timestamp = new Date().toISOString().split('T')[0];
+      XLSX.writeFile(wb, `hardware-catalog-${timestamp}.xlsx`);
+
+      toast({
+        title: 'Success',
+        description: `Exported ${hardware.length} hardware items`,
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to export hardware catalog',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    setImportResults(null);
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      let success = 0;
+      let failed = 0;
+      const errors: string[] = [];
+
+      for (const [index, row] of jsonData.entries()) {
+        try {
+          const rowData: any = row;
+          
+          if (!rowData['SKU Number'] || !rowData['Product Name']) {
+            failed++;
+            errors.push(`Row ${index + 2}: Missing required fields (SKU Number or Product Name)`);
+            continue;
+          }
+
+          const itemData = {
+            hardware_type: rowData['Hardware Type'] || 'Server',
+            sku_no: rowData['SKU Number'],
+            type: rowData['Type'] || 'TTX-Vision',
+            product_name: rowData['Product Name'],
+            description: rowData['Description'] || null,
+            price_gbp: rowData['Price (GBP)'] ? parseFloat(rowData['Price (GBP)']) : null,
+            minimum_quantity: rowData['Minimum Quantity'] ? parseInt(rowData['Minimum Quantity']) : 1,
+            required_optional: rowData['Required/Optional'] || 'Required',
+            tags: rowData['Tags'] || null,
+            comments: rowData['Comments'] || null,
+          };
+
+          const { error } = await supabase
+            .from('hardware_master')
+            .upsert(itemData, { onConflict: 'sku_no' });
+
+          if (error) throw error;
+          success++;
+        } catch (err: any) {
+          failed++;
+          errors.push(`Row ${index + 2}: ${err.message}`);
+        }
+      }
+
+      setImportResults({ success, failed, errors: errors.slice(0, 10) });
+      
+      if (success > 0) {
+        fetchHardware();
+        toast({
+          title: 'Import Complete',
+          description: `Successfully imported ${success} items${failed > 0 ? `, ${failed} failed` : ''}`,
+        });
+      }
+    } catch (error: any) {
+      console.error('Import error:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to import hardware catalog',
+        variant: 'destructive',
+      });
+    } finally {
+      setImporting(false);
+      event.target.value = '';
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -253,10 +367,20 @@ export default function HardwareManagement() {
           <h1 className="text-3xl font-bold">Hardware Catalog</h1>
           <p className="text-muted-foreground">Manage ThingTrax hardware SKUs and specifications</p>
         </div>
-        <Button onClick={() => { resetForm(); setDialogOpen(true); }}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Hardware
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExport}>
+            <Download className="mr-2 h-4 w-4" />
+            Export
+          </Button>
+          <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+            <Upload className="mr-2 h-4 w-4" />
+            Import
+          </Button>
+          <Button onClick={() => { resetForm(); setDialogOpen(true); }}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Hardware
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -521,6 +645,70 @@ export default function HardwareManagement() {
             </Button>
             <Button onClick={handleSave}>
               {editingItem ? 'Update' : 'Create'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Import Hardware Catalog</DialogTitle>
+            <DialogDescription>
+              Upload an Excel file to import hardware items. Existing items with matching SKU numbers will be updated.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="import-file">Select File</Label>
+              <Input
+                id="import-file"
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                onChange={handleImport}
+                disabled={importing}
+              />
+              <p className="text-xs text-muted-foreground">
+                Required columns: Hardware Type, SKU Number, Type, Product Name
+              </p>
+            </div>
+
+            {importing && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Importing...</span>
+              </div>
+            )}
+
+            {importResults && (
+              <div className="space-y-2">
+                <div className="flex gap-4 text-sm">
+                  <span className="text-green-600">✓ Success: {importResults.success}</span>
+                  {importResults.failed > 0 && (
+                    <span className="text-destructive">✗ Failed: {importResults.failed}</span>
+                  )}
+                </div>
+                {importResults.errors.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Errors:</p>
+                    <div className="text-xs text-muted-foreground space-y-1 max-h-32 overflow-y-auto">
+                      {importResults.errors.map((error, idx) => (
+                        <div key={idx}>{error}</div>
+                      ))}
+                      {importResults.errors.length === 10 && importResults.failed > 10 && (
+                        <div>... and {importResults.failed - 10} more errors</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setImportDialogOpen(false); setImportResults(null); }}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

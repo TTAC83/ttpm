@@ -29,19 +29,19 @@ export interface ConversionMapping {
 }
 
 export const PROJECT_ROLES = [
-  { value: "customer_project_lead", label: "Customer Project Lead" },
-  { value: "implementation_lead", label: "Implementation Lead" },
-  { value: "ai_iot_engineer", label: "AI/IoT Engineer" },
-  { value: "technical_project_lead", label: "Technical Project Lead" },
-  { value: "project_coordinator", label: "Project Coordinator" },
-  { value: "sales_lead", label: "Sales Lead" },
-  { value: "solution_consultant", label: "Solution Consultant" },
-  { value: "account_manager", label: "Account Manager" }
+  { value: 'customer_project_lead', label: 'Customer Project Lead' },
+  { value: 'implementation_lead', label: 'Implementation Lead' },
+  { value: 'ai_iot_engineer', label: 'AI/IoT Engineer' },
+  { value: 'technical_project_lead', label: 'Technical Project Lead' },
+  { value: 'project_coordinator', label: 'Project Coordinator' },
+  { value: 'sales_lead', label: 'Sales Lead' },
+  { value: 'solution_consultant', label: 'Solution Consultant' },
+  { value: 'account_manager', label: 'Account Manager' },
 ];
 
 export const SUGGESTED_ROLE_MAPPINGS = {
   'Solutions Consultant': 'solution_consultant', // Default mapping
-  'Salesperson': 'sales_lead', // Default mapping
+  Salesperson: 'sales_lead', // Default mapping
 };
 
 export const fetchSolutionsProjects = async (): Promise<SolutionsProject[]> => {
@@ -54,7 +54,9 @@ export const fetchSolutionsProjects = async (): Promise<SolutionsProject[]> => {
   return data || [];
 };
 
-export const fetchSolutionsProjectById = async (id: string): Promise<SolutionsProject | null> => {
+export const fetchSolutionsProjectById = async (
+  id: string,
+): Promise<SolutionsProject | null> => {
   const { data, error } = await supabase
     .from('solutions_projects')
     .select('*, companies(name)')
@@ -76,10 +78,15 @@ export const fetchSolutionsLines = async (solutionsProjectId: string) => {
   return data || [];
 };
 
-export const getConversionMapping = async (solutionsProject: SolutionsProject): Promise<ConversionMapping> => {
+export const getConversionMapping = async (
+  solutionsProject: SolutionsProject,
+): Promise<ConversionMapping> => {
   // Check if the mapped users exist in the profiles table
-  const userIds = [solutionsProject.salesperson, solutionsProject.solutions_consultant].filter(Boolean);
-  
+  const userIds = [
+    solutionsProject.salesperson,
+    solutionsProject.solutions_consultant,
+  ].filter(Boolean) as string[];
+
   let existingUsers: any[] = [];
   if (userIds.length > 0) {
     const { data } = await supabase
@@ -90,17 +97,21 @@ export const getConversionMapping = async (solutionsProject: SolutionsProject): 
   }
 
   return {
-    salesperson: existingUsers.find(u => u.user_id === solutionsProject.salesperson)?.user_id,
-    solutions_consultant: existingUsers.find(u => u.user_id === solutionsProject.solutions_consultant)?.user_id,
+    salesperson: existingUsers.find(
+      (u) => u.user_id === solutionsProject.salesperson,
+    )?.user_id,
+    solutions_consultant: existingUsers.find(
+      (u) => u.user_id === solutionsProject.solutions_consultant,
+    )?.user_id,
     customer_lead_name: solutionsProject.customer_lead,
-    availableRoles: PROJECT_ROLES
+    availableRoles: PROJECT_ROLES,
   };
 };
 
 export const convertSolutionsToImplementationProject = async (
   solutionsProject: SolutionsProject,
   roleMapping: { [key: string]: string },
-  contractSignedDate: string
+  contractSignedDate: string,
 ) => {
   // Use the existing company_id from the solutions project
   const company_id = solutionsProject.company_id;
@@ -131,24 +142,49 @@ export const convertSolutionsToImplementationProject = async (
 
   if (projectError) throw projectError;
 
-  // Convert solutions_lines to lines
+  // Convert solutions_lines to implementation lines and move related positions/equipment
   const solutionsLines = await fetchSolutionsLines(solutionsProject.id);
-  
+
   if (solutionsLines.length > 0) {
-    const convertedLines = solutionsLines.map(solutionLine => ({
-      project_id: project.id,
-      line_name: solutionLine.line_name,
-      line_description: solutionLine.line_description,
-      product_description: solutionLine.product_description,
-      min_speed: solutionLine.min_speed,
-      max_speed: solutionLine.max_speed,
-    }));
+    for (const solutionLine of solutionsLines) {
+      // Create corresponding implementation line
+      const { data: newLine, error: lineError } = await supabase
+        .from('lines')
+        .insert({
+          project_id: project.id,
+          line_name: solutionLine.line_name,
+          line_description: solutionLine.line_description,
+          product_description: solutionLine.product_description,
+          min_speed: solutionLine.min_speed,
+          max_speed: solutionLine.max_speed,
+        })
+        .select()
+        .single();
 
-    const { error: linesError } = await supabase
-      .from('lines')
-      .insert(convertedLines);
+      if (lineError) throw lineError;
 
-    if (linesError) throw linesError;
+      // Move positions from the solutions line to the new implementation line
+      const { error: positionsError } = await supabase
+        .from('positions')
+        .update({
+          line_id: newLine.id,
+          solutions_line_id: null,
+        })
+        .eq('solutions_line_id', solutionLine.id);
+
+      if (positionsError) throw positionsError;
+
+      // Move equipment from the solutions line to the new implementation line
+      const { error: equipmentError } = await supabase
+        .from('equipment')
+        .update({
+          line_id: newLine.id,
+          solutions_line_id: null,
+        })
+        .eq('solutions_line_id', solutionLine.id);
+
+      if (equipmentError) throw equipmentError;
+    }
   }
 
   return project;

@@ -101,7 +101,7 @@ export const useProjectHardwareSummary = (projectId: string) => {
                 sku_no: master?.sku_no,
                 model_number: master?.sku_no,
                 description: master?.description,
-                price: master?.price_gbp,
+                price: master?.rrp_gbp ?? master?.price_gbp,
               });
 
               // Add light if attached
@@ -120,7 +120,7 @@ export const useProjectHardwareSummary = (projectId: string) => {
                     model_number: lightMaster.sku_no,
                     manufacturer: lightMaster.manufacturer,
                     description: lightMaster.description,
-                    price: lightMaster.price_gbp,
+                    price: lightMaster.rrp_gbp ?? lightMaster.price_gbp,
                     supplier_name: lightMaster.supplier_name,
                     supplier_person: lightMaster.supplier_person,
                     supplier_email: lightMaster.supplier_email,
@@ -146,7 +146,7 @@ export const useProjectHardwareSummary = (projectId: string) => {
                     model_number: plcMaster.sku_no,
                     manufacturer: plcMaster.manufacturer,
                     description: plcMaster.description,
-                    price: plcMaster.price_gbp,
+                    price: plcMaster.rrp_gbp ?? plcMaster.price_gbp,
                     supplier_name: plcMaster.supplier_name,
                     supplier_person: plcMaster.supplier_person,
                     supplier_email: plcMaster.supplier_email,
@@ -172,7 +172,7 @@ export const useProjectHardwareSummary = (projectId: string) => {
                     model_number: hmiMaster.sku_no,
                     manufacturer: hmiMaster.manufacturer,
                     description: hmiMaster.description,
-                    price: hmiMaster.price_gbp,
+                    price: hmiMaster.rrp_gbp ?? hmiMaster.price_gbp,
                     supplier_name: hmiMaster.supplier_name,
                     supplier_person: hmiMaster.supplier_person,
                     supplier_email: hmiMaster.supplier_email,
@@ -186,7 +186,7 @@ export const useProjectHardwareSummary = (projectId: string) => {
         }
 
         // ============= IOT DEVICES FROM LINES =============
-        const { data: iotData } = await supabase
+      const { data: iotData } = await supabase
           .from('iot_devices')
           .select(`
             id,
@@ -203,7 +203,8 @@ export const useProjectHardwareSummary = (projectId: string) => {
               hardware_type,
               type,
               description,
-              price_gbp
+              price_gbp,
+              rrp_gbp
             )
           `)
           .in('equipment.line_id', lineIds);
@@ -225,7 +226,7 @@ export const useProjectHardwareSummary = (projectId: string) => {
                 sku_no: master?.sku_no,
                 model_number: master?.sku_no,
                 description: master?.description || master?.product_name,
-                price: master?.price_gbp,
+                price: master?.rrp_gbp ?? master?.price_gbp,
               });
             }
           });
@@ -298,22 +299,26 @@ export const useProjectHardwareSummary = (projectId: string) => {
           let hardwareType = req.hardware_type || 'Unknown';
           let category = req.hardware_type || 'Unknown';
           let itemName = req.name || 'Unknown';
+          let unitPrice: number | undefined;
 
           if (req.gateway_id) {
             master = gatewaysMap.get(req.gateway_id);
             hardwareType = 'Gateway';
             category = 'Gateway';
             itemName = master?.model_number || req.name || 'Gateway';
+            unitPrice = master?.price ?? master?.price_gbp;
           } else if (req.receiver_id) {
             master = receiversMap.get(req.receiver_id);
             hardwareType = 'Receiver';
             category = 'Receiver';
             itemName = master?.model_number || req.name || 'Receiver';
+            unitPrice = master?.price ?? master?.price_gbp;
           } else if (req.hardware_master_id) {
             master = hardwareMap.get(req.hardware_master_id);
             hardwareType = master?.hardware_type || req.hardware_type || 'Hardware';
             category = master?.hardware_type || req.hardware_type || 'Hardware';
             itemName = master?.product_name || req.name || 'Hardware';
+            unitPrice = master?.rrp_gbp ?? master?.price_gbp;
           }
 
           allHardware.push({
@@ -326,7 +331,7 @@ export const useProjectHardwareSummary = (projectId: string) => {
             manufacturer: master?.manufacturer,
             model_number: master?.model_number || master?.sku_no,
             description: master?.description,
-            price: master?.price || master?.price_gbp,
+            price: unitPrice,
             supplier_name: master?.supplier_name,
             supplier_person: master?.supplier_person,
             supplier_email: master?.supplier_email,

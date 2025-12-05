@@ -2708,6 +2708,45 @@ export type Database = {
           },
         ]
       }
+      project_hardware_invoice_status: {
+        Row: {
+          created_at: string
+          hardware_master_id: string
+          invoice_status: Database["public"]["Enums"]["invoice_status_enum"]
+          project_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hardware_master_id: string
+          invoice_status?: Database["public"]["Enums"]["invoice_status_enum"]
+          project_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hardware_master_id?: string
+          invoice_status?: Database["public"]["Enums"]["invoice_status_enum"]
+          project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_hardware_invoice_status_hardware_master_id_fkey"
+            columns: ["hardware_master_id"]
+            isOneToOne: false
+            referencedRelation: "hardware_master"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_hardware_invoice_status_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_hardware_prices: {
         Row: {
           created_at: string
@@ -3503,6 +3542,45 @@ export type Database = {
             columns: ["solutions_project_id"]
             isOneToOne: false
             referencedRelation: "solutions_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      solutions_project_hardware_invoice_status: {
+        Row: {
+          created_at: string
+          hardware_master_id: string
+          invoice_status: Database["public"]["Enums"]["invoice_status_enum"]
+          solutions_project_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hardware_master_id: string
+          invoice_status?: Database["public"]["Enums"]["invoice_status_enum"]
+          solutions_project_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hardware_master_id?: string
+          invoice_status?: Database["public"]["Enums"]["invoice_status_enum"]
+          solutions_project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solutions_project_hardware_invoice_st_solutions_project_id_fkey"
+            columns: ["solutions_project_id"]
+            isOneToOne: false
+            referencedRelation: "solutions_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solutions_project_hardware_invoice_stat_hardware_master_id_fkey"
+            columns: ["hardware_master_id"]
+            isOneToOne: false
+            referencedRelation: "hardware_master"
             referencedColumns: ["id"]
           },
         ]
@@ -5018,6 +5096,7 @@ export type Database = {
       impl_health_simple: "green" | "red"
       impl_week_status: "on_track" | "off_track"
       implementation_blocker_status_enum: "Live" | "Closed"
+      invoice_status_enum: "not_raised" | "raised" | "received"
       project_type: "implementation" | "solutions"
       reference_status_enum: "Active" | "Promised" | "Priority" | "N/A"
       task_status: "Planned" | "In Progress" | "Blocked" | "Done"
@@ -5211,6 +5290,7 @@ export const Constants = {
       impl_health_simple: ["green", "red"],
       impl_week_status: ["on_track", "off_track"],
       implementation_blocker_status_enum: ["Live", "Closed"],
+      invoice_status_enum: ["not_raised", "raised", "received"],
       project_type: ["implementation", "solutions"],
       reference_status_enum: ["Active", "Promised", "Priority", "N/A"],
       task_status: ["Planned", "In Progress", "Blocked", "Done"],

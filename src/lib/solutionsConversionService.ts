@@ -12,6 +12,28 @@ export interface SolutionsProject {
   customer_email?: string;
   customer_phone?: string;
   customer_job_title?: string;
+  segment?: string;
+  contract_signed_date?: string | null;
+  contract_start_date?: string | null;
+  contract_end_date?: string | null;
+  break_clause_enabled?: boolean;
+  break_clause_project_date?: string | null;
+  break_clause_key_points_md?: string | null;
+  line_description?: string | null;
+  product_description?: string | null;
+  project_goals?: string | null;
+  contracted_lines?: number | null;
+  billing_terms?: string | null;
+  hardware_fee?: number | null;
+  services_fee?: number | null;
+  arr?: number | null;
+  mrr?: number | null;
+  payment_terms_days?: number | null;
+  contracted_days?: number | null;
+  auto_renewal?: boolean;
+  standard_terms?: boolean;
+  deviation_of_terms?: string | null;
+  useful_links?: any;
   created_at: string;
   companies?: {
     name: string;
@@ -123,7 +145,13 @@ export const convertSolutionsToImplementationProject = async (
     site_name: solutionsProject.site_name,
     site_address: solutionsProject.site_address || null,
     domain: solutionsProject.domain,
+    segment: solutionsProject.segment || null,
     contract_signed_date: contractSignedDate,
+    contract_start_date: solutionsProject.contract_start_date || null,
+    contract_end_date: solutionsProject.contract_end_date || null,
+    break_clause_enabled: solutionsProject.break_clause_enabled ?? false,
+    break_clause_project_date: solutionsProject.break_clause_project_date || null,
+    break_clause_key_points_md: solutionsProject.break_clause_key_points_md || null,
     customer_project_lead: roleMapping.customer_project_lead || null,
     implementation_lead: roleMapping.implementation_lead || null,
     ai_iot_engineer: roleMapping.ai_iot_engineer || null,
@@ -132,6 +160,21 @@ export const convertSolutionsToImplementationProject = async (
     sales_lead: roleMapping.sales_lead || null,
     solution_consultant: roleMapping.solution_consultant || null,
     account_manager: roleMapping.account_manager || null,
+    line_description: solutionsProject.line_description || null,
+    product_description: solutionsProject.product_description || null,
+    project_goals: solutionsProject.project_goals || null,
+    contracted_lines: solutionsProject.contracted_lines || null,
+    billing_terms: solutionsProject.billing_terms || null,
+    hardware_fee: solutionsProject.hardware_fee || null,
+    services_fee: solutionsProject.services_fee || null,
+    arr: solutionsProject.arr || null,
+    mrr: solutionsProject.mrr || null,
+    payment_terms_days: solutionsProject.payment_terms_days || null,
+    contracted_days: solutionsProject.contracted_days || null,
+    auto_renewal: solutionsProject.auto_renewal ?? true,
+    standard_terms: solutionsProject.standard_terms ?? true,
+    deviation_of_terms: solutionsProject.deviation_of_terms || null,
+    useful_links: solutionsProject.useful_links || null,
   };
 
   const { data: project, error: projectError } = await supabase

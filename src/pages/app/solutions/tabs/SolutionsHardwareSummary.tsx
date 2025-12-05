@@ -94,19 +94,17 @@ export const SolutionsHardwareSummary = ({ solutionsProjectId }: SolutionsHardwa
 
   const totalPrice = hardware.reduce((sum, item) => {
     const itemPrice = item.price || 0;
-    const quantity = item.quantity || 1;
-    return sum + itemPrice * quantity;
+    return sum + itemPrice;
   }, 0);
-
+ 
   // Calculate stats
   const uniqueLines = new Set(hardware.filter(h => h.line_name).map(h => h.line_name));
   const totalLines = uniqueLines.size;
-
+ 
   // Group by hardware category from the "Type" field in hardware_master
   const categoryCounts = hardware.reduce((acc, item) => {
     const category = item.category || 'Other';
-    const quantity = item.quantity || 1;
-    acc[category] = (acc[category] || 0) + quantity;
+    acc[category] = (acc[category] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
@@ -147,20 +145,19 @@ export const SolutionsHardwareSummary = ({ solutionsProjectId }: SolutionsHardwa
         ) : (
           <>
           <div className="overflow-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Source</TableHead>
-                  <TableHead>Qty</TableHead>
-                  <TableHead>Line/Equipment</TableHead>
-                  <TableHead>SKU/Model</TableHead>
-                  <TableHead>Manufacturer</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Invoice Status</TableHead>
-                </TableRow>
-              </TableHeader>
+             <Table>
+               <TableHeader>
+                 <TableRow>
+                   <TableHead>Type</TableHead>
+                   <TableHead>Source</TableHead>
+                   <TableHead>Line/Equipment</TableHead>
+                   <TableHead>SKU/Model</TableHead>
+                   <TableHead>Manufacturer</TableHead>
+                   <TableHead>Description</TableHead>
+                   <TableHead>Price</TableHead>
+                   <TableHead>Invoice Status</TableHead>
+                 </TableRow>
+               </TableHeader>
               <TableBody>
                 {hardware.map((item) => {
                   const currentStatus: InvoiceStatus = item.invoice_status ?? 'not_raised';
@@ -173,7 +170,6 @@ export const SolutionsHardwareSummary = ({ solutionsProjectId }: SolutionsHardwa
                           {item.source === 'line' ? 'Line' : 'Direct'}
                         </Badge>
                       </TableCell>
-                      <TableCell>{item.quantity || 1}</TableCell>
                       <TableCell>
                         {item.line_name && <div className="text-sm">{item.line_name}</div>}
                         {item.equipment_name && (

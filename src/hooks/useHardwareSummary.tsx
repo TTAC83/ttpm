@@ -306,7 +306,7 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
           let hardwareType = req.hardware_type || 'Unknown';
           let category = req.hardware_type || 'Unknown';
           let itemName = req.name || 'Unknown';
-
+ 
           if (req.gateway_id) {
             master = gatewaysMap.get(req.gateway_id);
             hardwareType = 'Gateway';
@@ -323,25 +323,29 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
             category = master?.hardware_type || req.hardware_type || 'Hardware';
             itemName = master?.product_name || req.name || 'Hardware';
           }
-
-          allHardware.push({
-            id: `direct-${req.id}`,
-            hardware_type: `${hardwareType} - ${itemName}`,
-            category: category,
-            source: 'direct',
-            quantity: req.quantity || 1,
-            sku_no: master?.sku_no || master?.model_number,
-            manufacturer: master?.manufacturer,
-            model_number: master?.model_number || master?.sku_no,
-            description: master?.description,
-            price: master?.price || master?.price_gbp,
-            supplier_name: master?.supplier_name,
-            supplier_person: master?.supplier_person,
-            supplier_email: master?.supplier_email,
-            supplier_phone: master?.supplier_phone,
-            order_hyperlink: master?.order_hyperlink,
-            hardware_master_id: req.hardware_master_id,
-          });
+ 
+          const count = req.quantity || 1;
+ 
+          for (let i = 0; i < count; i++) {
+            allHardware.push({
+              id: `direct-${req.id}-${i + 1}`,
+              hardware_type: `${hardwareType} - ${itemName}`,
+              category: category,
+              source: 'direct',
+              quantity: 1,
+              sku_no: master?.sku_no || master?.model_number,
+              manufacturer: master?.manufacturer,
+              model_number: master?.model_number || master?.sku_no,
+              description: master?.description,
+              price: master?.price || master?.price_gbp,
+              supplier_name: master?.supplier_name,
+              supplier_person: master?.supplier_person,
+              supplier_email: master?.supplier_email,
+              supplier_phone: master?.supplier_phone,
+              order_hyperlink: master?.order_hyperlink,
+              hardware_master_id: req.hardware_master_id,
+            });
+          }
         });
       }
 

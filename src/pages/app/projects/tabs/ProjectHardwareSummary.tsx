@@ -146,17 +146,15 @@ export const ProjectHardwareSummary = ({ projectId }: ProjectHardwareSummaryProp
 
   const totalPrice = hardware.reduce((sum, item) => {
     const itemPrice = item.effective_price ?? item.price ?? 0;
-    const quantity = item.quantity || 1;
-    return sum + itemPrice * quantity;
+    return sum + itemPrice;
   }, 0);
-
+ 
   const uniqueLines = new Set(hardware.filter(h => h.line_name).map(h => h.line_name));
   const totalLines = uniqueLines.size;
-
+ 
   const categoryCounts = hardware.reduce((acc, item) => {
     const category = item.category || 'Other';
-    const quantity = item.quantity || 1;
-    acc[category] = (acc[category] || 0) + quantity;
+    acc[category] = (acc[category] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
@@ -198,7 +196,6 @@ export const ProjectHardwareSummary = ({ projectId }: ProjectHardwareSummaryProp
                 <TableRow>
                   <TableHead>Type</TableHead>
                   <TableHead>Source</TableHead>
-                  <TableHead>Qty</TableHead>
                   <TableHead>Line/Equipment</TableHead>
                   <TableHead>SKU/Model</TableHead>
                   <TableHead>Manufacturer</TableHead>
@@ -220,7 +217,6 @@ export const ProjectHardwareSummary = ({ projectId }: ProjectHardwareSummaryProp
                           {item.source === 'line' ? 'Line' : 'Direct'}
                         </Badge>
                       </TableCell>
-                      <TableCell>{item.quantity || 1}</TableCell>
                       <TableCell>
                         {item.line_name && <div className="text-sm">{item.line_name}</div>}
                         {item.equipment_name && (

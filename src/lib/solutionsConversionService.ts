@@ -230,5 +230,17 @@ export const convertSolutionsToImplementationProject = async (
     }
   }
 
+  // Move project-level IoT hardware requirements from the solutions project
+  // to the new implementation project so the Factory Hardware tab matches.
+  const { error: iotRequirementsError } = await supabase
+    .from('project_iot_requirements')
+    .update({
+      project_id: project.id,
+      solutions_project_id: null,
+    })
+    .eq('solutions_project_id', solutionsProject.id);
+
+  if (iotRequirementsError) throw iotRequirementsError;
+
   return project;
 };

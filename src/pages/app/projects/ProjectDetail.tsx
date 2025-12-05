@@ -379,40 +379,40 @@ export const ProjectDetail = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="space-y-2">
-          {/* First row of tabs */}
-          <TabsList className="grid w-full grid-cols-12">
+          {/* Row 1 */}
+          <TabsList className="flex flex-wrap gap-2">
             <TabsTrigger value="overview">Customer Overview</TabsTrigger>
             <TabsTrigger value="contract">Contract Info</TabsTrigger>
             <TabsTrigger value="team">Team</TabsTrigger>
+            <TabsTrigger value="hardware-summary">Hardware Summary</TabsTrigger>
+          </TabsList>
+
+          {/* Row 2 */}
+          <TabsList className="flex flex-wrap gap-2">
+            <TabsTrigger value="wbs">WBS Gantt</TabsTrigger>
+            <TabsTrigger value="actions">Actions</TabsTrigger>
+            <TabsTrigger value="calendar">Calendar</TabsTrigger>
+            {profile?.is_internal && (
+              <TabsTrigger value="product-gaps">Feature Requirements</TabsTrigger>
+            )}
+            {profile?.is_internal &&
+              ['IoT', 'Vision', 'Hybrid'].includes(project.domain) && (
+                <TabsTrigger value="blockers">Escalations</TabsTrigger>
+              )}
+          </TabsList>
+
+          {/* Row 3 - remaining tabs */}
+          <TabsList className="flex flex-wrap gap-2">
             <TabsTrigger value="account">Account Info</TabsTrigger>
             <TabsTrigger value="hardware">Factory Hardware</TabsTrigger>
-            <TabsTrigger value="hardware-summary">Hardware Summary</TabsTrigger>
             <TabsTrigger value="hardware-status">Hardware Status</TabsTrigger>
             <TabsTrigger value="factory">Factory</TabsTrigger>
             <TabsTrigger value="lines">Lines</TabsTrigger>
             <TabsTrigger value="tasks">Tasks</TabsTrigger>
-            <TabsTrigger value="wbs">WBS</TabsTrigger>
             <TabsTrigger value="wbs-v2">Gantt (Beta)</TabsTrigger>
-          </TabsList>
-          
-          {/* Second row of tabs */}
-          <TabsList
-            className="grid w-full"
-            style={{
-              gridTemplateColumns: `repeat(${3 + (profile?.is_internal ? (2 + (['IoT', 'Vision', 'Hybrid'].includes(project.domain) ? 1 : 0)) : 0)}, minmax(0, 1fr))`,
-            }}
-          >
-            <TabsTrigger value="actions">Actions</TabsTrigger>
-            <TabsTrigger value="calendar">Calendar</TabsTrigger>
             <TabsTrigger value="vision-models">Vision Models</TabsTrigger>
             {profile?.is_internal && (
               <TabsTrigger value="audit">Audit</TabsTrigger>
-            )}
-            {profile?.is_internal && (
-              <TabsTrigger value="product-gaps">Feature Requirements</TabsTrigger>
-            )}
-            {profile?.is_internal && ['IoT', 'Vision', 'Hybrid'].includes(project.domain) && (
-              <TabsTrigger value="blockers">Escalations</TabsTrigger>
             )}
           </TabsList>
         </div>

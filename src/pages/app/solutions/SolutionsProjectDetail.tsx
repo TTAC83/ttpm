@@ -201,28 +201,32 @@ export const SolutionsProjectDetail = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="space-y-2">
-          {/* First row of tabs */}
-          <TabsList className="grid grid-cols-10 lg:w-auto">
+          {/* Row 1 */}
+          <TabsList className="flex flex-wrap gap-2">
             <TabsTrigger value="overview">Customer Overview</TabsTrigger>
             <TabsTrigger value="contract">Contract Info</TabsTrigger>
             <TabsTrigger value="team">Team</TabsTrigger>
+            <TabsTrigger value="hardware-summary">Hardware Summary</TabsTrigger>
+          </TabsList>
+
+          {/* Row 2 */}
+          <TabsList className="flex flex-wrap gap-2">
+            <TabsTrigger value="wbs">WBS Gantt</TabsTrigger>
+            <TabsTrigger value="actions">Actions</TabsTrigger>
+            <TabsTrigger value="calendar">Calendar</TabsTrigger>
+            <TabsTrigger value="product-gaps">Feature Requirements</TabsTrigger>
+            <TabsTrigger value="blockers">Escalations</TabsTrigger>
+          </TabsList>
+
+          {/* Row 3 - remaining tabs */}
+          <TabsList className="flex flex-wrap gap-2">
             <TabsTrigger value="account">Account Info</TabsTrigger>
             <TabsTrigger value="hardware">Factory Hardware</TabsTrigger>
             <TabsTrigger value="factory">Factory</TabsTrigger>
             <TabsTrigger value="lines">Lines</TabsTrigger>
-            <TabsTrigger value="wbs">WBS</TabsTrigger>
             <TabsTrigger value="wbs-v2">Gantt (Beta)</TabsTrigger>
-            <TabsTrigger value="hardware-summary">Hardware Summary</TabsTrigger>
-          </TabsList>
-
-          {/* Second row of tabs - New unified tabs */}
-          <TabsList className="grid grid-cols-6 lg:w-auto">
-            <TabsTrigger value="actions">Actions</TabsTrigger>
-            <TabsTrigger value="calendar">Calendar</TabsTrigger>
             <TabsTrigger value="vision-models">Vision Models</TabsTrigger>
             <TabsTrigger value="audit">Audit</TabsTrigger>
-            <TabsTrigger value="product-gaps">Feature Requirements</TabsTrigger>
-            <TabsTrigger value="blockers">Escalations</TabsTrigger>
           </TabsList>
         </div>
 

@@ -349,9 +349,14 @@ export const useProjectHardwareSummary = (projectId: string) => {
         });
       }
 
-      const hardwareMasterIds = Array.from(
-        new Set(allHardware.map(item => item.hardware_master_id).filter(Boolean)) as string[]
-      );
+      const hardwareMasterIdsSet = new Set<string>();
+      allHardware.forEach(item => {
+        if (item.hardware_master_id) {
+          hardwareMasterIdsSet.add(item.hardware_master_id);
+        }
+      });
+      const hardwareMasterIds = Array.from(hardwareMasterIdsSet);
+
 
       const overridesMap = new Map<string, number>();
 

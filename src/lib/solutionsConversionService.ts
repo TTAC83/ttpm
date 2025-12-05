@@ -1,39 +1,54 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 
 export interface SolutionsProject {
   id: string;
   company_id: string;
   domain: 'Vision' | 'IoT' | 'Hybrid';
+  name: string;
   site_name: string;
-  site_address?: string;
-  salesperson?: string;
-  solutions_consultant?: string;
-  customer_lead?: string;
-  customer_email?: string;
-  customer_phone?: string;
-  customer_job_title?: string;
-  segment?: string;
+  site_address?: string | null;
+  salesperson?: string | null;
+  sales_lead?: string | null;
+  account_manager?: string | null;
+  solutions_consultant?: string | null;
+  ai_iot_engineer?: string | null;
+  implementation_lead?: string | null;
+  project_coordinator?: string | null;
+  technical_project_lead?: string | null;
+  customer_lead?: string | null;
+  customer_email?: string | null;
+  customer_phone?: string | null;
+  customer_job_title?: string | null;
+  customer_project_lead?: string | null;
+  segment?: string | null;
+  expansion_opportunity?: string | null;
   contract_signed_date?: string | null;
   contract_start_date?: string | null;
   contract_end_date?: string | null;
-  break_clause_enabled?: boolean;
+  potential_contract_start_date?: string;
+  break_clause_enabled?: boolean | null;
   break_clause_project_date?: string | null;
   break_clause_key_points_md?: string | null;
   line_description?: string | null;
   product_description?: string | null;
   project_goals?: string | null;
   contracted_lines?: number | null;
+  contracted_days?: number | null;
   billing_terms?: string | null;
   hardware_fee?: number | null;
   services_fee?: number | null;
   arr?: number | null;
   mrr?: number | null;
   payment_terms_days?: number | null;
-  contracted_days?: number | null;
-  auto_renewal?: boolean;
-  standard_terms?: boolean;
+  auto_renewal?: boolean | null;
+  standard_terms?: boolean | null;
   deviation_of_terms?: string | null;
-  useful_links?: any;
+  case_study?: boolean | null;
+  reference_call?: boolean | null;
+  reference_status?: string | null;
+  site_visit?: boolean | null;
+  testimonial?: boolean | null;
   servers_required?: number | null;
   gateways_required?: number | null;
   tv_display_devices_required?: number | null;
@@ -48,11 +63,14 @@ export interface SolutionsProject {
   teams_webhook_url?: string | null;
   tablet_use_cases?: string | null;
   modules_and_features?: string | null;
+  useful_links?: any;
   created_at: string;
+  updated_at?: string;
   companies?: {
     name: string;
   };
 }
+
 
 export interface ConversionMapping {
   salesperson?: string;
@@ -63,6 +81,8 @@ export interface ConversionMapping {
     label: string;
   }>;
 }
+
+type ProjectInsert = Database['public']['Tables']['projects']['Insert'];
 
 export const PROJECT_ROLES = [
   { value: 'customer_project_lead', label: 'Customer Project Lead' },
@@ -153,27 +173,36 @@ export const convertSolutionsToImplementationProject = async (
   const company_id = solutionsProject.company_id;
 
   // Create the implementation project
-  const projectData = {
+  const projectData: ProjectInsert = {
     company_id,
-    name: solutionsProject.site_name, // Use site_name as project name
+    name: solutionsProject.name || solutionsProject.site_name, // Preserve original name when available
     site_name: solutionsProject.site_name,
     site_address: solutionsProject.site_address || null,
     domain: solutionsProject.domain,
     segment: solutionsProject.segment || null,
+    expansion_opportunity: solutionsProject.expansion_opportunity || null,
     contract_signed_date: contractSignedDate,
     contract_start_date: solutionsProject.contract_start_date || null,
     contract_end_date: solutionsProject.contract_end_date || null,
     break_clause_enabled: solutionsProject.break_clause_enabled ?? false,
     break_clause_project_date: solutionsProject.break_clause_project_date || null,
     break_clause_key_points_md: solutionsProject.break_clause_key_points_md || null,
-    customer_project_lead: roleMapping.customer_project_lead || null,
-    implementation_lead: roleMapping.implementation_lead || null,
-    ai_iot_engineer: roleMapping.ai_iot_engineer || null,
-    technical_project_lead: roleMapping.technical_project_lead || null,
-    project_coordinator: roleMapping.project_coordinator || null,
-    sales_lead: roleMapping.sales_lead || null,
-    solution_consultant: roleMapping.solution_consultant || null,
-    account_manager: roleMapping.account_manager || null,
+    customer_project_lead:
+      roleMapping.customer_project_lead || solutionsProject.customer_project_lead || null,
+    implementation_lead:
+      roleMapping.implementation_lead || solutionsProject.implementation_lead || null,
+    ai_iot_engineer:
+      roleMapping.ai_iot_engineer || solutionsProject.ai_iot_engineer || null,
+    technical_project_lead:
+      roleMapping.technical_project_lead || solutionsProject.technical_project_lead || null,
+    project_coordinator:
+      roleMapping.project_coordinator || solutionsProject.project_coordinator || null,
+    sales_lead: roleMapping.sales_lead || solutionsProject.sales_lead || null,
+    solution_consultant:
+      roleMapping.solution_consultant || solutionsProject.solutions_consultant || null,
+    account_manager: roleMapping.account_manager || solutionsProject.account_manager || null,
+    salesperson: solutionsProject.salesperson || null,
+    solutions_consultant: solutionsProject.solutions_consultant || null,
     line_description: solutionsProject.line_description || null,
     product_description: solutionsProject.product_description || null,
     project_goals: solutionsProject.project_goals || null,
@@ -203,7 +232,12 @@ export const convertSolutionsToImplementationProject = async (
     teams_webhook_url: solutionsProject.teams_webhook_url || null,
     tablet_use_cases: solutionsProject.tablet_use_cases || 'None',
     modules_and_features: solutionsProject.modules_and_features || null,
+    case_study: solutionsProject.case_study ?? null,
+    reference_call: solutionsProject.reference_call ?? null,
+    site_visit: solutionsProject.site_visit ?? null,
+    testimonial: solutionsProject.testimonial ?? null,
   };
+
 
   const { data: project, error: projectError } = await supabase
     .from('projects')
@@ -228,6 +262,9 @@ export const convertSolutionsToImplementationProject = async (
           product_description: solutionLine.product_description,
           min_speed: solutionLine.min_speed,
           max_speed: solutionLine.max_speed,
+          camera_count: solutionLine.camera_count,
+          iot_device_count: solutionLine.iot_device_count,
+          photos_url: solutionLine.photos_url,
         })
         .select()
         .single();

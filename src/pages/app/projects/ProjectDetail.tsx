@@ -385,6 +385,7 @@ export const ProjectDetail = () => {
             <TabsTrigger value="contract">Contract Info</TabsTrigger>
             <TabsTrigger value="team">Team</TabsTrigger>
             <TabsTrigger value="account">Account Info</TabsTrigger>
+            <TabsTrigger value="hardware">Factory Hardware</TabsTrigger>
             <TabsTrigger value="hardware-summary">Hardware Summary</TabsTrigger>
           </TabsList>
 
@@ -405,7 +406,6 @@ export const ProjectDetail = () => {
 
           {/* Row 3 - remaining tabs */}
           <TabsList className="flex flex-wrap gap-2">
-            <TabsTrigger value="hardware">Factory Hardware</TabsTrigger>
             <TabsTrigger value="hardware-status">Hardware Status</TabsTrigger>
             <TabsTrigger value="factory">Factory</TabsTrigger>
             <TabsTrigger value="lines">Lines</TabsTrigger>

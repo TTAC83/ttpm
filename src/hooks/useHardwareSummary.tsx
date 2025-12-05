@@ -15,13 +15,15 @@ export interface HardwareItem {
   model_number?: string;
   description?: string;
   price?: number;
+  hardware_master_id?: string;
+  invoice_status?: 'not_raised' | 'raised' | 'received';
   supplier_name?: string;
   supplier_person?: string;
   supplier_email?: string;
   supplier_phone?: string;
   order_hyperlink?: string;
 }
-
+ 
 export const useHardwareSummary = (solutionsProjectId: string) => {
   const [hardware, setHardware] = useState<HardwareItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,6 +104,7 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
                 model_number: master?.sku_no,
                 description: master?.description,
                 price: master?.price_gbp,
+                hardware_master_id: master?.id,
               });
 
               // Add light if attached
@@ -126,6 +129,7 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
                     supplier_email: lightMaster.supplier_email,
                     supplier_phone: lightMaster.supplier_phone,
                     order_hyperlink: lightMaster.order_hyperlink,
+                    hardware_master_id: lightMaster.id,
                   });
                 }
               }
@@ -152,6 +156,7 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
                     supplier_email: plcMaster.supplier_email,
                     supplier_phone: plcMaster.supplier_phone,
                     order_hyperlink: plcMaster.order_hyperlink,
+                    hardware_master_id: plcMaster.id,
                   });
                 }
               }
@@ -178,6 +183,7 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
                     supplier_email: hmiMaster.supplier_email,
                     supplier_phone: hmiMaster.supplier_phone,
                     order_hyperlink: hmiMaster.order_hyperlink,
+                    hardware_master_id: hmiMaster.id,
                   });
                 }
               }
@@ -198,6 +204,7 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
               solutions_line_id
             ),
             hardware_master(
+              id,
               sku_no,
               product_name,
               hardware_type,
@@ -226,6 +233,7 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
                 model_number: master?.sku_no,
                 description: master?.description || master?.product_name,
                 price: master?.price_gbp,
+                hardware_master_id: master?.id,
               });
             }
           });
@@ -332,11 +340,54 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
             supplier_email: master?.supplier_email,
             supplier_phone: master?.supplier_phone,
             order_hyperlink: master?.order_hyperlink,
+            hardware_master_id: req.hardware_master_id,
           });
         });
       }
 
-      setHardware(allHardware);
+      const hardwareMasterIdsSet = new Set<string>();
+      allHardware.forEach(item => {
+        if (item.hardware_master_id) {
+          hardwareMasterIdsSet.add(item.hardware_master_id);
+        }
+      });
+      const hardwareMasterIds = Array.from(hardwareMasterIdsSet);
+
+      const invoiceStatusMap = new Map<string, 'not_raised' | 'raised' | 'received'>();
+
+      if (hardwareMasterIds.length > 0) {
+        const { data: invoiceRows, error: invoiceError } = await (supabase
+          .from('solutions_project_hardware_invoice_status' as any)
+          .select('hardware_master_id, invoice_status')
+          .eq('solutions_project_id', solutionsProjectId)
+          .in('hardware_master_id', hardwareMasterIds));
+
+        if (invoiceError) {
+          console.error('Error fetching solutions project hardware invoice status:', invoiceError);
+        } else if (invoiceRows) {
+          invoiceRows.forEach((row: any) => {
+            if (row.invoice_status) {
+              invoiceStatusMap.set(
+                row.hardware_master_id,
+                row.invoice_status as 'not_raised' | 'raised' | 'received',
+              );
+            }
+          });
+        }
+      }
+
+      const hardwareWithStatus = allHardware.map(item => {
+        const invoiceStatus: 'not_raised' | 'raised' | 'received' = item.hardware_master_id
+          ? invoiceStatusMap.get(item.hardware_master_id) ?? 'not_raised'
+          : 'not_raised';
+
+        return {
+          ...item,
+          invoice_status: invoiceStatus,
+        };
+      });
+
+      setHardware(hardwareWithStatus);
     } catch (error) {
       console.error('Error fetching hardware:', error);
       toast({

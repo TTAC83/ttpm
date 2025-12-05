@@ -1,15 +1,50 @@
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useHardwareSummary } from '@/hooks/useHardwareSummary';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface SolutionsHardwareSummaryProps {
   solutionsProjectId: string;
 }
 
+type InvoiceStatus = 'not_raised' | 'raised' | 'received';
+
+const getInvoiceStatusLabel = (status: InvoiceStatus) => {
+  switch (status) {
+    case 'not_raised':
+      return 'Not Raised';
+    case 'raised':
+      return 'Raised';
+    case 'received':
+      return 'Received';
+    default:
+      return 'Not Raised';
+  }
+};
+
+const getInvoiceStatusTriggerClasses = (status: InvoiceStatus) => {
+  switch (status) {
+    case 'not_raised':
+      return 'bg-destructive/10 text-destructive border-destructive/30';
+    case 'raised':
+      return 'bg-secondary/20 text-secondary-foreground border-secondary/40';
+    case 'received':
+      return 'bg-primary/10 text-primary border-primary/30';
+    default:
+      return '';
+  }
+};
+
 export const SolutionsHardwareSummary = ({ solutionsProjectId }: SolutionsHardwareSummaryProps) => {
-  const { hardware, loading } = useHardwareSummary(solutionsProjectId);
+  const { hardware, loading, refetch } = useHardwareSummary(solutionsProjectId);
+  const { toast } = useToast();
+  const [invoiceSavingId, setInvoiceSavingId] = useState<string | null>(null);
 
   if (loading) {
     return (
@@ -24,7 +59,7 @@ export const SolutionsHardwareSummary = ({ solutionsProjectId }: SolutionsHardwa
   const totalPrice = hardware.reduce((sum, item) => {
     const itemPrice = item.price || 0;
     const quantity = item.quantity || 1;
-    return sum + (itemPrice * quantity);
+    return sum + itemPrice * quantity;
   }, 0);
 
   // Calculate stats
@@ -87,65 +122,71 @@ export const SolutionsHardwareSummary = ({ solutionsProjectId }: SolutionsHardwa
                   <TableHead>Manufacturer</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Price</TableHead>
-                  <TableHead>Supplier</TableHead>
-                  <TableHead>Contact</TableHead>
+                  <TableHead>Invoice Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {hardware.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-medium">{item.category || 'Other'}</TableCell>
-                    <TableCell>
-                      <Badge variant={item.source === 'line' ? 'default' : 'secondary'}>
-                        {item.source === 'line' ? 'Line' : 'Direct'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {item.quantity || 1}
-                    </TableCell>
-                    <TableCell>
-                      {item.line_name && <div className="text-sm">{item.line_name}</div>}
-                      {item.equipment_name && <div className="text-xs text-muted-foreground">{item.equipment_name}</div>}
-                      {!item.line_name && !item.equipment_name && <span className="text-muted-foreground">-</span>}
-                    </TableCell>
-                    <TableCell>{item.model_number || 'N/A'}</TableCell>
-                    <TableCell>{item.manufacturer || 'N/A'}</TableCell>
-                    <TableCell className="max-w-xs truncate" title={item.description || undefined}>
-                      {item.description || 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      {item.price ? `$${item.price.toLocaleString()}` : 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      {item.supplier_name && <div className="text-sm">{item.supplier_name}</div>}
-                      {item.supplier_person && <div className="text-xs text-muted-foreground">{item.supplier_person}</div>}
-                      {!item.supplier_name && !item.supplier_person && <span className="text-muted-foreground">-</span>}
-                    </TableCell>
-                    <TableCell>
-                      {item.supplier_email && (
-                        <a 
-                          href={`mailto:${item.supplier_email}`}
-                          className="text-sm text-primary hover:underline block"
-                        >
-                          {item.supplier_email}
-                        </a>
-                      )}
-                      {item.supplier_phone && (
-                        <div className="text-xs text-muted-foreground">{item.supplier_phone}</div>
-                      )}
-                      {item.order_hyperlink && (
-                        <a 
-                          href={item.order_hyperlink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-primary hover:underline"
-                        >
-                          Order Link
-                        </a>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {hardware.map((item) => {
+                  const currentStatus: InvoiceStatus = item.invoice_status ?? 'not_raised';
+
+                  return (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.category || 'Other'}</TableCell>
+                      <TableCell>
+                        <Badge variant={item.source === 'line' ? 'default' : 'secondary'}>
+                          {item.source === 'line' ? 'Line' : 'Direct'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{item.quantity || 1}</TableCell>
+                      <TableCell>
+                        {item.line_name && <div className="text-sm">{item.line_name}</div>}
+                        {item.equipment_name && (
+                          <div className="text-xs text-muted-foreground">{item.equipment_name}</div>
+                        )}
+                        {!item.line_name && !item.equipment_name && (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>{item.model_number || 'N/A'}</TableCell>
+                      <TableCell>{item.manufacturer || 'N/A'}</TableCell>
+                      <TableCell className="max-w-xs truncate" title={item.description || undefined}>
+                        {item.description || 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        {item.price ? `£${item.price.toLocaleString()}` : 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        {item.hardware_master_id ? (
+                          <Select
+                            value={currentStatus}
+                            onValueChange={(value) =>
+                              handleInvoiceStatusChange(item.hardware_master_id, value as InvoiceStatus)
+                            }
+                          >
+                            <SelectTrigger
+                              className={cn(
+                                'w-36 justify-between text-xs',
+                                getInvoiceStatusTriggerClasses(currentStatus),
+                              )}
+                              disabled={invoiceSavingId === item.hardware_master_id}
+                            >
+                              <SelectValue placeholder="Select status">
+                                {getInvoiceStatusLabel(currentStatus)}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent className="z-50">
+                              <SelectItem value="not_raised">Not Raised</SelectItem>
+                              <SelectItem value="raised">Raised</SelectItem>
+                              <SelectItem value="received">Received</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">N/A</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

@@ -15,13 +15,15 @@ export interface HardwareItem {
   model_number?: string;
   description?: string;
   price?: number;
+  hardware_master_id?: string;
+  override_price?: number;
+  effective_price?: number;
   supplier_name?: string;
   supplier_person?: string;
   supplier_email?: string;
   supplier_phone?: string;
   order_hyperlink?: string;
 }
-
 export const useProjectHardwareSummary = (projectId: string) => {
   const [hardware, setHardware] = useState<HardwareItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,20 +92,20 @@ export const useProjectHardwareSummary = (projectId: string) => {
             
             if (line) {
               // Add camera
-              allHardware.push({
-                id: `camera-${cam.id}`,
-                hardware_type: `Camera - ${master?.product_name || cam.camera_type || 'Unknown'}`,
-                category: master?.hardware_type || 'Camera',
-                source: 'line',
-                line_name: line.line_name,
-                equipment_name: cam.equipment?.name,
-                quantity: 1,
-                sku_no: master?.sku_no,
-                model_number: master?.sku_no,
-                description: master?.description,
-                price: master?.rrp_gbp ?? master?.price_gbp,
-              });
-
+          allHardware.push({
+            id: `camera-${cam.id}`,
+            hardware_type: `Camera - ${master?.product_name || cam.camera_type || 'Unknown'}`,
+            category: master?.hardware_type || 'Camera',
+            source: 'line',
+            line_name: line.line_name,
+            equipment_name: cam.equipment?.name,
+            quantity: 1,
+            sku_no: master?.sku_no,
+            model_number: master?.sku_no,
+            description: master?.description,
+            hardware_master_id: master?.id,
+            price: master?.rrp_gbp ?? master?.price_gbp,
+          });
               // Add light if attached
               if (cam.light_id) {
                 const lightMaster = accessoryMasterData.find(m => m.id === cam.light_id);
@@ -120,6 +122,7 @@ export const useProjectHardwareSummary = (projectId: string) => {
                     model_number: lightMaster.sku_no,
                     manufacturer: lightMaster.manufacturer,
                     description: lightMaster.description,
+                    hardware_master_id: lightMaster.id,
                     price: lightMaster.rrp_gbp ?? lightMaster.price_gbp,
                     supplier_name: lightMaster.supplier_name,
                     supplier_person: lightMaster.supplier_person,
@@ -146,6 +149,7 @@ export const useProjectHardwareSummary = (projectId: string) => {
                     model_number: plcMaster.sku_no,
                     manufacturer: plcMaster.manufacturer,
                     description: plcMaster.description,
+                    hardware_master_id: plcMaster.id,
                     price: plcMaster.rrp_gbp ?? plcMaster.price_gbp,
                     supplier_name: plcMaster.supplier_name,
                     supplier_person: plcMaster.supplier_person,
@@ -172,6 +176,7 @@ export const useProjectHardwareSummary = (projectId: string) => {
                     model_number: hmiMaster.sku_no,
                     manufacturer: hmiMaster.manufacturer,
                     description: hmiMaster.description,
+                    hardware_master_id: hmiMaster.id,
                     price: hmiMaster.rrp_gbp ?? hmiMaster.price_gbp,
                     supplier_name: hmiMaster.supplier_name,
                     supplier_person: hmiMaster.supplier_person,
@@ -198,6 +203,7 @@ export const useProjectHardwareSummary = (projectId: string) => {
               line_id
             ),
             hardware_master(
+              id,
               sku_no,
               product_name,
               hardware_type,
@@ -226,6 +232,7 @@ export const useProjectHardwareSummary = (projectId: string) => {
                 sku_no: master?.sku_no,
                 model_number: master?.sku_no,
                 description: master?.description || master?.product_name,
+                hardware_master_id: master?.id,
                 price: master?.rrp_gbp ?? master?.price_gbp,
               });
             }
@@ -331,6 +338,7 @@ export const useProjectHardwareSummary = (projectId: string) => {
             manufacturer: master?.manufacturer,
             model_number: master?.model_number || master?.sku_no,
             description: master?.description,
+            hardware_master_id: req.hardware_master_id,
             price: unitPrice,
             supplier_name: master?.supplier_name,
             supplier_person: master?.supplier_person,
@@ -341,7 +349,43 @@ export const useProjectHardwareSummary = (projectId: string) => {
         });
       }
 
-      setHardware(allHardware);
+      const hardwareMasterIds = Array.from(
+        new Set(allHardware.map(item => item.hardware_master_id).filter(Boolean)) as string[]
+      );
+
+      const overridesMap = new Map<string, number>();
+
+      if (hardwareMasterIds.length > 0) {
+        const { data: overrides, error: overridesError } = await (supabase
+          .from('project_hardware_prices' as any)
+          .select('hardware_master_id, price_gbp')
+          .eq('project_id', projectId)
+          .in('hardware_master_id', hardwareMasterIds));
+
+        if (overridesError) {
+          console.error('Error fetching project hardware price overrides:', overridesError);
+        } else if (overrides) {
+          overrides.forEach((row: any) => {
+            if (row.price_gbp != null) {
+              overridesMap.set(row.hardware_master_id, Number(row.price_gbp));
+            }
+          });
+        }
+      }
+
+      const hardwareWithOverrides = allHardware.map(item => {
+        const override = item.hardware_master_id
+          ? overridesMap.get(item.hardware_master_id)
+          : undefined;
+
+        return {
+          ...item,
+          override_price: override,
+          effective_price: override ?? item.price,
+        };
+      });
+
+      setHardware(hardwareWithOverrides);
     } catch (error) {
       console.error('Error fetching hardware:', error);
       toast({

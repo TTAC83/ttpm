@@ -2708,6 +2708,48 @@ export type Database = {
           },
         ]
       }
+      project_hardware_prices: {
+        Row: {
+          created_at: string
+          hardware_master_id: string
+          id: string
+          price_gbp: number | null
+          project_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hardware_master_id: string
+          id?: string
+          price_gbp?: number | null
+          project_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hardware_master_id?: string
+          id?: string
+          price_gbp?: number | null
+          project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_hardware_prices_hardware_master_id_fkey"
+            columns: ["hardware_master_id"]
+            isOneToOne: false
+            referencedRelation: "hardware_master"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_hardware_prices_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_iot_requirements: {
         Row: {
           bau_customer_id: string | null

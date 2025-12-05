@@ -384,12 +384,14 @@ export const ProjectDetail = () => {
             <TabsTrigger value="overview">Customer Overview</TabsTrigger>
             <TabsTrigger value="contract">Contract Info</TabsTrigger>
             <TabsTrigger value="team">Team</TabsTrigger>
+            <TabsTrigger value="account">Account Info</TabsTrigger>
             <TabsTrigger value="hardware-summary">Hardware Summary</TabsTrigger>
           </TabsList>
 
           {/* Row 2 */}
           <TabsList className="flex flex-wrap gap-2">
             <TabsTrigger value="wbs">WBS Gantt</TabsTrigger>
+            <TabsTrigger value="wbs-v2">Gantt (Beta)</TabsTrigger>
             <TabsTrigger value="actions">Actions</TabsTrigger>
             <TabsTrigger value="calendar">Calendar</TabsTrigger>
             {profile?.is_internal && (
@@ -403,13 +405,11 @@ export const ProjectDetail = () => {
 
           {/* Row 3 - remaining tabs */}
           <TabsList className="flex flex-wrap gap-2">
-            <TabsTrigger value="account">Account Info</TabsTrigger>
             <TabsTrigger value="hardware">Factory Hardware</TabsTrigger>
             <TabsTrigger value="hardware-status">Hardware Status</TabsTrigger>
             <TabsTrigger value="factory">Factory</TabsTrigger>
             <TabsTrigger value="lines">Lines</TabsTrigger>
             <TabsTrigger value="tasks">Tasks</TabsTrigger>
-            <TabsTrigger value="wbs-v2">Gantt (Beta)</TabsTrigger>
             <TabsTrigger value="vision-models">Vision Models</TabsTrigger>
             {profile?.is_internal && (
               <TabsTrigger value="audit">Audit</TabsTrigger>

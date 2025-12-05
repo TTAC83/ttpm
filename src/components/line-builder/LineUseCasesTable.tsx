@@ -20,8 +20,17 @@ interface UseCaseData {
   camera_description?: string;
 }
 
+interface AttributeData {
+  camera_name: string;
+  equipment_name: string;
+  position_name: string;
+  attribute_title: string;
+  attribute_description?: string;
+}
+
 export const LineUseCasesTable: React.FC<LineUseCasesTableProps> = ({ lineId }) => {
   const [useCases, setUseCases] = useState<UseCaseData[]>([]);
+  const [attributes, setAttributes] = useState<AttributeData[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -63,6 +72,12 @@ export const LineUseCasesTable: React.FC<LineUseCasesTableProps> = ({ lineId }) 
                     category,
                     description
                   )
+                ),
+                camera_attributes (
+                  id,
+                  title,
+                  description,
+                  order_index
                 )
               )
             `)
@@ -86,6 +101,12 @@ export const LineUseCasesTable: React.FC<LineUseCasesTableProps> = ({ lineId }) 
                     category,
                     description
                   )
+                ),
+                camera_attributes (
+                  id,
+                  title,
+                  description,
+                  order_index
                 )
               )
             `)
@@ -96,6 +117,7 @@ export const LineUseCasesTable: React.FC<LineUseCasesTableProps> = ({ lineId }) 
 
       // Transform the data into a flat structure
       const useCasesData: UseCaseData[] = [];
+      const attributesData: AttributeData[] = [];
 
       equipmentData?.forEach((equipment: any) => {
         equipment.cameras?.forEach((camera: any) => {
@@ -113,10 +135,21 @@ export const LineUseCasesTable: React.FC<LineUseCasesTableProps> = ({ lineId }) 
               });
             }
           });
+
+          camera.camera_attributes?.forEach((attr: any) => {
+            attributesData.push({
+              camera_name: camera.camera_type || 'Unknown Camera',
+              equipment_name: equipment.name,
+              position_name: 'Equipment Position',
+              attribute_title: attr.title,
+              attribute_description: attr.description,
+            });
+          });
         });
       });
 
       setUseCases(useCasesData);
+      setAttributes(attributesData);
     } catch (error) {
       console.error('Error fetching line use cases:', error);
       toast({
@@ -149,7 +182,7 @@ export const LineUseCasesTable: React.FC<LineUseCasesTableProps> = ({ lineId }) 
     );
   }
 
-  if (useCases.length === 0) {
+  if (useCases.length === 0 && attributes.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -157,7 +190,7 @@ export const LineUseCasesTable: React.FC<LineUseCasesTableProps> = ({ lineId }) 
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground text-center py-4">
-            No vision use cases configured for this line
+            No vision use cases or attributes configured for this line
           </p>
         </CardContent>
       </Card>
@@ -170,38 +203,75 @@ export const LineUseCasesTable: React.FC<LineUseCasesTableProps> = ({ lineId }) 
         <CardTitle>Vision Use Cases ({useCases.length})</CardTitle>
       </CardHeader>
       <CardContent>
-        {Object.entries(useCasesByCategory).map(([category, categoryUseCases]) => (
-          <div key={category} className="mb-6 last:mb-0">
+        {useCases.length > 0 && (
+          <div className="space-y-6">
+            {Object.entries(useCasesByCategory).map(([category, categoryUseCases]) => (
+              <div key={category} className="mb-6 last:mb-0">
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <Badge variant="outline">{category}</Badge>
+                  <span className="text-sm text-muted-foreground">({categoryUseCases.length})</span>
+                </h3>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Use Case</TableHead>
+                      <TableHead>Position</TableHead>
+                      <TableHead>Equipment</TableHead>
+                      <TableHead>Camera</TableHead>
+                      <TableHead>Description</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {categoryUseCases.map((useCase, index) => (
+                      <TableRow key={`${useCase.use_case_name}-${index}`}>
+                        <TableCell className="font-medium">{useCase.use_case_name}</TableCell>
+                        <TableCell>{useCase.position_name}</TableCell>
+                        <TableCell>{useCase.equipment_name}</TableCell>
+                        <TableCell>{useCase.camera_name}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {useCase.camera_description || useCase.use_case_description || "—"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {attributes.length > 0 && (
+          <div className="mt-8">
             <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <Badge variant="outline">{category}</Badge>
-              <span className="text-sm text-muted-foreground">({categoryUseCases.length})</span>
+              <Badge variant="outline">Camera Attributes</Badge>
+              <span className="text-sm text-muted-foreground">({attributes.length})</span>
             </h3>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Use Case</TableHead>
-                  <TableHead>Position</TableHead>
-                  <TableHead>Equipment</TableHead>
-                  <TableHead>Camera</TableHead>
+                  <TableHead>Attribute</TableHead>
                   <TableHead>Description</TableHead>
+                  <TableHead>Camera</TableHead>
+                  <TableHead>Equipment</TableHead>
+                  <TableHead>Position</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {categoryUseCases.map((useCase, index) => (
-                  <TableRow key={`${useCase.use_case_name}-${index}`}>
-                    <TableCell className="font-medium">{useCase.use_case_name}</TableCell>
-                    <TableCell>{useCase.position_name}</TableCell>
-                    <TableCell>{useCase.equipment_name}</TableCell>
-                    <TableCell>{useCase.camera_name}</TableCell>
+                {attributes.map((attr, index) => (
+                  <TableRow key={`${attr.attribute_title}-${attr.camera_name}-${index}`}>
+                    <TableCell className="font-medium">{attr.attribute_title}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {useCase.camera_description || useCase.use_case_description || '—'}
+                      {attr.attribute_description || "—"}
                     </TableCell>
+                    <TableCell>{attr.camera_name}</TableCell>
+                    <TableCell>{attr.equipment_name}</TableCell>
+                    <TableCell>{attr.position_name}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </div>
-        ))}
+        )}
       </CardContent>
     </Card>
   );

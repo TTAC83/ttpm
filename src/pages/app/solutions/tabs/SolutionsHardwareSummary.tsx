@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useHardwareSummary } from '@/hooks/useHardwareSummary';
+import { useHardwareSummary, type HardwareItem } from '@/hooks/useHardwareSummary';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -45,6 +45,42 @@ export const SolutionsHardwareSummary = ({ solutionsProjectId }: SolutionsHardwa
   const { hardware, loading, refetch } = useHardwareSummary(solutionsProjectId);
   const { toast } = useToast();
   const [invoiceSavingId, setInvoiceSavingId] = useState<string | null>(null);
+
+  const handleInvoiceStatusChange = async (item: HardwareItem, status: InvoiceStatus) => {
+    if (!item.hardware_master_id) return;
+
+    try {
+      setInvoiceSavingId(item.id);
+      const { error } = await (supabase
+        .from('solutions_project_hardware_invoice_status' as any)
+        .upsert(
+          {
+            solutions_project_id: solutionsProjectId,
+            hardware_master_id: item.hardware_master_id,
+            invoice_status: status,
+          },
+          { onConflict: 'solutions_project_id,hardware_master_id' },
+        ));
+
+      if (error) throw error;
+
+      toast({
+        title: 'Invoice status updated',
+        description: 'Invoice status saved successfully.',
+      });
+
+      await refetch();
+    } catch (error) {
+      console.error('Error saving invoice status:', error);
+      toast({
+        title: 'Error saving invoice status',
+        description: 'Could not save invoice status. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setInvoiceSavingId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -160,7 +196,7 @@ export const SolutionsHardwareSummary = ({ solutionsProjectId }: SolutionsHardwa
                           <Select
                             value={currentStatus}
                             onValueChange={(value) =>
-                              handleInvoiceStatusChange(item.hardware_master_id, value as InvoiceStatus)
+                              handleInvoiceStatusChange(item, value as InvoiceStatus)
                             }
                           >
                             <SelectTrigger
@@ -168,7 +204,7 @@ export const SolutionsHardwareSummary = ({ solutionsProjectId }: SolutionsHardwa
                                 'w-36 justify-between text-xs',
                                 getInvoiceStatusTriggerClasses(currentStatus),
                               )}
-                              disabled={invoiceSavingId === item.hardware_master_id}
+                              disabled={invoiceSavingId === item.id}
                             >
                               <SelectValue placeholder="Select status">
                                 {getInvoiceStatusLabel(currentStatus)}

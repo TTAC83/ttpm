@@ -18,6 +18,7 @@ export interface HardwareItem {
   hardware_master_id?: string;
   override_price?: number;
   effective_price?: number;
+  invoice_status?: 'not_raised' | 'raised' | 'received';
   supplier_name?: string;
   supplier_person?: string;
   supplier_email?: string;
@@ -357,8 +358,8 @@ export const useProjectHardwareSummary = (projectId: string) => {
       });
       const hardwareMasterIds = Array.from(hardwareMasterIdsSet);
 
-
       const overridesMap = new Map<string, number>();
+      const invoiceStatusMap = new Map<string, 'not_raised' | 'raised' | 'received'>();
 
       if (hardwareMasterIds.length > 0) {
         const { data: overrides, error: overridesError } = await (supabase
@@ -376,6 +377,25 @@ export const useProjectHardwareSummary = (projectId: string) => {
             }
           });
         }
+
+        const { data: invoiceRows, error: invoiceError } = await (supabase
+          .from('project_hardware_invoice_status' as any)
+          .select('hardware_master_id, invoice_status')
+          .eq('project_id', projectId)
+          .in('hardware_master_id', hardwareMasterIds));
+
+        if (invoiceError) {
+          console.error('Error fetching project hardware invoice status:', invoiceError);
+        } else if (invoiceRows) {
+          invoiceRows.forEach((row: any) => {
+            if (row.invoice_status) {
+              invoiceStatusMap.set(
+                row.hardware_master_id,
+                row.invoice_status as 'not_raised' | 'raised' | 'received',
+              );
+            }
+          });
+        }
       }
 
       const hardwareWithOverrides = allHardware.map(item => {
@@ -383,10 +403,15 @@ export const useProjectHardwareSummary = (projectId: string) => {
           ? overridesMap.get(item.hardware_master_id)
           : undefined;
 
+        const invoiceStatus: 'not_raised' | 'raised' | 'received' = item.hardware_master_id
+          ? invoiceStatusMap.get(item.hardware_master_id) ?? 'not_raised'
+          : 'not_raised';
+
         return {
           ...item,
           override_price: override,
           effective_price: override ?? item.price,
+          invoice_status: invoiceStatus,
         };
       });
 

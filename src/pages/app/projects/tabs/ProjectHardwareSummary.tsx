@@ -3,9 +3,38 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useProjectHardwareSummary, type HardwareItem } from '@/hooks/useProjectHardwareSummary';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+type InvoiceStatus = 'not_raised' | 'raised' | 'received';
+
+const getInvoiceStatusLabel = (status: InvoiceStatus) => {
+  switch (status) {
+    case 'not_raised':
+      return 'Not Raised';
+    case 'raised':
+      return 'Raised';
+    case 'received':
+      return 'Received';
+    default:
+      return 'Not Raised';
+  }
+};
+
+const getInvoiceStatusTriggerClasses = (status: InvoiceStatus) => {
+  switch (status) {
+    case 'not_raised':
+      return 'bg-destructive/10 text-destructive border-destructive/30';
+    case 'raised':
+      return 'bg-secondary/20 text-secondary-foreground border-secondary/40';
+    case 'received':
+      return 'bg-primary/10 text-primary border-primary/30';
+    default:
+      return '';
+  }
+};
 
 interface ProjectHardwareSummaryProps {
   projectId: string;
@@ -17,6 +46,7 @@ export const ProjectHardwareSummary = ({ projectId }: ProjectHardwareSummaryProp
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<string>('');
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [invoiceSavingId, setInvoiceSavingId] = useState<string | null>(null);
 
   if (loading) {
     return (
@@ -54,7 +84,7 @@ export const ProjectHardwareSummary = ({ projectId }: ProjectHardwareSummaryProp
             hardware_master_id: item.hardware_master_id,
             price_gbp: numeric,
           },
-          { onConflict: 'project_id,hardware_master_id' }
+          { onConflict: 'project_id,hardware_master_id' },
         ));
 
       if (error) throw error;
@@ -75,6 +105,42 @@ export const ProjectHardwareSummary = ({ projectId }: ProjectHardwareSummaryProp
       });
     } finally {
       setSavingId(null);
+    }
+  };
+
+  const handleInvoiceStatusChange = async (item: HardwareItem, status: InvoiceStatus) => {
+    if (!item.hardware_master_id) return;
+
+    try {
+      setInvoiceSavingId(item.id);
+      const { error } = await (supabase
+        .from('project_hardware_invoice_status' as any)
+        .upsert(
+          {
+            project_id: projectId,
+            hardware_master_id: item.hardware_master_id,
+            invoice_status: status,
+          },
+          { onConflict: 'project_id,hardware_master_id' },
+        ));
+
+      if (error) throw error;
+
+      toast({
+        title: 'Invoice status updated',
+        description: 'Invoice status saved successfully.',
+      });
+
+      await refetch();
+    } catch (error) {
+      console.error('Error saving invoice status:', error);
+      toast({
+        title: 'Error saving invoice status',
+        description: 'Could not save invoice status. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setInvoiceSavingId(null);
     }
   };
 
@@ -139,112 +205,112 @@ export const ProjectHardwareSummary = ({ projectId }: ProjectHardwareSummaryProp
                   <TableHead>Description</TableHead>
                   <TableHead>Book Price</TableHead>
                   <TableHead>Price</TableHead>
-                  <TableHead>Supplier</TableHead>
-                  <TableHead>Contact</TableHead>
+                  <TableHead>Invoice Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {hardware.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-medium">{item.category || 'Other'}</TableCell>
-                    <TableCell>
-                      <Badge variant={item.source === 'line' ? 'default' : 'secondary'}>
-                        {item.source === 'line' ? 'Line' : 'Direct'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{item.quantity || 1}</TableCell>
-                    <TableCell>
-                      {item.line_name && <div className="text-sm">{item.line_name}</div>}
-                      {item.equipment_name && (
-                        <div className="text-xs text-muted-foreground">{item.equipment_name}</div>
-                      )}
-                      {!item.line_name && !item.equipment_name && (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>{item.model_number || 'N/A'}</TableCell>
-                    <TableCell>{item.manufacturer || 'N/A'}</TableCell>
-                    <TableCell className="max-w-xs truncate" title={item.description || undefined}>
-                      {item.description || 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      {item.price != null ? `£${item.price.toLocaleString()}` : 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      {item.hardware_master_id ? (
-                        editingId === item.id ? (
-                          <div className="flex items-center gap-2">
-                            <span>£</span>
-                            <input
-                              type="number"
-                              className="w-24 border rounded px-1 py-0.5 text-right text-sm"
-                              value={editingValue}
-                              onChange={(e) => setEditingValue(e.target.value)}
-                              onBlur={() => handleSavePrice(item)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') handleSavePrice(item);
-                                if (e.key === 'Escape') setEditingId(null);
+                {hardware.map((item) => {
+                  const currentStatus: InvoiceStatus = item.invoice_status ?? 'not_raised';
+
+                  return (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.category || 'Other'}</TableCell>
+                      <TableCell>
+                        <Badge variant={item.source === 'line' ? 'default' : 'secondary'}>
+                          {item.source === 'line' ? 'Line' : 'Direct'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{item.quantity || 1}</TableCell>
+                      <TableCell>
+                        {item.line_name && <div className="text-sm">{item.line_name}</div>}
+                        {item.equipment_name && (
+                          <div className="text-xs text-muted-foreground">{item.equipment_name}</div>
+                        )}
+                        {!item.line_name && !item.equipment_name && (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>{item.model_number || 'N/A'}</TableCell>
+                      <TableCell>{item.manufacturer || 'N/A'}</TableCell>
+                      <TableCell className="max-w-xs truncate" title={item.description || undefined}>
+                        {item.description || 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        {item.price != null ? `£${item.price.toLocaleString()}` : 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        {item.hardware_master_id ? (
+                          editingId === item.id ? (
+                            <div className="flex items-center gap-2">
+                              <span>£</span>
+                              <input
+                                type="number"
+                                className="w-24 border rounded px-1 py-0.5 text-right text-sm"
+                                value={editingValue}
+                                onChange={(e) => setEditingValue(e.target.value)}
+                                onBlur={() => handleSavePrice(item)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleSavePrice(item);
+                                  if (e.key === 'Escape') setEditingId(null);
+                                }}
+                                autoFocus
+                              />
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled={savingId === item.id}
+                              onClick={() => {
+                                setEditingId(item.id);
+                                setEditingValue(
+                                  (item.override_price ?? item.effective_price ?? item.price ?? 0).toString(),
+                                );
                               }}
-                              autoFocus
-                            />
-                          </div>
+                              className="text-right w-full text-sm text-primary hover:underline disabled:opacity-50"
+                            >
+                              {item.override_price != null
+                                ? `£${item.override_price.toLocaleString()}`
+                                : item.effective_price != null
+                                ? `£${item.effective_price.toLocaleString()}`
+                                : 'Set price'}
+                            </button>
+                          )
                         ) : (
-                          <button
-                            type="button"
-                            disabled={savingId === item.id}
-                            onClick={() => {
-                              setEditingId(item.id);
-                              setEditingValue(
-                                (item.override_price ?? item.effective_price ?? item.price ?? 0).toString()
-                              );
-                            }}
-                            className="text-right w-full text-sm text-primary hover:underline disabled:opacity-50"
+                          <span className="text-xs text-muted-foreground">N/A</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {item.hardware_master_id ? (
+                          <Select
+                            value={currentStatus}
+                            onValueChange={(value) =>
+                              handleInvoiceStatusChange(item, value as InvoiceStatus)
+                            }
                           >
-                            {item.override_price != null
-                              ? `£${item.override_price.toLocaleString()}`
-                              : item.effective_price != null
-                              ? `£${item.effective_price.toLocaleString()}`
-                              : 'Set price'}
-                          </button>
-                        )
-                      ) : (
-                        <span className="text-xs text-muted-foreground">N/A</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {item.supplier_name && <div className="text-sm">{item.supplier_name}</div>}
-                      {item.supplier_person && (
-                        <div className="text-xs text-muted-foreground">{item.supplier_person}</div>
-                      )}
-                      {!item.supplier_name && !item.supplier_person && (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {item.supplier_email && (
-                        <a
-                          href={`mailto:${item.supplier_email}`}
-                          className="text-sm text-primary hover:underline block"
-                        >
-                          {item.supplier_email}
-                        </a>
-                      )}
-                      {item.supplier_phone && (
-                        <div className="text-xs text-muted-foreground">{item.supplier_phone}</div>
-                      )}
-                      {item.order_hyperlink && (
-                        <a
-                          href={item.order_hyperlink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-primary hover:underline"
-                        >
-                          Order Link
-                        </a>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                            <SelectTrigger
+                              className={cn(
+                                'w-36 justify-between text-xs',
+                                getInvoiceStatusTriggerClasses(currentStatus),
+                              )}
+                              disabled={invoiceSavingId === item.id}
+                            >
+                              <SelectValue placeholder="Select status">
+                                {getInvoiceStatusLabel(currentStatus)}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent className="z-50">
+                              <SelectItem value="not_raised">Not Raised</SelectItem>
+                              <SelectItem value="raised">Raised</SelectItem>
+                              <SelectItem value="received">Received</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">N/A</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

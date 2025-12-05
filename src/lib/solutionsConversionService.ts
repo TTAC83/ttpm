@@ -34,6 +34,20 @@ export interface SolutionsProject {
   standard_terms?: boolean;
   deviation_of_terms?: string | null;
   useful_links?: any;
+  servers_required?: number | null;
+  gateways_required?: number | null;
+  tv_display_devices_required?: number | null;
+  receivers_required?: number | null;
+  lines_required?: number | null;
+  website_url?: string | null;
+  job_scheduling?: string | null;
+  job_scheduling_notes?: string | null;
+  s3_bucket_required?: boolean | null;
+  teams_integration?: boolean | null;
+  teams_id?: string | null;
+  teams_webhook_url?: string | null;
+  tablet_use_cases?: string | null;
+  modules_and_features?: string | null;
   created_at: string;
   companies?: {
     name: string;
@@ -175,6 +189,20 @@ export const convertSolutionsToImplementationProject = async (
     standard_terms: solutionsProject.standard_terms ?? true,
     deviation_of_terms: solutionsProject.deviation_of_terms || null,
     useful_links: solutionsProject.useful_links || null,
+    servers_required: solutionsProject.servers_required ?? 0,
+    gateways_required: solutionsProject.gateways_required ?? 0,
+    tv_display_devices_required: solutionsProject.tv_display_devices_required ?? 0,
+    receivers_required: solutionsProject.receivers_required ?? 0,
+    lines_required: solutionsProject.lines_required ?? 0,
+    website_url: solutionsProject.website_url || null,
+    job_scheduling: solutionsProject.job_scheduling || null,
+    job_scheduling_notes: solutionsProject.job_scheduling_notes || null,
+    s3_bucket_required: solutionsProject.s3_bucket_required ?? false,
+    teams_integration: solutionsProject.teams_integration ?? false,
+    teams_id: solutionsProject.teams_id || null,
+    teams_webhook_url: solutionsProject.teams_webhook_url || null,
+    tablet_use_cases: solutionsProject.tablet_use_cases || 'None',
+    modules_and_features: solutionsProject.modules_and_features || null,
   };
 
   const { data: project, error: projectError } = await supabase

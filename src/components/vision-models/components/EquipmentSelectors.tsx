@@ -104,6 +104,11 @@ export function EquipmentSelectors({
         render={({ field }) => (
           <FormItem>
             <FormLabel>Line Name</FormLabel>
+            {!field.value && form.watch('line_name') && (
+              <p className="text-xs text-muted-foreground">
+                Current: <span className="font-medium text-amber-600">{form.watch('line_name')}</span>
+              </p>
+            )}
             <Select
               disabled={disabled}
               onValueChange={handleLineChange}
@@ -111,11 +116,7 @@ export function EquipmentSelectors({
             >
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a line">
-                    {field.value 
-                      ? lines.find(l => l.value === field.value)?.label 
-                      : form.watch('line_name') || 'Select a line'}
-                  </SelectValue>
+                  <SelectValue placeholder="Select a line" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
@@ -137,6 +138,11 @@ export function EquipmentSelectors({
         render={({ field }) => (
           <FormItem>
             <FormLabel>Position</FormLabel>
+            {!field.value && form.watch('position') && (
+              <p className="text-xs text-muted-foreground">
+                Current: <span className="font-medium text-amber-600">{form.watch('position')}</span>
+              </p>
+            )}
             <Select
               disabled={disabled || !currentLineId || positions.length === 0}
               onValueChange={handlePositionChange}
@@ -144,11 +150,7 @@ export function EquipmentSelectors({
             >
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a position">
-                    {field.value 
-                      ? positions.find(p => p.value === field.value)?.label 
-                      : form.watch('position') || 'Select a position'}
-                  </SelectValue>
+                  <SelectValue placeholder="Select a position" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
@@ -170,6 +172,11 @@ export function EquipmentSelectors({
         render={({ field }) => (
           <FormItem>
             <FormLabel>Equipment</FormLabel>
+            {!field.value && form.watch('equipment') && (
+              <p className="text-xs text-muted-foreground">
+                Current: <span className="font-medium text-amber-600">{form.watch('equipment')}</span>
+              </p>
+            )}
             <Select
               disabled={disabled || !currentPositionId || equipment.length === 0}
               onValueChange={handleEquipmentChange}
@@ -177,11 +184,7 @@ export function EquipmentSelectors({
             >
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select equipment">
-                    {field.value 
-                      ? equipment.find(e => e.value === field.value)?.label 
-                      : form.watch('equipment') || 'Select equipment'}
-                  </SelectValue>
+                  <SelectValue placeholder="Select equipment" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>

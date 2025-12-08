@@ -27,6 +27,8 @@ const visionModelSchema = z.object({
   product_run_end: z.date().optional(),
   product_run_end_time: z.string().optional(),
   product_run_end_has_time: z.boolean().default(false),
+  // Person responsible for footage capture
+  footage_assigned_to: z.string().uuid().optional().nullable(),
 });
 
 export type VisionModelFormData = z.infer<typeof visionModelSchema>;
@@ -63,6 +65,7 @@ export function useVisionModelForm({ model, open, projectType }: UseVisionModelF
       product_run_end: undefined,
       product_run_end_time: '',
       product_run_end_has_time: false,
+      footage_assigned_to: null,
     },
   });
 
@@ -97,6 +100,7 @@ export function useVisionModelForm({ model, open, projectType }: UseVisionModelF
         product_run_end: endDateTime.date,
         product_run_end_time: endDateTime.time,
         product_run_end_has_time: endDateTime.hasTime,
+        footage_assigned_to: model.footage_assigned_to || null,
       });
     }
   }, [open, model, form]);

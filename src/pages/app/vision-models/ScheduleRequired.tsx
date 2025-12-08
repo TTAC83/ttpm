@@ -14,6 +14,13 @@ const config: VisionModelsTableConfig = {
   columns: [
     { key: 'customer_name', label: 'Customer' },
     { key: 'project_name', label: 'Project' },
+    { 
+      key: 'implementation_lead_name', 
+      label: 'Impl Lead',
+      render: (model) => model.implementation_lead_name || (
+        <span className="text-muted-foreground">-</span>
+      )
+    },
     { key: 'line_name', label: 'Line' },
     { key: 'equipment', label: 'Equipment' },
     { key: 'product_sku', label: 'Product SKU' },

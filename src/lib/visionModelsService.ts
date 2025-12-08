@@ -31,6 +31,11 @@ export interface VisionModel {
   status: 'Footage Required' | 'Annotation Required' | 'Processing Required' | 'Deployment Required' | 'Validation Required' | 'Complete';
   created_at: string;
   updated_at: string;
+  // Person responsible fields
+  footage_assigned_to?: string | null;
+  footage_assigned_to_name?: string;
+  implementation_lead_name?: string;
+  // Enriched project info
   project_name?: string;
   customer_name?: string;
   // Computed: whether this record uses FK or legacy text
@@ -71,7 +76,7 @@ export function getDisplayValues(model: VisionModel, linkedData?: {
 }
 
 /**
- * Private helper to enrich vision models with project info
+ * Private helper to enrich vision models with project info and responsible person names
  * Eliminates duplicate code across getScheduleRequiredModels, getFootageRequiredModels, getModelsByStatus
  */
 async function enrichModelsWithProjectInfo(
@@ -83,50 +88,75 @@ async function enrichModelsWithProjectInfo(
   // Collect unique project IDs from both implementation and solutions
   const implProjectIds = [...new Set(visionModels.map(m => m.project_id).filter(Boolean))];
   const solProjectIds = [...new Set(visionModels.map(m => m.solutions_project_id).filter(Boolean))];
+  const footageAssignedUserIds = [...new Set(visionModels.map(m => m.footage_assigned_to).filter(Boolean))];
 
-  // Fetch implementation projects
-  const implProjectMap = new Map<string, { name: string; customer: string }>();
+  // Fetch implementation projects with implementation_lead
+  const implProjectMap = new Map<string, { name: string; customer: string; implementation_lead?: string }>();
   if (implProjectIds.length > 0) {
     const { data: projects } = await supabase
       .from('projects')
-      .select(`id, name, companies!projects_company_id_fkey(name)`)
+      .select(`id, name, implementation_lead, companies!projects_company_id_fkey(name)`)
       .in('id', implProjectIds);
 
     (projects || []).forEach((p: any) => {
       implProjectMap.set(p.id, {
         name: p.name,
-        customer: p.companies?.name || 'Unknown'
+        customer: p.companies?.name || 'Unknown',
+        implementation_lead: p.implementation_lead
       });
     });
   }
 
-  // Fetch solutions projects
-  const solProjectMap = new Map<string, { name: string; customer: string }>();
+  // Fetch solutions projects with solutions_consultant
+  const solProjectMap = new Map<string, { name: string; customer: string; solutions_consultant?: string }>();
   if (solProjectIds.length > 0) {
     const { data: projects } = await supabase
       .from('solutions_projects')
-      .select(`id, name, companies!solutions_projects_company_id_fkey(name)`)
+      .select(`id, name, solutions_consultant, companies!solutions_projects_company_id_fkey(name)`)
       .in('id', solProjectIds);
 
     (projects || []).forEach((p: any) => {
       solProjectMap.set(p.id, {
         name: p.name,
-        customer: p.companies?.name || 'Unknown'
+        customer: p.companies?.name || 'Unknown',
+        solutions_consultant: p.solutions_consultant
       });
     });
   }
 
-  // Enrich models with project info
+  // Collect all user IDs we need names for
+  const allUserIds = new Set<string>();
+  implProjectMap.forEach(p => { if (p.implementation_lead) allUserIds.add(p.implementation_lead); });
+  solProjectMap.forEach(p => { if (p.solutions_consultant) allUserIds.add(p.solutions_consultant); });
+  footageAssignedUserIds.forEach(id => allUserIds.add(id));
+
+  // Fetch profile names for all users
+  const profileNameMap = new Map<string, string>();
+  if (allUserIds.size > 0) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('user_id, name')
+      .in('user_id', Array.from(allUserIds));
+
+    (profiles || []).forEach((p: any) => {
+      profileNameMap.set(p.user_id, p.name || 'Unknown');
+    });
+  }
+
+  // Enrich models with project info and person names
   return visionModels.map((item: any) => {
-    let projectInfo: { name: string; customer: string } | undefined;
+    let projectInfo: { name: string; customer: string; implementation_lead?: string; solutions_consultant?: string } | undefined;
     let projectType: 'implementation' | 'solutions' = defaultProjectType;
+    let responsiblePersonId: string | undefined;
 
     if (item.project_id) {
       projectInfo = implProjectMap.get(item.project_id);
       projectType = 'implementation';
+      responsiblePersonId = projectInfo?.implementation_lead;
     } else if (item.solutions_project_id) {
       projectInfo = solProjectMap.get(item.solutions_project_id);
       projectType = 'solutions';
+      responsiblePersonId = projectInfo?.solutions_consultant;
     }
 
     return {
@@ -135,6 +165,8 @@ async function enrichModelsWithProjectInfo(
       customer_name: projectInfo?.customer || 'Unknown',
       project_type: projectType,
       uses_fk: modelUsesFk(item),
+      implementation_lead_name: responsiblePersonId ? profileNameMap.get(responsiblePersonId) : undefined,
+      footage_assigned_to_name: item.footage_assigned_to ? profileNameMap.get(item.footage_assigned_to) : undefined,
     };
   }) as VisionModel[];
 }

@@ -13,6 +13,13 @@ const config: VisionModelsTableConfig = {
   columns: [
     { key: 'customer_name', label: 'Customer' },
     { key: 'project_name', label: 'Project' },
+    { 
+      key: 'footage_assigned_to_name', 
+      label: 'Assigned To',
+      render: (model) => model.footage_assigned_to_name || (
+        <span className="text-amber-600 font-medium">Unassigned</span>
+      )
+    },
     { key: 'line_name', label: 'Line' },
     { key: 'equipment', label: 'Equipment' },
     { key: 'product_sku', label: 'Product SKU' },

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,21 @@ export function VisionModelDialog({
     open,
   });
 
+  // Fetch internal users for footage assignment
+  const { data: internalUsers = [] } = useQuery({
+    queryKey: ['internal-users'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, name')
+        .eq('is_internal', true)
+        .order('name');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: open,
+  });
+
   const startDateTime = useDateTimeField({
     form,
     dateName: 'product_run_start',
@@ -79,6 +95,8 @@ export function VisionModelDialog({
         line_name: data.line_name,
         position: data.position,
         equipment: data.equipment,
+        // Include footage assignment
+        footage_assigned_to: data.footage_assigned_to || null,
       };
 
       if (mode === 'edit' && model?.id) {
@@ -217,6 +235,36 @@ export function VisionModelDialog({
                       <SelectItem value="Validation Required">Validation Required</SelectItem>
                       <SelectItem value="Deployment Required">Deployment Required</SelectItem>
                       <SelectItem value="Complete">Complete</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="footage_assigned_to"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Footage Assigned To</FormLabel>
+                  <Select 
+                    disabled={isDisabled} 
+                    onValueChange={(value) => field.onChange(value === '__none__' ? null : value)} 
+                    value={field.value || '__none__'}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select person to capture footage" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="__none__">Unassigned</SelectItem>
+                      {internalUsers.map((user) => (
+                        <SelectItem key={user.user_id} value={user.user_id}>
+                          {user.name || 'Unknown'}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />

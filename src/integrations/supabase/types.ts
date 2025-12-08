@@ -4114,6 +4114,7 @@ export type Database = {
           end_date: string | null
           equipment: string
           equipment_id: string | null
+          footage_assigned_to: string | null
           group_name: string | null
           id: string
           line_id: string | null
@@ -4141,6 +4142,7 @@ export type Database = {
           end_date?: string | null
           equipment: string
           equipment_id?: string | null
+          footage_assigned_to?: string | null
           group_name?: string | null
           id?: string
           line_id?: string | null
@@ -4168,6 +4170,7 @@ export type Database = {
           end_date?: string | null
           equipment?: string
           equipment_id?: string | null
+          footage_assigned_to?: string | null
           group_name?: string | null
           id?: string
           line_id?: string | null
@@ -4203,6 +4206,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "equipment"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vision_models_footage_assigned_to_fkey"
+            columns: ["footage_assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "vision_models_line_id_fkey"

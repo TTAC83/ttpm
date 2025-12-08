@@ -202,6 +202,7 @@ export function VisionModelBulkUpload({
       setProgress(70);
 
       // Transform rows to VisionModel format
+      // Bulk uploaded dates are date-only (no time component)
       const models = rows.map(row => ({
         ...(projectType === 'solutions' 
           ? { solutions_project_id: projectId, project_type: 'solutions' as const }
@@ -218,6 +219,8 @@ export function VisionModelBulkUpload({
         end_date: row.end_date || null,
         product_run_start: row.product_run_start || null,
         product_run_end: row.product_run_end || null,
+        product_run_start_has_time: false,
+        product_run_end_has_time: false,
         status: row.status,
       }));
 

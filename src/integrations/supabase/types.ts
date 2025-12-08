@@ -4117,6 +4117,7 @@ export type Database = {
           footage_assigned_to: string | null
           group_name: string | null
           id: string
+          last_rescheduled_at: string | null
           line_id: string | null
           line_name: string
           position: string
@@ -4129,6 +4130,7 @@ export type Database = {
           product_title: string
           project_id: string | null
           project_type: Database["public"]["Enums"]["project_type"] | null
+          reschedule_count: number
           solutions_line_id: string | null
           solutions_project_id: string | null
           start_date: string | null
@@ -4145,6 +4147,7 @@ export type Database = {
           footage_assigned_to?: string | null
           group_name?: string | null
           id?: string
+          last_rescheduled_at?: string | null
           line_id?: string | null
           line_name: string
           position: string
@@ -4157,6 +4160,7 @@ export type Database = {
           product_title: string
           project_id?: string | null
           project_type?: Database["public"]["Enums"]["project_type"] | null
+          reschedule_count?: number
           solutions_line_id?: string | null
           solutions_project_id?: string | null
           start_date?: string | null
@@ -4173,6 +4177,7 @@ export type Database = {
           footage_assigned_to?: string | null
           group_name?: string | null
           id?: string
+          last_rescheduled_at?: string | null
           line_id?: string | null
           line_name?: string
           position?: string
@@ -4185,6 +4190,7 @@ export type Database = {
           product_title?: string
           project_id?: string | null
           project_type?: Database["public"]["Enums"]["project_type"] | null
+          reschedule_count?: number
           solutions_line_id?: string | null
           solutions_project_id?: string | null
           start_date?: string | null

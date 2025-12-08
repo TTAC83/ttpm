@@ -100,13 +100,28 @@ export function VisionModelDialog({
       };
 
       if (mode === 'edit' && model?.id) {
+        // Check if dates were changed (reschedule detection)
+        const oldStart = model.product_run_start;
+        const oldEnd = model.product_run_end;
+        const newStart = transformedData.product_run_start;
+        const newEnd = transformedData.product_run_end;
+        
+        // Detect reschedule: dates changed when there were previously set dates
+        const wasRescheduled = (oldStart || oldEnd) && 
+          (oldStart !== newStart || oldEnd !== newEnd);
+
+        if (wasRescheduled) {
+          payload.reschedule_count = (model.reschedule_count || 0) + 1;
+          payload.last_rescheduled_at = new Date().toISOString();
+        }
+
         const { error } = await supabase
           .from('vision_models')
           .update(payload)
           .eq('id', model.id);
 
         if (error) throw error;
-        toast.success('Vision model updated successfully');
+        toast.success(wasRescheduled ? 'Vision model rescheduled' : 'Vision model updated successfully');
       } else {
         const { error } = await supabase
           .from('vision_models')

@@ -2,6 +2,8 @@ import { visionModelsService, VisionModel } from "@/lib/visionModelsService";
 import { VisionModelsTable } from "@/components/vision-models/VisionModelsTable";
 import { VisionModelsTableConfig } from "@/components/vision-models/types";
 import { formatDateWithOptionalTime, TimezoneMode } from "@/lib/dateUtils";
+import { Badge } from "@/components/ui/badge";
+import { RefreshCw } from "lucide-react";
 
 const config: VisionModelsTableConfig = {
   title: "Footage Required",
@@ -53,6 +55,16 @@ const config: VisionModelsTableConfig = {
           </span>
         );
       }
+    },
+    {
+      key: 'reschedule_count',
+      label: 'Rescheduled',
+      render: (model) => model.reschedule_count > 0 ? (
+        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 gap-1">
+          <RefreshCw className="h-3 w-3" />
+          ×{model.reschedule_count}
+        </Badge>
+      ) : null
     },
   ],
   customSort: (a, b, sortColumn, sortDirection) => {

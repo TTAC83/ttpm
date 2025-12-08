@@ -2,13 +2,20 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { supabase } from '@/integrations/supabase/client';
 import { parseDateTime } from '../utils/dateTimeTransform';
 
 const visionModelSchema = z.object({
+  // Legacy text fields (still used for display and legacy records)
   line_name: z.string().min(1, 'Line name is required'),
   position: z.string().min(1, 'Position is required'),
   equipment: z.string().min(1, 'Equipment is required'),
+  // New FK fields
+  line_id: z.string().uuid().optional().nullable(),
+  solutions_line_id: z.string().uuid().optional().nullable(),
+  position_id: z.string().uuid().optional().nullable(),
+  equipment_id: z.string().uuid().optional().nullable(),
+  camera_id: z.string().uuid().optional().nullable(),
+  // Other fields
   product_sku: z.string().optional(),
   product_title: z.string().optional(),
   use_case: z.string().optional(),
@@ -40,6 +47,11 @@ export function useVisionModelForm({ model, open, projectType }: UseVisionModelF
       line_name: '',
       position: '',
       equipment: '',
+      line_id: null,
+      solutions_line_id: null,
+      position_id: null,
+      equipment_id: null,
+      camera_id: null,
       product_sku: '',
       product_title: '',
       use_case: '',
@@ -69,6 +81,11 @@ export function useVisionModelForm({ model, open, projectType }: UseVisionModelF
         line_name: model.line_name || '',
         position: model.position || '',
         equipment: model.equipment || '',
+        line_id: model.line_id || null,
+        solutions_line_id: model.solutions_line_id || null,
+        position_id: model.position_id || null,
+        equipment_id: model.equipment_id || null,
+        camera_id: model.camera_id || null,
         product_sku: model.product_sku || '',
         product_title: model.product_title || '',
         use_case: model.use_case || '',

@@ -20,8 +20,10 @@ export interface VisionModel {
   product_title: string;
   use_case: string;
   group_name?: string;
-  start_date: string | null;
-  end_date: string | null;
+  /** @deprecated Use product_run_start instead */
+  start_date?: string | null;
+  /** @deprecated Use product_run_end instead */
+  end_date?: string | null;
   product_run_start: string | null;
   product_run_start_has_time?: boolean;
   product_run_end: string | null;
@@ -68,6 +70,75 @@ export function getDisplayValues(model: VisionModel, linkedData?: {
   };
 }
 
+/**
+ * Private helper to enrich vision models with project info
+ * Eliminates duplicate code across getScheduleRequiredModels, getFootageRequiredModels, getModelsByStatus
+ */
+async function enrichModelsWithProjectInfo(
+  visionModels: any[],
+  defaultProjectType: 'implementation' | 'solutions' = 'implementation'
+): Promise<VisionModel[]> {
+  if (!visionModels || visionModels.length === 0) return [];
+
+  // Collect unique project IDs from both implementation and solutions
+  const implProjectIds = [...new Set(visionModels.map(m => m.project_id).filter(Boolean))];
+  const solProjectIds = [...new Set(visionModels.map(m => m.solutions_project_id).filter(Boolean))];
+
+  // Fetch implementation projects
+  const implProjectMap = new Map<string, { name: string; customer: string }>();
+  if (implProjectIds.length > 0) {
+    const { data: projects } = await supabase
+      .from('projects')
+      .select(`id, name, companies!projects_company_id_fkey(name)`)
+      .in('id', implProjectIds);
+
+    (projects || []).forEach((p: any) => {
+      implProjectMap.set(p.id, {
+        name: p.name,
+        customer: p.companies?.name || 'Unknown'
+      });
+    });
+  }
+
+  // Fetch solutions projects
+  const solProjectMap = new Map<string, { name: string; customer: string }>();
+  if (solProjectIds.length > 0) {
+    const { data: projects } = await supabase
+      .from('solutions_projects')
+      .select(`id, name, companies!solutions_projects_company_id_fkey(name)`)
+      .in('id', solProjectIds);
+
+    (projects || []).forEach((p: any) => {
+      solProjectMap.set(p.id, {
+        name: p.name,
+        customer: p.companies?.name || 'Unknown'
+      });
+    });
+  }
+
+  // Enrich models with project info
+  return visionModels.map((item: any) => {
+    let projectInfo: { name: string; customer: string } | undefined;
+    let projectType: 'implementation' | 'solutions' = defaultProjectType;
+
+    if (item.project_id) {
+      projectInfo = implProjectMap.get(item.project_id);
+      projectType = 'implementation';
+    } else if (item.solutions_project_id) {
+      projectInfo = solProjectMap.get(item.solutions_project_id);
+      projectType = 'solutions';
+    }
+
+    return {
+      ...item,
+      project_name: projectInfo?.name || 'Unknown',
+      customer_name: projectInfo?.customer || 'Unknown',
+      project_type: projectType,
+      uses_fk: modelUsesFk(item),
+    };
+  }) as VisionModel[];
+}
+
 export const visionModelsService = {
   async getProjectVisionModels(
     projectId: string,
@@ -95,41 +166,11 @@ export const visionModelsService = {
       .from('vision_models')
       .select('*')
       .eq('status', 'Footage Required')
-      .not('project_id', 'is', null)
       .or('product_run_start.is.null,product_run_end.is.null')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    if (!visionModels || visionModels.length === 0) return [];
-
-    const projectIds = [...new Set(visionModels.map((m: any) => m.project_id).filter(Boolean))];
-
-    const { data: projects } = await supabase
-      .from('projects')
-      .select(`
-        id,
-        name,
-        companies!projects_company_id_fkey(name)
-      `)
-      .in('id', projectIds);
-
-    const projectMap = new Map((projects || []).map((p: any) => [p.id, {
-      name: p.name,
-      customer: p.companies?.name || 'Unknown'
-    }]));
-
-    const models = visionModels.map((item: any) => {
-      const projectInfo = projectMap.get(item.project_id);
-      return {
-        ...item,
-        project_name: projectInfo?.name || 'Unknown',
-        customer_name: projectInfo?.customer || 'Unknown',
-        project_type: 'implementation' as const,
-        uses_fk: modelUsesFk(item),
-      };
-    });
-
-    return models as VisionModel[];
+    return enrichModelsWithProjectInfo(visionModels || []);
   },
 
   async getFootageRequiredModels(): Promise<VisionModel[]> {
@@ -137,42 +178,12 @@ export const visionModelsService = {
       .from('vision_models')
       .select('*')
       .eq('status', 'Footage Required')
-      .not('project_id', 'is', null)
       .not('product_run_start', 'is', null)
       .not('product_run_end', 'is', null)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    if (!visionModels || visionModels.length === 0) return [];
-
-    const projectIds = [...new Set(visionModels.map((m: any) => m.project_id).filter(Boolean))];
-
-    const { data: projects } = await supabase
-      .from('projects')
-      .select(`
-        id,
-        name,
-        companies!projects_company_id_fkey(name)
-      `)
-      .in('id', projectIds);
-
-    const projectMap = new Map((projects || []).map((p: any) => [p.id, {
-      name: p.name,
-      customer: p.companies?.name || 'Unknown'
-    }]));
-
-    const models = visionModels.map((item: any) => {
-      const projectInfo = projectMap.get(item.project_id);
-      return {
-        ...item,
-        project_name: projectInfo?.name || 'Unknown',
-        customer_name: projectInfo?.customer || 'Unknown',
-        project_type: 'implementation' as const,
-        uses_fk: modelUsesFk(item),
-      };
-    });
-
-    return models as VisionModel[];
+    return enrichModelsWithProjectInfo(visionModels || []);
   },
 
   async getModelsByStatus(status: VisionModel['status']): Promise<VisionModel[]> {
@@ -180,40 +191,10 @@ export const visionModelsService = {
       .from('vision_models')
       .select('*')
       .eq('status', status)
-      .not('project_id', 'is', null)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    if (!visionModels || visionModels.length === 0) return [];
-
-    const projectIds = [...new Set(visionModels.map((m: any) => m.project_id).filter(Boolean))];
-
-    const { data: projects } = await supabase
-      .from('projects')
-      .select(`
-        id,
-        name,
-        companies!projects_company_id_fkey(name)
-      `)
-      .in('id', projectIds);
-
-    const projectMap = new Map((projects || []).map((p: any) => [p.id, {
-      name: p.name,
-      customer: p.companies?.name || 'Unknown'
-    }]));
-
-    const models = visionModels.map((item: any) => {
-      const projectInfo = projectMap.get(item.project_id);
-      return {
-        ...item,
-        project_name: projectInfo?.name || 'Unknown',
-        customer_name: projectInfo?.customer || 'Unknown',
-        project_type: 'implementation' as const,
-        uses_fk: modelUsesFk(item),
-      };
-    });
-
-    return models as VisionModel[];
+    return enrichModelsWithProjectInfo(visionModels || []);
   },
 
   async createVisionModel(model: Omit<VisionModel, 'id' | 'created_at' | 'updated_at'>) {

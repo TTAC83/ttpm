@@ -35,6 +35,9 @@ export interface VisionModel {
   footage_assigned_to?: string | null;
   footage_assigned_to_name?: string;
   implementation_lead_name?: string;
+  // Reschedule tracking
+  reschedule_count: number;
+  last_rescheduled_at?: string | null;
   // Enriched project info
   project_name?: string;
   customer_name?: string;

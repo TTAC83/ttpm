@@ -1,7 +1,7 @@
 import { visionModelsService, VisionModel } from "@/lib/visionModelsService";
 import { VisionModelsTable } from "@/components/vision-models/VisionModelsTable";
 import { VisionModelsTableConfig } from "@/components/vision-models/types";
-import { formatDateTimeSmartUK } from "@/lib/dateUtils";
+import { formatDateWithOptionalTime, TimezoneMode } from "@/lib/dateUtils";
 
 const config: VisionModelsTableConfig = {
   title: "Footage Required",
@@ -10,6 +10,7 @@ const config: VisionModelsTableConfig = {
   emptyMessage: "No models found ready for footage",
   queryKey: ['footage-required-models'],
   queryFn: () => visionModelsService.getFootageRequiredModels(),
+  showTimezoneToggle: true,
   columns: [
     { key: 'customer_name', label: 'Customer' },
     { key: 'project_name', label: 'Project' },
@@ -29,12 +30,13 @@ const config: VisionModelsTableConfig = {
     { 
       key: 'product_run_start', 
       label: 'Run Start',
-      render: (model) => formatDateTimeSmartUK(model.product_run_start!)
+      render: (model, timezone: TimezoneMode = 'uk') => 
+        formatDateWithOptionalTime(model.product_run_start, model.product_run_start_has_time, timezone)
     },
     { 
       key: 'product_run_end', 
       label: 'Run End',
-      render: (model) => {
+      render: (model, timezone: TimezoneMode = 'uk') => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const runStartDate = model.product_run_start ? new Date(model.product_run_start) : null;
@@ -47,7 +49,7 @@ const config: VisionModelsTableConfig = {
         
         return (
           <span className={isInProductionWindow ? "text-green-600 font-semibold" : isOverdue ? "text-destructive font-semibold" : ""}>
-            {formatDateTimeSmartUK(model.product_run_end!)}
+            {formatDateWithOptionalTime(model.product_run_end, model.product_run_end_has_time, timezone)}
           </span>
         );
       }

@@ -12,6 +12,7 @@ import { useDateTimeField } from './hooks/useDateTimeField';
 import { transformFormData } from './utils/dateTimeTransform';
 import { DateTimeField } from './components/DateTimeField';
 import { EquipmentSelectors } from './components/EquipmentSelectors';
+import { modelUsesFk } from '@/lib/visionModelsService';
 
 interface VisionModelDialogProps {
   open: boolean;
@@ -34,7 +35,7 @@ export function VisionModelDialog({
 }: VisionModelDialogProps) {
   const [loading, setLoading] = useState(false);
   const form = useVisionModelForm({ model, open, projectType });
-  const { lines, positions, equipment, loading: cascadeLoading } = useLineEquipmentCascade({
+  const { lines, positions, equipment, cameras, loading: cascadeLoading } = useLineEquipmentCascade({
     form,
     projectId,
     projectType,
@@ -55,15 +56,29 @@ export function VisionModelDialog({
     hasTimeName: 'product_run_end_has_time',
   });
 
+  // Check if this is a legacy record (has text fields but no FK fields)
+  const isLegacyRecord = model && !modelUsesFk(model) && (model.line_name || model.position || model.equipment);
+
   const onSubmit = async (data: any) => {
     setLoading(true);
     try {
       const transformedData = transformFormData(data);
-      const column = projectType === 'solutions' ? 'solutions_project_id' : 'project_id';
+      const projectColumn = projectType === 'solutions' ? 'solutions_project_id' : 'project_id';
 
-      const payload = {
-        [column]: projectId,
+      // Build payload with FK fields
+      const payload: any = {
+        [projectColumn]: projectId,
         ...transformedData,
+        // Include FK fields
+        line_id: data.line_id || null,
+        solutions_line_id: data.solutions_line_id || null,
+        position_id: data.position_id || null,
+        equipment_id: data.equipment_id || null,
+        camera_id: data.camera_id || null,
+        // Include text fields for display/search
+        line_name: data.line_name,
+        position: data.position,
+        equipment: data.equipment,
       };
 
       if (mode === 'edit' && model?.id) {
@@ -121,7 +136,10 @@ export function VisionModelDialog({
               lines={lines}
               positions={positions}
               equipment={equipment}
+              cameras={cameras}
               disabled={isDisabled}
+              projectType={projectType}
+              isLegacyRecord={isLegacyRecord}
             />
 
             <FormField

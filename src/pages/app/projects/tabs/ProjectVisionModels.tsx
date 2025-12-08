@@ -7,34 +7,17 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateUK } from '@/lib/dateUtils';
-import { Plus, Pencil, Trash2, Eye, AlertCircle, Calendar as CalendarIcon, Table as TableIcon, Download, FileDown, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, AlertCircle, Calendar as CalendarIcon, Table as TableIcon, Download, FileDown, ArrowUpDown, ArrowUp, ArrowDown, Link2, Link2Off } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { VisionModelDialog } from '@/components/vision-models/VisionModelDialog';
 import { VisionModelBulkUpload } from '@/components/VisionModelBulkUpload';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths } from 'date-fns';
 import * as XLSX from 'xlsx';
-
-interface VisionModel {
-  id: string;
-  project_id: string;
-  line_name: string;
-  position: string;
-  equipment: string;
-  product_sku: string;
-  product_title: string;
-  use_case: string;
-  group_name?: string;
-  start_date: string | null;
-  end_date: string | null;
-  product_run_start: string | null;
-  product_run_end: string | null;
-  status: 'Footage Required' | 'Annotation Required' | 'Processing Required' | 'Deployment Required' | 'Validation Required' | 'Complete';
-  created_at: string;
-  updated_at: string;
-}
+import { VisionModel, modelUsesFk } from '@/lib/visionModelsService';
 
 interface ProjectVisionModelsProps {
   projectId: string;
@@ -477,71 +460,94 @@ export default function ProjectVisionModels({ projectId, projectType = 'implemen
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredAndSortedModels.map((model) => (
-                      <TableRow key={model.id}>
-                        <TableCell className="font-medium">{model.line_name}</TableCell>
-                        <TableCell>{model.equipment}</TableCell>
-                        <TableCell>{model.product_sku}</TableCell>
-                        <TableCell>{model.product_title}</TableCell>
-                        <TableCell>{model.group_name || '-'}</TableCell>
-                        <TableCell>
-                          <Badge variant={getStatusBadgeVariant(model.status)}>
-                            {model.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {model.start_date ? formatDateUK(model.start_date) : 'Not set'}
-                        </TableCell>
-                        <TableCell>
-                          {model.end_date ? formatDateUK(model.end_date) : 'Not set'}
-                        </TableCell>
-                        <TableCell>
-                          {model.product_run_start ? formatDateUK(model.product_run_start) : 'Not set'}
-                        </TableCell>
-                        <TableCell>
-                          {model.product_run_end ? formatDateUK(model.product_run_end) : 'Not set'}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleOpenDialog('view', model)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleOpenDialog('edit', model)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Vision Model</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to delete this vision model? This action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDelete(model)}>
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {filteredAndSortedModels.map((model) => {
+                      const usesFk = modelUsesFk(model);
+                      return (
+                        <TableRow key={model.id}>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    {usesFk ? (
+                                      <Link2 className="h-3.5 w-3.5 text-green-500" />
+                                    ) : (
+                                      <Link2Off className="h-3.5 w-3.5 text-amber-500" />
+                                    )}
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    {usesFk 
+                                      ? 'Linked to database records' 
+                                      : 'Legacy text-based record - edit to upgrade'}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              {model.line_name}
+                            </div>
+                          </TableCell>
+                          <TableCell>{model.equipment}</TableCell>
+                          <TableCell>{model.product_sku}</TableCell>
+                          <TableCell>{model.product_title}</TableCell>
+                          <TableCell>{model.group_name || '-'}</TableCell>
+                          <TableCell>
+                            <Badge variant={getStatusBadgeVariant(model.status)}>
+                              {model.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {model.start_date ? formatDateUK(model.start_date) : 'Not set'}
+                          </TableCell>
+                          <TableCell>
+                            {model.end_date ? formatDateUK(model.end_date) : 'Not set'}
+                          </TableCell>
+                          <TableCell>
+                            {model.product_run_start ? formatDateUK(model.product_run_start) : 'Not set'}
+                          </TableCell>
+                          <TableCell>
+                            {model.product_run_end ? formatDateUK(model.product_run_end) : 'Not set'}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleOpenDialog('view', model)}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleOpenDialog('edit', model)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete Vision Model</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to delete this vision model? This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDelete(model)}>
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </CardContent>

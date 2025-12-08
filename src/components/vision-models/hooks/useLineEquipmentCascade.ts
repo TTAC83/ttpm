@@ -2,9 +2,16 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UseFormReturn } from 'react-hook-form';
 
-interface CascadeOption {
-  value: string;
-  label: string;
+export interface CascadeOption {
+  value: string;  // The ID (UUID) for FK
+  label: string;  // Display name
+  name: string;   // The actual name value
+}
+
+export interface CameraOption {
+  value: string;  // camera ID
+  label: string;  // camera name/mac_address
+  equipmentId: string;
 }
 
 interface UseLineEquipmentCascadeProps {
@@ -15,23 +22,25 @@ interface UseLineEquipmentCascadeProps {
 }
 
 /**
- * Hook to manage cascading line -> position -> equipment dropdowns
+ * Hook to manage cascading line -> position -> equipment -> camera dropdowns
+ * Now returns both IDs (for FK) and names (for display/legacy)
  */
 export function useLineEquipmentCascade({ form, projectId, projectType, open }: UseLineEquipmentCascadeProps) {
   const [lines, setLines] = useState<CascadeOption[]>([]);
   const [positions, setPositions] = useState<CascadeOption[]>([]);
   const [equipment, setEquipment] = useState<CascadeOption[]>([]);
+  const [cameras, setCameras] = useState<CameraOption[]>([]);
   const [loading, setLoading] = useState(false);
 
   const lineTable = projectType === 'solutions' ? 'solutions_lines' : 'lines' as const;
   const lineIdField = projectType === 'solutions' ? 'solutions_project_id' : 'project_id' as const;
-  const projectIdField = projectType === 'solutions' ? 'solutions_line_id' : 'line_id' as const;
+  const positionLineField = projectType === 'solutions' ? 'solutions_line_id' : 'line_id' as const;
 
   // Load lines when dialog opens
   useEffect(() => {
     if (!open || !projectId) return;
 
-      const loadLines = async () => {
+    const loadLines = async () => {
       setLoading(true);
       try {
         const { data, error } = await (supabase as any)
@@ -41,7 +50,11 @@ export function useLineEquipmentCascade({ form, projectId, projectType, open }: 
           .order('line_name');
 
         if (error) throw error;
-        setLines(data?.map((l: any) => ({ value: l.line_name, label: l.line_name })) || []);
+        setLines(data?.map((l: any) => ({ 
+          value: l.id,        // UUID for FK
+          label: l.line_name, // Display
+          name: l.line_name   // For legacy text field
+        })) || []);
       } catch (error) {
         console.error('Error loading lines:', error);
         setLines([]);
@@ -51,38 +64,33 @@ export function useLineEquipmentCascade({ form, projectId, projectType, open }: 
     };
 
     loadLines();
-  }, [open, projectId, lineTable]);
+  }, [open, projectId, lineTable, lineIdField]);
 
   // Load positions when line changes
   useEffect(() => {
-    const lineName = form.watch('line_name');
-    if (!lineName || !projectId) {
+    const lineId = projectType === 'solutions' 
+      ? form.watch('solutions_line_id') 
+      : form.watch('line_id');
+    
+    if (!lineId || !projectId) {
       setPositions([]);
       return;
     }
 
     const loadPositions = async () => {
       try {
-        // Get line ID first
-        const { data: lineData, error: lineError } = await (supabase as any)
-          .from(lineTable)
-          .select('id')
-          .eq(lineIdField, projectId)
-          .eq('line_name', lineName)
-          .single();
-
-        if (lineError) throw lineError;
-        if (!lineData) return;
-
-        // Query positions using the correct column name 'name'
-        const { data, error } = await (supabase as any)
+        const { data, error } = await supabase
           .from('positions')
           .select('id, name')
-          .eq(projectIdField, lineData.id)
+          .eq(positionLineField, lineId)
           .order('name');
 
         if (error) throw error;
-        setPositions(data?.map((p: any) => ({ value: p.name, label: p.name })) || []);
+        setPositions(data?.map((p: any) => ({ 
+          value: p.id,    // UUID for FK
+          label: p.name,  // Display
+          name: p.name    // For legacy text field
+        })) || []);
       } catch (error) {
         console.error('Error loading positions:', error);
         setPositions([]);
@@ -90,51 +98,32 @@ export function useLineEquipmentCascade({ form, projectId, projectType, open }: 
     };
 
     loadPositions();
-  }, [form.watch('line_name'), projectId, lineTable, lineIdField, projectIdField]);
+  }, [form.watch('line_id'), form.watch('solutions_line_id'), projectId, positionLineField, projectType]);
 
   // Load equipment when position changes
   useEffect(() => {
-    const lineName = form.watch('line_name');
-    const positionName = form.watch('position');
+    const positionId = form.watch('position_id');
     
-    if (!lineName || !positionName || !projectId) {
+    if (!positionId || !projectId) {
       setEquipment([]);
+      setCameras([]);
       return;
     }
 
     const loadEquipment = async () => {
       try {
-        // Get line ID
-        const { data: lineData, error: lineError } = await (supabase as any)
-          .from(lineTable)
-          .select('id')
-          .eq(lineIdField, projectId)
-          .eq('line_name', lineName)
-          .single();
-
-        if (lineError) throw lineError;
-        if (!lineData) return;
-
-        // Get position ID using the correct column name 'name'
-        const { data: positionData, error: posError } = await (supabase as any)
-          .from('positions')
-          .select('id')
-          .eq(projectIdField, lineData.id)
-          .eq('name', positionName)
-          .single();
-
-        if (posError) throw posError;
-        if (!positionData) return;
-
-        // Query equipment using the correct column name 'name'
-        const { data, error } = await (supabase as any)
+        const { data, error } = await supabase
           .from('equipment')
           .select('id, name')
-          .eq('position_id', positionData.id)
+          .eq('position_id', positionId)
           .order('name');
 
         if (error) throw error;
-        setEquipment(data?.map((e: any) => ({ value: e.name, label: e.name })) || []);
+        setEquipment(data?.map((e: any) => ({ 
+          value: e.id,    // UUID for FK
+          label: e.name,  // Display
+          name: e.name    // For legacy text field
+        })) || []);
       } catch (error) {
         console.error('Error loading equipment:', error);
         setEquipment([]);
@@ -142,12 +131,45 @@ export function useLineEquipmentCascade({ form, projectId, projectType, open }: 
     };
 
     loadEquipment();
-  }, [form.watch('line_name'), form.watch('position'), projectId, lineTable, lineIdField, projectIdField]);
+  }, [form.watch('position_id'), projectId]);
+
+  // Load cameras when equipment changes
+  useEffect(() => {
+    const equipmentId = form.watch('equipment_id');
+    
+    if (!equipmentId) {
+      setCameras([]);
+      return;
+    }
+
+    const loadCameras = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('cameras')
+          .select('id, mac_address, equipment_id')
+          .eq('equipment_id', equipmentId)
+          .order('mac_address');
+
+        if (error) throw error;
+        setCameras(data?.map((c: any) => ({ 
+          value: c.id,
+          label: c.mac_address || 'Unnamed Camera',
+          equipmentId: c.equipment_id
+        })) || []);
+      } catch (error) {
+        console.error('Error loading cameras:', error);
+        setCameras([]);
+      }
+    };
+
+    loadCameras();
+  }, [form.watch('equipment_id')]);
 
   return {
     lines,
     positions,
     equipment,
+    cameras,
     loading,
   };
 }

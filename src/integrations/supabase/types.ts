@@ -4109,13 +4109,17 @@ export type Database = {
       }
       vision_models: {
         Row: {
+          camera_id: string | null
           created_at: string
           end_date: string | null
           equipment: string
+          equipment_id: string | null
           group_name: string | null
           id: string
+          line_id: string | null
           line_name: string
           position: string
+          position_id: string | null
           product_run_end: string | null
           product_run_end_has_time: boolean | null
           product_run_start: string | null
@@ -4124,6 +4128,7 @@ export type Database = {
           product_title: string
           project_id: string | null
           project_type: Database["public"]["Enums"]["project_type"] | null
+          solutions_line_id: string | null
           solutions_project_id: string | null
           start_date: string | null
           status: string
@@ -4131,13 +4136,17 @@ export type Database = {
           use_case: string
         }
         Insert: {
+          camera_id?: string | null
           created_at?: string
           end_date?: string | null
           equipment: string
+          equipment_id?: string | null
           group_name?: string | null
           id?: string
+          line_id?: string | null
           line_name: string
           position: string
+          position_id?: string | null
           product_run_end?: string | null
           product_run_end_has_time?: boolean | null
           product_run_start?: string | null
@@ -4146,6 +4155,7 @@ export type Database = {
           product_title: string
           project_id?: string | null
           project_type?: Database["public"]["Enums"]["project_type"] | null
+          solutions_line_id?: string | null
           solutions_project_id?: string | null
           start_date?: string | null
           status?: string
@@ -4153,13 +4163,17 @@ export type Database = {
           use_case: string
         }
         Update: {
+          camera_id?: string | null
           created_at?: string
           end_date?: string | null
           equipment?: string
+          equipment_id?: string | null
           group_name?: string | null
           id?: string
+          line_id?: string | null
           line_name?: string
           position?: string
+          position_id?: string | null
           product_run_end?: string | null
           product_run_end_has_time?: boolean | null
           product_run_start?: string | null
@@ -4168,6 +4182,7 @@ export type Database = {
           product_title?: string
           project_id?: string | null
           project_type?: Database["public"]["Enums"]["project_type"] | null
+          solutions_line_id?: string | null
           solutions_project_id?: string | null
           start_date?: string | null
           status?: string
@@ -4175,6 +4190,41 @@ export type Database = {
           use_case?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "vision_models_camera_id_fkey"
+            columns: ["camera_id"]
+            isOneToOne: false
+            referencedRelation: "cameras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vision_models_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vision_models_line_id_fkey"
+            columns: ["line_id"]
+            isOneToOne: false
+            referencedRelation: "lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vision_models_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "positions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vision_models_solutions_line_id_fkey"
+            columns: ["solutions_line_id"]
+            isOneToOne: false
+            referencedRelation: "solutions_lines"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "vision_models_solutions_project_id_fkey"
             columns: ["solutions_project_id"]

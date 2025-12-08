@@ -83,7 +83,7 @@ export function EquipmentSelectors({
 
   // Handler for camera selection
   const handleCameraChange = (cameraId: string) => {
-    form.setValue('camera_id', cameraId);
+    form.setValue('camera_id', cameraId === '__none__' ? null : cameraId);
   };
 
   return (
@@ -120,7 +120,7 @@ export function EquipmentSelectors({
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {lines.map((line) => (
+                {lines.filter(l => l.value).map((line) => (
                   <SelectItem key={line.value} value={line.value}>
                     {line.label}
                   </SelectItem>
@@ -154,7 +154,7 @@ export function EquipmentSelectors({
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {positions.map((position) => (
+                {positions.filter(p => p.value).map((position) => (
                   <SelectItem key={position.value} value={position.value}>
                     {position.label}
                   </SelectItem>
@@ -188,7 +188,7 @@ export function EquipmentSelectors({
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {equipment.map((eq) => (
+                {equipment.filter(e => e.value).map((eq) => (
                   <SelectItem key={eq.value} value={eq.value}>
                     {eq.label}
                   </SelectItem>
@@ -210,7 +210,7 @@ export function EquipmentSelectors({
               <Select
                 disabled={disabled || !currentEquipmentId}
                 onValueChange={handleCameraChange}
-                value={field.value || ''}
+                value={field.value || '__none__'}
               >
                 <FormControl>
                   <SelectTrigger>
@@ -218,8 +218,8 @@ export function EquipmentSelectors({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">No camera selected</SelectItem>
-                  {cameras.map((camera) => (
+                  <SelectItem value="__none__">No camera selected</SelectItem>
+                  {cameras.filter(c => c.value).map((camera) => (
                     <SelectItem key={camera.value} value={camera.value}>
                       {camera.label}
                     </SelectItem>

@@ -4960,27 +4960,7 @@ export type Database = {
       impl_set_weekly_review:
         | {
             Args: {
-              p_company_id: string
-              p_customer_health: Database["public"]["Enums"]["impl_health_simple"]
-              p_notes?: string
-              p_project_status: Database["public"]["Enums"]["impl_week_status"]
-              p_week_start: string
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              p_company_id: string
-              p_customer_health: Database["public"]["Enums"]["impl_health_simple"]
-              p_notes?: string
-              p_project_status: Database["public"]["Enums"]["impl_week_status"]
-              p_reason_code?: string
-              p_week_start: string
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
+              p_churn_risk?: Database["public"]["Enums"]["churn_risk_level"]
               p_company_id: string
               p_current_status?: string
               p_customer_health: Database["public"]["Enums"]["impl_health_simple"]
@@ -4995,7 +4975,27 @@ export type Database = {
           }
         | {
             Args: {
-              p_churn_risk?: Database["public"]["Enums"]["churn_risk_level"]
+              p_company_id: string
+              p_customer_health: Database["public"]["Enums"]["impl_health_simple"]
+              p_notes?: string
+              p_project_status: Database["public"]["Enums"]["impl_week_status"]
+              p_week_start: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_company_id: string
+              p_customer_health: Database["public"]["Enums"]["impl_health_simple"]
+              p_notes?: string
+              p_project_status: Database["public"]["Enums"]["impl_week_status"]
+              p_reason_code?: string
+              p_week_start: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
               p_company_id: string
               p_current_status?: string
               p_customer_health: Database["public"]["Enums"]["impl_health_simple"]
@@ -5033,6 +5033,17 @@ export type Database = {
               p_bau_customer_id: string
               p_date_from: string
               p_date_to: string
+              p_escalation: string
+              p_health: Database["public"]["Enums"]["bau_health_simple"]
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_bau_customer_id: string
+              p_churn_risk?: Database["public"]["Enums"]["churn_risk_level"]
+              p_date_from: string
+              p_date_to: string
               p_escalation?: string
               p_health: Database["public"]["Enums"]["bau_health_simple"]
               p_reason_code?: string
@@ -5055,22 +5066,11 @@ export type Database = {
         | {
             Args: {
               p_bau_customer_id: string
-              p_churn_risk?: Database["public"]["Enums"]["churn_risk_level"]
               p_date_from: string
               p_date_to: string
               p_escalation?: string
               p_health: Database["public"]["Enums"]["bau_health_simple"]
               p_reason_code?: string
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              p_bau_customer_id: string
-              p_date_from: string
-              p_date_to: string
-              p_escalation: string
-              p_health: Database["public"]["Enums"]["bau_health_simple"]
             }
             Returns: undefined
           }

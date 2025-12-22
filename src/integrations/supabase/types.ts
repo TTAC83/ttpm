@@ -1849,6 +1849,70 @@ export type Database = {
           },
         ]
       }
+      impl_weekly_reviews_backup: {
+        Row: {
+          churn_risk: Database["public"]["Enums"]["churn_risk_level"] | null
+          churn_risk_reason: string | null
+          company_id: string | null
+          current_status: string | null
+          customer_health:
+            | Database["public"]["Enums"]["impl_health_simple"]
+            | null
+          id: string | null
+          notes: string | null
+          planned_go_live_date: string | null
+          project_status: Database["public"]["Enums"]["impl_week_status"] | null
+          reason_code: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          week_end: string | null
+          week_start: string | null
+          weekly_summary: string | null
+        }
+        Insert: {
+          churn_risk?: Database["public"]["Enums"]["churn_risk_level"] | null
+          churn_risk_reason?: string | null
+          company_id?: string | null
+          current_status?: string | null
+          customer_health?:
+            | Database["public"]["Enums"]["impl_health_simple"]
+            | null
+          id?: string | null
+          notes?: string | null
+          planned_go_live_date?: string | null
+          project_status?:
+            | Database["public"]["Enums"]["impl_week_status"]
+            | null
+          reason_code?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          week_end?: string | null
+          week_start?: string | null
+          weekly_summary?: string | null
+        }
+        Update: {
+          churn_risk?: Database["public"]["Enums"]["churn_risk_level"] | null
+          churn_risk_reason?: string | null
+          company_id?: string | null
+          current_status?: string | null
+          customer_health?:
+            | Database["public"]["Enums"]["impl_health_simple"]
+            | null
+          id?: string | null
+          notes?: string | null
+          planned_go_live_date?: string | null
+          project_status?:
+            | Database["public"]["Enums"]["impl_week_status"]
+            | null
+          reason_code?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          week_end?: string | null
+          week_start?: string | null
+          weekly_summary?: string | null
+        }
+        Relationships: []
+      }
       impl_weekly_weeks: {
         Row: {
           available_at: string
@@ -1867,6 +1931,27 @@ export type Database = {
           created_at?: string | null
           week_end?: string
           week_start?: string
+        }
+        Relationships: []
+      }
+      impl_weekly_weeks_backup: {
+        Row: {
+          available_at: string | null
+          created_at: string | null
+          week_end: string | null
+          week_start: string | null
+        }
+        Insert: {
+          available_at?: string | null
+          created_at?: string | null
+          week_end?: string | null
+          week_start?: string | null
+        }
+        Update: {
+          available_at?: string | null
+          created_at?: string | null
+          week_end?: string | null
+          week_start?: string | null
         }
         Relationships: []
       }

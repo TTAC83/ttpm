@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ensureWeeks, listWeeks, listImplCompanies, loadOverdueTasks, loadOpenActions, loadEventsAroundWeek, loadReview, saveReview, loadWeeklyStats, loadOpenVisionModels, VisionModelRow } from "@/lib/implementationWeekly";
+import { ensureWeeks, listWeeks, listAllWeeksWithData, listImplCompanies, loadOverdueTasks, loadOpenActions, loadEventsAroundWeek, loadReview, saveReview, loadWeeklyStats, loadOpenVisionModels, VisionModelRow, ImplWeek } from "@/lib/implementationWeekly";
 import { productGapsService } from "@/lib/productGapsService";
 import { ProductGapDrawer } from "@/components/ProductGapDrawer";
 import { cn } from "@/lib/utils";
@@ -44,7 +44,7 @@ type TaskRow = {
   project_id: string;
 };
 
-function formatWeekLabel(w: Week) {
+function formatWeekLabelLocal(w: Week | ImplWeek) {
   return new Date(w.week_start + "T00:00:00").toLocaleDateString('en-GB', { 
     weekday: "short", 
     day: "2-digit", 
@@ -58,6 +58,7 @@ export default function ImplementationWeeklyReviewPage() {
   const [search, setSearch] = useState("");
   const [selectedWeek, setSelectedWeek] = useState<string | null>(null);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
+  const [showAllWeeks, setShowAllWeeks] = useState(false);
 
   // Stats query for selected week
   const statsQ = useQuery({
@@ -67,31 +68,32 @@ export default function ImplementationWeeklyReviewPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Ensure weeks exist (current + next)
-  useEffect(() => { 
-    ensureWeeks().catch((error) => {
-      console.error("Failed to ensure weeks:", error);
-    }); 
-  }, []);
+  // Get recent weeks synchronously (always available)
+  const recentWeeks = useMemo(() => listWeeks(4), []);
 
-  const weeksQ = useQuery({
-    queryKey: ["impl-weeks"],
-    queryFn: listWeeks,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+  // Query for all historical weeks (only when showAllWeeks is true)
+  const allWeeksQ = useQuery({
+    queryKey: ["impl-all-weeks"],
+    queryFn: listAllWeeksWithData,
+    staleTime: 5 * 60 * 1000,
+    enabled: showAllWeeks,
   });
 
-  // Set default week to the second highest date available (current week)
-  useEffect(() => {
-    if (weeksQ.data && !selectedWeek) {
-      // Since weeks are ordered descending, the second item is the current week
-      if (weeksQ.data.length >= 2) {
-        setSelectedWeek(weeksQ.data[1].week_start);
-      } else if (weeksQ.data.length > 0) {
-        // Fallback to first available week if less than 2 weeks
-        setSelectedWeek(weeksQ.data[0].week_start);
-      }
+  // Combine weeks based on mode
+  const weeks = useMemo(() => {
+    if (showAllWeeks && allWeeksQ.data) {
+      return allWeeksQ.data;
     }
-  }, [weeksQ.data, selectedWeek]);
+    return recentWeeks;
+  }, [showAllWeeks, allWeeksQ.data, recentWeeks]);
+
+  // Set default week to current week (first item since we generate current + historical)
+  useEffect(() => {
+    if (weeks.length > 0 && !selectedWeek) {
+      // First item is the current week
+      setSelectedWeek(weeks[0].week_start);
+    }
+  }, [weeks, selectedWeek]);
 
   const companiesQ = useQuery({
     queryKey: ["impl-companies"],
@@ -121,12 +123,7 @@ export default function ImplementationWeeklyReviewPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Fallback: if only one week exists, default to that single week
-  useEffect(() => {
-    if (!selectedWeek && weeksQ.data && weeksQ.data.length === 1) {
-      setSelectedWeek(weeksQ.data[0].week_start);
-    }
-  }, [weeksQ.data, selectedWeek]);
+  // This effect is no longer needed - initial selection handled above
 
   useEffect(() => {
     if (!selectedCompanyId && companiesQ.data && companiesQ.data.length > 0) {
@@ -156,18 +153,18 @@ export default function ImplementationWeeklyReviewPage() {
   return (
     <div className="p-4 space-y-4">
       {/* Debug Information */}
-      {(weeksQ.isLoading || companiesQ.isLoading || companiesHealthQ.isLoading) && (
+      {(companiesQ.isLoading || companiesHealthQ.isLoading || (showAllWeeks && allWeeksQ.isLoading)) && (
         <Card className="p-3 bg-blue-50">
           <div>Loading data...</div>
         </Card>
       )}
       
-      {(weeksQ.error || companiesQ.error || companiesHealthQ.error) && (
+      {(companiesQ.error || companiesHealthQ.error || (showAllWeeks && allWeeksQ.error)) && (
         <Card className="p-3 bg-red-50">
           <div>Error loading data:</div>
-          {weeksQ.error && <div>Weeks: {(weeksQ.error as Error).message}</div>}
           {companiesQ.error && <div>Companies: {(companiesQ.error as Error).message}</div>}
           {companiesHealthQ.error && <div>Health Data: {(companiesHealthQ.error as Error).message}</div>}
+          {showAllWeeks && allWeeksQ.error && <div>Historical Weeks: {(allWeeksQ.error as Error).message}</div>}
         </Card>
       )}
 
@@ -185,19 +182,35 @@ export default function ImplementationWeeklyReviewPage() {
             )}
           </h1>
           <div className="ml-auto flex gap-2 items-center">
-            {/* Week selector */}
-            <select
-              className="border rounded px-2 py-1"
-              value={selectedWeek ?? ""}
-              onChange={(e) => setSelectedWeek(e.target.value || null)}
-            >
-              <option value="">Select a week...</option>
-              {(weeksQ.data ?? []).map(w => (
-                <option key={w.week_start} value={w.week_start}>
-                  {formatWeekLabel(w)}
-                </option>
-              ))}
-            </select>
+            {/* Week selector with load more option */}
+            <div className="flex gap-2 items-center">
+              <select
+                className="border rounded px-2 py-1"
+                value={selectedWeek ?? ""}
+                onChange={(e) => setSelectedWeek(e.target.value || null)}
+              >
+                <option value="">Select a week...</option>
+                {weeks.map(w => (
+                  <option key={w.week_start} value={w.week_start}>
+                    {formatWeekLabelLocal(w)}
+                  </option>
+                ))}
+              </select>
+              
+              {!showAllWeeks && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAllWeeks(true)}
+                  className="text-xs text-muted-foreground"
+                >
+                  Load more weeks
+                </Button>
+              )}
+              {showAllWeeks && allWeeksQ.isLoading && (
+                <span className="text-xs text-muted-foreground">Loading...</span>
+              )}
+            </div>
           </div>
         </div>
       </Card>

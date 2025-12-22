@@ -1,26 +1,80 @@
 import { supabase } from "@/integrations/supabase/client";
+import { generateAvailableWeeks, GeneratedWeek, getCurrentWeekStart, formatWeekLabel } from "./weekUtils";
 
 export type ImplWeek = { week_start: string; week_end: string; available_at: string };
 export type ImplCompany = { company_id: string; company_name: string };
 
+// Re-export for convenience
+export { formatWeekLabel, getCurrentWeekStart };
+
+/**
+ * No longer needed - weeks are generated dynamically
+ * @deprecated Use generateAvailableWeeks() instead
+ */
 export async function ensureWeeks(): Promise<void> {
-  const { error } = await supabase.rpc("impl_generate_weeks");
-  if (error) throw error;
+  // No-op - weeks are now generated dynamically in the frontend
+  // Keeping this function for backward compatibility
+  return;
 }
 
-export async function listWeeks(): Promise<ImplWeek[]> {
-  const { data, error } = await supabase
-    .from("impl_weekly_weeks")
-    .select("week_start,week_end,available_at")
-    .gte("week_start", "2024-08-05")  // Only include proper Monday weeks
+/**
+ * Returns dynamically generated weeks (current + recent 4 weeks by default)
+ * No longer depends on impl_weekly_weeks table
+ */
+export function listWeeks(recentCount: number = 4): ImplWeek[] {
+  const weeks = generateAvailableWeeks(recentCount, 0);
+  return weeks.map(w => ({
+    week_start: w.week_start,
+    week_end: w.week_end,
+    available_at: w.available_at
+  }));
+}
+
+/**
+ * Gets all historical weeks that have review data, combined with recent weeks
+ */
+export async function listAllWeeksWithData(): Promise<ImplWeek[]> {
+  // Get recent dynamic weeks
+  const recentWeeks = generateAvailableWeeks(4, 0);
+  const recentWeekStarts = new Set(recentWeeks.map(w => w.week_start));
+  
+  // Get all weeks that have review data in the database
+  const { data: reviewWeeks, error } = await supabase
+    .from("impl_weekly_reviews")
+    .select("week_start, week_end")
     .order("week_start", { ascending: false });
-  if (error) throw error;
-  // Filter to ensure we only get weeks that start on Monday (dow = 1)
-  const mondayWeeks = (data ?? []).filter(week => {
-    const weekStart = new Date(week.week_start + "T00:00:00");
-    return weekStart.getDay() === 1; // Monday
+  
+  if (error) {
+    console.error("Error fetching historical weeks:", error);
+    return recentWeeks;
+  }
+  
+  // Build a map of unique weeks from reviews (dedup by week_start)
+  const weekMap = new Map<string, ImplWeek>();
+  
+  // Add recent weeks first
+  recentWeeks.forEach(w => {
+    weekMap.set(w.week_start, w);
   });
-  return mondayWeeks;
+  
+  // Add historical weeks from reviews
+  (reviewWeeks || []).forEach((r: any) => {
+    if (!weekMap.has(r.week_start)) {
+      const monday = new Date(r.week_start + 'T00:00:00');
+      // Only include if it's a Monday
+      if (monday.getDay() === 1) {
+        weekMap.set(r.week_start, {
+          week_start: r.week_start,
+          week_end: r.week_end,
+          available_at: new Date(r.week_start + 'T00:01:00').toISOString()
+        });
+      }
+    }
+  });
+  
+  // Sort by week_start descending
+  return Array.from(weekMap.values())
+    .sort((a, b) => b.week_start.localeCompare(a.week_start));
 }
 
 export async function listImplCompanies(): Promise<ImplCompany[]> {

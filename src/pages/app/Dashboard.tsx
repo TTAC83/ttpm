@@ -70,22 +70,9 @@ export const Dashboard = () => {
 
   const fetchDashboardData = async () => {
       try {
-        // Ensure weeks exist and get current week start for weekly reviews
-        await ensureWeeks();
-        
-        // Get the current week from the weeks table instead of calculating it
-        const { data: weeksData } = await supabase
-          .from('impl_weekly_weeks')
-          .select('week_start, week_end, available_at')
-          .order('week_start', { ascending: false });
-        
-        // Find the current week (the second highest date available, as per Weekly Review logic)
-        let weekStartStr = null;
-        if (weeksData && weeksData.length >= 2) {
-          weekStartStr = weeksData[1].week_start; // Current week (second from top)
-        } else if (weeksData && weeksData.length > 0) {
-          weekStartStr = weeksData[0].week_start; // Fallback to first available week
-        }
+        // Get the current week dynamically - no longer depends on database table
+        const weeks = listWeeks(4);
+        const weekStartStr = weeks.length > 0 ? weeks[0].week_start : null;
         
         if (weekStartStr) {
           setCurrentWeek(weekStartStr);

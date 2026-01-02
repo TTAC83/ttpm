@@ -12,6 +12,7 @@ import { DeleteContactDialog } from '@/components/contacts/DeleteContactDialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 
 interface MasterRole {
   id: string;
@@ -668,33 +669,32 @@ export default function Contacts() {
                             )}
                           </div>
                         </PopoverTrigger>
-                        <PopoverContent className="w-56 p-2" align="start">
-                          <div className="space-y-2">
-                            <p className="text-sm font-medium mb-2">Select Company</p>
-                            {allCompanies.length === 0 ? (
-                              <p className="text-sm text-muted-foreground">No companies available</p>
-                            ) : (
-                              <div className="space-y-1 max-h-48 overflow-y-auto">
-                                <button
-                                  className={`w-full text-left px-2 py-1.5 rounded hover:bg-muted text-sm ${!contact.company ? 'bg-muted' : ''}`}
-                                  onClick={() => selectCompany(null)}
-                                  disabled={savingCompany}
+                        <PopoverContent className="w-56 p-0" align="start">
+                          <Command>
+                            <CommandInput placeholder="Search companies..." />
+                            <CommandList>
+                              <CommandEmpty>No company found.</CommandEmpty>
+                              <CommandGroup>
+                                <CommandItem
+                                  value=""
+                                  onSelect={() => selectCompany(null)}
                                 >
+                                  <Check className={`mr-2 h-4 w-4 ${!contact.company ? 'opacity-100' : 'opacity-0'}`} />
                                   <span className="text-muted-foreground italic">None</span>
-                                </button>
+                                </CommandItem>
                                 {allCompanies.map(company => (
-                                  <button
+                                  <CommandItem
                                     key={company.id}
-                                    className={`w-full text-left px-2 py-1.5 rounded hover:bg-muted text-sm ${contact.company === company.name ? 'bg-muted' : ''}`}
-                                    onClick={() => selectCompany(company.name)}
-                                    disabled={savingCompany}
+                                    value={company.name}
+                                    onSelect={() => selectCompany(company.name)}
                                   >
+                                    <Check className={`mr-2 h-4 w-4 ${contact.company === company.name ? 'opacity-100' : 'opacity-0'}`} />
                                     {company.name}
-                                  </button>
+                                  </CommandItem>
                                 ))}
-                              </div>
-                            )}
-                          </div>
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
                         </PopoverContent>
                       </Popover>
                     </TableCell>

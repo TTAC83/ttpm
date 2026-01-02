@@ -10,6 +10,13 @@ import { Plus, Search, Users, Mail, Phone, Building2, Edit, Trash2, X, Check } f
 import { ContactDialog } from '@/components/contacts/ContactDialog';
 import { DeleteContactDialog } from '@/components/contacts/DeleteContactDialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+
+interface MasterRole {
+  id: string;
+  name: string;
+}
 
 export interface ContactEmail {
   email: string;
@@ -50,9 +57,14 @@ export default function Contacts() {
   const [inlineEditing, setInlineEditing] = useState<EditingState | null>(null);
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [allRoles, setAllRoles] = useState<MasterRole[]>([]);
+  const [editingRolesContactId, setEditingRolesContactId] = useState<string | null>(null);
+  const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
+  const [savingRoles, setSavingRoles] = useState(false);
 
   useEffect(() => {
     fetchContacts();
+    fetchAllRoles();
   }, []);
 
   useEffect(() => {
@@ -61,6 +73,20 @@ export default function Contacts() {
       inputRef.current.select();
     }
   }, [inlineEditing]);
+
+  const fetchAllRoles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('contact_roles_master')
+        .select('id, name')
+        .order('name');
+      
+      if (error) throw error;
+      setAllRoles(data || []);
+    } catch (error) {
+      console.error('Failed to fetch roles:', error);
+    }
+  };
 
   const fetchContacts = async () => {
     try {
@@ -195,6 +221,71 @@ export default function Contacts() {
     const primary = emails.find(e => e.is_primary);
     return primary?.email || emails[0]?.email || null;
   };
+
+  // Role editing functions
+  const startRolesEdit = useCallback((contact: Contact) => {
+    setEditingRolesContactId(contact.id);
+    setSelectedRoleIds(contact.roles?.map(r => r.id) || []);
+  }, []);
+
+  const toggleRole = useCallback((roleId: string) => {
+    setSelectedRoleIds(prev => 
+      prev.includes(roleId) 
+        ? prev.filter(id => id !== roleId)
+        : [...prev, roleId]
+    );
+  }, []);
+
+  const saveRoles = useCallback(async () => {
+    if (!editingRolesContactId) return;
+
+    try {
+      setSavingRoles(true);
+      
+      // Delete existing role assignments
+      const { error: deleteError } = await supabase
+        .from('contact_role_assignments')
+        .delete()
+        .eq('contact_id', editingRolesContactId);
+
+      if (deleteError) throw deleteError;
+
+      // Insert new role assignments
+      if (selectedRoleIds.length > 0) {
+        const { error: insertError } = await supabase
+          .from('contact_role_assignments')
+          .insert(
+            selectedRoleIds.map(roleId => ({
+              contact_id: editingRolesContactId,
+              role_id: roleId
+            }))
+          );
+
+        if (insertError) throw insertError;
+      }
+
+      // Update local state
+      const newRoles = allRoles.filter(r => selectedRoleIds.includes(r.id));
+      setContacts(prev => prev.map(c => 
+        c.id === editingRolesContactId ? { ...c, roles: newRoles } : c
+      ));
+
+      setEditingRolesContactId(null);
+      
+      toast({
+        title: "Saved",
+        description: "Roles updated",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to update roles",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingRoles(false);
+    }
+  }, [editingRolesContactId, selectedRoleIds, allRoles, toast]);
 
   // Inline editing functions
   const startInlineEdit = useCallback((contact: Contact, field: EditableField) => {
@@ -500,22 +591,70 @@ export default function Contacts() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {contact.roles && contact.roles.length > 0 ? (
-                          contact.roles.slice(0, 2).map(role => (
-                            <Badge key={role.id} variant="outline" className="text-xs">
-                              {role.name}
-                            </Badge>
-                          ))
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                        {contact.roles && contact.roles.length > 2 && (
-                          <Badge variant="secondary" className="text-xs">
-                            +{contact.roles.length - 2}
-                          </Badge>
-                        )}
-                      </div>
+                      <Popover 
+                        open={editingRolesContactId === contact.id} 
+                        onOpenChange={(open) => {
+                          if (!open && editingRolesContactId === contact.id) {
+                            saveRoles();
+                          }
+                        }}
+                      >
+                        <PopoverTrigger asChild>
+                          <div 
+                            className="flex flex-wrap gap-1 cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5 -mx-1 transition-colors min-h-[24px]"
+                            onDoubleClick={() => startRolesEdit(contact)}
+                          >
+                            {contact.roles && contact.roles.length > 0 ? (
+                              <>
+                                {contact.roles.slice(0, 2).map(role => (
+                                  <Badge key={role.id} variant="outline" className="text-xs">
+                                    {role.name}
+                                  </Badge>
+                                ))}
+                                {contact.roles.length > 2 && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    +{contact.roles.length - 2}
+                                  </Badge>
+                                )}
+                              </>
+                            ) : (
+                              <span className="text-muted-foreground italic text-sm">Double-click to add</span>
+                            )}
+                          </div>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-56 p-2" align="start">
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium mb-2">Select Roles</p>
+                            {allRoles.length === 0 ? (
+                              <p className="text-sm text-muted-foreground">No roles available</p>
+                            ) : (
+                              <div className="space-y-1 max-h-48 overflow-y-auto">
+                                {allRoles.map(role => (
+                                  <label 
+                                    key={role.id}
+                                    className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer"
+                                  >
+                                    <Checkbox
+                                      checked={selectedRoleIds.includes(role.id)}
+                                      onCheckedChange={() => toggleRole(role.id)}
+                                      disabled={savingRoles}
+                                    />
+                                    <span className="text-sm">{role.name}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            )}
+                            <Button 
+                              size="sm" 
+                              className="w-full mt-2"
+                              onClick={saveRoles}
+                              disabled={savingRoles}
+                            >
+                              {savingRoles ? 'Saving...' : 'Done'}
+                            </Button>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">

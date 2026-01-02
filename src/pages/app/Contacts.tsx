@@ -1,24 +1,21 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Search, Users, Mail, Phone, Building2, Edit, Trash2, X, Check, Download, Upload, FileDown } from 'lucide-react';
+import { Plus, Search, Users, X, Download, Upload, FileDown } from 'lucide-react';
 import { ContactDialog } from '@/components/contacts/ContactDialog';
 import { DeleteContactDialog } from '@/components/contacts/DeleteContactDialog';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { MultiSelectCombobox, MultiSelectOption } from '@/components/ui/multi-select-combobox';
+import { ContactsTable } from '@/components/contacts/ContactsTable';
+import { ImportErrorsDialog } from '@/components/contacts/ImportErrorsDialog';
+import { useContacts, Contact } from '@/hooks/useContacts';
 import { 
   exportContactsToCsv, 
   generateTemplate, 
   parseCsvFile, 
   importContacts, 
-  downloadCsv 
+  downloadCsv,
+  ImportResult,
 } from '@/lib/contactsCsvService';
 import {
   DropdownMenu,
@@ -27,239 +24,37 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-interface MasterRole {
-  id: string;
-  name: string;
-}
-
-interface Company {
-  id: string;
-  name: string;
-}
-
-export interface ContactEmail {
-  email: string;
-  is_primary: boolean;
-}
-
-export interface Contact {
-  id: string;
-  name: string;
-  phone: string | null;
-  company: string | null;
-  notes: string | null;
-  emails: ContactEmail[];
-  created_at: string;
-  updated_at: string;
-  created_by: string | null;
-  roles?: { id: string; name: string }[];
-  projects?: { id: string; name: string; type: 'implementation' | 'solutions' }[];
-}
-
-type EditableField = 'name' | 'phone' | 'email';
-
-interface EditingState {
-  contactId: string;
-  field: EditableField;
-  value: string;
-}
+// Re-export types for backward compatibility
+export type { Contact, ContactEmail } from '@/hooks/useContacts';
 
 export default function Contacts() {
   const { toast } = useToast();
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const {
+    contacts,
+    filteredContacts,
+    loading,
+    searchQuery,
+    setSearchQuery,
+    allRoles,
+    allCompanies,
+    allProjects,
+    refetch,
+    hasMore,
+    totalCount,
+    updateContactLocal,
+  } = useContacts();
+
+  // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [contactToDelete, setContactToDelete] = useState<Contact | null>(null);
-  const [inlineEditing, setInlineEditing] = useState<EditingState | null>(null);
-  const [saving, setSaving] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [allRoles, setAllRoles] = useState<MasterRole[]>([]);
-  const [editingRolesContactId, setEditingRolesContactId] = useState<string | null>(null);
-  const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
-  const [savingRoles, setSavingRoles] = useState(false);
-  const [allCompanies, setAllCompanies] = useState<Company[]>([]);
-  const [editingCompanyContactId, setEditingCompanyContactId] = useState<string | null>(null);
-  const [savingCompany, setSavingCompany] = useState(false);
-  // Projects editing state
-  const [allProjects, setAllProjects] = useState<{ id: string; name: string; type: 'implementation' | 'solutions' }[]>([]);
-  const [editingProjectsContactId, setEditingProjectsContactId] = useState<string | null>(null);
-  const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
-  const [savingProjects, setSavingProjects] = useState(false);
+
   // CSV import state
   const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [importErrorsOpen, setImportErrorsOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    fetchContacts();
-    fetchAllRoles();
-    fetchAllCompanies();
-    fetchAllProjects();
-  }, []);
-
-  useEffect(() => {
-    if (inlineEditing && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
-  }, [inlineEditing]);
-
-  const fetchAllRoles = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('contact_roles_master')
-        .select('id, name')
-        .order('name');
-      
-      if (error) throw error;
-      setAllRoles(data || []);
-    } catch (error) {
-      console.error('Failed to fetch roles:', error);
-    }
-  };
-
-  const fetchAllCompanies = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('companies')
-        .select('id, name')
-        .order('name');
-      
-      if (error) throw error;
-      setAllCompanies(data || []);
-    } catch (error) {
-      console.error('Failed to fetch companies:', error);
-    }
-  };
-
-  const fetchAllProjects = async () => {
-    try {
-      const [projectsRes, solutionsRes] = await Promise.all([
-        supabase.from('projects').select('id, company_id, companies (name)').order('created_at', { ascending: false }),
-        supabase.from('solutions_projects').select('id, company_id, companies (name)').order('created_at', { ascending: false }),
-      ]);
-
-      const implProjects = (projectsRes.data || []).map(p => ({
-        id: p.id,
-        name: p.companies?.name || 'Unknown',
-        type: 'implementation' as const
-      }));
-
-      const solProjects = (solutionsRes.data || []).map(p => ({
-        id: p.id,
-        name: p.companies?.name || 'Unknown',
-        type: 'solutions' as const
-      }));
-
-      setAllProjects([...implProjects, ...solProjects]);
-    } catch (error) {
-      console.error('Failed to fetch projects:', error);
-    }
-  };
-
-  const fetchContacts = async () => {
-    try {
-      setLoading(true);
-      
-      const { data: contactsData, error: contactsError } = await supabase
-        .from('contacts')
-        .select('*')
-        .order('name');
-
-      if (contactsError) throw contactsError;
-
-      const { data: roleAssignments, error: rolesError } = await supabase
-        .from('contact_role_assignments')
-        .select(`
-          contact_id,
-          contact_roles_master (id, name)
-        `);
-
-      if (rolesError) throw rolesError;
-
-      const { data: projectAssignments, error: projectsError } = await supabase
-        .from('contact_projects')
-        .select(`
-          contact_id,
-          projects (id, company_id, companies (name))
-        `);
-
-      if (projectsError) throw projectsError;
-
-      const { data: solutionsAssignments, error: solutionsError } = await supabase
-        .from('contact_solutions_projects')
-        .select(`
-          contact_id,
-          solutions_projects (id, company_id, companies (name))
-        `);
-
-      if (solutionsError) throw solutionsError;
-
-      const enrichedContacts = (contactsData || []).map(contact => {
-        const contactRoles = roleAssignments
-          ?.filter(ra => ra.contact_id === contact.id)
-          .map(ra => ra.contact_roles_master)
-          .filter(Boolean) as { id: string; name: string }[] || [];
-
-        const implProjects = projectAssignments
-          ?.filter(pa => pa.contact_id === contact.id)
-          .map(pa => ({
-            id: pa.projects?.id,
-            name: pa.projects?.companies?.name || 'Unknown',
-            type: 'implementation' as const
-          }))
-          .filter(p => p.id) || [];
-
-        const solProjects = solutionsAssignments
-          ?.filter(sa => sa.contact_id === contact.id)
-          .map(sa => ({
-            id: sa.solutions_projects?.id,
-            name: sa.solutions_projects?.companies?.name || 'Unknown',
-            type: 'solutions' as const
-          }))
-          .filter(p => p.id) || [];
-
-        const rawEmails = contact.emails;
-        let parsedEmails: ContactEmail[] = [];
-        if (Array.isArray(rawEmails)) {
-          parsedEmails = rawEmails as unknown as ContactEmail[];
-        }
-
-        return {
-          ...contact,
-          emails: parsedEmails,
-          roles: contactRoles,
-          projects: [...implProjects, ...solProjects]
-        };
-      });
-
-      setContacts(enrichedContacts);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch contacts",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredContacts = useMemo(() => {
-    if (!searchQuery.trim()) return contacts;
-    
-    const query = searchQuery.toLowerCase();
-    return contacts.filter(contact => 
-      contact.name.toLowerCase().includes(query) ||
-      contact.company?.toLowerCase().includes(query) ||
-      contact.phone?.toLowerCase().includes(query) ||
-      contact.emails.some(e => e.email.toLowerCase().includes(query)) ||
-      contact.roles?.some(r => r.name.toLowerCase().includes(query)) ||
-      contact.projects?.some(p => p.name.toLowerCase().includes(query))
-    );
-  }, [contacts, searchQuery]);
 
   const openCreateDialog = () => {
     setEditingContact(null);
@@ -279,355 +74,13 @@ export default function Contacts() {
   const handleSaved = () => {
     setDialogOpen(false);
     setEditingContact(null);
-    fetchContacts();
+    refetch();
   };
 
   const handleDeleted = () => {
     setDeleteDialogOpen(false);
     setContactToDelete(null);
-    fetchContacts();
-  };
-
-  const getPrimaryEmail = (emails: ContactEmail[]) => {
-    const primary = emails.find(e => e.is_primary);
-    return primary?.email || emails[0]?.email || null;
-  };
-
-  // Role editing functions
-  const startRolesEdit = useCallback((contact: Contact) => {
-    setEditingRolesContactId(contact.id);
-    setSelectedRoleIds(contact.roles?.map(r => r.id) || []);
-  }, []);
-
-  const handleRolesChange = useCallback((newRoleIds: string[]) => {
-    setSelectedRoleIds(newRoleIds);
-  }, []);
-
-  const saveRoles = useCallback(async () => {
-    if (!editingRolesContactId) return;
-
-    try {
-      setSavingRoles(true);
-      
-      // Delete existing role assignments
-      const { error: deleteError } = await supabase
-        .from('contact_role_assignments')
-        .delete()
-        .eq('contact_id', editingRolesContactId);
-
-      if (deleteError) throw deleteError;
-
-      // Insert new role assignments
-      if (selectedRoleIds.length > 0) {
-        const { error: insertError } = await supabase
-          .from('contact_role_assignments')
-          .insert(
-            selectedRoleIds.map(roleId => ({
-              contact_id: editingRolesContactId,
-              role_id: roleId
-            }))
-          );
-
-        if (insertError) throw insertError;
-      }
-
-      // Update local state
-      const newRoles = allRoles.filter(r => selectedRoleIds.includes(r.id));
-      setContacts(prev => prev.map(c => 
-        c.id === editingRolesContactId ? { ...c, roles: newRoles } : c
-      ));
-
-      setEditingRolesContactId(null);
-      
-      toast({
-        title: "Saved",
-        description: "Roles updated",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to update roles",
-        variant: "destructive",
-      });
-    } finally {
-      setSavingRoles(false);
-    }
-  }, [editingRolesContactId, selectedRoleIds, allRoles, toast]);
-
-  // Projects editing functions
-  const startProjectsEdit = useCallback((contact: Contact) => {
-    setEditingProjectsContactId(contact.id);
-    setSelectedProjectIds(contact.projects?.map(p => p.id) || []);
-  }, []);
-
-  const handleProjectsChange = useCallback((newProjectIds: string[]) => {
-    setSelectedProjectIds(newProjectIds);
-  }, []);
-
-  const saveProjects = useCallback(async () => {
-    if (!editingProjectsContactId) return;
-
-    try {
-      setSavingProjects(true);
-      
-      // Delete existing project assignments
-      await supabase.from('contact_projects').delete().eq('contact_id', editingProjectsContactId);
-      await supabase.from('contact_solutions_projects').delete().eq('contact_id', editingProjectsContactId);
-
-      // Separate into implementation and solutions projects
-      const implProjectIds = allProjects
-        .filter(p => p.type === 'implementation' && selectedProjectIds.includes(p.id))
-        .map(p => p.id);
-      
-      const solProjectIds = allProjects
-        .filter(p => p.type === 'solutions' && selectedProjectIds.includes(p.id))
-        .map(p => p.id);
-
-      // Insert implementation projects
-      if (implProjectIds.length > 0) {
-        const { error } = await supabase
-          .from('contact_projects')
-          .insert(implProjectIds.map(pid => ({ contact_id: editingProjectsContactId, project_id: pid })));
-        if (error) throw error;
-      }
-
-      // Insert solutions projects
-      if (solProjectIds.length > 0) {
-        const { error } = await supabase
-          .from('contact_solutions_projects')
-          .insert(solProjectIds.map(pid => ({ contact_id: editingProjectsContactId, solutions_project_id: pid })));
-        if (error) throw error;
-      }
-
-      // Update local state
-      const newProjects = allProjects.filter(p => selectedProjectIds.includes(p.id));
-      setContacts(prev => prev.map(c => 
-        c.id === editingProjectsContactId ? { ...c, projects: newProjects } : c
-      ));
-
-      setEditingProjectsContactId(null);
-      
-      toast({
-        title: "Saved",
-        description: "Projects updated",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to update projects",
-        variant: "destructive",
-      });
-    } finally {
-      setSavingProjects(false);
-    }
-  }, [editingProjectsContactId, selectedProjectIds, allProjects, toast]);
-
-  // Company editing functions
-  const startCompanyEdit = useCallback((contact: Contact) => {
-    setEditingCompanyContactId(contact.id);
-  }, []);
-
-  const selectCompany = useCallback(async (companyName: string | null) => {
-    if (!editingCompanyContactId) return;
-
-    try {
-      setSavingCompany(true);
-      
-      const { error } = await supabase
-        .from('contacts')
-        .update({ company: companyName })
-        .eq('id', editingCompanyContactId);
-
-      if (error) throw error;
-
-      setContacts(prev => prev.map(c => 
-        c.id === editingCompanyContactId ? { ...c, company: companyName } : c
-      ));
-
-      setEditingCompanyContactId(null);
-      
-      toast({
-        title: "Saved",
-        description: "Company updated",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to update company",
-        variant: "destructive",
-      });
-    } finally {
-      setSavingCompany(false);
-    }
-  }, [editingCompanyContactId, toast]);
-
-  // Inline editing functions
-  const startInlineEdit = useCallback((contact: Contact, field: EditableField) => {
-    let value = '';
-    if (field === 'email') {
-      value = getPrimaryEmail(contact.emails) || '';
-    } else {
-      value = contact[field] || '';
-    }
-    setInlineEditing({ contactId: contact.id, field, value });
-  }, []);
-
-  const cancelInlineEdit = useCallback(() => {
-    setInlineEditing(null);
-  }, []);
-
-  const saveInlineEdit = useCallback(async () => {
-    if (!inlineEditing) return;
-
-    const { contactId, field, value } = inlineEditing;
-    const trimmedValue = value.trim();
-
-    // Validate name is not empty
-    if (field === 'name' && !trimmedValue) {
-      toast({
-        title: "Validation Error",
-        description: "Name cannot be empty",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate email format if provided
-    if (field === 'email' && trimmedValue && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedValue)) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter a valid email address",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setSaving(true);
-      
-      const contact = contacts.find(c => c.id === contactId);
-      
-      if (field === 'email') {
-        // Handle email update - update primary email or add new one
-        let updatedEmails: ContactEmail[];
-        
-        if (!trimmedValue) {
-          // Remove primary email - keep others
-          updatedEmails = contact?.emails.filter(e => !e.is_primary) || [];
-        } else if (contact?.emails.length) {
-          // Update existing primary or set first as primary
-          const hasPrimary = contact.emails.some(e => e.is_primary);
-          if (hasPrimary) {
-            updatedEmails = contact.emails.map(e => 
-              e.is_primary ? { ...e, email: trimmedValue } : e
-            );
-          } else {
-            updatedEmails = [
-              { email: trimmedValue, is_primary: true },
-              ...contact.emails.slice(1)
-            ];
-          }
-        } else {
-          // No emails yet - create new primary
-          updatedEmails = [{ email: trimmedValue, is_primary: true }];
-        }
-
-        const { error } = await supabase
-          .from('contacts')
-          .update({ emails: updatedEmails as unknown as any })
-          .eq('id', contactId);
-
-        if (error) throw error;
-
-        setContacts(prev => prev.map(c => 
-          c.id === contactId ? { ...c, emails: updatedEmails } : c
-        ));
-      } else {
-        const { error } = await supabase
-          .from('contacts')
-          .update({ [field]: trimmedValue || null })
-          .eq('id', contactId);
-
-        if (error) throw error;
-
-        setContacts(prev => prev.map(c => 
-          c.id === contactId ? { ...c, [field]: trimmedValue || null } : c
-        ));
-      }
-
-      setInlineEditing(null);
-      
-      toast({
-        title: "Saved",
-        description: `${field.charAt(0).toUpperCase() + field.slice(1)} updated`,
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: `Failed to update ${field}`,
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
-  }, [inlineEditing, toast, contacts]);
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      saveInlineEdit();
-    } else if (e.key === 'Escape') {
-      cancelInlineEdit();
-    }
-  }, [saveInlineEdit, cancelInlineEdit]);
-
-  // Render editable cell
-  const renderEditableCell = (
-    contact: Contact, 
-    field: EditableField, 
-    icon: React.ReactNode,
-    displayValue: string | null
-  ) => {
-    const isEditing = inlineEditing?.contactId === contact.id && inlineEditing?.field === field;
-
-    if (isEditing) {
-      return (
-        <div className="flex items-center gap-1">
-          <Input
-            ref={inputRef}
-            value={inlineEditing.value}
-            onChange={(e) => setInlineEditing(prev => prev ? { ...prev, value: e.target.value } : null)}
-            onKeyDown={handleKeyDown}
-            onBlur={saveInlineEdit}
-            className="h-7 text-sm py-0 px-2"
-            disabled={saving}
-          />
-        </div>
-      );
-    }
-
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div 
-            className="flex items-center gap-1.5 text-sm cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5 -mx-1 transition-colors"
-            onDoubleClick={() => startInlineEdit(contact, field)}
-          >
-            {displayValue ? (
-              <>
-                {icon}
-                <span>{displayValue}</span>
-              </>
-            ) : (
-              <span className="text-muted-foreground italic">Double-click to add</span>
-            )}
-          </div>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>Double-click to edit</p>
-        </TooltipContent>
-      </Tooltip>
-    );
+    refetch();
   };
 
   // CSV Export/Import functions
@@ -669,20 +122,21 @@ export default function Contacts() {
       }
 
       const result = await importContacts(rows, allCompanies, allRoles);
+      setImportResult(result);
 
       if (result.success > 0) {
-        await fetchContacts();
+        await refetch();
       }
 
+      // Show detailed errors in modal if any
       if (result.errors.length > 0) {
-        console.error('Import errors:', result.errors);
+        setImportErrorsOpen(true);
+      } else {
+        toast({
+          title: "Import Complete",
+          description: `${result.success} contacts imported successfully`,
+        });
       }
-
-      toast({
-        title: "Import Complete",
-        description: `${result.success} imported, ${result.failed} failed${result.errors.length > 0 ? '. Check console for details.' : ''}`,
-        variant: result.failed > 0 ? "destructive" : "default",
-      });
     } catch (error: any) {
       toast({
         title: "Import Failed",
@@ -695,7 +149,7 @@ export default function Contacts() {
         fileInputRef.current.value = '';
       }
     }
-  }, [allCompanies, allRoles, toast, fetchContacts]);
+  }, [allCompanies, allRoles, toast, refetch]);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -755,8 +209,8 @@ export default function Contacts() {
             <div>
               <CardTitle>All Contacts</CardTitle>
               <CardDescription>
-                {filteredContacts.length} of {contacts.length} contact{contacts.length !== 1 ? 's' : ''} 
-                <span className="ml-2 text-xs">(double-click cells to edit)</span>
+                {filteredContacts.length} of {totalCount} contact{totalCount !== 1 ? 's' : ''} 
+                {hasMore && <span className="ml-1">(more available)</span>}
               </CardDescription>
             </div>
             <div className="relative w-72">
@@ -790,268 +244,16 @@ export default function Contacts() {
               {searchQuery ? 'No contacts match your search.' : 'No contacts yet. Click "Add Contact" to create one.'}
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Roles</TableHead>
-                  <TableHead>Projects</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredContacts.map((contact) => (
-                  <TableRow key={contact.id}>
-                    <TableCell className="font-medium">
-                      {renderEditableCell(contact, 'name', null, contact.name)}
-                    </TableCell>
-                    <TableCell>
-                      {inlineEditing?.contactId === contact.id && inlineEditing?.field === 'email' ? (
-                        <div className="flex items-center gap-1">
-                          <Input
-                            ref={inputRef}
-                            value={inlineEditing.value}
-                            onChange={(e) => setInlineEditing(prev => prev ? { ...prev, value: e.target.value } : null)}
-                            onKeyDown={handleKeyDown}
-                            onBlur={saveInlineEdit}
-                            className="h-7 text-sm py-0 px-2"
-                            disabled={saving}
-                            type="email"
-                            placeholder="email@example.com"
-                          />
-                        </div>
-                      ) : (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div 
-                              className="flex items-center gap-1.5 text-sm cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5 -mx-1 transition-colors"
-                              onDoubleClick={() => startInlineEdit(contact, 'email')}
-                            >
-                              {getPrimaryEmail(contact.emails) ? (
-                                <>
-                                  <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-                                  <span>{getPrimaryEmail(contact.emails)}</span>
-                                  {contact.emails.length > 1 && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      +{contact.emails.length - 1}
-                                    </Badge>
-                                  )}
-                                </>
-                              ) : (
-                                <span className="text-muted-foreground italic">Double-click to add</span>
-                              )}
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Double-click to edit</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {renderEditableCell(
-                        contact, 
-                        'phone', 
-                        <Phone className="h-3.5 w-3.5 text-muted-foreground" />,
-                        contact.phone
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Popover 
-                        open={editingCompanyContactId === contact.id} 
-                        onOpenChange={(open) => {
-                          if (!open) {
-                            setEditingCompanyContactId(null);
-                          }
-                        }}
-                      >
-                        <PopoverTrigger asChild>
-                          <div 
-                            className="flex items-center gap-1.5 cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5 -mx-1 transition-colors min-h-[24px]"
-                            onDoubleClick={() => startCompanyEdit(contact)}
-                          >
-                            {contact.company ? (
-                              <>
-                                <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                                <span className="text-sm">{contact.company}</span>
-                              </>
-                            ) : (
-                              <span className="text-muted-foreground italic text-sm">Double-click to add</span>
-                            )}
-                          </div>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-56 p-0" align="start">
-                          <Command>
-                            <CommandInput placeholder="Search companies..." />
-                            <CommandList>
-                              <CommandEmpty>No company found.</CommandEmpty>
-                              <CommandGroup>
-                                <CommandItem
-                                  value=""
-                                  onSelect={() => selectCompany(null)}
-                                >
-                                  <Check className={`mr-2 h-4 w-4 ${!contact.company ? 'opacity-100' : 'opacity-0'}`} />
-                                  <span className="text-muted-foreground italic">None</span>
-                                </CommandItem>
-                                {allCompanies.map(company => (
-                                  <CommandItem
-                                    key={company.id}
-                                    value={company.name}
-                                    onSelect={() => selectCompany(company.name)}
-                                  >
-                                    <Check className={`mr-2 h-4 w-4 ${contact.company === company.name ? 'opacity-100' : 'opacity-0'}`} />
-                                    {company.name}
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                    </TableCell>
-                    <TableCell>
-                      <Popover 
-                        open={editingRolesContactId === contact.id} 
-                        onOpenChange={(open) => {
-                          if (!open && editingRolesContactId === contact.id) {
-                            saveRoles();
-                          }
-                        }}
-                      >
-                        <PopoverTrigger asChild>
-                          <div 
-                            className="flex flex-wrap gap-1 cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5 -mx-1 transition-colors min-h-[24px]"
-                            onDoubleClick={() => startRolesEdit(contact)}
-                          >
-                            {contact.roles && contact.roles.length > 0 ? (
-                              <>
-                                {contact.roles.slice(0, 2).map(role => (
-                                  <Badge key={role.id} variant="outline" className="text-xs">
-                                    {role.name}
-                                  </Badge>
-                                ))}
-                                {contact.roles.length > 2 && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    +{contact.roles.length - 2}
-                                  </Badge>
-                                )}
-                              </>
-                            ) : (
-                              <span className="text-muted-foreground italic text-sm">Double-click to add</span>
-                            )}
-                          </div>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-72 p-2" align="start">
-                          <MultiSelectCombobox
-                            options={allRoles.map((role): MultiSelectOption => ({
-                              value: role.id,
-                              label: role.name,
-                            }))}
-                            selected={selectedRoleIds}
-                            onSelectionChange={handleRolesChange}
-                            searchPlaceholder="Search roles..."
-                            emptyMessage="No roles found."
-                            disabled={savingRoles}
-                            inline
-                          />
-                          <Button 
-                            size="sm" 
-                            className="w-full mt-2"
-                            onClick={saveRoles}
-                            disabled={savingRoles}
-                          >
-                            {savingRoles ? 'Saving...' : 'Done'}
-                          </Button>
-                        </PopoverContent>
-                      </Popover>
-                    </TableCell>
-                    <TableCell>
-                      <Popover 
-                        open={editingProjectsContactId === contact.id} 
-                        onOpenChange={(open) => {
-                          if (!open && editingProjectsContactId === contact.id) {
-                            saveProjects();
-                          }
-                        }}
-                      >
-                        <PopoverTrigger asChild>
-                          <div 
-                            className="flex flex-wrap gap-1 cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5 -mx-1 transition-colors min-h-[24px]"
-                            onDoubleClick={() => startProjectsEdit(contact)}
-                          >
-                            {contact.projects && contact.projects.length > 0 ? (
-                              <>
-                                {contact.projects.slice(0, 2).map(project => (
-                                  <Badge 
-                                    key={project.id} 
-                                    variant={project.type === 'implementation' ? 'default' : 'secondary'}
-                                    className="text-xs"
-                                  >
-                                    {project.name}
-                                  </Badge>
-                                ))}
-                                {contact.projects.length > 2 && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    +{contact.projects.length - 2}
-                                  </Badge>
-                                )}
-                              </>
-                            ) : (
-                              <span className="text-muted-foreground italic text-sm">Double-click to add</span>
-                            )}
-                          </div>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-72 p-2" align="start">
-                          <MultiSelectCombobox
-                            options={allProjects.map((project): MultiSelectOption => ({
-                              value: project.id,
-                              label: project.name,
-                              badge: project.type,
-                              badgeVariant: project.type === 'implementation' ? 'default' : 'secondary',
-                            }))}
-                            selected={selectedProjectIds}
-                            onSelectionChange={handleProjectsChange}
-                            searchPlaceholder="Search projects..."
-                            emptyMessage="No projects found."
-                            disabled={savingProjects}
-                            inline
-                          />
-                          <Button 
-                            size="sm" 
-                            className="w-full mt-2"
-                            onClick={saveProjects}
-                            disabled={savingProjects}
-                          >
-                            {savingProjects ? 'Saving...' : 'Done'}
-                          </Button>
-                        </PopoverContent>
-                      </Popover>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openEditDialog(contact)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openDeleteDialog(contact)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <ContactsTable
+              contacts={filteredContacts}
+              allRoles={allRoles}
+              allCompanies={allCompanies}
+              allProjects={allProjects}
+              onUpdate={updateContactLocal}
+              onEdit={openEditDialog}
+              onDelete={openDeleteDialog}
+              onRefetch={refetch}
+            />
           )}
         </CardContent>
       </Card>
@@ -1068,6 +270,12 @@ export default function Contacts() {
         onOpenChange={setDeleteDialogOpen}
         contact={contactToDelete}
         onDeleted={handleDeleted}
+      />
+
+      <ImportErrorsDialog
+        open={importErrorsOpen}
+        onOpenChange={setImportErrorsOpen}
+        result={importResult}
       />
     </div>
   );

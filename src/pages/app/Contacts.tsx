@@ -825,32 +825,27 @@ export default function Contacts() {
                             )}
                           </div>
                         </PopoverTrigger>
-                        <PopoverContent className="w-72 p-3" align="start">
-                          <div className="space-y-3">
-                            <p className="text-sm font-medium">Select Roles</p>
-                            <MultiSelectCombobox
-                              options={allRoles.map((role): MultiSelectOption => ({
-                                value: role.id,
-                                label: role.name,
-                              }))}
-                              selected={selectedRoleIds}
-                              onSelectionChange={handleRolesChange}
-                              placeholder="Search roles..."
-                              searchPlaceholder="Search roles..."
-                              emptyMessage="No roles found."
-                              disabled={savingRoles}
-                              maxDisplayed={2}
-                              open={editingRolesContactId === contact.id}
-                            />
-                            <Button 
-                              size="sm" 
-                              className="w-full"
-                              onClick={saveRoles}
-                              disabled={savingRoles}
-                            >
-                              {savingRoles ? 'Saving...' : 'Done'}
-                            </Button>
-                          </div>
+                        <PopoverContent className="w-72 p-2" align="start">
+                          <MultiSelectCombobox
+                            options={allRoles.map((role): MultiSelectOption => ({
+                              value: role.id,
+                              label: role.name,
+                            }))}
+                            selected={selectedRoleIds}
+                            onSelectionChange={handleRolesChange}
+                            searchPlaceholder="Search roles..."
+                            emptyMessage="No roles found."
+                            disabled={savingRoles}
+                            inline
+                          />
+                          <Button 
+                            size="sm" 
+                            className="w-full mt-2"
+                            onClick={saveRoles}
+                            disabled={savingRoles}
+                          >
+                            {savingRoles ? 'Saving...' : 'Done'}
+                          </Button>
                         </PopoverContent>
                       </Popover>
                     </TableCell>
@@ -890,34 +885,29 @@ export default function Contacts() {
                             )}
                           </div>
                         </PopoverTrigger>
-                        <PopoverContent className="w-72 p-3" align="start">
-                          <div className="space-y-3">
-                            <p className="text-sm font-medium">Select Projects</p>
-                            <MultiSelectCombobox
-                              options={allProjects.map((project): MultiSelectOption => ({
-                                value: project.id,
-                                label: project.name,
-                                badge: project.type,
-                                badgeVariant: project.type === 'implementation' ? 'default' : 'secondary',
-                              }))}
-                              selected={selectedProjectIds}
-                              onSelectionChange={handleProjectsChange}
-                              placeholder="Search projects..."
-                              searchPlaceholder="Search projects..."
-                              emptyMessage="No projects found."
-                              disabled={savingProjects}
-                              maxDisplayed={2}
-                              open={editingProjectsContactId === contact.id}
-                            />
-                            <Button 
-                              size="sm" 
-                              className="w-full"
-                              onClick={saveProjects}
-                              disabled={savingProjects}
-                            >
-                              {savingProjects ? 'Saving...' : 'Done'}
-                            </Button>
-                          </div>
+                        <PopoverContent className="w-72 p-2" align="start">
+                          <MultiSelectCombobox
+                            options={allProjects.map((project): MultiSelectOption => ({
+                              value: project.id,
+                              label: project.name,
+                              badge: project.type,
+                              badgeVariant: project.type === 'implementation' ? 'default' : 'secondary',
+                            }))}
+                            selected={selectedProjectIds}
+                            onSelectionChange={handleProjectsChange}
+                            searchPlaceholder="Search projects..."
+                            emptyMessage="No projects found."
+                            disabled={savingProjects}
+                            inline
+                          />
+                          <Button 
+                            size="sm" 
+                            className="w-full mt-2"
+                            onClick={saveProjects}
+                            disabled={savingProjects}
+                          >
+                            {savingProjects ? 'Saving...' : 'Done'}
+                          </Button>
                         </PopoverContent>
                       </Popover>
                     </TableCell>

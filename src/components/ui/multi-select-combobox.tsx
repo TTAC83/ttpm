@@ -36,6 +36,8 @@ interface MultiSelectComboboxProps {
   maxDisplayed?: number;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /** When true, renders just the search list without button trigger wrapper */
+  inline?: boolean;
 }
 
 export function MultiSelectCombobox({
@@ -50,6 +52,7 @@ export function MultiSelectCombobox({
   maxDisplayed = 3,
   open: controlledOpen,
   onOpenChange,
+  inline = false,
 }: MultiSelectComboboxProps) {
   const [internalOpen, setInternalOpen] = React.useState(false);
   
@@ -77,6 +80,63 @@ export function MultiSelectCombobox({
     e.stopPropagation();
     onSelectionChange(selected.filter((v) => v !== value));
   };
+
+  // Sort options: selected first, then unselected, both alphabetically
+  const sortedOptions = React.useMemo(() => {
+    const selectedSet = new Set(selected);
+    return [...options].sort((a, b) => {
+      const aSelected = selectedSet.has(a.value);
+      const bSelected = selectedSet.has(b.value);
+      if (aSelected && !bSelected) return -1;
+      if (!aSelected && bSelected) return 1;
+      return a.label.localeCompare(b.label);
+    });
+  }, [options, selected]);
+
+  // Inline variant: just the command list without popover wrapper
+  if (inline) {
+    return (
+      <Command className={cn("border rounded-md", className)}>
+        <CommandInput placeholder={searchPlaceholder} disabled={disabled} />
+        <CommandList className="max-h-[200px]">
+          <CommandEmpty>{emptyMessage}</CommandEmpty>
+          <CommandGroup>
+            {sortedOptions.map((option) => {
+              const isSelected = selected.includes(option.value);
+              return (
+                <CommandItem
+                  key={option.value}
+                  value={option.label}
+                  onSelect={() => !disabled && toggleOption(option.value)}
+                  className={cn(disabled && "opacity-50 cursor-not-allowed")}
+                >
+                  <div
+                    className={cn(
+                      "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                      isSelected
+                        ? "bg-primary text-primary-foreground"
+                        : "opacity-50 [&_svg]:invisible"
+                    )}
+                  >
+                    <Check className="h-3 w-3" />
+                  </div>
+                  <span className="flex-1">{option.label}</span>
+                  {option.badge && (
+                    <Badge
+                      variant={option.badgeVariant || "secondary"}
+                      className="ml-2 text-xs"
+                    >
+                      {option.badge}
+                    </Badge>
+                  )}
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+        </CommandList>
+      </Command>
+    );
+  }
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
@@ -145,7 +205,7 @@ export function MultiSelectCombobox({
           <CommandList>
             <CommandEmpty>{emptyMessage}</CommandEmpty>
             <CommandGroup>
-              {options.map((option) => {
+              {sortedOptions.map((option) => {
                 const isSelected = selected.includes(option.value);
                 return (
                   <CommandItem

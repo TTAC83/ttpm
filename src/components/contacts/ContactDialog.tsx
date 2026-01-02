@@ -12,6 +12,12 @@ import { Plus, X, Star } from 'lucide-react';
 import { Contact, ContactEmail } from '@/pages/app/Contacts';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Combobox } from '@/components/ui/combobox';
+
+interface Company {
+  id: string;
+  name: string;
+}
 
 interface ContactRole {
   id: string;
@@ -37,6 +43,7 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
   const [saving, setSaving] = useState(false);
   const [availableRoles, setAvailableRoles] = useState<ContactRole[]>([]);
   const [availableProjects, setAvailableProjects] = useState<Project[]>([]);
+  const [availableCompanies, setAvailableCompanies] = useState<Company[]>([]);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -78,14 +85,18 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
 
   const fetchRolesAndProjects = async () => {
     try {
-      const [rolesRes, projectsRes, solutionsRes] = await Promise.all([
+      const [rolesRes, projectsRes, solutionsRes, companiesRes] = await Promise.all([
         supabase.from('contact_roles_master').select('*').order('name'),
         supabase.from('projects').select('id, company_id, companies (name)').order('created_at', { ascending: false }),
         supabase.from('solutions_projects').select('id, company_id, companies (name)').order('created_at', { ascending: false }),
+        supabase.from('companies').select('id, name').order('name'),
       ]);
 
       if (rolesRes.error) throw rolesRes.error;
       setAvailableRoles(rolesRes.data || []);
+
+      if (companiesRes.error) throw companiesRes.error;
+      setAvailableCompanies(companiesRes.data || []);
 
       const implProjects: Project[] = (projectsRes.data || []).map(p => ({
         id: p.id,
@@ -322,11 +333,13 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
 
             <div className="space-y-2">
               <Label htmlFor="company">Company</Label>
-              <Input
-                id="company"
+              <Combobox
+                options={availableCompanies.map(c => ({ value: c.name, label: c.name }))}
                 value={formData.company}
-                onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
-                placeholder="Acme Corp"
+                onValueChange={(value) => setFormData(prev => ({ ...prev, company: value }))}
+                placeholder="Select company..."
+                searchPlaceholder="Search companies..."
+                emptyMessage="No company found."
               />
             </div>
 

@@ -30,6 +30,7 @@ import { ProjectHardware } from './tabs/ProjectHardware';
 import { ProjectHardwareSummary } from './tabs/ProjectHardwareSummary';
 import { ProjectHardwareStatus } from './tabs/ProjectHardwareStatus';
 import { GanttChart } from '@/features/gantt/components/GanttChart';
+import { ProjectContacts } from './tabs/ProjectContacts';
 
 interface Project {
   id: string;
@@ -128,7 +129,7 @@ export const ProjectDetail = () => {
   useEffect(() => {
     // Handle URL parameters to set active tab
     const tab = searchParams.get('tab');
-    if (tab && ['overview', 'contract', 'team', 'hardware', 'hardware-summary', 'hardware-status', 'factory', 'lines', 'tasks', 'wbs', 'actions', 'calendar', 'vision-models', 'audit', 'blockers'].includes(tab)) {
+    if (tab && ['overview', 'contract', 'team', 'contacts', 'hardware', 'hardware-summary', 'hardware-status', 'factory', 'lines', 'tasks', 'wbs', 'actions', 'calendar', 'vision-models', 'audit', 'blockers'].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -384,6 +385,7 @@ export const ProjectDetail = () => {
             <TabsTrigger value="overview">Customer Overview</TabsTrigger>
             <TabsTrigger value="contract">Contract Info</TabsTrigger>
             <TabsTrigger value="team">Team</TabsTrigger>
+            <TabsTrigger value="contacts">Contacts</TabsTrigger>
             <TabsTrigger value="account">Account Info</TabsTrigger>
             <TabsTrigger value="hardware">Factory Hardware</TabsTrigger>
             <TabsTrigger value="hardware-summary">Hardware Summary</TabsTrigger>
@@ -431,6 +433,15 @@ export const ProjectDetail = () => {
 
         <TabsContent value="account" className="space-y-4">
           <AccountInfoTab data={project} onUpdate={fetchProject} type="project" />
+        </TabsContent>
+
+        <TabsContent value="contacts" className="space-y-4">
+          <ProjectContacts 
+            projectId={project.id} 
+            projectType="implementation" 
+            companyId={project.company_id}
+            companyName={project.companies?.name || 'Unknown'}
+          />
         </TabsContent>
 
         <TabsContent value="hardware" className="space-y-4">

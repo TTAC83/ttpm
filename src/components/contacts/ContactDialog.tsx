@@ -8,10 +8,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, X, Star } from 'lucide-react';
-import { Contact, ContactEmail } from '@/pages/app/Contacts';
+import { Contact, ContactEmail } from '@/hooks/useContacts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Combobox } from '@/components/ui/combobox';
 import { MultiSelectCombobox, MultiSelectOption } from '@/components/ui/multi-select-combobox';
+import { useAuth } from '@/hooks/useAuth';
 interface Company {
   id: string;
   name: string;
@@ -38,6 +39,7 @@ interface ContactDialogProps {
 
 export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactDialogProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [saving, setSaving] = useState(false);
   const [availableRoles, setAvailableRoles] = useState<ContactRole[]>([]);
   const [availableProjects, setAvailableProjects] = useState<Project[]>([]);
@@ -215,7 +217,7 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
 
         if (error) throw error;
       } else {
-        // Create new contact
+        // Create new contact with created_by for audit trail
         const { data, error } = await supabase
           .from('contacts')
           .insert({
@@ -224,6 +226,7 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
             company: formData.company.trim() || null,
             notes: formData.notes.trim() || null,
             emails: emailsJson as unknown as any,
+            created_by: user?.id || null,
           })
           .select()
           .single();

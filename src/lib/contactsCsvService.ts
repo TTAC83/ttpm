@@ -15,6 +15,7 @@ export interface ImportResult {
   success: number;
   failed: number;
   errors: string[];
+  duplicates: string[];
 }
 
 const CSV_HEADERS = ['name', 'phone', 'company', 'primary_email', 'additional_emails', 'roles', 'notes'];
@@ -92,9 +93,23 @@ export async function importContacts(
   existingCompanies: { id: string; name: string }[],
   existingRoles: { id: string; name: string }[]
 ): Promise<ImportResult> {
-  const result: ImportResult = { success: 0, failed: 0, errors: [] };
+  const result: ImportResult = { success: 0, failed: 0, errors: [], duplicates: [] };
   const companyMap = new Map(existingCompanies.map(c => [c.name.toLowerCase(), c.name]));
   const roleMap = new Map(existingRoles.map(r => [r.name.toLowerCase(), r.id]));
+  
+  // Fetch existing contacts for duplicate detection
+  const { data: existingContacts } = await supabase
+    .from('contacts')
+    .select('name, company');
+  
+  const existingSet = new Set(
+    (existingContacts || []).map(c => 
+      `${c.name.toLowerCase()}|${(c.company || '').toLowerCase()}`
+    )
+  );
+
+  // Get current user for created_by
+  const { data: { user } } = await supabase.auth.getUser();
   
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
@@ -119,6 +134,16 @@ export async function importContacts(
         }
         companyName = matchedCompany;
       }
+      
+      // Check for duplicates
+      const duplicateKey = `${row.name.trim().toLowerCase()}|${(companyName || '').toLowerCase()}`;
+      if (existingSet.has(duplicateKey)) {
+        result.duplicates.push(`Row ${rowNum}: "${row.name}" at "${companyName || 'no company'}" already exists`);
+        result.errors.push(`Row ${rowNum}: Duplicate contact - "${row.name}" already exists${companyName ? ` at ${companyName}` : ''}`);
+        result.failed++;
+        continue;
+      }
+      existingSet.add(duplicateKey); // Prevent duplicates within same import
       
       // Parse and validate roles
       const roleIds: string[] = [];
@@ -148,7 +173,7 @@ export async function importContacts(
         }
       }
       
-      // Insert contact
+      // Insert contact with created_by for audit
       const { data: contact, error: contactError } = await supabase
         .from('contacts')
         .insert({
@@ -157,6 +182,7 @@ export async function importContacts(
           company: companyName,
           notes: row.notes?.trim() || null,
           emails: emails as any,
+          created_by: user?.id || null,
         })
         .select()
         .single();

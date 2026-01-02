@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Contact } from '@/pages/app/Contacts';
+import { Contact } from '@/hooks/useContacts';
 
 interface DeleteContactDialogProps {
   open: boolean;

@@ -18,6 +18,11 @@ interface MasterRole {
   name: string;
 }
 
+interface Company {
+  id: string;
+  name: string;
+}
+
 export interface ContactEmail {
   email: string;
   is_primary: boolean;
@@ -37,7 +42,7 @@ export interface Contact {
   projects?: { id: string; name: string; type: 'implementation' | 'solutions' }[];
 }
 
-type EditableField = 'name' | 'phone' | 'company' | 'email';
+type EditableField = 'name' | 'phone' | 'email';
 
 interface EditingState {
   contactId: string;
@@ -61,10 +66,14 @@ export default function Contacts() {
   const [editingRolesContactId, setEditingRolesContactId] = useState<string | null>(null);
   const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
   const [savingRoles, setSavingRoles] = useState(false);
+  const [allCompanies, setAllCompanies] = useState<Company[]>([]);
+  const [editingCompanyContactId, setEditingCompanyContactId] = useState<string | null>(null);
+  const [savingCompany, setSavingCompany] = useState(false);
 
   useEffect(() => {
     fetchContacts();
     fetchAllRoles();
+    fetchAllCompanies();
   }, []);
 
   useEffect(() => {
@@ -85,6 +94,20 @@ export default function Contacts() {
       setAllRoles(data || []);
     } catch (error) {
       console.error('Failed to fetch roles:', error);
+    }
+  };
+
+  const fetchAllCompanies = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('companies')
+        .select('id, name')
+        .order('name');
+      
+      if (error) throw error;
+      setAllCompanies(data || []);
+    } catch (error) {
+      console.error('Failed to fetch companies:', error);
     }
   };
 
@@ -286,6 +309,45 @@ export default function Contacts() {
       setSavingRoles(false);
     }
   }, [editingRolesContactId, selectedRoleIds, allRoles, toast]);
+
+  // Company editing functions
+  const startCompanyEdit = useCallback((contact: Contact) => {
+    setEditingCompanyContactId(contact.id);
+  }, []);
+
+  const selectCompany = useCallback(async (companyName: string | null) => {
+    if (!editingCompanyContactId) return;
+
+    try {
+      setSavingCompany(true);
+      
+      const { error } = await supabase
+        .from('contacts')
+        .update({ company: companyName })
+        .eq('id', editingCompanyContactId);
+
+      if (error) throw error;
+
+      setContacts(prev => prev.map(c => 
+        c.id === editingCompanyContactId ? { ...c, company: companyName } : c
+      ));
+
+      setEditingCompanyContactId(null);
+      
+      toast({
+        title: "Saved",
+        description: "Company updated",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to update company",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingCompany(false);
+    }
+  }, [editingCompanyContactId, toast]);
 
   // Inline editing functions
   const startInlineEdit = useCallback((contact: Contact, field: EditableField) => {
@@ -583,12 +645,58 @@ export default function Contacts() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {renderEditableCell(
-                        contact, 
-                        'company', 
-                        <Building2 className="h-3.5 w-3.5 text-muted-foreground" />,
-                        contact.company
-                      )}
+                      <Popover 
+                        open={editingCompanyContactId === contact.id} 
+                        onOpenChange={(open) => {
+                          if (!open) {
+                            setEditingCompanyContactId(null);
+                          }
+                        }}
+                      >
+                        <PopoverTrigger asChild>
+                          <div 
+                            className="flex items-center gap-1.5 cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5 -mx-1 transition-colors min-h-[24px]"
+                            onDoubleClick={() => startCompanyEdit(contact)}
+                          >
+                            {contact.company ? (
+                              <>
+                                <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                                <span className="text-sm">{contact.company}</span>
+                              </>
+                            ) : (
+                              <span className="text-muted-foreground italic text-sm">Double-click to add</span>
+                            )}
+                          </div>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-56 p-2" align="start">
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium mb-2">Select Company</p>
+                            {allCompanies.length === 0 ? (
+                              <p className="text-sm text-muted-foreground">No companies available</p>
+                            ) : (
+                              <div className="space-y-1 max-h-48 overflow-y-auto">
+                                <button
+                                  className={`w-full text-left px-2 py-1.5 rounded hover:bg-muted text-sm ${!contact.company ? 'bg-muted' : ''}`}
+                                  onClick={() => selectCompany(null)}
+                                  disabled={savingCompany}
+                                >
+                                  <span className="text-muted-foreground italic">None</span>
+                                </button>
+                                {allCompanies.map(company => (
+                                  <button
+                                    key={company.id}
+                                    className={`w-full text-left px-2 py-1.5 rounded hover:bg-muted text-sm ${contact.company === company.name ? 'bg-muted' : ''}`}
+                                    onClick={() => selectCompany(company.name)}
+                                    disabled={savingCompany}
+                                  >
+                                    {company.name}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                     </TableCell>
                     <TableCell>
                       <Popover 

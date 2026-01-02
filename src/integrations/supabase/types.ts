@@ -1288,6 +1288,59 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_companies: {
+        Row: {
+          company_id: string
+          contact_id: string
+          created_at: string
+          id: string
+          is_primary: boolean
+        }
+        Insert: {
+          company_id: string
+          contact_id: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+        }
+        Update: {
+          company_id?: string
+          contact_id?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_companies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_companies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_impl_companies"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "contact_companies_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_companies_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "v_contacts_enriched"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_projects: {
         Row: {
           contact_id: string
@@ -4909,6 +4962,7 @@ export type Database = {
       }
       v_contacts_enriched: {
         Row: {
+          companies: Json | null
           company: string | null
           company_id: string | null
           created_at: string | null
@@ -4924,6 +4978,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          companies?: never
           company?: string | null
           company_id?: string | null
           created_at?: string | null
@@ -4939,6 +4994,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          companies?: never
           company?: string | null
           company_id?: string | null
           created_at?: string | null

@@ -17,7 +17,8 @@ import {
   BarChart3,
   User,
   PieChart,
-  Camera
+  Camera,
+  Users
 } from "lucide-react";
 
 export type Role = "internal_admin" | "internal_user" | "external_admin" | "external_user";
@@ -251,6 +252,12 @@ export const NAV: NavItem[] = [
         iconName: "Eye",
         matchPaths: ["/app/admin/vision-use-cases"]
       },
+      { 
+        label: "Contact Roles", 
+        to: "/app/admin/contact-roles",
+        iconName: "Users",
+        matchPaths: ["/app/admin/contact-roles"]
+      },
     ]
   },
 
@@ -303,7 +310,8 @@ export const ICON_MAP = {
   BarChart3,
   User,
   PieChart,
-  Camera
+  Camera,
+  Users
 } as const;
 
 export function visibleItemsForRole(role: Role | null | undefined): NavItem[] {

@@ -38,6 +38,7 @@ import Actions from "./pages/app/Actions";
 import GlobalTasks from "./pages/app/GlobalTasks";
 import GlobalCalendar from "./pages/app/GlobalCalendar";
 import GlobalModels from "./pages/app/GlobalModels";
+import Contacts from "./pages/app/Contacts";
 import { Expenses } from "./pages/app/Expenses";
 import { SolutionsList } from "./pages/app/solutions/SolutionsList";
 import { NewSolutionsProject } from "./pages/app/solutions/NewSolutionsProject";
@@ -177,6 +178,7 @@ const App = () => (
                 <Complete />
               </InternalRoute>} />
               <Route path="expenses" element={<Expenses />} />
+              <Route path="contacts" element={<InternalRoute><Contacts /></InternalRoute>} />
               <Route path="bau" element={<BAU />} />
               <Route path="bau/board-summary" element={<BAUBoardSummary />} />
               <Route 

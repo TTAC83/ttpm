@@ -162,7 +162,16 @@ export const NAV: NavItem[] = [
     ]
   },
 
-  // 5) Solutions Consulting
+  // 5) Contacts
+  {
+    label: "Contacts",
+    iconName: "Users",
+    to: "/app/contacts",
+    roles: ["internal_admin", "internal_user"],
+    matchPaths: ["/app/contacts"]
+  },
+
+  // 6) Solutions Consulting
   {
     label: "Solutions Consulting",
     iconName: "Briefcase",

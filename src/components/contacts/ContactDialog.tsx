@@ -1,18 +1,19 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, X, Star } from 'lucide-react';
 import { Contact, ContactEmail } from '@/hooks/useContacts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Combobox } from '@/components/ui/combobox';
 import { MultiSelectCombobox, MultiSelectOption } from '@/components/ui/multi-select-combobox';
 import { useAuth } from '@/hooks/useAuth';
+import { EmailInput } from './shared/EmailInput';
+import { ContactFormFields } from './shared/ContactFormFields';
+import { RoleSelector } from './shared/RoleSelector';
+import { linkContactToCompany } from '@/lib/contactMatchingService';
+
 interface Company {
   id: string;
   name: string;
@@ -48,11 +49,10 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
-    company: '',
     notes: '',
   });
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
   const [emails, setEmails] = useState<ContactEmail[]>([]);
-  const [newEmail, setNewEmail] = useState('');
   const [selectedRoleIds, setSelectedRoleIds] = useState<Set<string>>(new Set());
   const [selectedProjectIds, setSelectedProjectIds] = useState<Set<string>>(new Set());
 
@@ -63,12 +63,14 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
         setFormData({
           name: contact.name,
           phone: contact.phone || '',
-          company: contact.company || '',
           notes: contact.notes || '',
         });
         setEmails(contact.emails || []);
         setSelectedRoleIds(new Set(contact.roles?.map(r => r.id) || []));
         setSelectedProjectIds(new Set(contact.projects?.map(p => p.id) || []));
+        // Set primary company from companies array or fall back to company_id
+        const primaryCompany = contact.companies?.find(c => c.is_primary) || contact.companies?.[0];
+        setSelectedCompanyId(primaryCompany?.id || contact.company_id || null);
       } else {
         resetForm();
       }
@@ -76,11 +78,11 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
   }, [open, contact]);
 
   const resetForm = () => {
-    setFormData({ name: '', phone: '', company: '', notes: '' });
+    setFormData({ name: '', phone: '', notes: '' });
     setEmails([]);
-    setNewEmail('');
     setSelectedRoleIds(new Set());
     setSelectedProjectIds(new Set());
+    setSelectedCompanyId(null);
   };
 
   const fetchRolesAndProjects = async () => {
@@ -116,74 +118,6 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
     }
   };
 
-  const addEmail = () => {
-    const trimmed = newEmail.trim().toLowerCase();
-    if (!trimmed) return;
-    
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      toast({
-        title: "Invalid Email",
-        description: "Please enter a valid email address",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (emails.some(e => e.email.toLowerCase() === trimmed)) {
-      toast({
-        title: "Duplicate Email",
-        description: "This email is already added",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setEmails(prev => [...prev, { email: trimmed, is_primary: prev.length === 0 }]);
-    setNewEmail('');
-  };
-
-  const removeEmail = (emailToRemove: string) => {
-    setEmails(prev => {
-      const filtered = prev.filter(e => e.email !== emailToRemove);
-      // If we removed the primary, make the first one primary
-      if (filtered.length > 0 && !filtered.some(e => e.is_primary)) {
-        filtered[0].is_primary = true;
-      }
-      return filtered;
-    });
-  };
-
-  const setPrimaryEmail = (email: string) => {
-    setEmails(prev => prev.map(e => ({
-      ...e,
-      is_primary: e.email === email
-    })));
-  };
-
-  const toggleRole = (roleId: string) => {
-    setSelectedRoleIds(prev => {
-      const next = new Set(prev);
-      if (next.has(roleId)) {
-        next.delete(roleId);
-      } else {
-        next.add(roleId);
-      }
-      return next;
-    });
-  };
-
-  const toggleProject = (projectId: string) => {
-    setSelectedProjectIds(prev => {
-      const next = new Set(prev);
-      if (next.has(projectId)) {
-        next.delete(projectId);
-      } else {
-        next.add(projectId);
-      }
-      return next;
-    });
-  };
-
   const handleSave = async () => {
     if (!formData.name.trim()) {
       toast({
@@ -198,9 +132,8 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
       setSaving(true);
 
       let contactId = contact?.id;
-
-      // Convert emails to JSON-compatible format
       const emailsJson = emails.map(e => ({ email: e.email, is_primary: e.is_primary }));
+      const selectedCompany = availableCompanies.find(c => c.id === selectedCompanyId);
 
       if (contact) {
         // Update existing contact
@@ -209,7 +142,8 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
           .update({
             name: formData.name.trim(),
             phone: formData.phone.trim() || null,
-            company: formData.company.trim() || null,
+            company: selectedCompany?.name || null,
+            company_id: selectedCompanyId,
             notes: formData.notes.trim() || null,
             emails: emailsJson as unknown as any,
           })
@@ -217,13 +151,14 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
 
         if (error) throw error;
       } else {
-        // Create new contact with created_by for audit trail
+        // Create new contact
         const { data, error } = await supabase
           .from('contacts')
           .insert({
             name: formData.name.trim(),
             phone: formData.phone.trim() || null,
-            company: formData.company.trim() || null,
+            company: selectedCompany?.name || null,
+            company_id: selectedCompanyId,
             notes: formData.notes.trim() || null,
             emails: emailsJson as unknown as any,
             created_by: user?.id || null,
@@ -236,6 +171,19 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
       }
 
       if (!contactId) throw new Error('Contact ID not available');
+
+      // Sync company in contact_companies junction table
+      if (selectedCompanyId) {
+        // First remove existing primary company links for this contact
+        await supabase
+          .from('contact_companies')
+          .delete()
+          .eq('contact_id', contactId)
+          .eq('is_primary', true);
+        
+        // Add the new primary company link
+        await linkContactToCompany(contactId, selectedCompanyId, true);
+      }
 
       // Sync role assignments
       await supabase.from('contact_role_assignments').delete().eq('contact_id', contactId);
@@ -311,33 +259,18 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
           </TabsList>
 
           <TabsContent value="details" className="space-y-4 mt-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="John Doe"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                  placeholder="+44 7700 900000"
-                />
-              </div>
-            </div>
+            <ContactFormFields 
+              formData={formData} 
+              onChange={setFormData}
+              disabled={saving}
+            />
 
             <div className="space-y-2">
               <Label htmlFor="company">Company</Label>
               <Combobox
-                options={availableCompanies.map(c => ({ value: c.name, label: c.name }))}
-                value={formData.company}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, company: value }))}
+                options={availableCompanies.map(c => ({ value: c.id, label: c.name }))}
+                value={selectedCompanyId || ''}
+                onValueChange={(value) => setSelectedCompanyId(value || null)}
                 placeholder="Select company..."
                 searchPlaceholder="Search companies..."
                 emptyMessage="No company found."
@@ -346,93 +279,21 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
 
             <div className="space-y-2">
               <Label>Emails</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  placeholder="email@example.com"
-                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addEmail())}
-                />
-                <Button type="button" variant="outline" onClick={addEmail}>
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-              {emails.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {emails.map((email) => (
-                    <Badge
-                      key={email.email}
-                      variant={email.is_primary ? "default" : "secondary"}
-                      className="flex items-center gap-1 pr-1"
-                    >
-                      {email.is_primary && <Star className="h-3 w-3" />}
-                      {email.email}
-                      {!email.is_primary && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-4 w-4 ml-1 hover:bg-transparent"
-                          onClick={() => setPrimaryEmail(email.email)}
-                          title="Set as primary"
-                        >
-                          <Star className="h-3 w-3" />
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-4 w-4 hover:bg-transparent"
-                        onClick={() => removeEmail(email.email)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="Additional notes about this contact..."
-                rows={3}
+              <EmailInput
+                emails={emails}
+                onChange={setEmails}
+                disabled={saving}
               />
             </div>
           </TabsContent>
 
           <TabsContent value="roles" className="mt-4">
-            <div className="space-y-2">
-              <Label>Assign Roles</Label>
-              <p className="text-sm text-muted-foreground mb-3">
-                Select one or more roles for this contact
-              </p>
-              {availableRoles.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4 border rounded-md">
-                  No roles available. Create roles in Master Data first.
-                </p>
-              ) : (
-                <MultiSelectCombobox
-                  options={availableRoles.map((role): MultiSelectOption => ({
-                    value: role.id,
-                    label: role.name,
-                  }))}
-                  selected={Array.from(selectedRoleIds)}
-                  onSelectionChange={(ids) => setSelectedRoleIds(new Set(ids))}
-                  placeholder="Search and select roles..."
-                  searchPlaceholder="Search roles..."
-                  emptyMessage="No roles found."
-                />
-              )}
-              {selectedRoleIds.size > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  {selectedRoleIds.size} role{selectedRoleIds.size !== 1 ? 's' : ''} selected
-                </p>
-              )}
-            </div>
+            <RoleSelector
+              availableRoles={availableRoles}
+              selectedRoleIds={selectedRoleIds}
+              onChange={setSelectedRoleIds}
+              disabled={saving}
+            />
           </TabsContent>
 
           <TabsContent value="projects" className="mt-4">

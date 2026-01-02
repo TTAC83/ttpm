@@ -1,17 +1,14 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, X, Star, AlertCircle, UserPlus } from 'lucide-react';
+import { AlertCircle, UserPlus } from 'lucide-react';
 import { Contact, ContactEmail } from '@/hooks/useContacts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MultiSelectCombobox, MultiSelectOption } from '@/components/ui/multi-select-combobox';
 import { useAuth } from '@/hooks/useAuth';
 import { 
   findContactByEmail, 
@@ -19,6 +16,9 @@ import {
   linkContactToProject, 
   linkContactToSolutionsProject 
 } from '@/lib/contactMatchingService';
+import { EmailInput } from './shared/EmailInput';
+import { ContactFormFields } from './shared/ContactFormFields';
+import { RoleSelector } from './shared/RoleSelector';
 
 interface ContactRole {
   id: string;
@@ -60,7 +60,6 @@ export function ProjectContactDialog({
     notes: '',
   });
   const [emails, setEmails] = useState<ContactEmail[]>([]);
-  const [newEmail, setNewEmail] = useState('');
   const [selectedRoleIds, setSelectedRoleIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -84,7 +83,6 @@ export function ProjectContactDialog({
   const resetForm = () => {
     setFormData({ name: '', phone: '', notes: '' });
     setEmails([]);
-    setNewEmail('');
     setSelectedRoleIds(new Set());
     setMatchedContact(null);
   };
@@ -119,56 +117,6 @@ export function ProjectContactDialog({
     } finally {
       setCheckingEmail(false);
     }
-  };
-
-  const addEmail = () => {
-    const trimmed = newEmail.trim().toLowerCase();
-    if (!trimmed) return;
-    
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      toast({
-        title: "Invalid Email",
-        description: "Please enter a valid email address",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (emails.some(e => e.email.toLowerCase() === trimmed)) {
-      toast({
-        title: "Duplicate Email",
-        description: "This email is already added",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const newEmails = [...emails, { email: trimmed, is_primary: emails.length === 0 }];
-    setEmails(newEmails);
-    setNewEmail('');
-    
-    // Check for existing contact when adding first email
-    if (newEmails.length === 1 && !contact) {
-      checkEmailMatch(trimmed);
-    }
-  };
-
-  const removeEmail = (emailToRemove: string) => {
-    setEmails(prev => {
-      const filtered = prev.filter(e => e.email !== emailToRemove);
-      if (filtered.length > 0 && !filtered.some(e => e.is_primary)) {
-        filtered[0].is_primary = true;
-      }
-      return filtered;
-    });
-    setMatchedContact(null);
-  };
-
-  const setPrimaryEmail = (email: string) => {
-    setEmails(prev => prev.map(e => ({
-      ...e,
-      is_primary: e.email === email
-    })));
   };
 
   const handleLinkExisting = async () => {
@@ -327,26 +275,11 @@ export function ProjectContactDialog({
           </TabsList>
 
           <TabsContent value="details" className="space-y-4 mt-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="John Doe"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                  placeholder="+44 7700 900000"
-                />
-              </div>
-            </div>
+            <ContactFormFields 
+              formData={formData} 
+              onChange={setFormData}
+              disabled={saving}
+            />
 
             <div className="space-y-2">
               <Label>Company</Label>
@@ -358,89 +291,22 @@ export function ProjectContactDialog({
 
             <div className="space-y-2">
               <Label>Emails</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  placeholder="email@example.com"
-                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addEmail())}
-                  onBlur={() => newEmail && checkEmailMatch(newEmail)}
-                />
-                <Button type="button" variant="outline" onClick={addEmail} disabled={checkingEmail}>
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-              {emails.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {emails.map((email) => (
-                    <Badge
-                      key={email.email}
-                      variant={email.is_primary ? "default" : "secondary"}
-                      className="flex items-center gap-1 pr-1"
-                    >
-                      {email.is_primary && <Star className="h-3 w-3" />}
-                      {email.email}
-                      {!email.is_primary && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-4 w-4 ml-1 hover:bg-transparent"
-                          onClick={() => setPrimaryEmail(email.email)}
-                          title="Set as primary"
-                        >
-                          <Star className="h-3 w-3" />
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-4 w-4 hover:bg-transparent"
-                        onClick={() => removeEmail(email.email)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="Additional notes about this contact..."
-                rows={3}
+              <EmailInput
+                emails={emails}
+                onChange={setEmails}
+                onEmailBlur={!contact ? checkEmailMatch : undefined}
+                disabled={saving || checkingEmail}
               />
             </div>
           </TabsContent>
 
           <TabsContent value="roles" className="mt-4">
-            <div className="space-y-2">
-              <Label>Assign Roles</Label>
-              <p className="text-sm text-muted-foreground mb-3">
-                Select one or more roles for this contact
-              </p>
-              {availableRoles.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4 border rounded-md">
-                  No roles available. Create roles in Master Data first.
-                </p>
-              ) : (
-                <MultiSelectCombobox
-                  options={availableRoles.map((role): MultiSelectOption => ({
-                    value: role.id,
-                    label: role.name,
-                  }))}
-                  selected={Array.from(selectedRoleIds)}
-                  onSelectionChange={(ids) => setSelectedRoleIds(new Set(ids))}
-                  placeholder="Search and select roles..."
-                  searchPlaceholder="Search roles..."
-                  emptyMessage="No roles found."
-                />
-              )}
-            </div>
+            <RoleSelector
+              availableRoles={availableRoles}
+              selectedRoleIds={selectedRoleIds}
+              onChange={setSelectedRoleIds}
+              disabled={saving}
+            />
           </TabsContent>
         </Tabs>
 

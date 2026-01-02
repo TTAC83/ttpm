@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { SolutionsLines } from './tabs/SolutionsLines';
 import { SolutionsHardwareSummary } from './tabs/SolutionsHardwareSummary';
 import { OverviewTab } from '@/components/shared/OverviewTab';
+import { ProjectContacts } from '@/pages/app/projects/tabs/ProjectContacts';
 import { ContractInformationTab } from '@/components/shared/ContractInformationTab';
 import { TeamTab } from '@/components/shared/TeamTab';
 import { AccountInfoTab } from '@/components/shared/AccountInfoTab';
@@ -207,6 +208,7 @@ export const SolutionsProjectDetail = () => {
             <TabsTrigger value="contract">Contract Info</TabsTrigger>
             <TabsTrigger value="team">Team</TabsTrigger>
             <TabsTrigger value="account">Account Info</TabsTrigger>
+            <TabsTrigger value="contacts">Contacts</TabsTrigger>
             <TabsTrigger value="hardware-summary">Hardware Summary</TabsTrigger>
           </TabsList>
 
@@ -244,6 +246,15 @@ export const SolutionsProjectDetail = () => {
 
         <TabsContent value="account" className="space-y-4">
           <AccountInfoTab data={project} onUpdate={fetchProject} type="solutions" />
+        </TabsContent>
+
+        <TabsContent value="contacts" className="space-y-4">
+          <ProjectContacts 
+            projectId={project.id} 
+            projectType="solutions"
+            companyId={project.company_id}
+            companyName={project.companies?.name || 'Unknown'}
+          />
         </TabsContent>
 
         <TabsContent value="hardware" className="space-y-4">

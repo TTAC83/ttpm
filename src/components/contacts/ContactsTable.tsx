@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Contact } from '@/hooks/useContacts';
 import { ContactRow } from './ContactRow';
 import { useContactInlineEdit } from '@/hooks/useContactInlineEdit';
+import { linkContactToCompany } from '@/lib/contactMatchingService';
 
 interface MasterRole {
   id: string;
@@ -31,6 +32,8 @@ interface ContactsTableProps {
   onEdit: (contact: Contact) => void;
   onDelete: (contact: Contact) => void;
   onRefetch: () => void;
+  /** When true, shows unlink icon instead of delete (for project context) */
+  isProjectContext?: boolean;
 }
 
 export function ContactsTable({
@@ -42,6 +45,7 @@ export function ContactsTable({
   onEdit,
   onDelete,
   onRefetch,
+  isProjectContext = false,
 }: ContactsTableProps) {
   const { toast } = useToast();
   const inlineEdit = useContactInlineEdit({ contacts, onUpdate });
@@ -114,25 +118,50 @@ export function ContactsTable({
     }
   }, [editingRolesContactId, selectedRoleIds, allRoles, onUpdate, toast]);
 
-  // Company editing functions
+  // Company editing functions - now uses junction table
   const startCompanyEdit = useCallback((contact: Contact) => {
     setEditingCompanyContactId(contact.id);
   }, []);
 
-  const selectCompany = useCallback(async (companyName: string | null) => {
+  const selectCompany = useCallback(async (companyId: string | null) => {
     if (!editingCompanyContactId) return;
 
     try {
       setSavingCompany(true);
       
-      const { error } = await supabase
+      const selectedCompany = allCompanies.find(c => c.id === companyId);
+      
+      // Update the contacts table for backward compatibility
+      const { error: contactError } = await supabase
         .from('contacts')
-        .update({ company: companyName })
+        .update({ 
+          company: selectedCompany?.name || null,
+          company_id: companyId 
+        })
         .eq('id', editingCompanyContactId);
 
-      if (error) throw error;
+      if (contactError) throw contactError;
 
-      onUpdate(editingCompanyContactId, { company: companyName });
+      // Update the contact_companies junction table
+      // First, remove existing primary company link
+      await supabase
+        .from('contact_companies')
+        .delete()
+        .eq('contact_id', editingCompanyContactId)
+        .eq('is_primary', true);
+
+      // Add new primary company link if a company is selected
+      if (companyId) {
+        await linkContactToCompany(editingCompanyContactId, companyId, true);
+      }
+
+      onUpdate(editingCompanyContactId, { 
+        company: selectedCompany?.name || null,
+        company_id: companyId,
+        companies: companyId && selectedCompany 
+          ? [{ id: companyId, name: selectedCompany.name, is_primary: true }]
+          : []
+      });
 
       setEditingCompanyContactId(null);
       
@@ -149,7 +178,7 @@ export function ContactsTable({
     } finally {
       setSavingCompany(false);
     }
-  }, [editingCompanyContactId, onUpdate, toast]);
+  }, [editingCompanyContactId, allCompanies, onUpdate, toast]);
 
   // Projects editing functions
   const startProjectsEdit = useCallback((contact: Contact) => {
@@ -234,6 +263,7 @@ export function ContactsTable({
             allCompanies={allCompanies}
             allProjects={allProjects}
             inlineEdit={inlineEdit}
+            isProjectContext={isProjectContext}
             // Role editing
             editingRolesContactId={editingRolesContactId}
             selectedRoleIds={selectedRoleIds}

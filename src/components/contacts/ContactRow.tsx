@@ -6,7 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { MultiSelectCombobox, MultiSelectOption } from '@/components/ui/multi-select-combobox';
-import { Edit, Trash2, Mail, Phone, Building2, Check, Pencil } from 'lucide-react';
+import { Edit, Trash2, Mail, Phone, Building2, Check, Pencil, Unlink } from 'lucide-react';
 import { Contact, ContactEmail } from '@/hooks/useContacts';
 import { EditableField } from '@/hooks/useContactInlineEdit';
 
@@ -43,6 +43,7 @@ interface ContactRowProps {
   allCompanies: Company[];
   allProjects: Project[];
   inlineEdit: InlineEditState;
+  isProjectContext?: boolean;
   // Role editing
   editingRolesContactId: string | null;
   selectedRoleIds: string[];
@@ -55,7 +56,7 @@ interface ContactRowProps {
   editingCompanyContactId: string | null;
   savingCompany: boolean;
   onStartCompanyEdit: (contact: Contact) => void;
-  onSelectCompany: (name: string | null) => void;
+  onSelectCompany: (id: string | null) => void;
   onCancelCompanyEdit: () => void;
   // Projects editing
   editingProjectsContactId: string | null;
@@ -76,6 +77,7 @@ export function ContactRow({
   allCompanies,
   allProjects,
   inlineEdit,
+  isProjectContext = false,
   editingRolesContactId,
   selectedRoleIds,
   savingRoles,
@@ -199,10 +201,10 @@ export function ContactRow({
                     {allCompanies.map((company) => (
                       <CommandItem
                         key={company.id}
-                        onSelect={() => onSelectCompany(company.name)}
+                        onSelect={() => onSelectCompany(company.id)}
                       >
                         {company.name}
-                        {company.name === contact.company && (
+                        {company.id === contact.company_id && (
                           <Check className="ml-auto h-4 w-4" />
                         )}
                       </CommandItem>
@@ -384,13 +386,15 @@ export function ContactRow({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-destructive hover:text-destructive"
+                className={`h-8 w-8 ${isProjectContext ? 'text-orange-600 hover:text-orange-600' : 'text-destructive hover:text-destructive'}`}
                 onClick={() => onDelete(contact)}
               >
-                <Trash2 className="h-4 w-4" />
+                {isProjectContext ? <Unlink className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />}
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Delete contact</TooltipContent>
+            <TooltipContent>
+              {isProjectContext ? 'Remove from project' : 'Delete contact'}
+            </TooltipContent>
           </Tooltip>
         </div>
       </TableCell>

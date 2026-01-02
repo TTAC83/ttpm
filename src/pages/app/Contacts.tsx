@@ -30,7 +30,7 @@ export interface Contact {
   projects?: { id: string; name: string; type: 'implementation' | 'solutions' }[];
 }
 
-type EditableField = 'name' | 'phone' | 'company';
+type EditableField = 'name' | 'phone' | 'company' | 'email';
 
 interface EditingState {
   contactId: string;
@@ -198,7 +198,12 @@ export default function Contacts() {
 
   // Inline editing functions
   const startInlineEdit = useCallback((contact: Contact, field: EditableField) => {
-    const value = contact[field] || '';
+    let value = '';
+    if (field === 'email') {
+      value = getPrimaryEmail(contact.emails) || '';
+    } else {
+      value = contact[field] || '';
+    }
     setInlineEditing({ contactId: contact.id, field, value });
   }, []);
 
@@ -222,20 +227,68 @@ export default function Contacts() {
       return;
     }
 
+    // Validate email format if provided
+    if (field === 'email' && trimmedValue && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedValue)) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setSaving(true);
       
-      const { error } = await supabase
-        .from('contacts')
-        .update({ [field]: trimmedValue || null })
-        .eq('id', contactId);
+      const contact = contacts.find(c => c.id === contactId);
+      
+      if (field === 'email') {
+        // Handle email update - update primary email or add new one
+        let updatedEmails: ContactEmail[];
+        
+        if (!trimmedValue) {
+          // Remove primary email - keep others
+          updatedEmails = contact?.emails.filter(e => !e.is_primary) || [];
+        } else if (contact?.emails.length) {
+          // Update existing primary or set first as primary
+          const hasPrimary = contact.emails.some(e => e.is_primary);
+          if (hasPrimary) {
+            updatedEmails = contact.emails.map(e => 
+              e.is_primary ? { ...e, email: trimmedValue } : e
+            );
+          } else {
+            updatedEmails = [
+              { email: trimmedValue, is_primary: true },
+              ...contact.emails.slice(1)
+            ];
+          }
+        } else {
+          // No emails yet - create new primary
+          updatedEmails = [{ email: trimmedValue, is_primary: true }];
+        }
 
-      if (error) throw error;
+        const { error } = await supabase
+          .from('contacts')
+          .update({ emails: updatedEmails as unknown as any })
+          .eq('id', contactId);
 
-      // Update local state immediately for responsiveness
-      setContacts(prev => prev.map(c => 
-        c.id === contactId ? { ...c, [field]: trimmedValue || null } : c
-      ));
+        if (error) throw error;
+
+        setContacts(prev => prev.map(c => 
+          c.id === contactId ? { ...c, emails: updatedEmails } : c
+        ));
+      } else {
+        const { error } = await supabase
+          .from('contacts')
+          .update({ [field]: trimmedValue || null })
+          .eq('id', contactId);
+
+        if (error) throw error;
+
+        setContacts(prev => prev.map(c => 
+          c.id === contactId ? { ...c, [field]: trimmedValue || null } : c
+        ));
+      }
 
       setInlineEditing(null);
       
@@ -252,7 +305,7 @@ export default function Contacts() {
     } finally {
       setSaving(false);
     }
-  }, [inlineEditing, toast]);
+  }, [inlineEditing, toast, contacts]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -388,18 +441,46 @@ export default function Contacts() {
                       {renderEditableCell(contact, 'name', null, contact.name)}
                     </TableCell>
                     <TableCell>
-                      {getPrimaryEmail(contact.emails) ? (
-                        <div className="flex items-center gap-1.5 text-sm">
-                          <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span>{getPrimaryEmail(contact.emails)}</span>
-                          {contact.emails.length > 1 && (
-                            <Badge variant="secondary" className="text-xs">
-                              +{contact.emails.length - 1}
-                            </Badge>
-                          )}
+                      {inlineEditing?.contactId === contact.id && inlineEditing?.field === 'email' ? (
+                        <div className="flex items-center gap-1">
+                          <Input
+                            ref={inputRef}
+                            value={inlineEditing.value}
+                            onChange={(e) => setInlineEditing(prev => prev ? { ...prev, value: e.target.value } : null)}
+                            onKeyDown={handleKeyDown}
+                            onBlur={saveInlineEdit}
+                            className="h-7 text-sm py-0 px-2"
+                            disabled={saving}
+                            type="email"
+                            placeholder="email@example.com"
+                          />
                         </div>
                       ) : (
-                        <span className="text-muted-foreground">-</span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div 
+                              className="flex items-center gap-1.5 text-sm cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5 -mx-1 transition-colors"
+                              onDoubleClick={() => startInlineEdit(contact, 'email')}
+                            >
+                              {getPrimaryEmail(contact.emails) ? (
+                                <>
+                                  <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                                  <span>{getPrimaryEmail(contact.emails)}</span>
+                                  {contact.emails.length > 1 && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      +{contact.emails.length - 1}
+                                    </Badge>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="text-muted-foreground italic">Double-click to add</span>
+                              )}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Double-click to edit</p>
+                          </TooltipContent>
+                        </Tooltip>
                       )}
                     </TableCell>
                     <TableCell>

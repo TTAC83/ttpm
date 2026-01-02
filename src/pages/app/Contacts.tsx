@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,9 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Search, Users, Mail, Phone, Building2, Edit, Trash2, X } from 'lucide-react';
+import { Plus, Search, Users, Mail, Phone, Building2, Edit, Trash2, X, Check } from 'lucide-react';
 import { ContactDialog } from '@/components/contacts/ContactDialog';
 import { DeleteContactDialog } from '@/components/contacts/DeleteContactDialog';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 export interface ContactEmail {
   email: string;
@@ -29,6 +30,14 @@ export interface Contact {
   projects?: { id: string; name: string; type: 'implementation' | 'solutions' }[];
 }
 
+type EditableField = 'name' | 'phone' | 'company';
+
+interface EditingState {
+  contactId: string;
+  field: EditableField;
+  value: string;
+}
+
 export default function Contacts() {
   const { toast } = useToast();
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -38,16 +47,25 @@ export default function Contacts() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [contactToDelete, setContactToDelete] = useState<Contact | null>(null);
+  const [inlineEditing, setInlineEditing] = useState<EditingState | null>(null);
+  const [saving, setSaving] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchContacts();
   }, []);
 
+  useEffect(() => {
+    if (inlineEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [inlineEditing]);
+
   const fetchContacts = async () => {
     try {
       setLoading(true);
       
-      // Fetch contacts with their roles and project assignments
       const { data: contactsData, error: contactsError } = await supabase
         .from('contacts')
         .select('*')
@@ -55,7 +73,6 @@ export default function Contacts() {
 
       if (contactsError) throw contactsError;
 
-      // Fetch role assignments
       const { data: roleAssignments, error: rolesError } = await supabase
         .from('contact_role_assignments')
         .select(`
@@ -65,7 +82,6 @@ export default function Contacts() {
 
       if (rolesError) throw rolesError;
 
-      // Fetch implementation project assignments
       const { data: projectAssignments, error: projectsError } = await supabase
         .from('contact_projects')
         .select(`
@@ -75,7 +91,6 @@ export default function Contacts() {
 
       if (projectsError) throw projectsError;
 
-      // Fetch solutions project assignments
       const { data: solutionsAssignments, error: solutionsError } = await supabase
         .from('contact_solutions_projects')
         .select(`
@@ -85,7 +100,6 @@ export default function Contacts() {
 
       if (solutionsError) throw solutionsError;
 
-      // Map roles and projects to contacts
       const enrichedContacts = (contactsData || []).map(contact => {
         const contactRoles = roleAssignments
           ?.filter(ra => ra.contact_id === contact.id)
@@ -110,7 +124,6 @@ export default function Contacts() {
           }))
           .filter(p => p.id) || [];
 
-        // Parse emails from JSONB - handle as unknown first
         const rawEmails = contact.emails;
         let parsedEmails: ContactEmail[] = [];
         if (Array.isArray(rawEmails)) {
@@ -183,6 +196,122 @@ export default function Contacts() {
     return primary?.email || emails[0]?.email || null;
   };
 
+  // Inline editing functions
+  const startInlineEdit = useCallback((contact: Contact, field: EditableField) => {
+    const value = contact[field] || '';
+    setInlineEditing({ contactId: contact.id, field, value });
+  }, []);
+
+  const cancelInlineEdit = useCallback(() => {
+    setInlineEditing(null);
+  }, []);
+
+  const saveInlineEdit = useCallback(async () => {
+    if (!inlineEditing) return;
+
+    const { contactId, field, value } = inlineEditing;
+    const trimmedValue = value.trim();
+
+    // Validate name is not empty
+    if (field === 'name' && !trimmedValue) {
+      toast({
+        title: "Validation Error",
+        description: "Name cannot be empty",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setSaving(true);
+      
+      const { error } = await supabase
+        .from('contacts')
+        .update({ [field]: trimmedValue || null })
+        .eq('id', contactId);
+
+      if (error) throw error;
+
+      // Update local state immediately for responsiveness
+      setContacts(prev => prev.map(c => 
+        c.id === contactId ? { ...c, [field]: trimmedValue || null } : c
+      ));
+
+      setInlineEditing(null);
+      
+      toast({
+        title: "Saved",
+        description: `${field.charAt(0).toUpperCase() + field.slice(1)} updated`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: `Failed to update ${field}`,
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  }, [inlineEditing, toast]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveInlineEdit();
+    } else if (e.key === 'Escape') {
+      cancelInlineEdit();
+    }
+  }, [saveInlineEdit, cancelInlineEdit]);
+
+  // Render editable cell
+  const renderEditableCell = (
+    contact: Contact, 
+    field: EditableField, 
+    icon: React.ReactNode,
+    displayValue: string | null
+  ) => {
+    const isEditing = inlineEditing?.contactId === contact.id && inlineEditing?.field === field;
+
+    if (isEditing) {
+      return (
+        <div className="flex items-center gap-1">
+          <Input
+            ref={inputRef}
+            value={inlineEditing.value}
+            onChange={(e) => setInlineEditing(prev => prev ? { ...prev, value: e.target.value } : null)}
+            onKeyDown={handleKeyDown}
+            onBlur={saveInlineEdit}
+            className="h-7 text-sm py-0 px-2"
+            disabled={saving}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div 
+            className="flex items-center gap-1.5 text-sm cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5 -mx-1 transition-colors"
+            onDoubleClick={() => startInlineEdit(contact, field)}
+          >
+            {displayValue ? (
+              <>
+                {icon}
+                <span>{displayValue}</span>
+              </>
+            ) : (
+              <span className="text-muted-foreground italic">Double-click to add</span>
+            )}
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Double-click to edit</p>
+        </TooltipContent>
+      </Tooltip>
+    );
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -205,7 +334,8 @@ export default function Contacts() {
             <div>
               <CardTitle>All Contacts</CardTitle>
               <CardDescription>
-                {filteredContacts.length} of {contacts.length} contact{contacts.length !== 1 ? 's' : ''}
+                {filteredContacts.length} of {contacts.length} contact{contacts.length !== 1 ? 's' : ''} 
+                <span className="ml-2 text-xs">(double-click cells to edit)</span>
               </CardDescription>
             </div>
             <div className="relative w-72">
@@ -254,7 +384,9 @@ export default function Contacts() {
               <TableBody>
                 {filteredContacts.map((contact) => (
                   <TableRow key={contact.id}>
-                    <TableCell className="font-medium">{contact.name}</TableCell>
+                    <TableCell className="font-medium">
+                      {renderEditableCell(contact, 'name', null, contact.name)}
+                    </TableCell>
                     <TableCell>
                       {getPrimaryEmail(contact.emails) ? (
                         <div className="flex items-center gap-1.5 text-sm">
@@ -271,23 +403,19 @@ export default function Contacts() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {contact.phone ? (
-                        <div className="flex items-center gap-1.5 text-sm">
-                          <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span>{contact.phone}</span>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
+                      {renderEditableCell(
+                        contact, 
+                        'phone', 
+                        <Phone className="h-3.5 w-3.5 text-muted-foreground" />,
+                        contact.phone
                       )}
                     </TableCell>
                     <TableCell>
-                      {contact.company ? (
-                        <div className="flex items-center gap-1.5 text-sm">
-                          <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span>{contact.company}</span>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
+                      {renderEditableCell(
+                        contact, 
+                        'company', 
+                        <Building2 className="h-3.5 w-3.5 text-muted-foreground" />,
+                        contact.company
                       )}
                     </TableCell>
                     <TableCell>

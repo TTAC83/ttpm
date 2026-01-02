@@ -7,12 +7,18 @@ export interface ContactEmail {
   is_primary: boolean;
 }
 
+export interface ContactCompany {
+  id: string;
+  name: string;
+  is_primary: boolean;
+}
+
 export interface Contact {
   id: string;
   name: string;
   phone: string | null;
-  company: string | null;
-  company_id: string | null;
+  company: string | null; // Primary company name for display
+  company_id: string | null; // Primary company id for display
   notes: string | null;
   emails: ContactEmail[];
   created_at: string;
@@ -20,6 +26,7 @@ export interface Contact {
   created_by: string | null;
   roles: { id: string; name: string }[];
   projects: { id: string; name: string; type: 'implementation' | 'solutions' }[];
+  companies?: ContactCompany[]; // All linked companies
 }
 
 interface MasterRole {
@@ -122,6 +129,10 @@ export function useContacts({ pageSize = 50 }: UseContactsOptions = {}) {
         // Parse roles from JSONB
         const roles = (contact.roles || []) as { id: string; name: string }[];
 
+        // Parse companies from JSONB (new multi-company support)
+        const companies = (contact.companies || []) as unknown as ContactCompany[];
+        const primaryCompany = companies.find(c => c.is_primary) || companies[0];
+
         // Combine implementation and solutions projects
         const implProjects = (contact.impl_projects || []) as { id: string; name: string; type: string }[];
         const solProjects = (contact.sol_projects || []) as { id: string; name: string; type: string }[];
@@ -135,15 +146,16 @@ export function useContacts({ pageSize = 50 }: UseContactsOptions = {}) {
           id: contact.id,
           name: contact.name,
           phone: contact.phone,
-          company: contact.company,
-          company_id: contact.company_id,
+          company: primaryCompany?.name || contact.company || null,
+          company_id: primaryCompany?.id || contact.company_id || null,
           notes: contact.notes,
           emails: parsedEmails,
           created_at: contact.created_at,
           updated_at: contact.updated_at,
           created_by: contact.created_by,
           roles,
-          projects
+          projects,
+          companies,
         };
       });
 

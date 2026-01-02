@@ -32,7 +32,7 @@ interface ContactsTableProps {
   onEdit: (contact: Contact) => void;
   onDelete: (contact: Contact) => void;
   onRefetch: () => void;
-  /** When true, shows unlink icon instead of delete (for project context) */
+  /** When true, shows unlink icon instead of delete and hides Projects column */
   isProjectContext?: boolean;
 }
 
@@ -250,7 +250,7 @@ export function ContactsTable({
           <TableHead>Phone</TableHead>
           <TableHead>Company</TableHead>
           <TableHead>Roles</TableHead>
-          <TableHead>Projects</TableHead>
+          {!isProjectContext && <TableHead>Projects</TableHead>}
           <TableHead className="w-[80px]">Actions</TableHead>
         </TableRow>
       </TableHeader>

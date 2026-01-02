@@ -36,9 +36,20 @@ export function generateTemplate(): string {
   return rows.map(row => row.map(cell => `"${(cell || '').replace(/"/g, '""')}"`).join(',')).join('\n');
 }
 
+// Format cell for Excel - prevents leading zeros from being stripped
+function formatCellForExcel(value: string, preserveLeadingZeros = false): string {
+  const escaped = (value || '').replace(/"/g, '""');
+  // Use Excel formula format for fields that might have leading zeros
+  if (preserveLeadingZeros && value && /^0\d/.test(value)) {
+    return `"=""${escaped}"""`;
+  }
+  return `"${escaped}"`;
+}
+
 // Export contacts to CSV format
 export function exportContactsToCsv(contacts: any[]): string {
-  const rows = [CSV_HEADERS];
+  const rows: string[][] = [];
+  rows.push(CSV_HEADERS);
   
   for (const contact of contacts) {
     const emails = contact.emails || [];
@@ -61,7 +72,10 @@ export function exportContactsToCsv(contacts: any[]): string {
     ]);
   }
   
-  return rows.map(row => row.map(cell => `"${(cell || '').replace(/"/g, '""')}"`).join(',')).join('\n');
+  // Format cells, preserving leading zeros for phone column (index 1)
+  return rows.map(row => 
+    row.map((cell, colIndex) => formatCellForExcel(cell, colIndex === 1)).join(',')
+  ).join('\n');
 }
 
 // Parse CSV file

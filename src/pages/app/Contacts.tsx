@@ -11,8 +11,8 @@ import { ContactDialog } from '@/components/contacts/ContactDialog';
 import { DeleteContactDialog } from '@/components/contacts/DeleteContactDialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { MultiSelectCombobox, MultiSelectOption } from '@/components/ui/multi-select-combobox';
 
 interface MasterRole {
   id: string;
@@ -70,11 +70,17 @@ export default function Contacts() {
   const [allCompanies, setAllCompanies] = useState<Company[]>([]);
   const [editingCompanyContactId, setEditingCompanyContactId] = useState<string | null>(null);
   const [savingCompany, setSavingCompany] = useState(false);
+  // Projects editing state
+  const [allProjects, setAllProjects] = useState<{ id: string; name: string; type: 'implementation' | 'solutions' }[]>([]);
+  const [editingProjectsContactId, setEditingProjectsContactId] = useState<string | null>(null);
+  const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
+  const [savingProjects, setSavingProjects] = useState(false);
 
   useEffect(() => {
     fetchContacts();
     fetchAllRoles();
     fetchAllCompanies();
+    fetchAllProjects();
   }, []);
 
   useEffect(() => {
@@ -109,6 +115,31 @@ export default function Contacts() {
       setAllCompanies(data || []);
     } catch (error) {
       console.error('Failed to fetch companies:', error);
+    }
+  };
+
+  const fetchAllProjects = async () => {
+    try {
+      const [projectsRes, solutionsRes] = await Promise.all([
+        supabase.from('projects').select('id, company_id, companies (name)').order('created_at', { ascending: false }),
+        supabase.from('solutions_projects').select('id, company_id, companies (name)').order('created_at', { ascending: false }),
+      ]);
+
+      const implProjects = (projectsRes.data || []).map(p => ({
+        id: p.id,
+        name: p.companies?.name || 'Unknown',
+        type: 'implementation' as const
+      }));
+
+      const solProjects = (solutionsRes.data || []).map(p => ({
+        id: p.id,
+        name: p.companies?.name || 'Unknown',
+        type: 'solutions' as const
+      }));
+
+      setAllProjects([...implProjects, ...solProjects]);
+    } catch (error) {
+      console.error('Failed to fetch projects:', error);
     }
   };
 
@@ -252,12 +283,8 @@ export default function Contacts() {
     setSelectedRoleIds(contact.roles?.map(r => r.id) || []);
   }, []);
 
-  const toggleRole = useCallback((roleId: string) => {
-    setSelectedRoleIds(prev => 
-      prev.includes(roleId) 
-        ? prev.filter(id => id !== roleId)
-        : [...prev, roleId]
-    );
+  const handleRolesChange = useCallback((newRoleIds: string[]) => {
+    setSelectedRoleIds(newRoleIds);
   }, []);
 
   const saveRoles = useCallback(async () => {
@@ -310,6 +337,74 @@ export default function Contacts() {
       setSavingRoles(false);
     }
   }, [editingRolesContactId, selectedRoleIds, allRoles, toast]);
+
+  // Projects editing functions
+  const startProjectsEdit = useCallback((contact: Contact) => {
+    setEditingProjectsContactId(contact.id);
+    setSelectedProjectIds(contact.projects?.map(p => p.id) || []);
+  }, []);
+
+  const handleProjectsChange = useCallback((newProjectIds: string[]) => {
+    setSelectedProjectIds(newProjectIds);
+  }, []);
+
+  const saveProjects = useCallback(async () => {
+    if (!editingProjectsContactId) return;
+
+    try {
+      setSavingProjects(true);
+      
+      // Delete existing project assignments
+      await supabase.from('contact_projects').delete().eq('contact_id', editingProjectsContactId);
+      await supabase.from('contact_solutions_projects').delete().eq('contact_id', editingProjectsContactId);
+
+      // Separate into implementation and solutions projects
+      const implProjectIds = allProjects
+        .filter(p => p.type === 'implementation' && selectedProjectIds.includes(p.id))
+        .map(p => p.id);
+      
+      const solProjectIds = allProjects
+        .filter(p => p.type === 'solutions' && selectedProjectIds.includes(p.id))
+        .map(p => p.id);
+
+      // Insert implementation projects
+      if (implProjectIds.length > 0) {
+        const { error } = await supabase
+          .from('contact_projects')
+          .insert(implProjectIds.map(pid => ({ contact_id: editingProjectsContactId, project_id: pid })));
+        if (error) throw error;
+      }
+
+      // Insert solutions projects
+      if (solProjectIds.length > 0) {
+        const { error } = await supabase
+          .from('contact_solutions_projects')
+          .insert(solProjectIds.map(pid => ({ contact_id: editingProjectsContactId, solutions_project_id: pid })));
+        if (error) throw error;
+      }
+
+      // Update local state
+      const newProjects = allProjects.filter(p => selectedProjectIds.includes(p.id));
+      setContacts(prev => prev.map(c => 
+        c.id === editingProjectsContactId ? { ...c, projects: newProjects } : c
+      ));
+
+      setEditingProjectsContactId(null);
+      
+      toast({
+        title: "Saved",
+        description: "Projects updated",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to update projects",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingProjects(false);
+    }
+  }, [editingProjectsContactId, selectedProjectIds, allProjects, toast]);
 
   // Company editing functions
   const startCompanyEdit = useCallback((contact: Contact) => {
@@ -730,31 +825,25 @@ export default function Contacts() {
                             )}
                           </div>
                         </PopoverTrigger>
-                        <PopoverContent className="w-56 p-2" align="start">
-                          <div className="space-y-2">
-                            <p className="text-sm font-medium mb-2">Select Roles</p>
-                            {allRoles.length === 0 ? (
-                              <p className="text-sm text-muted-foreground">No roles available</p>
-                            ) : (
-                              <div className="space-y-1 max-h-48 overflow-y-auto">
-                                {allRoles.map(role => (
-                                  <label 
-                                    key={role.id}
-                                    className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer"
-                                  >
-                                    <Checkbox
-                                      checked={selectedRoleIds.includes(role.id)}
-                                      onCheckedChange={() => toggleRole(role.id)}
-                                      disabled={savingRoles}
-                                    />
-                                    <span className="text-sm">{role.name}</span>
-                                  </label>
-                                ))}
-                              </div>
-                            )}
+                        <PopoverContent className="w-72 p-3" align="start">
+                          <div className="space-y-3">
+                            <p className="text-sm font-medium">Select Roles</p>
+                            <MultiSelectCombobox
+                              options={allRoles.map((role): MultiSelectOption => ({
+                                value: role.id,
+                                label: role.name,
+                              }))}
+                              selected={selectedRoleIds}
+                              onSelectionChange={handleRolesChange}
+                              placeholder="Search roles..."
+                              searchPlaceholder="Search roles..."
+                              emptyMessage="No roles found."
+                              disabled={savingRoles}
+                              maxDisplayed={2}
+                            />
                             <Button 
                               size="sm" 
-                              className="w-full mt-2"
+                              className="w-full"
                               onClick={saveRoles}
                               disabled={savingRoles}
                             >
@@ -765,26 +854,70 @@ export default function Contacts() {
                       </Popover>
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {contact.projects && contact.projects.length > 0 ? (
-                          contact.projects.slice(0, 2).map(project => (
-                            <Badge 
-                              key={project.id} 
-                              variant={project.type === 'implementation' ? 'default' : 'secondary'}
-                              className="text-xs"
+                      <Popover 
+                        open={editingProjectsContactId === contact.id} 
+                        onOpenChange={(open) => {
+                          if (!open && editingProjectsContactId === contact.id) {
+                            saveProjects();
+                          }
+                        }}
+                      >
+                        <PopoverTrigger asChild>
+                          <div 
+                            className="flex flex-wrap gap-1 cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5 -mx-1 transition-colors min-h-[24px]"
+                            onDoubleClick={() => startProjectsEdit(contact)}
+                          >
+                            {contact.projects && contact.projects.length > 0 ? (
+                              <>
+                                {contact.projects.slice(0, 2).map(project => (
+                                  <Badge 
+                                    key={project.id} 
+                                    variant={project.type === 'implementation' ? 'default' : 'secondary'}
+                                    className="text-xs"
+                                  >
+                                    {project.name}
+                                  </Badge>
+                                ))}
+                                {contact.projects.length > 2 && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    +{contact.projects.length - 2}
+                                  </Badge>
+                                )}
+                              </>
+                            ) : (
+                              <span className="text-muted-foreground italic text-sm">Double-click to add</span>
+                            )}
+                          </div>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-72 p-3" align="start">
+                          <div className="space-y-3">
+                            <p className="text-sm font-medium">Select Projects</p>
+                            <MultiSelectCombobox
+                              options={allProjects.map((project): MultiSelectOption => ({
+                                value: project.id,
+                                label: project.name,
+                                badge: project.type,
+                                badgeVariant: project.type === 'implementation' ? 'default' : 'secondary',
+                              }))}
+                              selected={selectedProjectIds}
+                              onSelectionChange={handleProjectsChange}
+                              placeholder="Search projects..."
+                              searchPlaceholder="Search projects..."
+                              emptyMessage="No projects found."
+                              disabled={savingProjects}
+                              maxDisplayed={2}
+                            />
+                            <Button 
+                              size="sm" 
+                              className="w-full"
+                              onClick={saveProjects}
+                              disabled={savingProjects}
                             >
-                              {project.name}
-                            </Badge>
-                          ))
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                        {contact.projects && contact.projects.length > 2 && (
-                          <Badge variant="secondary" className="text-xs">
-                            +{contact.projects.length - 2}
-                          </Badge>
-                        )}
-                      </div>
+                              {savingProjects ? 'Saving...' : 'Done'}
+                            </Button>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">

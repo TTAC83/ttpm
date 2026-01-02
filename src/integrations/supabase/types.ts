@@ -1316,6 +1316,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "contact_projects_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "v_contacts_enriched"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "contact_projects_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
@@ -1349,6 +1356,13 @@ export type Database = {
             columns: ["contact_id"]
             isOneToOne: false
             referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_role_assignments_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "v_contacts_enriched"
             referencedColumns: ["id"]
           },
           {
@@ -1412,6 +1426,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "contact_solutions_projects_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "v_contacts_enriched"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "contact_solutions_projects_solutions_project_id_fkey"
             columns: ["solutions_project_id"]
             isOneToOne: false
@@ -1423,6 +1444,7 @@ export type Database = {
       contacts: {
         Row: {
           company: string | null
+          company_id: string | null
           created_at: string
           created_by: string | null
           emails: Json
@@ -1434,6 +1456,7 @@ export type Database = {
         }
         Insert: {
           company?: string | null
+          company_id?: string | null
           created_at?: string
           created_by?: string | null
           emails?: Json
@@ -1445,6 +1468,7 @@ export type Database = {
         }
         Update: {
           company?: string | null
+          company_id?: string | null
           created_at?: string
           created_by?: string | null
           emails?: Json
@@ -1454,7 +1478,22 @@ export type Database = {
           phone?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "contacts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contacts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_impl_companies"
+            referencedColumns: ["company_id"]
+          },
+        ]
       }
       equipment: {
         Row: {
@@ -4867,6 +4906,69 @@ export type Database = {
           site_name: string | null
         }
         Relationships: []
+      }
+      v_contacts_enriched: {
+        Row: {
+          company: string | null
+          company_id: string | null
+          created_at: string | null
+          created_by: string | null
+          emails: Json | null
+          id: string | null
+          impl_projects: Json | null
+          name: string | null
+          notes: string | null
+          phone: string | null
+          roles: Json | null
+          sol_projects: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          company?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          emails?: Json | null
+          id?: string | null
+          impl_projects?: never
+          name?: string | null
+          notes?: string | null
+          phone?: string | null
+          roles?: never
+          sol_projects?: never
+          updated_at?: string | null
+        }
+        Update: {
+          company?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          emails?: Json | null
+          id?: string | null
+          impl_projects?: never
+          name?: string | null
+          notes?: string | null
+          phone?: string | null
+          roles?: never
+          sol_projects?: never
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contacts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contacts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_impl_companies"
+            referencedColumns: ["company_id"]
+          },
+        ]
       }
       v_distinct_customers: {
         Row: {

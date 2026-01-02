@@ -34,10 +34,33 @@ function parseCsvFile(file: File): Promise<ProjectContactCsvRow[]> {
         const workbook = XLSX.read(data, { type: 'binary' });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json<ProjectContactCsvRow>(worksheet, { defval: '' });
+        
+        // Get raw data to detect header row
+        const rawData = XLSX.utils.sheet_to_json<any>(worksheet, { header: 1, defval: '' });
+        
+        // Find the header row by looking for expected column names
+        const expectedHeaders = ['name', 'phone', 'primary_email', 'roles'];
+        let headerRowIndex = 0;
+        
+        for (let i = 0; i < Math.min(5, rawData.length); i++) {
+          const row = rawData[i] as string[];
+          const lowercaseRow = row.map(cell => String(cell).toLowerCase().trim());
+          const matchCount = expectedHeaders.filter(h => lowercaseRow.includes(h)).length;
+          if (matchCount >= 3) {
+            headerRowIndex = i;
+            break;
+          }
+        }
+        
+        // Parse with correct header row
+        const jsonData = XLSX.utils.sheet_to_json<ProjectContactCsvRow>(worksheet, { 
+          defval: '',
+          range: headerRowIndex // Skip rows before header
+        });
+        
         resolve(jsonData);
       } catch (error) {
-        reject(new Error('Failed to parse CSV file'));
+        reject(new Error('Failed to parse file. Please ensure it has the correct format.'));
       }
     };
     

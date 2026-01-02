@@ -1,13 +1,13 @@
 import { useState, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Search, Users, X, Download, Upload, FileDown } from 'lucide-react';
+import { Plus, Users, Download, Upload, FileDown } from 'lucide-react';
 import { ContactDialog } from '@/components/contacts/ContactDialog';
 import { DeleteContactDialog } from '@/components/contacts/DeleteContactDialog';
 import { ContactsTable } from '@/components/contacts/ContactsTable';
 import { ImportErrorsDialog } from '@/components/contacts/ImportErrorsDialog';
+import { SearchBar } from '@/components/shared/SearchBar';
 import { useContacts, Contact } from '@/hooks/useContacts';
 import { 
   exportContactsToCsv, 
@@ -213,24 +213,12 @@ export default function Contacts() {
                 {hasMore && <span className="ml-1">(more available)</span>}
               </CardDescription>
             </div>
-            <div className="relative w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search contacts..."
+            <div className="relative">
+              <SearchBar
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-9"
+                onChange={setSearchQuery}
+                placeholder="Search contacts..."
               />
-              {searchQuery && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
-                  onClick={() => setSearchQuery('')}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              )}
             </div>
           </div>
         </CardHeader>

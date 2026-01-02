@@ -58,7 +58,7 @@ interface ContactRowProps {
   onStartCompanyEdit: (contact: Contact) => void;
   onSelectCompany: (id: string | null) => void;
   onCancelCompanyEdit: () => void;
-  // Projects editing
+  // Projects editing (hidden in project context)
   editingProjectsContactId: string | null;
   selectedProjectIds: string[];
   savingProjects: boolean;
@@ -298,72 +298,74 @@ export function ContactRow({
         )}
       </TableCell>
 
-      {/* Projects */}
-      <TableCell>
-        {isEditingProjects ? (
-          <div className="space-y-2">
-            <MultiSelectCombobox
-              options={allProjects.map((project): MultiSelectOption => ({
-                value: project.id,
-                label: project.name,
-                badge: project.type,
-                badgeVariant: project.type === 'implementation' ? 'default' : 'secondary',
-              }))}
-              selected={selectedProjectIds}
-              onSelectionChange={onProjectsChange}
-              placeholder="Select projects..."
-              searchPlaceholder="Search projects..."
-              emptyMessage="No projects found."
-              inline
-            />
-            <div className="flex gap-1">
-              <Button size="sm" variant="default" onClick={onSaveProjects} disabled={savingProjects}>
-                Done
-              </Button>
-              <Button size="sm" variant="ghost" onClick={onCancelProjectsEdit}>
-                Cancel
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div 
-                className="group flex flex-wrap gap-1 cursor-pointer hover:bg-muted/30 rounded p-1 -m-1 transition-colors min-h-[24px]"
-                onClick={() => onStartProjectsEdit(contact)}
-              >
-                {contact.projects && contact.projects.length > 0 ? (
-                  <>
-                    {contact.projects.slice(0, 2).map(project => (
-                      <Badge 
-                        key={project.id} 
-                        variant={project.type === 'implementation' ? 'default' : 'secondary'}
-                        className="text-xs"
-                      >
-                        {project.name}
-                      </Badge>
-                    ))}
-                    {contact.projects.length > 2 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{contact.projects.length - 2}
-                      </Badge>
-                    )}
-                    <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity self-center" />
-                  </>
-                ) : (
-                  <>
-                    <span className="text-muted-foreground italic text-sm">Click to add</span>
-                    <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
-                  </>
-                )}
+      {/* Projects - hidden in project context */}
+      {!isProjectContext && (
+        <TableCell>
+          {isEditingProjects ? (
+            <div className="space-y-2">
+              <MultiSelectCombobox
+                options={allProjects.map((project): MultiSelectOption => ({
+                  value: project.id,
+                  label: project.name,
+                  badge: project.type,
+                  badgeVariant: project.type === 'implementation' ? 'default' : 'secondary',
+                }))}
+                selected={selectedProjectIds}
+                onSelectionChange={onProjectsChange}
+                placeholder="Select projects..."
+                searchPlaceholder="Search projects..."
+                emptyMessage="No projects found."
+                inline
+              />
+              <div className="flex gap-1">
+                <Button size="sm" variant="default" onClick={onSaveProjects} disabled={savingProjects}>
+                  Done
+                </Button>
+                <Button size="sm" variant="ghost" onClick={onCancelProjectsEdit}>
+                  Cancel
+                </Button>
               </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Click to edit projects</p>
-            </TooltipContent>
-          </Tooltip>
-        )}
-      </TableCell>
+            </div>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div 
+                  className="group flex flex-wrap gap-1 cursor-pointer hover:bg-muted/30 rounded p-1 -m-1 transition-colors min-h-[24px]"
+                  onClick={() => onStartProjectsEdit(contact)}
+                >
+                  {contact.projects && contact.projects.length > 0 ? (
+                    <>
+                      {contact.projects.slice(0, 2).map(project => (
+                        <Badge 
+                          key={project.id} 
+                          variant={project.type === 'implementation' ? 'default' : 'secondary'}
+                          className="text-xs"
+                        >
+                          {project.name}
+                        </Badge>
+                      ))}
+                      {contact.projects.length > 2 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{contact.projects.length - 2}
+                        </Badge>
+                      )}
+                      <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity self-center" />
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-muted-foreground italic text-sm">Click to add</span>
+                      <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
+                    </>
+                  )}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Click to edit projects</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </TableCell>
+      )}
 
       {/* Actions */}
       <TableCell>

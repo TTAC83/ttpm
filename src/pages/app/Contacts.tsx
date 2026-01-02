@@ -840,6 +840,7 @@ export default function Contacts() {
                               emptyMessage="No roles found."
                               disabled={savingRoles}
                               maxDisplayed={2}
+                              open={editingRolesContactId === contact.id}
                             />
                             <Button 
                               size="sm" 
@@ -906,6 +907,7 @@ export default function Contacts() {
                               emptyMessage="No projects found."
                               disabled={savingProjects}
                               maxDisplayed={2}
+                              open={editingProjectsContactId === contact.id}
                             />
                             <Button 
                               size="sm" 

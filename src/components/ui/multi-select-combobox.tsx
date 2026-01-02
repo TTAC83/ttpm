@@ -34,6 +34,8 @@ interface MultiSelectComboboxProps {
   className?: string;
   disabled?: boolean;
   maxDisplayed?: number;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function MultiSelectCombobox({
@@ -46,8 +48,20 @@ export function MultiSelectCombobox({
   className,
   disabled = false,
   maxDisplayed = 3,
+  open: controlledOpen,
+  onOpenChange,
 }: MultiSelectComboboxProps) {
-  const [open, setOpen] = React.useState(false);
+  const [internalOpen, setInternalOpen] = React.useState(false);
+  
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!isControlled) {
+      setInternalOpen(newOpen);
+    }
+    onOpenChange?.(newOpen);
+  };
 
   const selectedOptions = options.filter((opt) => selected.includes(opt.value));
 
@@ -65,7 +79,7 @@ export function MultiSelectCombobox({
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"

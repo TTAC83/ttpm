@@ -6,13 +6,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Search, Users, Mail, Phone, Building2, Edit, Trash2, X, Check } from 'lucide-react';
+import { Plus, Search, Users, Mail, Phone, Building2, Edit, Trash2, X, Check, Download, Upload, FileDown } from 'lucide-react';
 import { ContactDialog } from '@/components/contacts/ContactDialog';
 import { DeleteContactDialog } from '@/components/contacts/DeleteContactDialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { MultiSelectCombobox, MultiSelectOption } from '@/components/ui/multi-select-combobox';
+import { 
+  exportContactsToCsv, 
+  generateTemplate, 
+  parseCsvFile, 
+  importContacts, 
+  downloadCsv 
+} from '@/lib/contactsCsvService';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface MasterRole {
   id: string;
@@ -75,6 +88,9 @@ export default function Contacts() {
   const [editingProjectsContactId, setEditingProjectsContactId] = useState<string | null>(null);
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
   const [savingProjects, setSavingProjects] = useState(false);
+  // CSV import state
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchContacts();
@@ -614,8 +630,83 @@ export default function Contacts() {
     );
   };
 
+  // CSV Export/Import functions
+  const handleExportCsv = useCallback(() => {
+    const dataToExport = searchQuery ? filteredContacts : contacts;
+    const csv = exportContactsToCsv(dataToExport);
+    const filename = `contacts_${new Date().toISOString().split('T')[0]}.csv`;
+    downloadCsv(csv, filename);
+    toast({
+      title: "Export Complete",
+      description: `${dataToExport.length} contacts exported`,
+    });
+  }, [contacts, filteredContacts, searchQuery, toast]);
+
+  const handleDownloadTemplate = useCallback(() => {
+    const csv = generateTemplate();
+    downloadCsv(csv, 'contacts_template.csv');
+    toast({
+      title: "Template Downloaded",
+      description: "Use this template to import contacts",
+    });
+  }, [toast]);
+
+  const handleImportCsv = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setImporting(true);
+      const rows = await parseCsvFile(file);
+      
+      if (rows.length === 0) {
+        toast({
+          title: "Empty File",
+          description: "The CSV file contains no data rows",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const result = await importContacts(rows, allCompanies, allRoles);
+
+      if (result.success > 0) {
+        await fetchContacts();
+      }
+
+      if (result.errors.length > 0) {
+        console.error('Import errors:', result.errors);
+      }
+
+      toast({
+        title: "Import Complete",
+        description: `${result.success} imported, ${result.failed} failed${result.errors.length > 0 ? '. Check console for details.' : ''}`,
+        variant: result.failed > 0 ? "destructive" : "default",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Import Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  }, [allCompanies, allRoles, toast, fetchContacts]);
+
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".csv,.xlsx,.xls"
+        onChange={handleImportCsv}
+        className="hidden"
+      />
+      
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Users className="h-8 w-8 text-primary" />
@@ -624,10 +715,38 @@ export default function Contacts() {
             <p className="text-muted-foreground">Manage contacts across all projects</p>
           </div>
         </div>
-        <Button onClick={openCreateDialog}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Contact
-        </Button>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" disabled={importing}>
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-background">
+              <DropdownMenuItem onClick={handleExportCsv} disabled={contacts.length === 0}>
+                <FileDown className="h-4 w-4 mr-2" />
+                Export {searchQuery ? 'Filtered' : 'All'} Contacts
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleDownloadTemplate}>
+                <FileDown className="h-4 w-4 mr-2" />
+                Download Template
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button 
+            variant="outline" 
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importing}
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            {importing ? 'Importing...' : 'Import'}
+          </Button>
+          <Button onClick={openCreateDialog}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Contact
+          </Button>
+        </div>
       </div>
 
       <Card>

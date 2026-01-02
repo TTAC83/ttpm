@@ -1,18 +1,18 @@
 import { useState, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Search, Users, X, Download, Upload, FileDown, Unlink } from 'lucide-react';
+import { Plus, Users, Download, Upload, FileDown, Unlink, UserPlus } from 'lucide-react';
 import { ProjectContactDialog } from '@/components/contacts/ProjectContactDialog';
 import { DeleteContactDialog } from '@/components/contacts/DeleteContactDialog';
 import { ContactsTable } from '@/components/contacts/ContactsTable';
 import { ImportErrorsDialog } from '@/components/contacts/ImportErrorsDialog';
+import { LinkExistingContactDialog } from '@/components/contacts/LinkExistingContactDialog';
+import { SearchBar } from '@/components/shared/SearchBar';
 import { useProjectContacts } from '@/hooks/useProjectContacts';
 import { Contact } from '@/hooks/useContacts';
 import { 
   exportContactsToCsv, 
-  generateTemplate, 
   downloadCsv,
 } from '@/lib/contactsCsvService';
 import { importProjectContacts, ImportResult } from '@/lib/projectContactsCsvService';
@@ -60,6 +60,7 @@ export function ProjectContacts({ projectId, projectType, companyId, companyName
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [unlinkDialogOpen, setUnlinkDialogOpen] = useState(false);
+  const [linkExistingOpen, setLinkExistingOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [contactToDelete, setContactToDelete] = useState<Contact | null>(null);
   const [contactToUnlink, setContactToUnlink] = useState<Contact | null>(null);
@@ -261,30 +262,26 @@ export function ProjectContacts({ projectId, projectType, companyId, companyName
                 <Upload className="h-4 w-4 mr-2" />
                 {importing ? 'Importing...' : 'Import'}
               </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setLinkExistingOpen(true)}
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Link Existing
+              </Button>
               <Button size="sm" onClick={openCreateDialog}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Contact
+                Add New
               </Button>
             </div>
           </div>
-          <div className="relative w-72 mt-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search contacts..."
+          <div className="mt-4">
+            <SearchBar
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-9"
+              onChange={setSearchQuery}
+              placeholder="Search contacts..."
             />
-            {searchQuery && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
-                onClick={() => setSearchQuery('')}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -342,6 +339,17 @@ export function ProjectContacts({ projectId, projectType, companyId, companyName
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <LinkExistingContactDialog
+        open={linkExistingOpen}
+        onOpenChange={setLinkExistingOpen}
+        projectId={projectId}
+        projectType={projectType}
+        companyId={companyId}
+        companyName={companyName}
+        existingContactIds={contacts.map(c => c.id)}
+        onLinked={refetch}
+      />
 
       <ImportErrorsDialog
         open={importErrorsOpen}

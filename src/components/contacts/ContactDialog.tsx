@@ -5,15 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, X, Star } from 'lucide-react';
 import { Contact, ContactEmail } from '@/pages/app/Contacts';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Combobox } from '@/components/ui/combobox';
-
+import { MultiSelectCombobox, MultiSelectOption } from '@/components/ui/multi-select-combobox';
 interface Company {
   id: string;
   name: string;
@@ -409,39 +407,28 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
               <p className="text-sm text-muted-foreground mb-3">
                 Select one or more roles for this contact
               </p>
-              <ScrollArea className="h-[300px] border rounded-md p-3">
-                {availableRoles.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No roles available. Create roles in Master Data first.
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {availableRoles.map((role) => (
-                      <div
-                        key={role.id}
-                        className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50"
-                      >
-                        <Checkbox
-                          id={`role-${role.id}`}
-                          checked={selectedRoleIds.has(role.id)}
-                          onCheckedChange={() => toggleRole(role.id)}
-                        />
-                        <div className="flex-1">
-                          <label
-                            htmlFor={`role-${role.id}`}
-                            className="text-sm font-medium cursor-pointer"
-                          >
-                            {role.name}
-                          </label>
-                          {role.description && (
-                            <p className="text-xs text-muted-foreground">{role.description}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
+              {availableRoles.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4 border rounded-md">
+                  No roles available. Create roles in Master Data first.
+                </p>
+              ) : (
+                <MultiSelectCombobox
+                  options={availableRoles.map((role): MultiSelectOption => ({
+                    value: role.id,
+                    label: role.name,
+                  }))}
+                  selected={Array.from(selectedRoleIds)}
+                  onSelectionChange={(ids) => setSelectedRoleIds(new Set(ids))}
+                  placeholder="Search and select roles..."
+                  searchPlaceholder="Search roles..."
+                  emptyMessage="No roles found."
+                />
+              )}
+              {selectedRoleIds.size > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {selectedRoleIds.size} role{selectedRoleIds.size !== 1 ? 's' : ''} selected
+                </p>
+              )}
             </div>
           </TabsContent>
 
@@ -451,39 +438,30 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
               <p className="text-sm text-muted-foreground mb-3">
                 Select projects this contact is associated with
               </p>
-              <ScrollArea className="h-[300px] border rounded-md p-3">
-                {availableProjects.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No projects available.
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {availableProjects.map((project) => (
-                      <div
-                        key={project.id}
-                        className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50"
-                      >
-                        <Checkbox
-                          id={`project-${project.id}`}
-                          checked={selectedProjectIds.has(project.id)}
-                          onCheckedChange={() => toggleProject(project.id)}
-                        />
-                        <div className="flex-1 flex items-center gap-2">
-                          <label
-                            htmlFor={`project-${project.id}`}
-                            className="text-sm font-medium cursor-pointer"
-                          >
-                            {project.name}
-                          </label>
-                          <Badge variant={project.type === 'implementation' ? 'default' : 'secondary'} className="text-xs">
-                            {project.type}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
+              {availableProjects.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4 border rounded-md">
+                  No projects available.
+                </p>
+              ) : (
+                <MultiSelectCombobox
+                  options={availableProjects.map((project): MultiSelectOption => ({
+                    value: project.id,
+                    label: project.name,
+                    badge: project.type,
+                    badgeVariant: project.type === 'implementation' ? 'default' : 'secondary',
+                  }))}
+                  selected={Array.from(selectedProjectIds)}
+                  onSelectionChange={(ids) => setSelectedProjectIds(new Set(ids))}
+                  placeholder="Search and select projects..."
+                  searchPlaceholder="Search projects..."
+                  emptyMessage="No projects found."
+                />
+              )}
+              {selectedProjectIds.size > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {selectedProjectIds.size} project{selectedProjectIds.size !== 1 ? 's' : ''} selected
+                </p>
+              )}
             </div>
           </TabsContent>
         </Tabs>

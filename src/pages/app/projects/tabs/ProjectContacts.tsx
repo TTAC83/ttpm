@@ -306,6 +306,7 @@ export function ProjectContacts({ projectId, projectType, companyId, companyName
               onEdit={openEditDialog}
               onDelete={openUnlinkDialog}
               onRefetch={refetch}
+              isProjectContext={true}
             />
           )}
         </CardContent>

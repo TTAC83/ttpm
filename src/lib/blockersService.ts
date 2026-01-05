@@ -330,7 +330,33 @@ export const blockersService = {
 
   // Upload attachment
   async uploadAttachment(blockerId: string, file: File) {
-    const filePath = `blockers/${blockerId}/${file.name}`;
+    // Validate file type - whitelist allowed MIME types
+    const allowedMimeTypes = [
+      'application/pdf',
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // xlsx
+      'application/vnd.ms-excel', // xls
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // docx
+      'application/msword', // doc
+      'text/plain',
+      'text/csv'
+    ];
+    
+    if (!allowedMimeTypes.includes(file.type)) {
+      throw new Error('File type not allowed. Please upload PDF, images, Office documents, or text files.');
+    }
+    
+    // Validate file size (10MB max)
+    const maxSizeBytes = 10 * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      throw new Error('File size exceeds 10MB limit.');
+    }
+    
+    // Sanitize file name to prevent path traversal and special character issues
+    const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const filePath = `blockers/${blockerId}/${Date.now()}_${sanitizedName}`;
     
     // Upload to storage
     const { error: uploadError } = await supabase.storage
@@ -345,7 +371,7 @@ export const blockersService = {
       .insert([{
         blocker_id: blockerId,
         file_path: filePath,
-        file_name: file.name,
+        file_name: file.name, // Store original name for display
         mime_type: file.type,
         size_bytes: file.size,
         uploaded_by: (await supabase.auth.getUser()).data.user?.id

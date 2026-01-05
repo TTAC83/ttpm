@@ -8,6 +8,7 @@ export interface ContactFilters {
   roles: string[];
   company: string[];
   projects: string[];
+  showArchived: boolean;
 }
 
 export interface ContactSort {
@@ -19,8 +20,9 @@ export interface UseContactsFiltersReturn {
   filters: ContactFilters;
   sort: ContactSort;
   setSearch: (value: string) => void;
-  setFilter: (key: keyof Omit<ContactFilters, 'search'>, values: string[]) => void;
+  setFilter: (key: keyof Omit<ContactFilters, 'search' | 'showArchived'>, values: string[]) => void;
   setSort: (column: ContactSortColumn, direction: SortDirection) => void;
+  setShowArchived: (value: boolean) => void;
   clearFilters: () => void;
   hasActiveFilters: boolean;
 }
@@ -30,6 +32,7 @@ const initialFilters: ContactFilters = {
   roles: [],
   company: [],
   projects: [],
+  showArchived: false,
 };
 
 const initialSort: ContactSort = {
@@ -45,12 +48,16 @@ export function useContactsFilters(): UseContactsFiltersReturn {
     setFilters(prev => ({ ...prev, search: value }));
   }, []);
 
-  const setFilter = useCallback((key: keyof Omit<ContactFilters, 'search'>, values: string[]) => {
+  const setFilter = useCallback((key: keyof Omit<ContactFilters, 'search' | 'showArchived'>, values: string[]) => {
     setFilters(prev => ({ ...prev, [key]: values }));
   }, []);
 
   const setSortColumn = useCallback((column: ContactSortColumn, direction: SortDirection) => {
     setSort({ column: direction ? column : null, direction });
+  }, []);
+
+  const setShowArchived = useCallback((value: boolean) => {
+    setFilters(prev => ({ ...prev, showArchived: value }));
   }, []);
 
   const clearFilters = useCallback(() => {
@@ -72,6 +79,7 @@ export function useContactsFilters(): UseContactsFiltersReturn {
     setSearch,
     setFilter,
     setSort: setSortColumn,
+    setShowArchived,
     clearFilters,
     hasActiveFilters,
   };

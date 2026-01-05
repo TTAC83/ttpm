@@ -203,7 +203,7 @@ export function useContacts({
           roles,
           projects,
           companies,
-          archived_at: contact.archived_at || null,
+          archived_at: (contact as any).archived_at || null,
         };
       });
 

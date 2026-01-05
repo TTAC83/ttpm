@@ -33,6 +33,7 @@ interface ContactsTableProps {
   onUpdate: (contactId: string, updates: Partial<Contact>) => void;
   onEdit: (contact: Contact) => void;
   onDelete: (contact: Contact) => void;
+  onArchive?: (contact: Contact) => void;
   onRefetch: () => void;
   /** When true, shows unlink icon instead of delete and hides Projects column */
   isProjectContext?: boolean;
@@ -41,7 +42,7 @@ interface ContactsTableProps {
   /** Sort state from parent */
   sort?: ContactSort;
   /** Callback to update filters */
-  onFilterChange?: (key: keyof Omit<ContactFilters, 'search'>, values: string[]) => void;
+  onFilterChange?: (key: keyof Omit<ContactFilters, 'search' | 'showArchived'>, values: string[]) => void;
   /** Callback to update sort */
   onSortChange?: (column: ContactSortColumn, direction: SortDirection) => void;
 }
@@ -54,6 +55,7 @@ export function ContactsTable({
   onUpdate,
   onEdit,
   onDelete,
+  onArchive,
   onRefetch,
   isProjectContext = false,
   filters,
@@ -371,6 +373,7 @@ export function ContactsTable({
             // Actions
             onEdit={onEdit}
             onDelete={onDelete}
+            onArchive={onArchive}
           />
         ))}
       </TableBody>

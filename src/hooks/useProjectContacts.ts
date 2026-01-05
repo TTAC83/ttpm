@@ -112,6 +112,7 @@ export function useProjectContacts({ projectId, projectType, companyId }: UsePro
           roles,
           projects,
           companies,
+          archived_at: (contact as any).archived_at || null,
         };
       });
 

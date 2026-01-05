@@ -1,8 +1,11 @@
 import { useState, useCallback, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Users, Download, Upload, FileDown } from 'lucide-react';
+import { Plus, Users, Download, Upload, FileDown, Archive } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { ContactDialog } from '@/components/contacts/ContactDialog';
 import { DeleteContactDialog } from '@/components/contacts/DeleteContactDialog';
 import { ContactsTable } from '@/components/contacts/ContactsTable';
@@ -38,6 +41,7 @@ export default function Contacts() {
     setSearch, 
     setFilter, 
     setSort, 
+    setShowArchived,
     hasActiveFilters 
   } = useContactsFilters();
 
@@ -92,6 +96,42 @@ export default function Contacts() {
     setContactToDelete(null);
     refetch();
   };
+
+  // Archive/Unarchive handler
+  const handleArchive = useCallback(async (contact: Contact) => {
+    const isCurrentlyArchived = !!contact.archived_at;
+    const newArchivedAt = isCurrentlyArchived ? null : new Date().toISOString();
+    
+    try {
+      const { error } = await supabase
+        .from('contacts')
+        .update({ archived_at: newArchivedAt })
+        .eq('id', contact.id);
+
+      if (error) throw error;
+
+      // Update local state
+      updateContactLocal(contact.id, { archived_at: newArchivedAt });
+
+      toast({
+        title: isCurrentlyArchived ? "Contact restored" : "Contact archived",
+        description: isCurrentlyArchived 
+          ? `${contact.name} has been restored` 
+          : `${contact.name} has been archived`,
+      });
+
+      // If we just archived and not showing archived, refetch to remove from list
+      if (!isCurrentlyArchived && !filters.showArchived) {
+        refetch();
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: `Failed to ${isCurrentlyArchived ? 'restore' : 'archive'} contact`,
+        variant: "destructive",
+      });
+    }
+  }, [filters.showArchived, refetch, toast, updateContactLocal]);
 
   // CSV Export/Import functions
   const handleExportCsv = useCallback(() => {
@@ -221,9 +261,21 @@ export default function Contacts() {
                 {contacts.length} of {totalCount} contact{totalCount !== 1 ? 's' : ''} 
                 {hasMore && <span className="ml-1">(more available)</span>}
                 {hasActiveFilters && <span className="ml-1 text-primary">(filtered)</span>}
+                {filters.showArchived && <span className="ml-1 text-muted-foreground">(including archived)</span>}
               </CardDescription>
             </div>
-            <div className="relative">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="show-archived"
+                  checked={filters.showArchived}
+                  onCheckedChange={setShowArchived}
+                />
+                <Label htmlFor="show-archived" className="text-sm text-muted-foreground flex items-center gap-1">
+                  <Archive className="h-3.5 w-3.5" />
+                  Show archived
+                </Label>
+              </div>
               <SearchBar
                 value={filters.search}
                 onChange={setSearch}
@@ -250,6 +302,7 @@ export default function Contacts() {
               onUpdate={updateContactLocal}
               onEdit={openEditDialog}
               onDelete={openDeleteDialog}
+              onArchive={handleArchive}
               onRefetch={refetch}
               filters={filters}
               sort={sort}

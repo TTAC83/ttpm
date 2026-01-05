@@ -6,9 +6,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { MultiSelectCombobox, MultiSelectOption } from '@/components/ui/multi-select-combobox';
-import { Edit, Trash2, Mail, Phone, Building2, Check, Pencil, Unlink } from 'lucide-react';
+import { Edit, Trash2, Mail, Phone, Building2, Check, Pencil, Unlink, Archive, ArchiveRestore } from 'lucide-react';
 import { Contact, ContactEmail } from '@/hooks/useContacts';
 import { EditableField } from '@/hooks/useContactInlineEdit';
+import { cn } from '@/lib/utils';
 
 interface MasterRole {
   id: string;
@@ -69,6 +70,7 @@ interface ContactRowProps {
   // Actions
   onEdit: (contact: Contact) => void;
   onDelete: (contact: Contact) => void;
+  onArchive?: (contact: Contact) => void;
 }
 
 export function ContactRow({
@@ -99,8 +101,10 @@ export function ContactRow({
   onCancelProjectsEdit,
   onEdit,
   onDelete,
+  onArchive,
 }: ContactRowProps) {
   const { editing, saving, inputRef, startEdit, updateValue, saveEdit, handleKeyDown, getPrimaryEmail } = inlineEdit;
+  const isArchived = !!contact.archived_at;
 
   const renderEditableCell = (
     field: EditableField,
@@ -159,10 +163,18 @@ export function ContactRow({
   const isEditingProjects = editingProjectsContactId === contact.id;
 
   return (
-    <TableRow>
+    <TableRow className={cn(isArchived && "opacity-60 bg-muted/30")}>
       {/* Name */}
       <TableCell className="font-medium">
-        {renderEditableCell('name', null, contact.name)}
+        <div className="flex items-center gap-2">
+          {renderEditableCell('name', null, contact.name)}
+          {isArchived && (
+            <Badge variant="outline" className="text-xs text-muted-foreground">
+              <Archive className="h-3 w-3 mr-1" />
+              Archived
+            </Badge>
+          )}
+        </div>
       </TableCell>
 
       {/* Email */}
@@ -383,6 +395,25 @@ export function ContactRow({
             </TooltipTrigger>
             <TooltipContent>Edit all details</TooltipContent>
           </Tooltip>
+          {onArchive && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => onArchive(contact)}
+                >
+                  {isArchived ? (
+                    <ArchiveRestore className="h-4 w-4" />
+                  ) : (
+                    <Archive className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{isArchived ? 'Restore contact' : 'Archive contact'}</TooltipContent>
+            </Tooltip>
+          )}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button

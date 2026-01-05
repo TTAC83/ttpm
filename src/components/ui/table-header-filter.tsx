@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown, Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -7,8 +7,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Checkbox } from '@/components/ui/checkbox';
+import { MultiSelectCombobox, MultiSelectOption } from '@/components/ui/multi-select-combobox';
 import { cn } from '@/lib/utils';
 
 export type SortDirection = 'asc' | 'desc' | null;
@@ -42,40 +41,14 @@ export function TableHeaderFilter({
   className,
 }: TableHeaderFilterProps) {
   const [open, setOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
 
   const hasActiveFilter = selectedValues.length > 0;
 
-  // Sort options: selected first, then alphabetically
-  const sortedOptions = useMemo(() => {
-    return [...options].sort((a, b) => {
-      const aSelected = selectedValues.includes(a.value);
-      const bSelected = selectedValues.includes(b.value);
-      if (aSelected && !bSelected) return -1;
-      if (!aSelected && bSelected) return 1;
-      return a.label.localeCompare(b.label);
-    });
-  }, [options, selectedValues]);
-
-  const filteredOptions = useMemo(() => {
-    if (!searchQuery.trim()) return sortedOptions;
-    return sortedOptions.filter(opt => 
-      opt.label.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [sortedOptions, searchQuery]);
-
-  const toggleOption = (value: string) => {
-    if (!onFilterChange) return;
-    const newValues = selectedValues.includes(value)
-      ? selectedValues.filter(v => v !== value)
-      : [...selectedValues, value];
-    onFilterChange(newValues);
-  };
-
-  const clearFilter = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onFilterChange?.([]);
-  };
+  // Convert to MultiSelectOption format
+  const multiSelectOptions: MultiSelectOption[] = options.map(opt => ({
+    value: opt.value,
+    label: opt.label,
+  }));
 
   const handleSortClick = () => {
     if (!onSortChange) return;
@@ -86,6 +59,11 @@ export function TableHeaderFilter({
     } else {
       onSortChange(null);
     }
+  };
+
+  const clearFilter = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onFilterChange?.([]);
   };
 
   const SortIcon = sortDirection === 'asc' 
@@ -119,7 +97,7 @@ export function TableHeaderFilter({
               variant="ghost"
               size="sm"
               className={cn(
-                "h-6 w-6 p-0",
+                "h-6 w-6 p-0 relative",
                 hasActiveFilter && "text-primary"
               )}
             >
@@ -137,16 +115,10 @@ export function TableHeaderFilter({
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-64 p-0" align="start">
-            <Command shouldFilter={false}>
-              <div className="flex items-center border-b px-3">
-                <CommandInput 
-                  placeholder={`Search ${label.toLowerCase()}...`}
-                  value={searchQuery}
-                  onValueChange={setSearchQuery}
-                  className="border-0 focus:ring-0"
-                />
-                {hasActiveFilter && (
+          <PopoverContent className="w-64 p-0 bg-background" align="start">
+            <div className="flex flex-col">
+              {hasActiveFilter && (
+                <div className="flex justify-end p-2 border-b">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -154,38 +126,20 @@ export function TableHeaderFilter({
                     onClick={clearFilter}
                   >
                     <X className="h-3 w-3 mr-1" />
-                    Clear
+                    Clear all
                   </Button>
-                )}
-              </div>
-              <CommandList>
-                <CommandEmpty>No results found.</CommandEmpty>
-                <CommandGroup className="max-h-64 overflow-auto">
-                  {filteredOptions.map((option) => {
-                    const isSelected = selectedValues.includes(option.value);
-                    return (
-                      <CommandItem
-                        key={option.value}
-                        value={option.label}
-                        onSelect={() => toggleOption(option.value)}
-                        className="flex items-center gap-2 cursor-pointer"
-                      >
-                        <Checkbox 
-                          checked={isSelected}
-                          className="pointer-events-none"
-                        />
-                        <span className={cn(
-                          "flex-1 truncate",
-                          isSelected && "font-medium"
-                        )}>
-                          {option.label}
-                        </span>
-                      </CommandItem>
-                    );
-                  })}
-                </CommandGroup>
-              </CommandList>
-            </Command>
+                </div>
+              )}
+              <MultiSelectCombobox
+                inline
+                options={multiSelectOptions}
+                selected={selectedValues}
+                onSelectionChange={(values) => onFilterChange?.(values)}
+                searchPlaceholder={`Search ${label.toLowerCase()}...`}
+                emptyMessage="No results found."
+                className="border-0 rounded-none"
+              />
+            </div>
           </PopoverContent>
         </Popover>
       )}

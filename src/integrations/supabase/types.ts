@@ -1496,6 +1496,8 @@ export type Database = {
       }
       contacts: {
         Row: {
+          archived_at: string | null
+          archived_by: string | null
           company: string | null
           company_id: string | null
           created_at: string
@@ -1508,6 +1510,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived_at?: string | null
+          archived_by?: string | null
           company?: string | null
           company_id?: string | null
           created_at?: string
@@ -1520,6 +1524,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived_at?: string | null
+          archived_by?: string | null
           company?: string | null
           company_id?: string | null
           created_at?: string

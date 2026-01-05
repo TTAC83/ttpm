@@ -28,6 +28,7 @@ export interface Contact {
   roles: { id: string; name: string }[];
   projects: { id: string; name: string; type: 'implementation' | 'solutions' }[];
   companies?: ContactCompany[];
+  archived_at: string | null;
 }
 
 interface MasterRole {
@@ -133,6 +134,12 @@ export function useContacts({
         .from('v_contacts_enriched')
         .select('*');
 
+      // Apply archived filter - by default hide archived contacts
+      if (!filters?.showArchived) {
+        countQuery = countQuery.is('archived_at', null);
+        dataQuery = dataQuery.is('archived_at', null);
+      }
+
       // Apply search filter (searches name, company, phone)
       if (filters?.search?.trim()) {
         const searchTerm = `%${filters.search.trim()}%`;
@@ -196,6 +203,7 @@ export function useContacts({
           roles,
           projects,
           companies,
+          archived_at: contact.archived_at || null,
         };
       });
 

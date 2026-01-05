@@ -166,7 +166,7 @@ export function TableHeaderFilter({
                     return (
                       <CommandItem
                         key={option.value}
-                        value={option.value}
+                        value={option.label}
                         onSelect={() => toggleOption(option.value)}
                         className="flex items-center gap-2 cursor-pointer"
                       >

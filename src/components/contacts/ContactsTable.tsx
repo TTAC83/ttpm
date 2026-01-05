@@ -25,7 +25,7 @@ interface Project {
   type: 'implementation' | 'solutions';
 }
 
-type ContactColumn = 'name' | 'roles' | 'company' | 'projects';
+type ContactColumn = 'name' | 'email' | 'phone' | 'roles' | 'company' | 'projects';
 
 interface ContactsTableProps {
   contacts: Contact[];
@@ -56,7 +56,7 @@ export function ContactsTable({
 
   // Table filtering and sorting
   const { filters, sort, setFilter, setSort } = useTableFilters<ContactColumn>({
-    columns: ['name', 'roles', 'company', 'projects'],
+    columns: ['name', 'email', 'phone', 'roles', 'company', 'projects'],
   });
 
   // Build filter options from data
@@ -107,6 +107,14 @@ export function ContactsTable({
         switch (sort.column) {
           case 'name':
             comparison = a.name.localeCompare(b.name);
+            break;
+          case 'email':
+            const aEmail = a.emails?.[0]?.email || '';
+            const bEmail = b.emails?.[0]?.email || '';
+            comparison = aEmail.localeCompare(bEmail);
+            break;
+          case 'phone':
+            comparison = (a.phone || '').localeCompare(b.phone || '');
             break;
           case 'company':
             comparison = (a.company || '').localeCompare(b.company || '');
@@ -332,8 +340,22 @@ export function ContactsTable({
               onSortChange={(dir) => setSort('name', dir)}
             />
           </TableHead>
-          <TableHead>Email</TableHead>
-          <TableHead>Phone</TableHead>
+          <TableHead>
+            <TableHeaderFilter
+              label="Email"
+              sortable
+              sortDirection={sort.column === 'email' ? sort.direction : null}
+              onSortChange={(dir) => setSort('email', dir)}
+            />
+          </TableHead>
+          <TableHead>
+            <TableHeaderFilter
+              label="Phone"
+              sortable
+              sortDirection={sort.column === 'phone' ? sort.direction : null}
+              onSortChange={(dir) => setSort('phone', dir)}
+            />
+          </TableHead>
           <TableHead>
             <TableHeaderFilter
               label="Company"

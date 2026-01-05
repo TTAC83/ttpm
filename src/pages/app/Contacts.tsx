@@ -9,6 +9,7 @@ import { ContactsTable } from '@/components/contacts/ContactsTable';
 import { ImportErrorsDialog } from '@/components/contacts/ImportErrorsDialog';
 import { SearchBar } from '@/components/shared/SearchBar';
 import { useContacts, Contact } from '@/hooks/useContacts';
+import { useContactsFilters } from '@/hooks/useContactsFilters';
 import { 
   exportContactsToCsv, 
   generateTemplate, 
@@ -29,12 +30,21 @@ export type { Contact, ContactEmail } from '@/hooks/useContacts';
 
 export default function Contacts() {
   const { toast } = useToast();
+  
+  // Centralized filter state
+  const { 
+    filters, 
+    sort, 
+    setSearch, 
+    setFilter, 
+    setSort, 
+    hasActiveFilters 
+  } = useContactsFilters();
+
+  // Fetch contacts with server-side filtering
   const {
     contacts,
-    filteredContacts,
     loading,
-    searchQuery,
-    setSearchQuery,
     allRoles,
     allCompanies,
     allProjects,
@@ -42,7 +52,7 @@ export default function Contacts() {
     hasMore,
     totalCount,
     updateContactLocal,
-  } = useContacts();
+  } = useContacts({ filters, sort });
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -85,15 +95,14 @@ export default function Contacts() {
 
   // CSV Export/Import functions
   const handleExportCsv = useCallback(() => {
-    const dataToExport = searchQuery ? filteredContacts : contacts;
-    const csv = exportContactsToCsv(dataToExport);
+    const csv = exportContactsToCsv(contacts);
     const filename = `contacts_${new Date().toISOString().split('T')[0]}.csv`;
     downloadCsv(csv, filename);
     toast({
       title: "Export Complete",
-      description: `${dataToExport.length} contacts exported`,
+      description: `${contacts.length} contacts exported`,
     });
-  }, [contacts, filteredContacts, searchQuery, toast]);
+  }, [contacts, toast]);
 
   const handleDownloadTemplate = useCallback(() => {
     const csv = generateTemplate();
@@ -180,7 +189,7 @@ export default function Contacts() {
             <DropdownMenuContent align="end" className="bg-background">
               <DropdownMenuItem onClick={handleExportCsv} disabled={contacts.length === 0}>
                 <FileDown className="h-4 w-4 mr-2" />
-                Export {searchQuery ? 'Filtered' : 'All'} Contacts
+                Export {hasActiveFilters ? 'Filtered' : 'All'} Contacts
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleDownloadTemplate}>
                 <FileDown className="h-4 w-4 mr-2" />
@@ -209,14 +218,15 @@ export default function Contacts() {
             <div>
               <CardTitle>All Contacts</CardTitle>
               <CardDescription>
-                {filteredContacts.length} of {totalCount} contact{totalCount !== 1 ? 's' : ''} 
+                {contacts.length} of {totalCount} contact{totalCount !== 1 ? 's' : ''} 
                 {hasMore && <span className="ml-1">(more available)</span>}
+                {hasActiveFilters && <span className="ml-1 text-primary">(filtered)</span>}
               </CardDescription>
             </div>
             <div className="relative">
               <SearchBar
-                value={searchQuery}
-                onChange={setSearchQuery}
+                value={filters.search}
+                onChange={setSearch}
                 placeholder="Search contacts..."
               />
             </div>
@@ -227,13 +237,13 @@ export default function Contacts() {
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
-          ) : filteredContacts.length === 0 ? (
+          ) : contacts.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {searchQuery ? 'No contacts match your search.' : 'No contacts yet. Click "Add Contact" to create one.'}
+              {hasActiveFilters ? 'No contacts match your filters.' : 'No contacts yet. Click "Add Contact" to create one.'}
             </div>
           ) : (
             <ContactsTable
-              contacts={filteredContacts}
+              contacts={contacts}
               allRoles={allRoles}
               allCompanies={allCompanies}
               allProjects={allProjects}
@@ -241,6 +251,10 @@ export default function Contacts() {
               onEdit={openEditDialog}
               onDelete={openDeleteDialog}
               onRefetch={refetch}
+              filters={filters}
+              sort={sort}
+              onFilterChange={setFilter}
+              onSortChange={setSort}
             />
           )}
         </CardContent>

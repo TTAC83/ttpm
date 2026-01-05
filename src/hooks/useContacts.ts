@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { ContactFilters, ContactSort, ContactSortColumn } from './useContactsFilters';
 
 export interface ContactEmail {
   email: string;
@@ -17,8 +18,8 @@ export interface Contact {
   id: string;
   name: string;
   phone: string | null;
-  company: string | null; // Primary company name for display
-  company_id: string | null; // Primary company id for display
+  company: string | null;
+  company_id: string | null;
   notes: string | null;
   emails: ContactEmail[];
   created_at: string;
@@ -26,7 +27,7 @@ export interface Contact {
   created_by: string | null;
   roles: { id: string; name: string }[];
   projects: { id: string; name: string; type: 'implementation' | 'solutions' }[];
-  companies?: ContactCompany[]; // All linked companies
+  companies?: ContactCompany[];
 }
 
 interface MasterRole {
@@ -47,13 +48,18 @@ interface Project {
 
 interface UseContactsOptions {
   pageSize?: number;
+  filters?: ContactFilters;
+  sort?: ContactSort;
 }
 
-export function useContacts({ pageSize = 50 }: UseContactsOptions = {}) {
+export function useContacts({ 
+  pageSize = 50, 
+  filters,
+  sort,
+}: UseContactsOptions = {}) {
   const { toast } = useToast();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
   
   // Reference data (cached)
   const [allRoles, setAllRoles] = useState<MasterRole[]>([]);
@@ -64,6 +70,10 @@ export function useContacts({ pageSize = 50 }: UseContactsOptions = {}) {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
+
+  // Debounce ref for search
+  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+  const lastFiltersRef = useRef<string>('');
 
   const fetchReferenceData = useCallback(async () => {
     try {
@@ -95,45 +105,75 @@ export function useContacts({ pageSize = 50 }: UseContactsOptions = {}) {
     }
   }, []);
 
-  const fetchContacts = useCallback(async (pageNum: number = 0) => {
+  // Map sort column to database column
+  const getSortColumn = (column: ContactSortColumn | null): string => {
+    switch (column) {
+      case 'name': return 'name';
+      case 'email': return 'name'; // Sort by name as fallback (emails are JSONB)
+      case 'phone': return 'phone';
+      case 'company': return 'company';
+      default: return 'name';
+    }
+  };
+
+  const fetchContacts = useCallback(async (pageNum: number = 0, isNewFilter: boolean = false) => {
     try {
       setLoading(true);
       
-      // Use the enriched view for single-query fetch
       const from = pageNum * pageSize;
       const to = from + pageSize - 1;
 
-      // Get total count
-      const { count } = await supabase
-        .from('contacts')
+      // Build the base query for count
+      let countQuery = supabase
+        .from('v_contacts_enriched')
         .select('*', { count: 'exact', head: true });
-      
+
+      // Build the data query
+      let dataQuery = supabase
+        .from('v_contacts_enriched')
+        .select('*');
+
+      // Apply search filter (searches name, company, phone)
+      if (filters?.search?.trim()) {
+        const searchTerm = `%${filters.search.trim()}%`;
+        const searchFilter = `name.ilike.${searchTerm},company.ilike.${searchTerm},phone.ilike.${searchTerm}`;
+        countQuery = countQuery.or(searchFilter);
+        dataQuery = dataQuery.or(searchFilter);
+      }
+
+      // Apply company filter using company_id
+      if (filters?.company && filters.company.length > 0) {
+        countQuery = countQuery.in('company_id', filters.company);
+        dataQuery = dataQuery.in('company_id', filters.company);
+      }
+
+      // Get count
+      const { count } = await countQuery;
       setTotalCount(count || 0);
 
-      // Fetch enriched contacts from view
-      const { data, error } = await supabase
-        .from('v_contacts_enriched')
-        .select('*')
-        .order('name')
-        .range(from, to);
+      // Apply sorting
+      const sortColumn = getSortColumn(sort?.column || null);
+      const sortAscending = sort?.direction !== 'desc';
+      dataQuery = dataQuery.order(sortColumn, { ascending: sortAscending });
+
+      // Apply pagination
+      dataQuery = dataQuery.range(from, to);
+
+      const { data, error } = await dataQuery;
 
       if (error) throw error;
 
-      const enrichedContacts: Contact[] = (data || []).map(contact => {
-        // Parse emails from JSONB
+      // Transform the data
+      let enrichedContacts: Contact[] = (data || []).map(contact => {
         let parsedEmails: ContactEmail[] = [];
         if (Array.isArray(contact.emails)) {
           parsedEmails = contact.emails as unknown as ContactEmail[];
         }
 
-        // Parse roles from JSONB
         const roles = (contact.roles || []) as { id: string; name: string }[];
-
-        // Parse companies from JSONB (new multi-company support)
         const companies = (contact.companies || []) as unknown as ContactCompany[];
         const primaryCompany = companies.find(c => c.is_primary) || companies[0];
 
-        // Combine implementation and solutions projects
         const implProjects = (contact.impl_projects || []) as { id: string; name: string; type: string }[];
         const solProjects = (contact.sol_projects || []) as { id: string; name: string; type: string }[];
         const projects = [...implProjects, ...solProjects].map(p => ({
@@ -159,7 +199,44 @@ export function useContacts({ pageSize = 50 }: UseContactsOptions = {}) {
         };
       });
 
-      if (pageNum === 0) {
+      // Client-side filtering for roles and projects (JSONB arrays can't be filtered server-side easily)
+      if (filters?.roles && filters.roles.length > 0) {
+        enrichedContacts = enrichedContacts.filter(contact =>
+          contact.roles?.some(r => filters.roles.includes(r.id))
+        );
+      }
+
+      if (filters?.projects && filters.projects.length > 0) {
+        enrichedContacts = enrichedContacts.filter(contact =>
+          contact.projects?.some(p => filters.projects.includes(p.id))
+        );
+      }
+
+      // Client-side sorting for roles and projects columns
+      if (sort?.column && sort?.direction) {
+        if (sort.column === 'roles') {
+          enrichedContacts.sort((a, b) => {
+            const aRoles = a.roles?.map(r => r.name).join(', ') || '';
+            const bRoles = b.roles?.map(r => r.name).join(', ') || '';
+            const comparison = aRoles.localeCompare(bRoles);
+            return sort.direction === 'desc' ? -comparison : comparison;
+          });
+        } else if (sort.column === 'projects') {
+          enrichedContacts.sort((a, b) => {
+            const comparison = (a.projects?.length || 0) - (b.projects?.length || 0);
+            return sort.direction === 'desc' ? -comparison : comparison;
+          });
+        } else if (sort.column === 'email') {
+          enrichedContacts.sort((a, b) => {
+            const aEmail = a.emails?.[0]?.email || '';
+            const bEmail = b.emails?.[0]?.email || '';
+            const comparison = aEmail.localeCompare(bEmail);
+            return sort.direction === 'desc' ? -comparison : comparison;
+          });
+        }
+      }
+
+      if (isNewFilter || pageNum === 0) {
         setContacts(enrichedContacts);
       } else {
         setContacts(prev => [...prev, ...enrichedContacts]);
@@ -177,39 +254,18 @@ export function useContacts({ pageSize = 50 }: UseContactsOptions = {}) {
     } finally {
       setLoading(false);
     }
-  }, [pageSize, toast]);
+  }, [pageSize, filters, sort, toast]);
 
   const loadMore = useCallback(() => {
     if (!loading && hasMore) {
-      fetchContacts(page + 1);
+      fetchContacts(page + 1, false);
     }
   }, [loading, hasMore, page, fetchContacts]);
 
   const refetch = useCallback(() => {
     setPage(0);
-    fetchContacts(0);
+    fetchContacts(0, true);
   }, [fetchContacts]);
-
-  // Initial load
-  useEffect(() => {
-    fetchReferenceData();
-    fetchContacts(0);
-  }, [fetchReferenceData, fetchContacts]);
-
-  // Filtered contacts (client-side for simplicity, server-side for scale)
-  const filteredContacts = useMemo(() => {
-    if (!searchQuery.trim()) return contacts;
-    
-    const query = searchQuery.toLowerCase();
-    return contacts.filter(contact => 
-      contact.name.toLowerCase().includes(query) ||
-      contact.company?.toLowerCase().includes(query) ||
-      contact.phone?.toLowerCase().includes(query) ||
-      contact.emails.some(e => e.email.toLowerCase().includes(query)) ||
-      contact.roles?.some(r => r.name.toLowerCase().includes(query)) ||
-      contact.projects?.some(p => p.name.toLowerCase().includes(query))
-    );
-  }, [contacts, searchQuery]);
 
   // Update a contact in local state
   const updateContactLocal = useCallback((contactId: string, updates: Partial<Contact>) => {
@@ -218,12 +274,42 @@ export function useContacts({ pageSize = 50 }: UseContactsOptions = {}) {
     ));
   }, []);
 
+  // Initial load of reference data
+  useEffect(() => {
+    fetchReferenceData();
+  }, [fetchReferenceData]);
+
+  // Debounced fetch when filters/sort change
+  useEffect(() => {
+    const filtersKey = JSON.stringify({ filters, sort });
+    
+    // Skip if filters haven't changed
+    if (filtersKey === lastFiltersRef.current) return;
+    lastFiltersRef.current = filtersKey;
+
+    // Clear any pending timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Debounce search, immediate for other filters
+    const delay = filters?.search ? 300 : 0;
+    
+    searchTimeoutRef.current = setTimeout(() => {
+      setPage(0);
+      fetchContacts(0, true);
+    }, delay);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [filters, sort, fetchContacts]);
+
   return {
     contacts,
-    filteredContacts,
     loading,
-    searchQuery,
-    setSearchQuery,
     allRoles,
     allCompanies,
     allProjects,

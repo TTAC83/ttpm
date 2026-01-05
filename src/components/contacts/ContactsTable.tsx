@@ -6,8 +6,8 @@ import { Contact } from '@/hooks/useContacts';
 import { ContactRow } from './ContactRow';
 import { useContactInlineEdit } from '@/hooks/useContactInlineEdit';
 import { linkContactToCompany } from '@/lib/contactMatchingService';
-import { TableHeaderFilter, SortDirection, FilterOption } from '@/components/ui/table-header-filter';
-import { useTableFilters } from '@/hooks/useTableFilters';
+import { TableHeaderFilter, FilterOption } from '@/components/ui/table-header-filter';
+import { ContactFilters, ContactSort, ContactSortColumn, SortDirection } from '@/hooks/useContactsFilters';
 
 interface MasterRole {
   id: string;
@@ -25,8 +25,6 @@ interface Project {
   type: 'implementation' | 'solutions';
 }
 
-type ContactColumn = 'name' | 'email' | 'phone' | 'roles' | 'company' | 'projects';
-
 interface ContactsTableProps {
   contacts: Contact[];
   allRoles: MasterRole[];
@@ -38,6 +36,14 @@ interface ContactsTableProps {
   onRefetch: () => void;
   /** When true, shows unlink icon instead of delete and hides Projects column */
   isProjectContext?: boolean;
+  /** Filter state from parent */
+  filters?: ContactFilters;
+  /** Sort state from parent */
+  sort?: ContactSort;
+  /** Callback to update filters */
+  onFilterChange?: (key: keyof Omit<ContactFilters, 'search'>, values: string[]) => void;
+  /** Callback to update sort */
+  onSortChange?: (column: ContactSortColumn, direction: SortDirection) => void;
 }
 
 export function ContactsTable({
@@ -50,14 +56,13 @@ export function ContactsTable({
   onDelete,
   onRefetch,
   isProjectContext = false,
+  filters,
+  sort,
+  onFilterChange,
+  onSortChange,
 }: ContactsTableProps) {
   const { toast } = useToast();
   const inlineEdit = useContactInlineEdit({ contacts, onUpdate });
-
-  // Table filtering and sorting
-  const { filters, sort, setFilter, setSort } = useTableFilters<ContactColumn>({
-    columns: ['name', 'email', 'phone', 'roles', 'company', 'projects'],
-  });
 
   // Build filter options from data
   const roleOptions: FilterOption[] = useMemo(() => 
@@ -74,68 +79,6 @@ export function ContactsTable({
     allProjects.map(p => ({ value: p.id, label: `${p.name} (${p.type})` })),
     [allProjects]
   );
-
-  // Apply filters and sorting to contacts
-  const filteredAndSortedContacts = useMemo(() => {
-    let result = [...contacts];
-
-    // Apply role filter
-    if (filters.roles.length > 0) {
-      result = result.filter(contact =>
-        contact.roles?.some(r => filters.roles.includes(r.id))
-      );
-    }
-
-    // Apply company filter
-    if (filters.company.length > 0) {
-      result = result.filter(contact =>
-        contact.company_id && filters.company.includes(contact.company_id)
-      );
-    }
-
-    // Apply projects filter
-    if (filters.projects.length > 0) {
-      result = result.filter(contact =>
-        contact.projects?.some(p => filters.projects.includes(p.id))
-      );
-    }
-
-    // Apply sorting
-    if (sort.column && sort.direction) {
-      result.sort((a, b) => {
-        let comparison = 0;
-        switch (sort.column) {
-          case 'name':
-            comparison = a.name.localeCompare(b.name);
-            break;
-          case 'email':
-            const aEmail = a.emails?.[0]?.email || '';
-            const bEmail = b.emails?.[0]?.email || '';
-            comparison = aEmail.localeCompare(bEmail);
-            break;
-          case 'phone':
-            comparison = (a.phone || '').localeCompare(b.phone || '');
-            break;
-          case 'company':
-            comparison = (a.company || '').localeCompare(b.company || '');
-            break;
-          case 'roles':
-            const aRoles = a.roles?.map(r => r.name).join(', ') || '';
-            const bRoles = b.roles?.map(r => r.name).join(', ') || '';
-            comparison = aRoles.localeCompare(bRoles);
-            break;
-          case 'projects':
-            const aProjects = a.projects?.length || 0;
-            const bProjects = b.projects?.length || 0;
-            comparison = aProjects - bProjects;
-            break;
-        }
-        return sort.direction === 'desc' ? -comparison : comparison;
-      });
-    }
-
-    return result;
-  }, [contacts, filters, sort]);
 
   // Role editing state
   const [editingRolesContactId, setEditingRolesContactId] = useState<string | null>(null);
@@ -205,7 +148,7 @@ export function ContactsTable({
     }
   }, [editingRolesContactId, selectedRoleIds, allRoles, onUpdate, toast]);
 
-  // Company editing functions - now uses junction table
+  // Company editing functions
   const startCompanyEdit = useCallback((contact: Contact) => {
     setEditingCompanyContactId(contact.id);
   }, []);
@@ -218,7 +161,6 @@ export function ContactsTable({
       
       const selectedCompany = allCompanies.find(c => c.id === companyId);
       
-      // Update the contacts table for backward compatibility
       const { error: contactError } = await supabase
         .from('contacts')
         .update({ 
@@ -229,15 +171,12 @@ export function ContactsTable({
 
       if (contactError) throw contactError;
 
-      // Update the contact_companies junction table
-      // First, remove existing primary company link
       await supabase
         .from('contact_companies')
         .delete()
         .eq('contact_id', editingCompanyContactId)
         .eq('is_primary', true);
 
-      // Add new primary company link if a company is selected
       if (companyId) {
         await linkContactToCompany(editingCompanyContactId, companyId, true);
       }
@@ -336,24 +275,24 @@ export function ContactsTable({
             <TableHeaderFilter
               label="Name"
               sortable
-              sortDirection={sort.column === 'name' ? sort.direction : null}
-              onSortChange={(dir) => setSort('name', dir)}
+              sortDirection={sort?.column === 'name' ? sort.direction : null}
+              onSortChange={(dir) => onSortChange?.('name', dir)}
             />
           </TableHead>
           <TableHead>
             <TableHeaderFilter
               label="Email"
               sortable
-              sortDirection={sort.column === 'email' ? sort.direction : null}
-              onSortChange={(dir) => setSort('email', dir)}
+              sortDirection={sort?.column === 'email' ? sort.direction : null}
+              onSortChange={(dir) => onSortChange?.('email', dir)}
             />
           </TableHead>
           <TableHead>
             <TableHeaderFilter
               label="Phone"
               sortable
-              sortDirection={sort.column === 'phone' ? sort.direction : null}
-              onSortChange={(dir) => setSort('phone', dir)}
+              sortDirection={sort?.column === 'phone' ? sort.direction : null}
+              onSortChange={(dir) => onSortChange?.('phone', dir)}
             />
           </TableHead>
           <TableHead>
@@ -362,10 +301,10 @@ export function ContactsTable({
               sortable
               filterable
               options={companyOptions}
-              selectedValues={filters.company}
-              onFilterChange={(values) => setFilter('company', values)}
-              sortDirection={sort.column === 'company' ? sort.direction : null}
-              onSortChange={(dir) => setSort('company', dir)}
+              selectedValues={filters?.company || []}
+              onFilterChange={(values) => onFilterChange?.('company', values)}
+              sortDirection={sort?.column === 'company' ? sort.direction : null}
+              onSortChange={(dir) => onSortChange?.('company', dir)}
             />
           </TableHead>
           <TableHead>
@@ -374,10 +313,10 @@ export function ContactsTable({
               sortable
               filterable
               options={roleOptions}
-              selectedValues={filters.roles}
-              onFilterChange={(values) => setFilter('roles', values)}
-              sortDirection={sort.column === 'roles' ? sort.direction : null}
-              onSortChange={(dir) => setSort('roles', dir)}
+              selectedValues={filters?.roles || []}
+              onFilterChange={(values) => onFilterChange?.('roles', values)}
+              sortDirection={sort?.column === 'roles' ? sort.direction : null}
+              onSortChange={(dir) => onSortChange?.('roles', dir)}
             />
           </TableHead>
           {!isProjectContext && (
@@ -387,10 +326,10 @@ export function ContactsTable({
                 sortable
                 filterable
                 options={projectOptions}
-                selectedValues={filters.projects}
-                onFilterChange={(values) => setFilter('projects', values)}
-                sortDirection={sort.column === 'projects' ? sort.direction : null}
-                onSortChange={(dir) => setSort('projects', dir)}
+                selectedValues={filters?.projects || []}
+                onFilterChange={(values) => onFilterChange?.('projects', values)}
+                sortDirection={sort?.column === 'projects' ? sort.direction : null}
+                onSortChange={(dir) => onSortChange?.('projects', dir)}
               />
             </TableHead>
           )}
@@ -398,7 +337,7 @@ export function ContactsTable({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {filteredAndSortedContacts.map((contact) => (
+        {contacts.map((contact) => (
           <ContactRow
             key={contact.id}
             contact={contact}

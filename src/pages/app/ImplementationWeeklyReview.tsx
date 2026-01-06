@@ -365,10 +365,40 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   const productGapsQ = useQuery({
     queryKey: ["impl-product-gaps", companyId],
     queryFn: async () => {
-      if (!projectId) return [];
-      return await productGapsService.getProjectProductGaps(projectId);
+      // Get ALL projects for this company, not just one
+      const { data: projects } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('company_id', companyId)
+        .in('domain', ['IoT', 'Vision', 'Hybrid']);
+      
+      if (!projects?.length) return [];
+      
+      // Fetch product gaps for all projects
+      const { data: gaps, error } = await supabase
+        .from('product_gaps')
+        .select(`
+          *,
+          projects!inner(name, company:companies(name)),
+          assigned_to_profile:profiles!assigned_to(name),
+          created_by_profile:profiles!created_by(name)
+        `)
+        .in('project_id', projects.map(p => p.id))
+        .eq('status', 'Live')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      return (gaps || []).map(gap => ({
+        ...gap,
+        status: gap.status as 'Live' | 'Closed',
+        project_name: (gap.projects as any)?.name,
+        company_name: (gap.projects as any)?.company?.name,
+        assigned_to_name: (gap.assigned_to_profile as any)?.name,
+        created_by_name: (gap.created_by_profile as any)?.name,
+      }));
     },
-    enabled: !!projectId,
+    enabled: !!companyId,
   });
 
   const blockersQ = useQuery({

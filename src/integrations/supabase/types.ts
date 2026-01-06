@@ -2106,13 +2106,6 @@ export type Database = {
             referencedRelation: "v_impl_companies"
             referencedColumns: ["company_id"]
           },
-          {
-            foreignKeyName: "impl_weekly_reviews_week_start_fkey"
-            columns: ["week_start"]
-            isOneToOne: false
-            referencedRelation: "impl_weekly_weeks"
-            referencedColumns: ["week_start"]
-          },
         ]
       }
       impl_weekly_reviews_backup: {

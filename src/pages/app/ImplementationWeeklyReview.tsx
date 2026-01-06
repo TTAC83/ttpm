@@ -363,18 +363,10 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   });
 
   const productGapsQ = useQuery({
-    queryKey: ["impl-product-gaps", companyId],
+    queryKey: ["impl-product-gaps", projectId],
     queryFn: async () => {
-      // Get ALL projects for this company, not just one
-      const { data: projects } = await supabase
-        .from('projects')
-        .select('id')
-        .eq('company_id', companyId)
-        .in('domain', ['IoT', 'Vision', 'Hybrid']);
+      if (!projectId) return [];
       
-      if (!projects?.length) return [];
-      
-      // Fetch product gaps for all projects
       const { data: gaps, error } = await supabase
         .from('product_gaps')
         .select(`
@@ -383,7 +375,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
           assigned_to_profile:profiles!assigned_to(name),
           created_by_profile:profiles!created_by(name)
         `)
-        .in('project_id', projects.map(p => p.id))
+        .eq('project_id', projectId)
         .eq('status', 'Live')
         .order('created_at', { ascending: false });
       
@@ -398,7 +390,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
         created_by_name: (gap.created_by_profile as any)?.name,
       }));
     },
-    enabled: !!companyId,
+    enabled: !!projectId,
   });
 
   const blockersQ = useQuery({

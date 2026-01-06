@@ -289,26 +289,33 @@ export default function Contacts() {
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
-          ) : contacts.length === 0 ? (
+          ) : contacts.length === 0 && !hasActiveFilters ? (
             <div className="text-center py-8 text-muted-foreground">
-              {hasActiveFilters ? 'No contacts match your filters.' : 'No contacts yet. Click "Add Contact" to create one.'}
+              No contacts yet. Click "Add Contact" to create one.
             </div>
           ) : (
-            <ContactsTable
-              contacts={contacts}
-              allRoles={allRoles}
-              allCompanies={allCompanies}
-              allProjects={allProjects}
-              onUpdate={updateContactLocal}
-              onEdit={openEditDialog}
-              onDelete={openDeleteDialog}
-              onArchive={handleArchive}
-              onRefetch={refetch}
-              filters={filters}
-              sort={sort}
-              onFilterChange={setFilter}
-              onSortChange={setSort}
-            />
+            <>
+              <ContactsTable
+                contacts={contacts}
+                allRoles={allRoles}
+                allCompanies={allCompanies}
+                allProjects={allProjects}
+                onUpdate={updateContactLocal}
+                onEdit={openEditDialog}
+                onDelete={openDeleteDialog}
+                onArchive={handleArchive}
+                onRefetch={refetch}
+                filters={filters}
+                sort={sort}
+                onFilterChange={setFilter}
+                onSortChange={setSort}
+              />
+              {contacts.length === 0 && hasActiveFilters && (
+                <div className="text-center py-8 text-muted-foreground">
+                  No contacts match your filters.
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

@@ -101,6 +101,7 @@ export function useProjectContacts({ projectId, projectType, companyId }: UsePro
         return {
           id: contact.id,
           name: contact.name,
+          title: (contact as any).title || null,
           phone: contact.phone,
           company: primaryCompany?.name || null,
           company_id: primaryCompany?.id || null,

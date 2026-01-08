@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Contact, ContactEmail } from './useContacts';
 
-export type EditableField = 'name' | 'phone' | 'email';
+export type EditableField = 'name' | 'title' | 'phone' | 'email';
 
 interface EditingState {
   contactId: string;

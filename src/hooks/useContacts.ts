@@ -17,6 +17,7 @@ export interface ContactCompany {
 export interface Contact {
   id: string;
   name: string;
+  title: string | null;
   phone: string | null;
   company: string | null;
   company_id: string | null;
@@ -110,6 +111,7 @@ export function useContacts({
   const getSortColumn = (column: ContactSortColumn | null): string => {
     switch (column) {
       case 'name': return 'name';
+      case 'title': return 'title';
       case 'email': return 'name'; // Sort by name as fallback (emails are JSONB)
       case 'phone': return 'phone';
       case 'company': return 'company';
@@ -192,6 +194,7 @@ export function useContacts({
         return {
           id: contact.id,
           name: contact.name,
+          title: (contact as any).title || null,
           phone: contact.phone,
           company: primaryCompany?.name || contact.company || null,
           company_id: primaryCompany?.id || contact.company_id || null,

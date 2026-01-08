@@ -9,6 +9,7 @@ import {
 
 interface ProjectContactCsvRow {
   name: string;
+  title: string;
   phone: string;
   primary_email: string;
   additional_emails: string;
@@ -192,6 +193,7 @@ export async function importProjectContacts(
         .from('contacts')
         .insert({
           name: row.name.trim(),
+          title: row.title?.trim() || null,
           phone: row.phone?.trim() || null,
           company: companyName,
           notes: row.notes?.trim() || null,

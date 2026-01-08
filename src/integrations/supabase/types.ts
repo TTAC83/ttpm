@@ -1507,6 +1507,7 @@ export type Database = {
           name: string
           notes: string | null
           phone: string | null
+          title: string | null
           updated_at: string
         }
         Insert: {
@@ -1521,6 +1522,7 @@ export type Database = {
           name: string
           notes?: string | null
           phone?: string | null
+          title?: string | null
           updated_at?: string
         }
         Update: {
@@ -1535,6 +1537,7 @@ export type Database = {
           name?: string
           notes?: string | null
           phone?: string | null
+          title?: string | null
           updated_at?: string
         }
         Relationships: [

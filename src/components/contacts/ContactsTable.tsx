@@ -283,6 +283,14 @@ export function ContactsTable({
           </TableHead>
           <TableHead>
             <TableHeaderFilter
+              label="Title"
+              sortable
+              sortDirection={sort?.column === 'title' ? sort.direction : null}
+              onSortChange={(dir) => onSortChange?.('title', dir)}
+            />
+          </TableHead>
+          <TableHead>
+            <TableHeaderFilter
               label="Email"
               sortable
               sortDirection={sort?.column === 'email' ? sort.direction : null}

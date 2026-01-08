@@ -56,6 +56,7 @@ export function ProjectContactDialog({
   
   const [formData, setFormData] = useState({
     name: '',
+    title: '',
     phone: '',
     notes: '',
   });
@@ -69,6 +70,7 @@ export function ProjectContactDialog({
       if (contact) {
         setFormData({
           name: contact.name,
+          title: contact.title || '',
           phone: contact.phone || '',
           notes: contact.notes || '',
         });
@@ -81,7 +83,7 @@ export function ProjectContactDialog({
   }, [open, contact]);
 
   const resetForm = () => {
-    setFormData({ name: '', phone: '', notes: '' });
+    setFormData({ name: '', title: '', phone: '', notes: '' });
     setEmails([]);
     setSelectedRoleIds(new Set());
     setMatchedContact(null);
@@ -174,6 +176,7 @@ export function ProjectContactDialog({
           .from('contacts')
           .update({
             name: formData.name.trim(),
+            title: formData.title.trim() || null,
             phone: formData.phone.trim() || null,
             notes: formData.notes.trim() || null,
             emails: emailsJson as unknown as any,
@@ -187,6 +190,7 @@ export function ProjectContactDialog({
           .from('contacts')
           .insert({
             name: formData.name.trim(),
+            title: formData.title.trim() || null,
             phone: formData.phone.trim() || null,
             company: companyName, // Auto-assign company name
             notes: formData.notes.trim() || null,

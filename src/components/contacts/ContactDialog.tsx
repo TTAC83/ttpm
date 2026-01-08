@@ -48,6 +48,7 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
   
   const [formData, setFormData] = useState({
     name: '',
+    title: '',
     phone: '',
     notes: '',
   });
@@ -62,6 +63,7 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
       if (contact) {
         setFormData({
           name: contact.name,
+          title: contact.title || '',
           phone: contact.phone || '',
           notes: contact.notes || '',
         });
@@ -78,7 +80,7 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
   }, [open, contact]);
 
   const resetForm = () => {
-    setFormData({ name: '', phone: '', notes: '' });
+    setFormData({ name: '', title: '', phone: '', notes: '' });
     setEmails([]);
     setSelectedRoleIds(new Set());
     setSelectedProjectIds(new Set());
@@ -141,6 +143,7 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
           .from('contacts')
           .update({
             name: formData.name.trim(),
+            title: formData.title.trim() || null,
             phone: formData.phone.trim() || null,
             company: selectedCompany?.name || null,
             company_id: selectedCompanyId,
@@ -156,6 +159,7 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
           .from('contacts')
           .insert({
             name: formData.name.trim(),
+            title: formData.title.trim() || null,
             phone: formData.phone.trim() || null,
             company: selectedCompany?.name || null,
             company_id: selectedCompanyId,

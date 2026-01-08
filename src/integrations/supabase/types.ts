@@ -4979,6 +4979,7 @@ export type Database = {
           phone: string | null
           roles: Json | null
           sol_projects: Json | null
+          title: string | null
           updated_at: string | null
         }
         Insert: {
@@ -4997,6 +4998,7 @@ export type Database = {
           phone?: string | null
           roles?: never
           sol_projects?: never
+          title?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -5015,6 +5017,7 @@ export type Database = {
           phone?: string | null
           roles?: never
           sol_projects?: never
+          title?: string | null
           updated_at?: string | null
         }
         Relationships: [

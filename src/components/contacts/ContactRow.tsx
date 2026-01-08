@@ -177,6 +177,11 @@ export function ContactRow({
         </div>
       </TableCell>
 
+      {/* Title */}
+      <TableCell>
+        {renderEditableCell('title', null, contact.title)}
+      </TableCell>
+
       {/* Email */}
       <TableCell>
         {renderEditableCell('email', <Mail className="h-3.5 w-3.5 text-muted-foreground" />, primaryEmail)}

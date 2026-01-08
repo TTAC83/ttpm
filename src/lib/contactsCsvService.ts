@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx';
 
 export interface ContactCsvRow {
   name: string;
+  title: string;
   phone: string;
   company: string;
   primary_email: string;
@@ -18,12 +19,13 @@ export interface ImportResult {
   duplicates: string[];
 }
 
-const CSV_HEADERS = ['name', 'phone', 'company', 'primary_email', 'additional_emails', 'roles', 'notes'];
+const CSV_HEADERS = ['name', 'title', 'phone', 'company', 'primary_email', 'additional_emails', 'roles', 'notes'];
 
 // Generate empty template with example row
 export function generateTemplate(): string {
   const exampleRow = [
     'John Doe',
+    'Operations Manager',
     '+44 7700 900000',
     'Acme Corp',
     'john@example.com',
@@ -63,6 +65,7 @@ export function exportContactsToCsv(contacts: any[]): string {
     
     rows.push([
       contact.name || '',
+      contact.title || '',
       contact.phone || '',
       contact.company || '',
       primaryEmail,
@@ -72,9 +75,9 @@ export function exportContactsToCsv(contacts: any[]): string {
     ]);
   }
   
-  // Format cells, preserving leading zeros for phone column (index 1)
+  // Format cells, preserving leading zeros for phone column (index 2 now)
   return rows.map(row => 
-    row.map((cell, colIndex) => formatCellForExcel(cell, colIndex === 1)).join(',')
+    row.map((cell, colIndex) => formatCellForExcel(cell, colIndex === 2)).join(',')
   ).join('\n');
 }
 
@@ -192,6 +195,7 @@ export async function importContacts(
         .from('contacts')
         .insert({
           name: row.name.trim(),
+          title: row.title?.trim() || null,
           phone: row.phone?.trim() || null,
           company: companyName,
           notes: row.notes?.trim() || null,

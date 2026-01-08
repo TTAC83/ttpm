@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 
 export type SortDirection = 'asc' | 'desc' | null;
-export type ContactSortColumn = 'name' | 'email' | 'phone' | 'company' | 'roles' | 'projects';
+export type ContactSortColumn = 'name' | 'title' | 'email' | 'phone' | 'company' | 'roles' | 'projects';
 
 export interface ContactFilters {
   search: string;

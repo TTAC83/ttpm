@@ -61,6 +61,7 @@ export const BAUContactsTab = ({ customerId }: BAUContactsTabProps) => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
+                  <TableHead>Title</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
@@ -70,6 +71,7 @@ export const BAUContactsTab = ({ customerId }: BAUContactsTabProps) => {
                 {contacts.map((contact) => (
                   <TableRow key={contact.id}>
                     <TableCell className="font-medium">{contact.name}</TableCell>
+                    <TableCell>{(contact as any).title || '-'}</TableCell>
                     <TableCell>{contact.role || '-'}</TableCell>
                     <TableCell>{contact.email || '-'}</TableCell>
                     <TableCell>{contact.phone || '-'}</TableCell>

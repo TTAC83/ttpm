@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 
 interface ContactFormData {
   name: string;
+  title: string;
   phone: string;
   notes: string;
 }
@@ -33,15 +34,26 @@ export function ContactFormFields({ formData, onChange, disabled }: ContactFormF
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="phone">Phone</Label>
+          <Label htmlFor="title">Title</Label>
           <Input
-            id="phone"
-            value={formData.phone}
-            onChange={(e) => updateField('phone', e.target.value)}
-            placeholder="+44 7700 900000"
+            id="title"
+            value={formData.title}
+            onChange={(e) => updateField('title', e.target.value)}
+            placeholder="Operations Manager"
             disabled={disabled}
           />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="phone">Phone</Label>
+        <Input
+          id="phone"
+          value={formData.phone}
+          onChange={(e) => updateField('phone', e.target.value)}
+          placeholder="+44 7700 900000"
+          disabled={disabled}
+        />
       </div>
 
       <div className="space-y-2">

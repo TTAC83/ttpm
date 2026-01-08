@@ -144,9 +144,10 @@ export function ProjectContacts({ projectId, projectType, companyId, companyName
 
   const handleDownloadTemplate = useCallback(() => {
     // Generate simplified template without company/project columns
-    const headers = ['name', 'phone', 'primary_email', 'additional_emails', 'roles', 'notes'];
+    const headers = ['name', 'title', 'phone', 'primary_email', 'additional_emails', 'roles', 'notes'];
     const exampleRow = [
       'John Doe',
+      'Operations Manager',
       '+44 7700 900000',
       'john@example.com',
       'john.personal@example.com',

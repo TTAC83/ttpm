@@ -146,6 +146,14 @@ export async function importProjectContacts(
           continue;
         }
         
+        // Update title if provided in CSV and contact doesn't have one
+        if (row.title?.trim() && !existingContact.title) {
+          await supabase
+            .from('contacts')
+            .update({ title: row.title.trim() })
+            .eq('id', existingContact.id);
+        }
+        
         // Link existing contact to company and project
         await linkContactToCompany(existingContact.id, companyId);
         

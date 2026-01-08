@@ -168,20 +168,26 @@ export async function importProjectContacts(
         continue;
       }
       
-      // Parse and validate roles
+      // Parse and validate roles - accept both semicolon and comma separators
       const roleIds: string[] = [];
+      let roleValidationFailed = false;
       if (row.roles?.trim()) {
-        const roleNames = row.roles.split(';').map(r => r.trim()).filter(Boolean);
+        // Split by semicolon first, then by comma if no semicolons found
+        const separator = row.roles.includes(';') ? ';' : ',';
+        const roleNames = row.roles.split(separator).map(r => r.trim()).filter(Boolean);
         for (const roleName of roleNames) {
           const roleId = roleMap.get(roleName.toLowerCase());
           if (!roleId) {
             result.errors.push(`Row ${rowNum}: Role "${roleName}" not found`);
-            result.failed++;
-            continue;
+            roleValidationFailed = true;
+          } else {
+            roleIds.push(roleId);
           }
-          roleIds.push(roleId);
         }
-        if (roleIds.length !== roleNames.length) continue;
+        if (roleValidationFailed) {
+          result.failed++;
+          continue;
+        }
       }
       
       // Build emails array

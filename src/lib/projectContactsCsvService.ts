@@ -139,19 +139,30 @@ export async function importProjectContacts(
       }
 
       if (existingContact) {
-        // Check if already linked to this project
-        if (linkedContactIds.has(existingContact.id)) {
-          result.duplicates.push(`Row ${rowNum}: "${existingContact.name}" is already linked to this project`);
-          result.failed++;
-          continue;
-        }
+        // Build update payload for existing contact
+        const updatePayload: Record<string, any> = {};
+        if (row.title?.trim()) updatePayload.title = row.title.trim();
+        if (row.phone?.trim()) updatePayload.phone = row.phone.trim();
+        if (row.notes?.trim()) updatePayload.notes = row.notes.trim();
         
-        // Update title if provided in CSV and contact doesn't have one
-        if (row.title?.trim() && !existingContact.title) {
+        // Update contact info if any fields provided
+        if (Object.keys(updatePayload).length > 0) {
           await supabase
             .from('contacts')
-            .update({ title: row.title.trim() })
+            .update(updatePayload)
             .eq('id', existingContact.id);
+        }
+        
+        // Check if already linked to this project
+        if (linkedContactIds.has(existingContact.id)) {
+          // Already linked - count as updated if we changed something
+          if (Object.keys(updatePayload).length > 0) {
+            result.linked++; // Reusing 'linked' count for updates
+          } else {
+            result.duplicates.push(`Row ${rowNum}: "${existingContact.name}" is already linked (no changes)`);
+            result.failed++;
+          }
+          continue;
         }
         
         // Link existing contact to company and project

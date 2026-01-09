@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Building, Calendar, MapPin } from 'lucide-react';
+import { ArrowLeft, Building, Calendar, MapPin, Check, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { SolutionsLines } from './tabs/SolutionsLines';
@@ -25,6 +25,7 @@ import { SharedAuditTab } from '@/components/shared/tabs/SharedAuditTab';
 import { SharedProductGapsTab } from '@/components/shared/tabs/SharedProductGapsTab';
 import { SharedBlockersTab } from '@/components/shared/tabs/SharedBlockersTab';
 import { GanttChart } from '@/features/gantt/components/GanttChart';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SolutionsProject {
   id: string;
@@ -43,6 +44,7 @@ interface SolutionsProject {
   tv_display_devices_required?: number;
   receivers_required?: number;
   lines_required?: number;
+  final_scoping_complete?: boolean;
   created_at: string;
   updated_at: string;
   companies?: {
@@ -150,6 +152,22 @@ export const SolutionsProjectDetail = () => {
                 <Badge variant={getDomainBadgeVariant(project.domain)}>
                   {project.domain}
                 </Badge>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className={`flex items-center justify-center h-6 w-6 rounded-full ${project.final_scoping_complete ? 'bg-green-500' : 'bg-red-500'}`}>
+                        {project.final_scoping_complete ? (
+                          <Check className="h-4 w-4 text-white" />
+                        ) : (
+                          <X className="h-4 w-4 text-white" />
+                        )}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Final Scoping {project.final_scoping_complete ? 'Complete' : 'Incomplete'}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
               <p className="text-muted-foreground flex items-center gap-2">
                 <Building className="h-4 w-4" />

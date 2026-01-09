@@ -67,6 +67,7 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
     auto_renewal: data.auto_renewal ?? true,
     standard_terms: data.standard_terms ?? true,
     deviation_of_terms: data.deviation_of_terms || '',
+    final_scoping_complete: data.final_scoping_complete || false,
   });
 
   const [contractedLinesError, setContractedLinesError] = useState<string>('');
@@ -314,6 +315,11 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
         useful_links: usefulLinks as any,
       };
 
+      // Add solutions-specific fields
+      if (type === 'solutions') {
+        updateData.final_scoping_complete = formData.final_scoping_complete;
+      }
+
       // Add type-specific fields
       if (type === 'project' || type === 'solutions') {
         updateData.contract_signed_date = formData.contract_signed_date || null;
@@ -387,6 +393,7 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
       auto_renewal: data.auto_renewal ?? true,
       standard_terms: data.standard_terms ?? true,
       deviation_of_terms: data.deviation_of_terms || '',
+      final_scoping_complete: data.final_scoping_complete || false,
     });
     setContractedLinesError('');
     setBillingTermsError('');
@@ -500,6 +507,17 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                 />
               </div>
 
+              {type === 'solutions' && (
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="final_scoping_complete"
+                    checked={formData.final_scoping_complete}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, final_scoping_complete: checked }))}
+                  />
+                  <Label htmlFor="final_scoping_complete">Final Scoping Complete</Label>
+                </div>
+              )}
+
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="line_description">Line Description</Label>
@@ -569,6 +587,18 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                   <p className="text-sm text-muted-foreground">Site Address</p>
                   <p className="font-medium whitespace-pre-wrap">{data.site_address || '-'}</p>
                 </div>
+                {type === 'solutions' && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Final Scoping Complete</p>
+                    <p className="font-medium">
+                      {data.final_scoping_complete ? (
+                        <Badge className="bg-green-500 hover:bg-green-600">Complete</Badge>
+                      ) : (
+                        <Badge variant="destructive">Incomplete</Badge>
+                      )}
+                    </p>
+                  </div>
+                )}
                 <div className="md:col-span-2">
                   <p className="text-sm text-muted-foreground">Line Description</p>
                   <p className="font-medium whitespace-pre-wrap">{data.line_description || '-'}</p>

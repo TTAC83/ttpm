@@ -4085,6 +4085,7 @@ export type Database = {
           deviation_of_terms: string | null
           domain: Database["public"]["Enums"]["work_domain"]
           expansion_opportunity: string | null
+          final_scoping_complete: boolean
           gateways_required: number | null
           hardware_fee: number | null
           id: string
@@ -4152,6 +4153,7 @@ export type Database = {
           deviation_of_terms?: string | null
           domain: Database["public"]["Enums"]["work_domain"]
           expansion_opportunity?: string | null
+          final_scoping_complete?: boolean
           gateways_required?: number | null
           hardware_fee?: number | null
           id?: string
@@ -4219,6 +4221,7 @@ export type Database = {
           deviation_of_terms?: string | null
           domain?: Database["public"]["Enums"]["work_domain"]
           expansion_opportunity?: string | null
+          final_scoping_complete?: boolean
           gateways_required?: number | null
           hardware_fee?: number | null
           id?: string

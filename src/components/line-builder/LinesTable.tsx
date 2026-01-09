@@ -4,10 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Plus, Trash2, Eye, Edit, Download, Upload } from "lucide-react";
+import { Loader2, Plus, Trash2, Eye, Edit, Download } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { LineVisualization } from "./LineVisualization";
-import { LineImportDialog } from "./LineImportDialog";
 import { exportLine, downloadLineExport } from "@/lib/lineExportService";
 
 interface Line {
@@ -51,7 +50,6 @@ export const LinesTable: React.FC<LinesTableProps> = ({
   const [wizardOpen, setWizardOpen] = useState(false);
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const [editLineId, setEditLineId] = useState<string | undefined>(undefined);
-  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [exportingLineId, setExportingLineId] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -152,10 +150,6 @@ export const LinesTable: React.FC<LinesTableProps> = ({
     }
   };
 
-  const handleImportComplete = () => {
-    fetchLines();
-  };
-
   if (loading) {
     return (
       <Card>
@@ -182,16 +176,10 @@ export const LinesTable: React.FC<LinesTableProps> = ({
             <CardTitle>Production Lines</CardTitle>
             <CardDescription>{description}</CardDescription>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
-              <Upload className="mr-2 h-4 w-4" />
-              Import Line
-            </Button>
-            <Button onClick={handleCreateLine}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Line
-            </Button>
-          </div>
+          <Button onClick={handleCreateLine}>
+            <Plus className="mr-2 h-4 w-4" />
+            Create Line
+          </Button>
         </div>
       </CardHeader>
 
@@ -305,15 +293,6 @@ export const LinesTable: React.FC<LinesTableProps> = ({
         }}
         {...wizardProps}
         onComplete={handleWizardComplete}
-      />
-
-      {/* Line Import Dialog */}
-      <LineImportDialog
-        open={importDialogOpen}
-        onOpenChange={setImportDialogOpen}
-        projectId={projectId}
-        projectType={projectType}
-        onImportComplete={handleImportComplete}
       />
     </Card>
   );

@@ -68,6 +68,8 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
     standard_terms: data.standard_terms ?? true,
     deviation_of_terms: data.deviation_of_terms || '',
     final_scoping_complete: data.final_scoping_complete || false,
+    contract_signed: data.contract_signed || false,
+    implementation_handover: data.implementation_handover || false,
   });
 
   const [contractedLinesError, setContractedLinesError] = useState<string>('');
@@ -318,6 +320,8 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
       // Add solutions-specific fields
       if (type === 'solutions') {
         updateData.final_scoping_complete = formData.final_scoping_complete;
+        updateData.contract_signed = formData.contract_signed;
+        updateData.implementation_handover = formData.implementation_handover;
       }
 
       // Add type-specific fields
@@ -394,6 +398,8 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
       standard_terms: data.standard_terms ?? true,
       deviation_of_terms: data.deviation_of_terms || '',
       final_scoping_complete: data.final_scoping_complete || false,
+      contract_signed: data.contract_signed || false,
+      implementation_handover: data.implementation_handover || false,
     });
     setContractedLinesError('');
     setBillingTermsError('');
@@ -508,13 +514,31 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
               </div>
 
               {type === 'solutions' && (
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="final_scoping_complete"
-                    checked={formData.final_scoping_complete}
-                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, final_scoping_complete: checked }))}
-                  />
-                  <Label htmlFor="final_scoping_complete">Final Scoping Complete</Label>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="final_scoping_complete"
+                      checked={formData.final_scoping_complete}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, final_scoping_complete: checked }))}
+                    />
+                    <Label htmlFor="final_scoping_complete">Final Scoping Complete</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="contract_signed"
+                      checked={formData.contract_signed}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, contract_signed: checked }))}
+                    />
+                    <Label htmlFor="contract_signed">Contract Signed</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="implementation_handover"
+                      checked={formData.implementation_handover}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, implementation_handover: checked }))}
+                    />
+                    <Label htmlFor="implementation_handover">Implementation Handover</Label>
+                  </div>
                 </div>
               )}
 
@@ -588,16 +612,38 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
                   <p className="font-medium whitespace-pre-wrap">{data.site_address || '-'}</p>
                 </div>
                 {type === 'solutions' && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">Final Scoping Complete</p>
-                    <p className="font-medium">
-                      {data.final_scoping_complete ? (
-                        <Badge className="bg-green-500 hover:bg-green-600">Complete</Badge>
-                      ) : (
-                        <Badge variant="destructive">Incomplete</Badge>
-                      )}
-                    </p>
-                  </div>
+                  <>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Final Scoping Complete</p>
+                      <p className="font-medium">
+                        {data.final_scoping_complete ? (
+                          <Badge className="bg-green-500 hover:bg-green-600">Complete</Badge>
+                        ) : (
+                          <Badge variant="destructive">Incomplete</Badge>
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Contract Signed</p>
+                      <p className="font-medium">
+                        {data.contract_signed ? (
+                          <Badge className="bg-blue-500 hover:bg-blue-600">Signed</Badge>
+                        ) : (
+                          <Badge variant="outline">Not Signed</Badge>
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Implementation Handover</p>
+                      <p className="font-medium">
+                        {data.implementation_handover ? (
+                          <Badge className="bg-purple-500 hover:bg-purple-600">Complete</Badge>
+                        ) : (
+                          <Badge variant="outline">Pending</Badge>
+                        )}
+                      </p>
+                    </div>
+                  </>
                 )}
                 <div className="md:col-span-2">
                   <p className="text-sm text-muted-foreground">Line Description</p>

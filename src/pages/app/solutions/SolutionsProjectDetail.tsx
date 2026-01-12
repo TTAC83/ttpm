@@ -45,6 +45,8 @@ interface SolutionsProject {
   receivers_required?: number;
   lines_required?: number;
   final_scoping_complete?: boolean;
+  contract_signed?: boolean;
+  implementation_handover?: boolean;
   created_at: string;
   updated_at: string;
   companies?: {
@@ -155,16 +157,48 @@ export const SolutionsProjectDetail = () => {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className={`flex items-center justify-center h-6 w-6 rounded-full ${project.final_scoping_complete ? 'bg-green-500' : 'bg-red-500'}`}>
+                      <div className={`flex items-center justify-center h-6 w-6 rounded-full ${project.final_scoping_complete ? 'bg-green-500' : 'bg-muted'}`}>
                         {project.final_scoping_complete ? (
                           <Check className="h-4 w-4 text-white" />
                         ) : (
-                          <X className="h-4 w-4 text-white" />
+                          <X className="h-4 w-4 text-muted-foreground" />
                         )}
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>Final Scoping {project.final_scoping_complete ? 'Complete' : 'Incomplete'}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className={`flex items-center justify-center h-6 w-6 rounded-full ${project.contract_signed ? 'bg-blue-500' : 'bg-muted'}`}>
+                        {project.contract_signed ? (
+                          <Check className="h-4 w-4 text-white" />
+                        ) : (
+                          <X className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Contract {project.contract_signed ? 'Signed' : 'Not Signed'}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className={`flex items-center justify-center h-6 w-6 rounded-full ${project.implementation_handover ? 'bg-purple-500' : 'bg-muted'}`}>
+                        {project.implementation_handover ? (
+                          <Check className="h-4 w-4 text-white" />
+                        ) : (
+                          <X className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Implementation {project.implementation_handover ? 'Handed Over' : 'Not Handed Over'}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>

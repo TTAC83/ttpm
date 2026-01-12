@@ -4071,6 +4071,7 @@ export type Database = {
           case_study: boolean | null
           company_id: string
           contract_end_date: string | null
+          contract_signed: boolean
           contract_signed_date: string | null
           contract_start_date: string | null
           contracted_days: number | null
@@ -4089,6 +4090,7 @@ export type Database = {
           gateways_required: number | null
           hardware_fee: number | null
           id: string
+          implementation_handover: boolean
           implementation_lead: string | null
           job_scheduling: string | null
           job_scheduling_notes: string | null
@@ -4139,6 +4141,7 @@ export type Database = {
           case_study?: boolean | null
           company_id: string
           contract_end_date?: string | null
+          contract_signed?: boolean
           contract_signed_date?: string | null
           contract_start_date?: string | null
           contracted_days?: number | null
@@ -4157,6 +4160,7 @@ export type Database = {
           gateways_required?: number | null
           hardware_fee?: number | null
           id?: string
+          implementation_handover?: boolean
           implementation_lead?: string | null
           job_scheduling?: string | null
           job_scheduling_notes?: string | null
@@ -4207,6 +4211,7 @@ export type Database = {
           case_study?: boolean | null
           company_id?: string
           contract_end_date?: string | null
+          contract_signed?: boolean
           contract_signed_date?: string | null
           contract_start_date?: string | null
           contracted_days?: number | null
@@ -4225,6 +4230,7 @@ export type Database = {
           gateways_required?: number | null
           hardware_fee?: number | null
           id?: string
+          implementation_handover?: boolean
           implementation_lead?: string | null
           job_scheduling?: string | null
           job_scheduling_notes?: string | null

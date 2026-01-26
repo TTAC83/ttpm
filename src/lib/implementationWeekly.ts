@@ -265,13 +265,19 @@ export type ImplWeeklyReview = {
   weekly_summary: string | null;
   planned_go_live_date: string | null;
   current_status: string | null;
+  phase_installation: boolean | null;
+  phase_installation_details: string | null;
+  phase_onboarding: boolean | null;
+  phase_onboarding_details: string | null;
+  phase_live: boolean | null;
+  phase_live_details: string | null;
 };
 
 export async function loadReview(companyId: string, weekStartISO: string): Promise<ImplWeeklyReview | null> {
   console.log('Loading weekly review for:', { companyId, weekStartISO });
   const { data, error } = await supabase
     .from("impl_weekly_reviews")
-    .select("project_status,customer_health,churn_risk,notes,reason_code,weekly_summary,planned_go_live_date,current_status")
+    .select("project_status,customer_health,churn_risk,notes,reason_code,weekly_summary,planned_go_live_date,current_status,phase_installation,phase_installation_details,phase_onboarding,phase_onboarding_details,phase_live,phase_live_details")
     .eq("company_id", companyId)
     .eq("week_start", weekStartISO)
     .maybeSingle();
@@ -298,6 +304,12 @@ export async function saveReview(params: {
   weeklySummary?: string | null;
   plannedGoLiveDate?: string | null;
   currentStatus?: string | null;
+  phaseInstallation?: boolean | null;
+  phaseInstallationDetails?: string | null;
+  phaseOnboarding?: boolean | null;
+  phaseOnboardingDetails?: string | null;
+  phaseLive?: boolean | null;
+  phaseLiveDetails?: string | null;
 }): Promise<void> {
   console.log('Saving weekly review:', params);
   const { data, error } = await supabase.rpc("impl_set_weekly_review" as any, {
@@ -311,6 +323,12 @@ export async function saveReview(params: {
     p_weekly_summary: params.weeklySummary ?? null,
     p_planned_go_live_date: params.plannedGoLiveDate ?? null,
     p_current_status: params.currentStatus ?? null,
+    p_phase_installation: params.phaseInstallation ?? null,
+    p_phase_installation_details: params.phaseInstallationDetails ?? null,
+    p_phase_onboarding: params.phaseOnboarding ?? null,
+    p_phase_onboarding_details: params.phaseOnboardingDetails ?? null,
+    p_phase_live: params.phaseLive ?? null,
+    p_phase_live_details: params.phaseLiveDetails ?? null,
   } as any);
   console.log('Save result:', { data, error });
   if (error) {

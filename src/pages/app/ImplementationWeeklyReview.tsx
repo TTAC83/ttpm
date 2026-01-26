@@ -1217,8 +1217,8 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
             </div>
           </div>
           
-          {/* Reason Code for Red Health */}
-          {customerHealth === "red" && (
+          {/* Reason Code for Red Health or Off Track Status */}
+          {(customerHealth === "red" || projectStatus === "off_track") && (
             <div>
               <div className="text-sm mb-1">
                 Reason Code <span className="text-destructive">*</span>

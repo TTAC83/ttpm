@@ -145,9 +145,20 @@ export default function ImplementationWeeklyReviewPage() {
       };
     });
     
-    if (!search) return companiesWithHealth;
-    const q = search.toLowerCase();
-    return companiesWithHealth.filter(c => c.company_name.toLowerCase().includes(q));
+    // Filter by search term
+    let filtered = companiesWithHealth;
+    if (search) {
+      const q = search.toLowerCase();
+      filtered = companiesWithHealth.filter(c => c.company_name.toLowerCase().includes(q));
+    }
+    
+    // Sort by go-live date (earliest first, null dates at the end)
+    return filtered.sort((a, b) => {
+      if (!a.planned_go_live_date && !b.planned_go_live_date) return 0;
+      if (!a.planned_go_live_date) return 1;
+      if (!b.planned_go_live_date) return -1;
+      return a.planned_go_live_date.localeCompare(b.planned_go_live_date);
+    });
   }, [companiesQ.data, companiesHealthQ.data, search]);
 
   return (

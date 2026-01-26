@@ -547,6 +547,40 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   // Hypercare state
   const [hypercare, setHypercare] = useState(false);
 
+  // Ref to hold latest state values to avoid stale closures in auto-save
+  const latestStateRef = useRef({
+    projectStatus: null as "on_track" | "off_track" | null,
+    customerHealth: null as "green" | "red" | null,
+    notes: "",
+    reasonCode: "",
+    weeklySummary: "",
+    phaseInstallation: false,
+    phaseInstallationDetails: "",
+    phaseOnboarding: false,
+    phaseOnboardingDetails: "",
+    phaseLive: false,
+    phaseLiveDetails: "",
+    hypercare: false
+  });
+
+  // Keep the ref updated with latest values
+  useEffect(() => {
+    latestStateRef.current = {
+      projectStatus,
+      customerHealth,
+      notes,
+      reasonCode,
+      weeklySummary,
+      phaseInstallation,
+      phaseInstallationDetails,
+      phaseOnboarding,
+      phaseOnboardingDetails,
+      phaseLive,
+      phaseLiveDetails,
+      hypercare
+    };
+  }, [projectStatus, customerHealth, notes, reasonCode, weeklySummary, phaseInstallation, phaseInstallationDetails, phaseOnboarding, phaseOnboardingDetails, phaseLive, phaseLiveDetails, hypercare]);
+
   // Reset states immediately when companyId or weekStart changes
   useEffect(() => {
     setProjectStatus(null);
@@ -702,18 +736,46 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     [autoSave]
   );
 
-  // Helper to trigger save with current state
+  // Helper to trigger save with current state - uses ref to always get latest values
   const triggerImmediateSave = useCallback(() => {
-    if (projectStatus && customerHealth) {
-      autoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary, phaseInstallation, phaseInstallationDetails, phaseOnboarding, phaseOnboardingDetails, phaseLive, phaseLiveDetails, hypercare);
+    const state = latestStateRef.current;
+    if (state.projectStatus && state.customerHealth) {
+      autoSave(
+        state.projectStatus, 
+        state.customerHealth, 
+        state.notes, 
+        state.reasonCode, 
+        state.weeklySummary, 
+        state.phaseInstallation, 
+        state.phaseInstallationDetails, 
+        state.phaseOnboarding, 
+        state.phaseOnboardingDetails, 
+        state.phaseLive, 
+        state.phaseLiveDetails, 
+        state.hypercare
+      );
     }
-  }, [autoSave, projectStatus, customerHealth, notes, reasonCode, weeklySummary, phaseInstallation, phaseInstallationDetails, phaseOnboarding, phaseOnboardingDetails, phaseLive, phaseLiveDetails, hypercare]);
+  }, [autoSave]);
 
   const triggerDebouncedSave = useCallback(() => {
-    if (projectStatus && customerHealth) {
-      triggerAutoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary, phaseInstallation, phaseInstallationDetails, phaseOnboarding, phaseOnboardingDetails, phaseLive, phaseLiveDetails, hypercare);
+    const state = latestStateRef.current;
+    if (state.projectStatus && state.customerHealth) {
+      triggerAutoSave(
+        state.projectStatus, 
+        state.customerHealth, 
+        state.notes, 
+        state.reasonCode, 
+        state.weeklySummary, 
+        state.phaseInstallation, 
+        state.phaseInstallationDetails, 
+        state.phaseOnboarding, 
+        state.phaseOnboardingDetails, 
+        state.phaseLive, 
+        state.phaseLiveDetails, 
+        state.hypercare
+      );
     }
-  }, [triggerAutoSave, projectStatus, customerHealth, notes, reasonCode, weeklySummary, phaseInstallation, phaseInstallationDetails, phaseOnboarding, phaseOnboardingDetails, phaseLive, phaseLiveDetails, hypercare]);
+  }, [triggerAutoSave]);
 
   // Auto-save when project status changes (immediate)
   useEffect(() => {

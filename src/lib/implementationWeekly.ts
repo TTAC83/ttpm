@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { generateAvailableWeeks, GeneratedWeek, getCurrentWeekStart, formatWeekLabel } from "./weekUtils";
 
 export type ImplWeek = { week_start: string; week_end: string; available_at: string };
-export type ImplCompany = { company_id: string; company_name: string };
+export type ImplCompany = { company_id: string; company_name: string; planned_go_live_date?: string | null };
 
 // Re-export for convenience
 export { formatWeekLabel, getCurrentWeekStart };
@@ -78,12 +78,41 @@ export async function listAllWeeksWithData(): Promise<ImplWeek[]> {
 }
 
 export async function listImplCompanies(): Promise<ImplCompany[]> {
-  const { data, error } = await supabase
+  // Get companies from view
+  const { data: companies, error } = await supabase
     .from("v_impl_companies")
     .select("company_id,company_name")
     .order("company_name", { ascending: true });
   if (error) throw error;
-  return data ?? [];
+  
+  if (!companies?.length) return [];
+  
+  // Get earliest go-live date for each company from projects
+  const { data: goLiveDates, error: goLiveError } = await supabase
+    .from("projects")
+    .select("company_id, planned_go_live_date")
+    .in("domain", ["IoT", "Vision", "Hybrid"])
+    .not("planned_go_live_date", "is", null)
+    .order("planned_go_live_date", { ascending: true });
+  
+  if (goLiveError) {
+    console.error("Error fetching go-live dates:", goLiveError);
+    return companies.map(c => ({ ...c, planned_go_live_date: null }));
+  }
+  
+  // Build a map of company_id -> earliest go-live date
+  const goLiveDateMap = new Map<string, string>();
+  (goLiveDates || []).forEach((p: { company_id: string; planned_go_live_date: string }) => {
+    if (!goLiveDateMap.has(p.company_id)) {
+      goLiveDateMap.set(p.company_id, p.planned_go_live_date);
+    }
+  });
+  
+  // Merge go-live dates with companies
+  return companies.map(c => ({
+    ...c,
+    planned_go_live_date: goLiveDateMap.get(c.company_id) || null
+  }));
 }
 
 export type TaskRow = {

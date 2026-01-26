@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Edit, Save, X } from 'lucide-react';
 import { format } from 'date-fns';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface AccountInfoTabProps {
   data: any;
@@ -22,6 +23,7 @@ interface AccountInfoTabProps {
 export const AccountInfoTab = ({ data, onUpdate, type }: AccountInfoTabProps) => {
   const { profile } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   
@@ -84,6 +86,9 @@ export const AccountInfoTab = ({ data, onUpdate, type }: AccountInfoTabProps) =>
         title: "Account Info Updated",
         description: "Reference and marketing information has been updated successfully",
       });
+
+      // Invalidate impl-companies cache so weekly review gets updated go-live dates
+      queryClient.invalidateQueries({ queryKey: ["impl-companies"] });
 
       setEditing(false);
       onUpdate();

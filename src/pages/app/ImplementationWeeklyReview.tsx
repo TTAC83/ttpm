@@ -27,8 +27,8 @@ import { blockersService } from "@/lib/blockersService";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
 
-type Company = { company_id: string; company_name: string };
-type CompanyWithHealth = { company_id: string; company_name: string; customer_health?: "green" | "red" | null; project_status?: "on_track" | "off_track" | null };
+type Company = { company_id: string; company_name: string; planned_go_live_date?: string | null };
+type CompanyWithHealth = { company_id: string; company_name: string; planned_go_live_date?: string | null; customer_health?: "green" | "red" | null; project_status?: "on_track" | "off_track" | null };
 type Week = { week_start: string; week_end: string; available_at: string };
 type Profile = { user_id: string; name: string };
 type TaskRow = {
@@ -297,7 +297,15 @@ export default function ImplementationWeeklyReviewPage() {
                   onClick={()=>setSelectedCompanyId(c.company_id)}
                 >
                   <div className="flex items-center gap-2">
-                    <div className="font-medium flex-1">{c.company_name}</div>
+                    <div className="flex-1">
+                      <div className="font-medium">{c.company_name}</div>
+                      {c.planned_go_live_date && (
+                        <div className="text-xs text-muted-foreground flex items-center gap-1">
+                          <CalendarIcon className="h-3 w-3" />
+                          Go Live: {format(new Date(c.planned_go_live_date), 'MMM d, yyyy')}
+                        </div>
+                      )}
+                    </div>
                     <div className="flex items-center gap-1">
                       {c.customer_health === "green" && (
                         <Smile className="h-4 w-4 text-green-600" />

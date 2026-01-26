@@ -750,13 +750,30 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     [autoSave]
   );
 
+  // Check if there's any data worth saving (phases, hypercare, notes, etc.)
+  const hasDataToSave = useCallback(() => {
+    const state = latestStateRef.current;
+    return state.projectStatus || 
+           state.customerHealth || 
+           state.phaseInstallation || 
+           state.phaseOnboarding || 
+           state.phaseLive || 
+           state.hypercare ||
+           state.notes ||
+           state.weeklySummary ||
+           state.phaseInstallationDetails ||
+           state.phaseOnboardingDetails ||
+           state.phaseLiveDetails;
+  }, []);
+
   // Helper to trigger save with current state - uses ref to always get latest values
   const triggerImmediateSave = useCallback(() => {
     // Skip auto-save while loading/resetting
     if (isLoadingRef.current) return;
     
     const state = latestStateRef.current;
-    if (state.projectStatus && state.customerHealth) {
+    // Save if we have any data worth saving (not just when both status fields are set)
+    if (hasDataToSave()) {
       autoSave(
         state.projectStatus, 
         state.customerHealth, 
@@ -772,14 +789,15 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
         state.hypercare
       );
     }
-  }, [autoSave]);
+  }, [autoSave, hasDataToSave]);
 
   const triggerDebouncedSave = useCallback(() => {
     // Skip auto-save while loading/resetting
     if (isLoadingRef.current) return;
     
     const state = latestStateRef.current;
-    if (state.projectStatus && state.customerHealth) {
+    // Save if we have any data worth saving (not just when both status fields are set)
+    if (hasDataToSave()) {
       triggerAutoSave(
         state.projectStatus, 
         state.customerHealth, 
@@ -795,7 +813,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
         state.hypercare
       );
     }
-  }, [triggerAutoSave]);
+  }, [triggerAutoSave, hasDataToSave]);
 
   // Auto-save when project status changes (immediate)
   useEffect(() => {

@@ -273,7 +273,17 @@ serve(async (req) => {
       }
     }
 
-    // 13. Delete project members
+    // 13. Delete product_gaps
+    const { error: productGapsError } = await supabaseClient
+      .from('product_gaps')
+      .delete()
+      .eq('project_id', projectId)
+    
+    if (productGapsError) {
+      console.error('Error deleting product_gaps:', productGapsError)
+    }
+
+    // 14. Delete project members
     const { error: membersError } = await supabaseClient
       .from('project_members')
       .delete()
@@ -283,7 +293,37 @@ serve(async (req) => {
       console.error('Error deleting project members:', membersError)
     }
 
-    // 14. Finally, delete the project
+    // 15. Delete contact_projects
+    const { error: contactProjectsError } = await supabaseClient
+      .from('contact_projects')
+      .delete()
+      .eq('project_id', projectId)
+    
+    if (contactProjectsError) {
+      console.error('Error deleting contact_projects:', contactProjectsError)
+    }
+
+    // 16. Delete blockers
+    const { error: blockersError } = await supabaseClient
+      .from('blockers')
+      .delete()
+      .eq('project_id', projectId)
+    
+    if (blockersError) {
+      console.error('Error deleting blockers:', blockersError)
+    }
+
+    // 17. Delete project_iot_requirements
+    const { error: iotRequirementsError } = await supabaseClient
+      .from('project_iot_requirements')
+      .delete()
+      .eq('project_id', projectId)
+    
+    if (iotRequirementsError) {
+      console.error('Error deleting project_iot_requirements:', iotRequirementsError)
+    }
+
+    // 18. Finally, delete the project
     const { error: projectError } = await supabaseClient
       .from('projects')
       .delete()

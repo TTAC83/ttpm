@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef, useCallback } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ensureWeeks, listWeeks, listAllWeeksWithData, listImplCompanies, loadOverdueTasks, loadOpenActions, loadEventsAroundWeek, loadReview, saveReview, loadWeeklyStats, loadOpenVisionModels, VisionModelRow, ImplWeek } from "@/lib/implementationWeekly";
 import { productGapsService } from "@/lib/productGapsService";
@@ -566,8 +566,8 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     hypercare: false
   });
 
-  // Keep the ref updated with latest values
-  useEffect(() => {
+  // Keep the ref updated with latest values - use useLayoutEffect to ensure it runs synchronously before other effects
+  useLayoutEffect(() => {
     latestStateRef.current = {
       projectStatus,
       customerHealth,

@@ -2043,6 +2043,12 @@ export type Database = {
             | null
           id: string
           notes: string | null
+          phase_installation: boolean | null
+          phase_installation_details: string | null
+          phase_live: boolean | null
+          phase_live_details: string | null
+          phase_onboarding: boolean | null
+          phase_onboarding_details: string | null
           planned_go_live_date: string | null
           project_status: Database["public"]["Enums"]["impl_week_status"] | null
           reason_code: string | null
@@ -2062,6 +2068,12 @@ export type Database = {
             | null
           id?: string
           notes?: string | null
+          phase_installation?: boolean | null
+          phase_installation_details?: string | null
+          phase_live?: boolean | null
+          phase_live_details?: string | null
+          phase_onboarding?: boolean | null
+          phase_onboarding_details?: string | null
           planned_go_live_date?: string | null
           project_status?:
             | Database["public"]["Enums"]["impl_week_status"]
@@ -2083,6 +2095,12 @@ export type Database = {
             | null
           id?: string
           notes?: string | null
+          phase_installation?: boolean | null
+          phase_installation_details?: string | null
+          phase_live?: boolean | null
+          phase_live_details?: string | null
+          phase_onboarding?: boolean | null
+          phase_onboarding_details?: string | null
           planned_go_live_date?: string | null
           project_status?:
             | Database["public"]["Enums"]["impl_week_status"]
@@ -5396,6 +5414,27 @@ export type Database = {
               p_current_status?: string
               p_customer_health: Database["public"]["Enums"]["impl_health_simple"]
               p_notes?: string
+              p_planned_go_live_date?: string
+              p_project_status: Database["public"]["Enums"]["impl_week_status"]
+              p_reason_code?: string
+              p_week_start: string
+              p_weekly_summary?: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_churn_risk?: Database["public"]["Enums"]["churn_risk_level"]
+              p_company_id: string
+              p_current_status?: string
+              p_customer_health: Database["public"]["Enums"]["impl_health_simple"]
+              p_notes?: string
+              p_phase_installation?: boolean
+              p_phase_installation_details?: string
+              p_phase_live?: boolean
+              p_phase_live_details?: string
+              p_phase_onboarding?: boolean
+              p_phase_onboarding_details?: string
               p_planned_go_live_date?: string
               p_project_status: Database["public"]["Enums"]["impl_week_status"]
               p_reason_code?: string

@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { CalendarIcon, Plus, Smile, Frown, CheckCircle, AlertCircle, Save, X, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { computeTaskStatus } from "@/lib/taskStatus";
@@ -532,6 +533,14 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   const [weeklySummary, setWeeklySummary] = useState<string>("");
   const [statusTouched, setStatusTouched] = useState(false);
   const [healthTouched, setHealthTouched] = useState(false);
+  
+  // Phase tracking states
+  const [phaseInstallation, setPhaseInstallation] = useState(false);
+  const [phaseInstallationDetails, setPhaseInstallationDetails] = useState("");
+  const [phaseOnboarding, setPhaseOnboarding] = useState(false);
+  const [phaseOnboardingDetails, setPhaseOnboardingDetails] = useState("");
+  const [phaseLive, setPhaseLive] = useState(false);
+  const [phaseLiveDetails, setPhaseLiveDetails] = useState("");
 
   // Reset states immediately when companyId or weekStart changes
   useEffect(() => {
@@ -542,6 +551,12 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     setWeeklySummary("");
     setStatusTouched(false);
     setHealthTouched(false);
+    setPhaseInstallation(false);
+    setPhaseInstallationDetails("");
+    setPhaseOnboarding(false);
+    setPhaseOnboardingDetails("");
+    setPhaseLive(false);
+    setPhaseLiveDetails("");
   }, [companyId, weekStart]);
 
   // Load saved data when reviewQ.data changes
@@ -552,11 +567,29 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
       setNotes(reviewQ.data.notes ?? "");
       setReasonCode(reviewQ.data.reason_code ?? "");
       setWeeklySummary(reviewQ.data.weekly_summary ?? "");
+      setPhaseInstallation(reviewQ.data.phase_installation ?? false);
+      setPhaseInstallationDetails(reviewQ.data.phase_installation_details ?? "");
+      setPhaseOnboarding(reviewQ.data.phase_onboarding ?? false);
+      setPhaseOnboardingDetails(reviewQ.data.phase_onboarding_details ?? "");
+      setPhaseLive(reviewQ.data.phase_live ?? false);
+      setPhaseLiveDetails(reviewQ.data.phase_live_details ?? "");
     }
   }, [reviewQ.data]);
 
   const autoSaveMutation = useMutation({
-    mutationFn: (params: { projectStatus: "on_track"|"off_track"|null, customerHealth: "green"|"red"|null, notes: string, reasonCode: string, weeklySummary: string }) => 
+    mutationFn: (params: { 
+      projectStatus: "on_track"|"off_track"|null, 
+      customerHealth: "green"|"red"|null, 
+      notes: string, 
+      reasonCode: string, 
+      weeklySummary: string,
+      phaseInstallation: boolean,
+      phaseInstallationDetails: string,
+      phaseOnboarding: boolean,
+      phaseOnboardingDetails: string,
+      phaseLive: boolean,
+      phaseLiveDetails: string
+    }) => 
       saveReview({
         companyId,
         weekStartISO: weekStart,
@@ -565,6 +598,12 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
         notes: params.notes,
         reasonCode: params.reasonCode,
         weeklySummary: params.weeklySummary,
+        phaseInstallation: params.phaseInstallation,
+        phaseInstallationDetails: params.phaseInstallationDetails,
+        phaseOnboarding: params.phaseOnboarding,
+        phaseOnboardingDetails: params.phaseOnboardingDetails,
+        phaseLive: params.phaseLive,
+        phaseLiveDetails: params.phaseLiveDetails,
       }),
     onSuccess: () => {
       // Only invalidate stats and health queries, not the review query to prevent re-renders
@@ -581,7 +620,19 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
 
   // Auto-save functionality
   const autoSave = useCallback(
-    async (projectStatusValue: "on_track"|"off_track"|null, customerHealthValue: "green"|"red"|null, notesValue: string, reasonCodeValue: string, weeklySummaryValue: string) => {
+    async (
+      projectStatusValue: "on_track"|"off_track"|null, 
+      customerHealthValue: "green"|"red"|null, 
+      notesValue: string, 
+      reasonCodeValue: string, 
+      weeklySummaryValue: string,
+      phaseInstallationValue: boolean,
+      phaseInstallationDetailsValue: string,
+      phaseOnboardingValue: boolean,
+      phaseOnboardingDetailsValue: string,
+      phaseLiveValue: boolean,
+      phaseLiveDetailsValue: string
+    ) => {
       // Don't auto-save if another save is already in progress
       if (autoSaveMutation.isPending) return;
       
@@ -599,6 +650,12 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
           notes: notesValue,
           reasonCode: reasonCodeValue,
           weeklySummary: weeklySummaryValue,
+          phaseInstallation: phaseInstallationValue,
+          phaseInstallationDetails: phaseInstallationDetailsValue,
+          phaseOnboarding: phaseOnboardingValue,
+          phaseOnboardingDetails: phaseOnboardingDetailsValue,
+          phaseLive: phaseLiveValue,
+          phaseLiveDetails: phaseLiveDetailsValue,
         });
       } catch (error) {
         console.error('Auto-save failed:', error);
@@ -610,51 +667,78 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   // Debounced auto-save for text fields
   const debouncedAutoSave = useRef<NodeJS.Timeout>();
   const triggerAutoSave = useCallback(
-    (projectStatusValue: "on_track"|"off_track"|null, customerHealthValue: "green"|"red"|null, notesValue: string, reasonCodeValue: string, weeklySummaryValue: string) => {
+    (
+      projectStatusValue: "on_track"|"off_track"|null, 
+      customerHealthValue: "green"|"red"|null, 
+      notesValue: string, 
+      reasonCodeValue: string, 
+      weeklySummaryValue: string,
+      phaseInstallationValue: boolean,
+      phaseInstallationDetailsValue: string,
+      phaseOnboardingValue: boolean,
+      phaseOnboardingDetailsValue: string,
+      phaseLiveValue: boolean,
+      phaseLiveDetailsValue: string
+    ) => {
       if (debouncedAutoSave.current) {
         clearTimeout(debouncedAutoSave.current);
       }
       debouncedAutoSave.current = setTimeout(() => {
-        autoSave(projectStatusValue, customerHealthValue, notesValue, reasonCodeValue, weeklySummaryValue);
+        autoSave(projectStatusValue, customerHealthValue, notesValue, reasonCodeValue, weeklySummaryValue, phaseInstallationValue, phaseInstallationDetailsValue, phaseOnboardingValue, phaseOnboardingDetailsValue, phaseLiveValue, phaseLiveDetailsValue);
       }, 1500); // 1.5 second delay to allow for faster typing
     },
     [autoSave]
   );
 
+  // Helper to trigger save with current state
+  const triggerImmediateSave = useCallback(() => {
+    if (projectStatus && customerHealth) {
+      autoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary, phaseInstallation, phaseInstallationDetails, phaseOnboarding, phaseOnboardingDetails, phaseLive, phaseLiveDetails);
+    }
+  }, [autoSave, projectStatus, customerHealth, notes, reasonCode, weeklySummary, phaseInstallation, phaseInstallationDetails, phaseOnboarding, phaseOnboardingDetails, phaseLive, phaseLiveDetails]);
+
+  const triggerDebouncedSave = useCallback(() => {
+    if (projectStatus && customerHealth) {
+      triggerAutoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary, phaseInstallation, phaseInstallationDetails, phaseOnboarding, phaseOnboardingDetails, phaseLive, phaseLiveDetails);
+    }
+  }, [triggerAutoSave, projectStatus, customerHealth, notes, reasonCode, weeklySummary, phaseInstallation, phaseInstallationDetails, phaseOnboarding, phaseOnboardingDetails, phaseLive, phaseLiveDetails]);
+
   // Auto-save when project status changes (immediate)
   useEffect(() => {
-    if (projectStatus && customerHealth) {
-      autoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary);
-    }
+    triggerImmediateSave();
   }, [projectStatus]);
 
   // Auto-save when customer health changes (immediate)
   useEffect(() => {
-    if (projectStatus && customerHealth) {
-      autoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary);
-    }
+    triggerImmediateSave();
   }, [customerHealth]);
 
   // Auto-save when reason code changes (immediate, since it's a select)
   useEffect(() => {
-    if (projectStatus && customerHealth && reasonCode) {
-      autoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary);
+    if (reasonCode) {
+      triggerImmediateSave();
     }
   }, [reasonCode]);
 
+  // Auto-save when phase toggles change (immediate)
+  useEffect(() => {
+    triggerImmediateSave();
+  }, [phaseInstallation, phaseOnboarding, phaseLive]);
+
   // Auto-save when notes change (debounced)
   useEffect(() => {
-    if (projectStatus && customerHealth) {
-      triggerAutoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary);
-    }
+    triggerDebouncedSave();
   }, [notes]);
 
   // Auto-save when weekly summary changes (debounced)
   useEffect(() => {
-    if (projectStatus && customerHealth) {
-      triggerAutoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary);
-    }
+    triggerDebouncedSave();
   }, [weeklySummary]);
+
+  // Auto-save when phase details change (debounced)
+  useEffect(() => {
+    triggerDebouncedSave();
+  }, [phaseInstallationDetails, phaseOnboardingDetails, phaseLiveDetails]);
 
   const handleEditTask = (task: TaskRow) => {
     setEditingTask(task);
@@ -1271,6 +1355,72 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
               value={weeklySummary} 
               onChange={(e)=>setWeeklySummary(e.target.value)} 
             />
+          </div>
+        </div>
+
+        {/* Project Phase Tracking */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-medium">Project Phases</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Installation Phase */}
+            <div className="border rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="phase-installation" className="font-medium">Installation</Label>
+                <Switch
+                  id="phase-installation"
+                  checked={phaseInstallation}
+                  onCheckedChange={setPhaseInstallation}
+                />
+              </div>
+              {phaseInstallation && (
+                <Textarea
+                  placeholder="Enter installation phase details..."
+                  value={phaseInstallationDetails}
+                  onChange={(e) => setPhaseInstallationDetails(e.target.value)}
+                  className="min-h-[80px] resize-none"
+                />
+              )}
+            </div>
+
+            {/* Onboarding Phase */}
+            <div className="border rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="phase-onboarding" className="font-medium">Onboarding</Label>
+                <Switch
+                  id="phase-onboarding"
+                  checked={phaseOnboarding}
+                  onCheckedChange={setPhaseOnboarding}
+                />
+              </div>
+              {phaseOnboarding && (
+                <Textarea
+                  placeholder="Enter onboarding phase details..."
+                  value={phaseOnboardingDetails}
+                  onChange={(e) => setPhaseOnboardingDetails(e.target.value)}
+                  className="min-h-[80px] resize-none"
+                />
+              )}
+            </div>
+
+            {/* Live Phase */}
+            <div className="border rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="phase-live" className="font-medium">Live</Label>
+                <Switch
+                  id="phase-live"
+                  checked={phaseLive}
+                  onCheckedChange={setPhaseLive}
+                />
+              </div>
+              {phaseLive && (
+                <Textarea
+                  placeholder="Enter live phase details..."
+                  value={phaseLiveDetails}
+                  onChange={(e) => setPhaseLiveDetails(e.target.value)}
+                  className="min-h-[80px] resize-none"
+                />
+              )}
+            </div>
           </div>
         </div>
 

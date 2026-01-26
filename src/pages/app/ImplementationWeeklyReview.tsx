@@ -750,10 +750,19 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     [autoSave]
   );
 
-  // Check if there's any data worth saving (phases, hypercare, notes, etc.)
-  const hasDataToSave = useCallback(() => {
+  // Helper to trigger save with current state - uses ref to always get latest values
+  const triggerImmediateSave = useCallback(() => {
+    // Skip auto-save while loading/resetting
+    if (isLoadingRef.current) {
+      console.log('Skipping save - isLoadingRef is true');
+      return;
+    }
+    
     const state = latestStateRef.current;
-    return state.projectStatus || 
+    console.log('triggerImmediateSave - state:', state);
+    
+    // Check if there's any data worth saving (inline check to avoid stale closure)
+    const hasData = state.projectStatus || 
            state.customerHealth || 
            state.phaseInstallation || 
            state.phaseOnboarding || 
@@ -764,16 +773,9 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
            state.phaseInstallationDetails ||
            state.phaseOnboardingDetails ||
            state.phaseLiveDetails;
-  }, []);
-
-  // Helper to trigger save with current state - uses ref to always get latest values
-  const triggerImmediateSave = useCallback(() => {
-    // Skip auto-save while loading/resetting
-    if (isLoadingRef.current) return;
     
-    const state = latestStateRef.current;
-    // Save if we have any data worth saving (not just when both status fields are set)
-    if (hasDataToSave()) {
+    if (hasData) {
+      console.log('Triggering autoSave with state:', state);
       autoSave(
         state.projectStatus, 
         state.customerHealth, 
@@ -788,16 +790,34 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
         state.phaseLiveDetails, 
         state.hypercare
       );
+    } else {
+      console.log('No data to save');
     }
-  }, [autoSave, hasDataToSave]);
+  }, [autoSave]);
 
   const triggerDebouncedSave = useCallback(() => {
     // Skip auto-save while loading/resetting
-    if (isLoadingRef.current) return;
+    if (isLoadingRef.current) {
+      console.log('Skipping debounced save - isLoadingRef is true');
+      return;
+    }
     
     const state = latestStateRef.current;
-    // Save if we have any data worth saving (not just when both status fields are set)
-    if (hasDataToSave()) {
+    
+    // Check if there's any data worth saving (inline check to avoid stale closure)
+    const hasData = state.projectStatus || 
+           state.customerHealth || 
+           state.phaseInstallation || 
+           state.phaseOnboarding || 
+           state.phaseLive || 
+           state.hypercare ||
+           state.notes ||
+           state.weeklySummary ||
+           state.phaseInstallationDetails ||
+           state.phaseOnboardingDetails ||
+           state.phaseLiveDetails;
+    
+    if (hasData) {
       triggerAutoSave(
         state.projectStatus, 
         state.customerHealth, 
@@ -813,7 +833,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
         state.hypercare
       );
     }
-  }, [triggerAutoSave, hasDataToSave]);
+  }, [triggerAutoSave]);
 
   // Auto-save when project status changes (immediate)
   useEffect(() => {

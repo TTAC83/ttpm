@@ -29,7 +29,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
 
 type Company = { company_id: string; company_name: string; planned_go_live_date?: string | null };
-type CompanyWithHealth = { company_id: string; company_name: string; planned_go_live_date?: string | null; customer_health?: "green" | "red" | null; project_status?: "on_track" | "off_track" | null; churn_risk?: "Low" | "Medium" | "High" | "Certain" | null };
+type CompanyWithHealth = { company_id: string; company_name: string; planned_go_live_date?: string | null; customer_health?: "green" | "red" | null; project_status?: "on_track" | "off_track" | null; churn_risk?: "Low" | "Medium" | "High" | "Certain" | null; hypercare?: boolean | null };
 type Week = { week_start: string; week_end: string; available_at: string };
 type Profile = { user_id: string; name: string };
 type TaskRow = {
@@ -110,7 +110,7 @@ export default function ImplementationWeeklyReviewPage() {
       
       const { data, error } = await supabase
         .from('impl_weekly_reviews')
-        .select('company_id, customer_health, project_status, churn_risk')
+        .select('company_id, customer_health, project_status, churn_risk, hypercare')
         .eq('week_start', selectedWeek);
       
       if (error) {
@@ -136,14 +136,15 @@ export default function ImplementationWeeklyReviewPage() {
     const list = companiesQ.data ?? [];
     const healthData = companiesHealthQ.data ?? [];
     
-    // Merge companies with their health status, project status, and churn risk
+    // Merge companies with their health status, project status, churn risk, and hypercare
     const companiesWithHealth: CompanyWithHealth[] = list.map(company => {
       const healthInfo = healthData.find(h => h.company_id === company.company_id);
       return {
         ...company,
         customer_health: healthInfo?.customer_health || null,
         project_status: healthInfo?.project_status || null,
-        churn_risk: (healthInfo as any)?.churn_risk || null
+        churn_risk: (healthInfo as any)?.churn_risk || null,
+        hypercare: (healthInfo as any)?.hypercare || null
       };
     });
     
@@ -305,7 +306,8 @@ export default function ImplementationWeeklyReviewPage() {
                   key={c.company_id}
                   className={cn(
                     "w-full text-left px-3 py-2 rounded-md hover:opacity-90",
-                    selectedCompanyId === c.company_id ? "ring-1" : "opacity-80"
+                    selectedCompanyId === c.company_id ? "ring-1" : "opacity-80",
+                    c.hypercare && "ring-2 ring-red-500"
                   )}
                   onClick={()=>setSelectedCompanyId(c.company_id)}
                 >
@@ -541,6 +543,9 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   const [phaseOnboardingDetails, setPhaseOnboardingDetails] = useState("");
   const [phaseLive, setPhaseLive] = useState(false);
   const [phaseLiveDetails, setPhaseLiveDetails] = useState("");
+  
+  // Hypercare state
+  const [hypercare, setHypercare] = useState(false);
 
   // Reset states immediately when companyId or weekStart changes
   useEffect(() => {
@@ -557,6 +562,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     setPhaseOnboardingDetails("");
     setPhaseLive(false);
     setPhaseLiveDetails("");
+    setHypercare(false);
   }, [companyId, weekStart]);
 
   // Load saved data when reviewQ.data changes
@@ -573,6 +579,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
       setPhaseOnboardingDetails(reviewQ.data.phase_onboarding_details ?? "");
       setPhaseLive(reviewQ.data.phase_live ?? false);
       setPhaseLiveDetails(reviewQ.data.phase_live_details ?? "");
+      setHypercare(reviewQ.data.hypercare ?? false);
     }
   }, [reviewQ.data]);
 
@@ -588,7 +595,8 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
       phaseOnboarding: boolean,
       phaseOnboardingDetails: string,
       phaseLive: boolean,
-      phaseLiveDetails: string
+      phaseLiveDetails: string,
+      hypercare: boolean
     }) => 
       saveReview({
         companyId,
@@ -604,6 +612,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
         phaseOnboardingDetails: params.phaseOnboardingDetails,
         phaseLive: params.phaseLive,
         phaseLiveDetails: params.phaseLiveDetails,
+        hypercare: params.hypercare,
       }),
     onSuccess: () => {
       // Only invalidate stats and health queries, not the review query to prevent re-renders
@@ -631,7 +640,8 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
       phaseOnboardingValue: boolean,
       phaseOnboardingDetailsValue: string,
       phaseLiveValue: boolean,
-      phaseLiveDetailsValue: string
+      phaseLiveDetailsValue: string,
+      hypercareValue: boolean
     ) => {
       // Don't auto-save if another save is already in progress
       if (autoSaveMutation.isPending) return;
@@ -656,6 +666,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
           phaseOnboardingDetails: phaseOnboardingDetailsValue,
           phaseLive: phaseLiveValue,
           phaseLiveDetails: phaseLiveDetailsValue,
+          hypercare: hypercareValue,
         });
       } catch (error) {
         console.error('Auto-save failed:', error);
@@ -678,13 +689,14 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
       phaseOnboardingValue: boolean,
       phaseOnboardingDetailsValue: string,
       phaseLiveValue: boolean,
-      phaseLiveDetailsValue: string
+      phaseLiveDetailsValue: string,
+      hypercareValue: boolean
     ) => {
       if (debouncedAutoSave.current) {
         clearTimeout(debouncedAutoSave.current);
       }
       debouncedAutoSave.current = setTimeout(() => {
-        autoSave(projectStatusValue, customerHealthValue, notesValue, reasonCodeValue, weeklySummaryValue, phaseInstallationValue, phaseInstallationDetailsValue, phaseOnboardingValue, phaseOnboardingDetailsValue, phaseLiveValue, phaseLiveDetailsValue);
+        autoSave(projectStatusValue, customerHealthValue, notesValue, reasonCodeValue, weeklySummaryValue, phaseInstallationValue, phaseInstallationDetailsValue, phaseOnboardingValue, phaseOnboardingDetailsValue, phaseLiveValue, phaseLiveDetailsValue, hypercareValue);
       }, 1500); // 1.5 second delay to allow for faster typing
     },
     [autoSave]
@@ -693,15 +705,15 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   // Helper to trigger save with current state
   const triggerImmediateSave = useCallback(() => {
     if (projectStatus && customerHealth) {
-      autoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary, phaseInstallation, phaseInstallationDetails, phaseOnboarding, phaseOnboardingDetails, phaseLive, phaseLiveDetails);
+      autoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary, phaseInstallation, phaseInstallationDetails, phaseOnboarding, phaseOnboardingDetails, phaseLive, phaseLiveDetails, hypercare);
     }
-  }, [autoSave, projectStatus, customerHealth, notes, reasonCode, weeklySummary, phaseInstallation, phaseInstallationDetails, phaseOnboarding, phaseOnboardingDetails, phaseLive, phaseLiveDetails]);
+  }, [autoSave, projectStatus, customerHealth, notes, reasonCode, weeklySummary, phaseInstallation, phaseInstallationDetails, phaseOnboarding, phaseOnboardingDetails, phaseLive, phaseLiveDetails, hypercare]);
 
   const triggerDebouncedSave = useCallback(() => {
     if (projectStatus && customerHealth) {
-      triggerAutoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary, phaseInstallation, phaseInstallationDetails, phaseOnboarding, phaseOnboardingDetails, phaseLive, phaseLiveDetails);
+      triggerAutoSave(projectStatus, customerHealth, notes, reasonCode, weeklySummary, phaseInstallation, phaseInstallationDetails, phaseOnboarding, phaseOnboardingDetails, phaseLive, phaseLiveDetails, hypercare);
     }
-  }, [triggerAutoSave, projectStatus, customerHealth, notes, reasonCode, weeklySummary, phaseInstallation, phaseInstallationDetails, phaseOnboarding, phaseOnboardingDetails, phaseLive, phaseLiveDetails]);
+  }, [triggerAutoSave, projectStatus, customerHealth, notes, reasonCode, weeklySummary, phaseInstallation, phaseInstallationDetails, phaseOnboarding, phaseOnboardingDetails, phaseLive, phaseLiveDetails, hypercare]);
 
   // Auto-save when project status changes (immediate)
   useEffect(() => {
@@ -720,10 +732,10 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     }
   }, [reasonCode]);
 
-  // Auto-save when phase toggles change (immediate)
+  // Auto-save when phase toggles or hypercare change (immediate)
   useEffect(() => {
     triggerImmediateSave();
-  }, [phaseInstallation, phaseOnboarding, phaseLive]);
+  }, [phaseInstallation, phaseOnboarding, phaseLive, hypercare]);
 
   // Auto-save when notes change (debounced)
   useEffect(() => {
@@ -1354,6 +1366,21 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
               placeholder="Write a short summary of this week's progress, issues, or notes…"
               value={weeklySummary} 
               onChange={(e)=>setWeeklySummary(e.target.value)} 
+            />
+          </div>
+        </div>
+
+        {/* Hypercare Toggle */}
+        <div className="border rounded-lg p-4 border-red-200 bg-red-50/50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="hypercare" className="font-medium text-red-700">Hypercare</Label>
+              <span className="text-xs text-muted-foreground">(Priority customer - will be highlighted in sidebar)</span>
+            </div>
+            <Switch
+              id="hypercare"
+              checked={hypercare}
+              onCheckedChange={setHypercare}
             />
           </div>
         </div>

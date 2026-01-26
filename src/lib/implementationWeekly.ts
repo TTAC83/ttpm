@@ -271,13 +271,14 @@ export type ImplWeeklyReview = {
   phase_onboarding_details: string | null;
   phase_live: boolean | null;
   phase_live_details: string | null;
+  hypercare: boolean | null;
 };
 
 export async function loadReview(companyId: string, weekStartISO: string): Promise<ImplWeeklyReview | null> {
   console.log('Loading weekly review for:', { companyId, weekStartISO });
   const { data, error } = await supabase
     .from("impl_weekly_reviews")
-    .select("project_status,customer_health,churn_risk,notes,reason_code,weekly_summary,planned_go_live_date,current_status,phase_installation,phase_installation_details,phase_onboarding,phase_onboarding_details,phase_live,phase_live_details")
+    .select("project_status,customer_health,churn_risk,notes,reason_code,weekly_summary,planned_go_live_date,current_status,phase_installation,phase_installation_details,phase_onboarding,phase_onboarding_details,phase_live,phase_live_details,hypercare")
     .eq("company_id", companyId)
     .eq("week_start", weekStartISO)
     .maybeSingle();
@@ -310,6 +311,7 @@ export async function saveReview(params: {
   phaseOnboardingDetails?: string | null;
   phaseLive?: boolean | null;
   phaseLiveDetails?: string | null;
+  hypercare?: boolean | null;
 }): Promise<void> {
   console.log('Saving weekly review:', params);
   const { data, error } = await supabase.rpc("impl_set_weekly_review" as any, {
@@ -329,6 +331,7 @@ export async function saveReview(params: {
     p_phase_onboarding_details: params.phaseOnboardingDetails ?? null,
     p_phase_live: params.phaseLive ?? null,
     p_phase_live_details: params.phaseLiveDetails ?? null,
+    p_hypercare: params.hypercare ?? null,
   } as any);
   console.log('Save result:', { data, error });
   if (error) {

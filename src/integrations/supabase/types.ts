@@ -2041,6 +2041,7 @@ export type Database = {
           customer_health:
             | Database["public"]["Enums"]["impl_health_simple"]
             | null
+          hypercare: boolean | null
           id: string
           notes: string | null
           phase_installation: boolean | null
@@ -2066,6 +2067,7 @@ export type Database = {
           customer_health?:
             | Database["public"]["Enums"]["impl_health_simple"]
             | null
+          hypercare?: boolean | null
           id?: string
           notes?: string | null
           phase_installation?: boolean | null
@@ -2093,6 +2095,7 @@ export type Database = {
           customer_health?:
             | Database["public"]["Enums"]["impl_health_simple"]
             | null
+          hypercare?: boolean | null
           id?: string
           notes?: string | null
           phase_installation?: boolean | null
@@ -5472,6 +5475,28 @@ export type Database = {
               p_notes?: string
               p_planned_go_live_date?: string
               p_project_status: Database["public"]["Enums"]["impl_week_status"]
+              p_reason_code?: string
+              p_week_start: string
+              p_weekly_summary?: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_churn_risk?: string
+              p_company_id: string
+              p_current_status?: string
+              p_customer_health: string
+              p_hypercare?: boolean
+              p_notes?: string
+              p_phase_installation?: boolean
+              p_phase_installation_details?: string
+              p_phase_live?: boolean
+              p_phase_live_details?: string
+              p_phase_onboarding?: boolean
+              p_phase_onboarding_details?: string
+              p_planned_go_live_date?: string
+              p_project_status: string
               p_reason_code?: string
               p_week_start: string
               p_weekly_summary?: string

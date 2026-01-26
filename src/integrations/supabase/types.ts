@@ -5655,6 +5655,7 @@ export type Database = {
         | "validated"
       hardware_status_enum: "open" | "overdue" | "complete"
       impl_health_simple: "green" | "red"
+      impl_week_health: "green" | "red"
       impl_week_status: "on_track" | "off_track"
       implementation_blocker_status_enum: "Live" | "Closed"
       invoice_status_enum: "not_raised" | "raised" | "received"
@@ -5849,6 +5850,7 @@ export const Constants = {
       ],
       hardware_status_enum: ["open", "overdue", "complete"],
       impl_health_simple: ["green", "red"],
+      impl_week_health: ["green", "red"],
       impl_week_status: ["on_track", "off_track"],
       implementation_blocker_status_enum: ["Live", "Closed"],
       invoice_status_enum: ["not_raised", "raised", "received"],

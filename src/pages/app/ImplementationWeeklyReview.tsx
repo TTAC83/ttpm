@@ -28,7 +28,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
 
 type Company = { company_id: string; company_name: string; planned_go_live_date?: string | null };
-type CompanyWithHealth = { company_id: string; company_name: string; planned_go_live_date?: string | null; customer_health?: "green" | "red" | null; project_status?: "on_track" | "off_track" | null };
+type CompanyWithHealth = { company_id: string; company_name: string; planned_go_live_date?: string | null; customer_health?: "green" | "red" | null; project_status?: "on_track" | "off_track" | null; churn_risk?: "Low" | "Medium" | "High" | "Certain" | null };
 type Week = { week_start: string; week_end: string; available_at: string };
 type Profile = { user_id: string; name: string };
 type TaskRow = {
@@ -109,7 +109,7 @@ export default function ImplementationWeeklyReviewPage() {
       
       const { data, error } = await supabase
         .from('impl_weekly_reviews')
-        .select('company_id, customer_health, project_status')
+        .select('company_id, customer_health, project_status, churn_risk')
         .eq('week_start', selectedWeek);
       
       if (error) {
@@ -135,13 +135,14 @@ export default function ImplementationWeeklyReviewPage() {
     const list = companiesQ.data ?? [];
     const healthData = companiesHealthQ.data ?? [];
     
-    // Merge companies with their health status and project status
+    // Merge companies with their health status, project status, and churn risk
     const companiesWithHealth: CompanyWithHealth[] = list.map(company => {
       const healthInfo = healthData.find(h => h.company_id === company.company_id);
       return {
         ...company,
         customer_health: healthInfo?.customer_health || null,
-        project_status: healthInfo?.project_status || null
+        project_status: healthInfo?.project_status || null,
+        churn_risk: (healthInfo as any)?.churn_risk || null
       };
     });
     
@@ -329,6 +330,18 @@ export default function ImplementationWeeklyReviewPage() {
                       )}
                       {c.project_status === "off_track" && (
                         <AlertCircle className="h-4 w-4 text-red-600" />
+                      )}
+                      {c.churn_risk === "Low" && (
+                        <AlertTriangle className="h-4 w-4 text-green-600" />
+                      )}
+                      {c.churn_risk === "Medium" && (
+                        <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                      )}
+                      {c.churn_risk === "High" && (
+                        <AlertTriangle className="h-4 w-4 text-orange-500" />
+                      )}
+                      {c.churn_risk === "Certain" && (
+                        <AlertTriangle className="h-4 w-4 text-red-600" />
                       )}
                     </div>
                   </div>

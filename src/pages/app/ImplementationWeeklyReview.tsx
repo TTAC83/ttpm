@@ -547,6 +547,9 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   // Hypercare state
   const [hypercare, setHypercare] = useState(false);
 
+  // Flag to prevent auto-save during load/reset phase (use ref to avoid stale closures)
+  const isLoadingRef = useRef(true);
+
   // Ref to hold latest state values to avoid stale closures in auto-save
   const latestStateRef = useRef({
     projectStatus: null as "on_track" | "off_track" | null,
@@ -581,8 +584,9 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     };
   }, [projectStatus, customerHealth, notes, reasonCode, weeklySummary, phaseInstallation, phaseInstallationDetails, phaseOnboarding, phaseOnboardingDetails, phaseLive, phaseLiveDetails, hypercare]);
 
-  // Reset states immediately when companyId or weekStart changes
+  // Reset states immediately when companyId or weekStart changes - set loading to prevent auto-save
   useEffect(() => {
+    isLoadingRef.current = true; // Prevent auto-save during reset/load
     setProjectStatus(null);
     setCustomerHealth(null);
     setNotes("");
@@ -599,8 +603,11 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     setHypercare(false);
   }, [companyId, weekStart]);
 
-  // Load saved data when reviewQ.data changes
+  // Load saved data when reviewQ.data changes OR when query completes (even with null)
   useEffect(() => {
+    // Only proceed once the query has finished loading
+    if (reviewQ.isLoading) return;
+    
     if (reviewQ.data) {
       setProjectStatus(reviewQ.data.project_status ?? null);
       setCustomerHealth(reviewQ.data.customer_health ?? null);
@@ -615,7 +622,14 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
       setPhaseLiveDetails(reviewQ.data.phase_live_details ?? "");
       setHypercare(reviewQ.data.hypercare ?? false);
     }
-  }, [reviewQ.data]);
+    
+    // Allow auto-save after data is loaded (with a small delay to let state settle)
+    const timer = setTimeout(() => {
+      isLoadingRef.current = false;
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [reviewQ.data, reviewQ.isLoading]);
 
   const autoSaveMutation = useMutation({
     mutationFn: (params: { 
@@ -738,6 +752,9 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
 
   // Helper to trigger save with current state - uses ref to always get latest values
   const triggerImmediateSave = useCallback(() => {
+    // Skip auto-save while loading/resetting
+    if (isLoadingRef.current) return;
+    
     const state = latestStateRef.current;
     if (state.projectStatus && state.customerHealth) {
       autoSave(
@@ -758,6 +775,9 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
   }, [autoSave]);
 
   const triggerDebouncedSave = useCallback(() => {
+    // Skip auto-save while loading/resetting
+    if (isLoadingRef.current) return;
+    
     const state = latestStateRef.current;
     if (state.projectStatus && state.customerHealth) {
       triggerAutoSave(

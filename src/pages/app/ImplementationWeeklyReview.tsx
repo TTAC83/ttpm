@@ -306,8 +306,8 @@ export default function ImplementationWeeklyReviewPage() {
                   key={c.company_id}
                   className={cn(
                     "w-full text-left px-3 py-2 rounded-md hover:opacity-90",
-                    selectedCompanyId === c.company_id ? "ring-1" : "opacity-80",
-                    c.hypercare && "ring-2 ring-red-500"
+                    selectedCompanyId === c.company_id ? "ring-1 ring-primary" : "opacity-80",
+                    c.hypercare && "!ring-2 !ring-red-500"
                   )}
                   onClick={()=>setSelectedCompanyId(c.company_id)}
                 >

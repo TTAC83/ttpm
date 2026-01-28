@@ -23,6 +23,15 @@ export function CameraBasicInfoTab({ formData, masterData, updateField }: Camera
         />
       </div>
       <div>
+        <Label htmlFor="camera-ip">Camera IP</Label>
+        <Input
+          id="camera-ip"
+          value={formData.camera_ip}
+          onChange={(e) => updateField("camera_ip", e.target.value)}
+          placeholder="Enter camera IP address (optional)"
+        />
+      </div>
+      <div>
         <Label htmlFor="camera-model">Camera Model *</Label>
         <Select
           value={formData.camera_type}

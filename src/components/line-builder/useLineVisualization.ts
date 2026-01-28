@@ -8,6 +8,7 @@ import { useSaveWithRetry } from "./useSaveWithRetry";
 interface Camera {
   id: string;
   name: string;
+  camera_ip?: string;
   camera_type: string;
   lens_type: string;
   light_required?: boolean;
@@ -220,6 +221,7 @@ export const useLineVisualization = (lineId: string) => {
   const handleEditCamera = (camera: any, positionName: string, equipmentName: string) => {
     setCameraFormData({
       name: camera.name || "",
+      camera_ip: camera.camera_ip || "",
       camera_type: camera.camera_type || "",
       lens_type: camera.lens_type || "",
       light_required: camera.light_required || false,
@@ -315,6 +317,7 @@ export const useLineVisualization = (lineId: string) => {
             .from('cameras')
             .update({
               mac_address: cleanFormData.name || '',
+              camera_ip: cleanFormData.camera_ip || null,
               camera_type: cleanFormData.camera_type,
               lens_type: cleanFormData.lens_type || '',
               light_required: cleanFormData.light_required,

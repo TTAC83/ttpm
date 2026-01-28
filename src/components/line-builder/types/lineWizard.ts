@@ -18,6 +18,7 @@ export interface Equipment {
 export interface Camera {
   id: string;
   name: string;
+  camera_ip?: string;
   camera_type: string;
   lens_type: string;
   light_required?: boolean;

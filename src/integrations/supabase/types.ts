@@ -1138,6 +1138,7 @@ export type Database = {
       }
       cameras: {
         Row: {
+          camera_ip: string | null
           camera_type: string
           created_at: string
           equipment_id: string
@@ -1155,6 +1156,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          camera_ip?: string | null
           camera_type: string
           created_at?: string
           equipment_id: string
@@ -1172,6 +1174,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          camera_ip?: string | null
           camera_type?: string
           created_at?: string
           equipment_id?: string

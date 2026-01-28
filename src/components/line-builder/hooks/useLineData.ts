@@ -39,6 +39,7 @@ export function useLineData(config: WizardConfig) {
           cameras: (eq.cameras || []).map((cam: any) => ({
             id: cam.id,
             name: cam.name || "Unnamed Camera",
+            camera_ip: cam.camera_ip || "",
             camera_type: cam.camera_type,
             lens_type: cam.lens_type,
             light_required: cam.light_required || false,
@@ -238,6 +239,7 @@ export function useLineData(config: WizardConfig) {
               camera_type: camera.camera_type,
               lens_type: camera.lens_type || '',
               mac_address: camera.name || '',
+              camera_ip: camera.camera_ip || null,
               light_required: camera.light_required || false,
               light_id: camera.light_id || null,
               light_notes: camera.light_notes || null,

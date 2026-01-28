@@ -29,6 +29,7 @@ interface Equipment {
   cameras: Array<{
     id: string;
     name: string;
+    camera_ip?: string;
     camera_type: string;
     lens_type: string;
     light_required?: boolean;
@@ -141,6 +142,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   // Camera form state
   const [cameraForm, setCameraForm] = useState({
     name: "",
+    camera_ip: "",
     camera_type: "",
     lens_type: "",
     light_required: false,
@@ -370,6 +372,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
   const resetCameraForm = () => {
     setCameraForm({
       name: "",
+      camera_ip: "",
       camera_type: "",
       lens_type: "",
       light_required: false,
@@ -584,6 +587,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     
     setCameraForm({
       name: camera.name || "",
+      camera_ip: camera.camera_ip || "",
       camera_type: camera.camera_type || "",
       lens_type: camera.lens_type || "",
       light_required: camera.light_required || false,

@@ -1,5 +1,6 @@
 export interface CameraFormData {
   name: string;
+  camera_ip: string;
   camera_type: string;
   lens_type: string;
   light_required: boolean;
@@ -42,6 +43,7 @@ export interface MasterData {
 
 export const emptyFormData: CameraFormData = {
   name: "",
+  camera_ip: "",
   camera_type: "",
   lens_type: "",
   light_required: false,

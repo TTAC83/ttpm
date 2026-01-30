@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Smile, Frown, Bug, TrendingUp, TrendingDown, CheckCircle, Clock, Star, Minus } from "lucide-react";
+import { Smile, Frown, Bug, TrendingUp, TrendingDown, CheckCircle, Clock, Star, Minus, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
 
@@ -95,6 +95,14 @@ export default function ExecutiveSummary() {
     return <Bug className="h-6 w-6 text-green-600" />;
   };
 
+  const renderEscalationIcon = (status: 'none' | 'active' | 'critical') => {
+    if (status === 'none') return null;
+    if (status === 'critical') {
+      return <AlertTriangle className="h-6 w-6 text-red-600" />;
+    }
+    return <AlertTriangle className="h-6 w-6 text-foreground" />;
+  };
+
   const renderReferenceIcon = (status: 'Active' | 'Promised' | 'Priority' | 'N/A' | null) => {
     if (!status || status === 'N/A') {
       return <Minus className="h-6 w-6 text-muted-foreground" />;
@@ -161,6 +169,12 @@ export default function ExecutiveSummary() {
                 Product Gaps {sortColumn === 'product_gaps_status' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
               <TableHead 
+                className="text-center cursor-pointer hover:bg-muted/50"
+                onClick={() => handleSort('escalation_status')}
+              >
+                Escalations {sortColumn === 'escalation_status' && (sortDirection === 'asc' ? '↑' : '↓')}
+              </TableHead>
+              <TableHead 
                 className="cursor-pointer hover:bg-muted/50"
                 onClick={() => handleSort('segment')}
               >
@@ -195,7 +209,7 @@ export default function ExecutiveSummary() {
           <TableBody>
             {sortedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                   No implementation projects found.
                 </TableCell>
               </TableRow>
@@ -216,6 +230,9 @@ export default function ExecutiveSummary() {
                   </TableCell>
                   <TableCell className="text-center">
                     {renderProductGapsIcon(row.product_gaps_status)}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {renderEscalationIcon(row.escalation_status)}
                   </TableCell>
                   <TableCell>{row.segment || '-'}</TableCell>
                   <TableCell>{row.expansion_opportunity || '-'}</TableCell>

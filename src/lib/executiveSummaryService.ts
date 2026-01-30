@@ -8,6 +8,9 @@ export interface ExecutiveSummaryRow {
   customer_health: 'green' | 'red' | null;
   reason_code: string | null;
   project_on_track: 'on_track' | 'off_track' | null;
+  phase_installation: boolean | null;
+  phase_onboarding: boolean | null;
+  phase_live: boolean | null;
   product_gaps_status: 'none' | 'non_critical' | 'critical';
   escalation_status: 'none' | 'active' | 'critical';
   planned_go_live_date: string | null;
@@ -35,7 +38,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
   // Fetch weekly reviews for current week (only for customer health and project status)
   const { data: reviews, error: reviewsError } = await supabase
     .from('impl_weekly_reviews')
-    .select('company_id, customer_health, project_status, reason_code, week_start')
+    .select('company_id, customer_health, project_status, reason_code, phase_installation, phase_onboarding, phase_live, week_start')
     .eq('week_start', mondayISO);
 
   if (reviewsError) throw reviewsError;
@@ -58,14 +61,17 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
 
   if (escalationsError) throw escalationsError;
 
-  // Create a map of company reviews (for health, project status, and reason code)
+  // Create a map of company reviews (for health, project status, reason code, and phases)
   const reviewMap = new Map(
     (reviews || []).map(r => [
       r.company_id,
       {
         health: r.customer_health,
         status: r.project_status,
-        reason_code: r.reason_code
+        reason_code: r.reason_code,
+        phase_installation: r.phase_installation,
+        phase_onboarding: r.phase_onboarding,
+        phase_live: r.phase_live
       }
     ])
   );
@@ -119,6 +125,9 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       customer_health: review?.health || null,
       reason_code: review?.reason_code || null,
       project_on_track: review?.status || null,
+      phase_installation: review?.phase_installation ?? null,
+      phase_onboarding: review?.phase_onboarding ?? null,
+      phase_live: review?.phase_live ?? null,
       product_gaps_status,
       escalation_status,
       planned_go_live_date: project.planned_go_live_date || null

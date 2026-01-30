@@ -1,7 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { fetchExecutiveSummaryData } from "@/lib/executiveSummaryService";
+import { blockersService, ImplementationBlocker } from "@/lib/blockersService";
+import { productGapsService, ProductGap } from "@/lib/productGapsService";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Table,
   TableBody,
@@ -11,19 +14,102 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Smile, Frown, Bug, TrendingUp, TrendingDown, AlertTriangle, Hammer, GraduationCap, Rocket } from "lucide-react";
-import { useState } from "react";
 import { format } from "date-fns";
+import { BlockerDrawer } from "@/components/BlockerDrawer";
+import { ProductGapDrawer } from "@/components/ProductGapDrawer";
+import { EditActionDialog } from "@/components/EditActionDialog";
+import { formatDateUK } from "@/lib/dateUtils";
 
 export default function ExecutiveSummary() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Drawer states
+  const [selectedEscalation, setSelectedEscalation] = useState<ImplementationBlocker | undefined>();
+  const [escalationDrawerOpen, setEscalationDrawerOpen] = useState(false);
+  const [selectedProductGap, setSelectedProductGap] = useState<ProductGap | undefined>();
+  const [productGapDrawerOpen, setProductGapDrawerOpen] = useState(false);
+  const [selectedAction, setSelectedAction] = useState<any | null>(null);
+  const [actionDialogOpen, setActionDialogOpen] = useState(false);
 
   const { data: summaryData = [], isLoading } = useQuery({
     queryKey: ['executive-summary'],
     queryFn: fetchExecutiveSummaryData,
   });
+
+  // Fetch escalations (Live only)
+  const { data: escalations = [], isLoading: escalationsLoading } = useQuery({
+    queryKey: ['executive-escalations'],
+    queryFn: () => blockersService.getAllBlockers({ status: 'Live' }),
+  });
+
+  // Fetch product gaps (Live only)
+  const { data: productGaps = [], isLoading: productGapsLoading } = useQuery({
+    queryKey: ['executive-product-gaps'],
+    queryFn: async () => {
+      const allGaps = await productGapsService.getAllProductGaps();
+      return allGaps.filter(g => g.status === 'Live');
+    },
+  });
+
+  // Fetch actions (critical or overdue)
+  const { data: actions = [], isLoading: actionsLoading } = useQuery({
+    queryKey: ['executive-actions'],
+    queryFn: async () => {
+      const ukToday = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+      const { data, error } = await supabase
+        .from('actions')
+        .select(`
+          *,
+          profiles:assignee(name),
+          projects:project_id(name, companies:company_id(name))
+        `)
+        .or(`is_critical.eq.true,and(planned_date.lt.${ukToday})`)
+        .neq('status', 'Done')
+        .order('is_critical', { ascending: false })
+        .order('planned_date', { ascending: true });
+      
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Fetch profiles for action editing
+  const { data: profiles = [] } = useQuery({
+    queryKey: ['profiles'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, name')
+        .order('name');
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Handle action save
+  const handleActionSave = async (actionData: any) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('create-action', {
+        body: {
+          id: selectedAction?.id,
+          ...actionData,
+          isUpdate: true,
+        },
+      });
+      if (error) throw error;
+      setActionDialogOpen(false);
+      setSelectedAction(null);
+      queryClient.invalidateQueries({ queryKey: ['executive-actions'] });
+    } catch (error) {
+      console.error('Error updating action:', error);
+    }
+  };
 
   // Filter data based on search
   const filteredData = summaryData.filter(row => 
@@ -401,6 +487,251 @@ export default function ExecutiveSummary() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Escalations Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5" />
+            Escalations ({escalations.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {escalationsLoading ? (
+            <div className="p-4 text-muted-foreground">Loading escalations...</div>
+          ) : escalations.length === 0 ? (
+            <div className="p-4 text-muted-foreground">No live escalations.</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Project</TableHead>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Owner</TableHead>
+                  <TableHead>Raised</TableHead>
+                  <TableHead>Est. Complete</TableHead>
+                  <TableHead>Age</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {escalations.map((esc) => (
+                  <TableRow 
+                    key={esc.id}
+                    className={esc.is_critical ? "bg-red-100 dark:bg-red-950/30 border-l-4 border-l-red-500" : ""}
+                  >
+                    <TableCell className="font-medium">{esc.customer_name}</TableCell>
+                    <TableCell>{esc.project_name}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <span>{esc.title}</span>
+                        {esc.is_critical && <Badge variant="destructive" className="text-xs">CRITICAL</Badge>}
+                      </div>
+                    </TableCell>
+                    <TableCell>{esc.owner_name}</TableCell>
+                    <TableCell>{formatDateUK(esc.raised_at)}</TableCell>
+                    <TableCell>{esc.estimated_complete_date ? formatDateUK(esc.estimated_complete_date) : '-'}</TableCell>
+                    <TableCell className={esc.is_overdue ? "text-red-600 font-medium" : ""}>{esc.age_days}</TableCell>
+                    <TableCell>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedEscalation(esc);
+                          setEscalationDrawerOpen(true);
+                        }}
+                      >
+                        Edit
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Actions Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-orange-500" />
+            Actions - Critical & Overdue ({actions.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {actionsLoading ? (
+            <div className="p-4 text-muted-foreground">Loading actions...</div>
+          ) : actions.length === 0 ? (
+            <div className="p-4 text-muted-foreground">No critical or overdue actions.</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Project</TableHead>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Assignee</TableHead>
+                  <TableHead>Planned Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {actions.map((action) => {
+                  const ukToday = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+                  const isOverdue = action.planned_date && action.planned_date < ukToday;
+                  return (
+                    <TableRow 
+                      key={action.id}
+                      className={action.is_critical ? "bg-red-100 dark:bg-red-950/30 border-l-4 border-l-red-500" : isOverdue ? "bg-amber-50 dark:bg-amber-950/20" : ""}
+                    >
+                      <TableCell className="font-medium">{action.projects?.companies?.name || '-'}</TableCell>
+                      <TableCell>{action.projects?.name || '-'}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span>{action.title}</span>
+                          {action.is_critical && <Badge variant="destructive" className="text-xs">CRITICAL</Badge>}
+                        </div>
+                      </TableCell>
+                      <TableCell>{action.profiles?.name || '-'}</TableCell>
+                      <TableCell className={isOverdue ? "text-red-600 font-medium" : ""}>
+                        {action.planned_date ? formatDateUK(action.planned_date) : '-'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={action.status === 'Done' ? 'default' : 'secondary'}>
+                          {action.status?.replace(/_/g, ' ')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            setSelectedAction(action);
+                            setActionDialogOpen(true);
+                          }}
+                        >
+                          Edit
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Product Gaps Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bug className="h-5 w-5" />
+            Product Gaps ({productGaps.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {productGapsLoading ? (
+            <div className="p-4 text-muted-foreground">Loading product gaps...</div>
+          ) : productGaps.length === 0 ? (
+            <div className="p-4 text-muted-foreground">No live product gaps.</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Project</TableHead>
+                  <TableHead>Product Gap</TableHead>
+                  <TableHead>Assigned To</TableHead>
+                  <TableHead>Est. Complete</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {productGaps.map((gap) => (
+                  <TableRow 
+                    key={gap.id}
+                    className={gap.is_critical ? "bg-red-100 dark:bg-red-950/30 border-l-4 border-l-red-500" : ""}
+                  >
+                    <TableCell className="font-medium">{gap.company_name}</TableCell>
+                    <TableCell>{gap.project_name}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <span>{gap.title}</span>
+                        {gap.is_critical && <Badge variant="destructive" className="text-xs">CRITICAL</Badge>}
+                      </div>
+                    </TableCell>
+                    <TableCell>{gap.assigned_to_name || '-'}</TableCell>
+                    <TableCell>
+                      {gap.estimated_complete_date ? formatDateUK(gap.estimated_complete_date) : '-'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={gap.is_critical ? "destructive" : "default"}>
+                        {gap.is_critical ? "Critical" : "Live"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedProductGap(gap);
+                          setProductGapDrawerOpen(true);
+                        }}
+                      >
+                        Edit
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Drawers */}
+      {selectedEscalation && (
+        <BlockerDrawer
+          open={escalationDrawerOpen}
+          onOpenChange={setEscalationDrawerOpen}
+          projectId={selectedEscalation.project_id || ''}
+          blocker={selectedEscalation}
+          onSuccess={() => {
+            setEscalationDrawerOpen(false);
+            setSelectedEscalation(undefined);
+            queryClient.invalidateQueries({ queryKey: ['executive-escalations'] });
+            queryClient.invalidateQueries({ queryKey: ['executive-summary'] });
+          }}
+        />
+      )}
+
+      <ProductGapDrawer
+        open={productGapDrawerOpen}
+        onOpenChange={setProductGapDrawerOpen}
+        productGap={selectedProductGap}
+        onSuccess={() => {
+          setProductGapDrawerOpen(false);
+          setSelectedProductGap(undefined);
+          queryClient.invalidateQueries({ queryKey: ['executive-product-gaps'] });
+          queryClient.invalidateQueries({ queryKey: ['executive-summary'] });
+        }}
+      />
+
+      {selectedAction && (
+        <EditActionDialog
+          open={actionDialogOpen}
+          onOpenChange={setActionDialogOpen}
+          action={selectedAction}
+          profiles={profiles}
+          onSave={handleActionSave}
+        />
+      )}
     </div>
   );
 }

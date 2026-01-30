@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Smile, Frown, Bug, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
+import { Smile, Frown, Bug, TrendingUp, TrendingDown, AlertTriangle, Hammer, GraduationCap, Rocket } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
 
@@ -124,6 +124,19 @@ export default function ExecutiveSummary() {
     return <AlertTriangle className="h-6 w-6 text-foreground" />;
   };
 
+  const renderPhaseIcon = (phase: 'installation' | 'onboarding' | 'live', isActive: boolean | null) => {
+    if (!isActive) return null;
+    
+    switch (phase) {
+      case 'installation':
+        return <Hammer className="h-5 w-5 text-orange-500" />;
+      case 'onboarding':
+        return <GraduationCap className="h-5 w-5 text-blue-500" />;
+      case 'live':
+        return <Rocket className="h-5 w-5 text-green-500" />;
+    }
+  };
+
 
   if (isLoading) {
     return (
@@ -169,6 +182,9 @@ export default function ExecutiveSummary() {
               <TableHead className="text-center">Customer Health</TableHead>
               <TableHead>Reason Code</TableHead>
               <TableHead className="text-center">Project On Track</TableHead>
+              <TableHead className="text-center">Installation</TableHead>
+              <TableHead className="text-center">Onboarding</TableHead>
+              <TableHead className="text-center">Live</TableHead>
               <TableHead 
                 className="text-center cursor-pointer hover:bg-muted/50"
                 onClick={() => handleSort('product_gaps_status')}
@@ -192,7 +208,7 @@ export default function ExecutiveSummary() {
           <TableBody>
             {sortedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                   No implementation projects found.
                 </TableCell>
               </TableRow>
@@ -211,6 +227,15 @@ export default function ExecutiveSummary() {
                   <TableCell>{row.reason_code || ''}</TableCell>
                   <TableCell className="text-center">
                     {renderOnTrackIcon(row.project_on_track)}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {renderPhaseIcon('installation', row.phase_installation)}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {renderPhaseIcon('onboarding', row.phase_onboarding)}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {renderPhaseIcon('live', row.phase_live)}
                   </TableCell>
                   <TableCell className="text-center">
                     {renderProductGapsIcon(row.product_gaps_status)}

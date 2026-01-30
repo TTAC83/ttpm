@@ -8,6 +8,7 @@ export interface ExecutiveSummaryRow {
   customer_health: 'green' | 'red' | null;
   project_on_track: 'on_track' | 'off_track' | null;
   product_gaps_status: 'none' | 'non_critical' | 'critical';
+  escalation_status: 'none' | 'active' | 'critical';
   segment: string | null;
   expansion_opportunity: string | null;
   reference_status: 'Active' | 'Promised' | 'Priority' | 'N/A' | null;
@@ -52,6 +53,14 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
 
   if (gapsError) throw gapsError;
 
+  // Fetch escalations (implementation_blockers) grouped by project
+  const { data: escalations, error: escalationsError } = await supabase
+    .from('implementation_blockers')
+    .select('project_id, is_critical, status')
+    .eq('status', 'Live');
+
+  if (escalationsError) throw escalationsError;
+
   // Create a map of company reviews (only for health and project status)
   const reviewMap = new Map(
     (reviews || []).map(r => [
@@ -73,11 +82,23 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
     });
   });
 
+  // Group escalations by project
+  const escalationsMap = new Map<string, { hasCritical: boolean; hasAny: boolean }>();
+  (escalations || []).forEach(esc => {
+    if (!esc.project_id) return;
+    const existing = escalationsMap.get(esc.project_id) || { hasCritical: false, hasAny: false };
+    escalationsMap.set(esc.project_id, {
+      hasCritical: existing.hasCritical || esc.is_critical,
+      hasAny: true
+    });
+  });
+
   // Build the summary rows
   return projects.map(project => {
     // Get project's company review by company_id (for health and status only)
     const review = reviewMap.get(project.company_id);
     const gaps = gapsMap.get(project.id);
+    const escData = escalationsMap.get(project.id);
     
     if (review) {
       console.log('✅ Found review for project', project.name, 'company_id:', project.company_id, review);
@@ -88,6 +109,11 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       product_gaps_status = gaps.hasCritical ? 'critical' : 'non_critical';
     }
 
+    let escalation_status: 'none' | 'active' | 'critical' = 'none';
+    if (escData?.hasAny) {
+      escalation_status = escData.hasCritical ? 'critical' : 'active';
+    }
+
     return {
       project_id: project.id,
       customer_name: project.companies?.name || 'N/A',
@@ -95,6 +121,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       customer_health: review?.health || null,
       project_on_track: review?.status || null,
       product_gaps_status,
+      escalation_status,
       segment: project.segment,
       expansion_opportunity: project.expansion_opportunity,
       reference_status: project.reference_status || null,

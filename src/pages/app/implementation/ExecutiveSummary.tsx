@@ -42,25 +42,46 @@ export default function ExecutiveSummary() {
     }
   };
 
+  // Default sort: escalation status priority, then planned go-live date
+  const getEscalationPriority = (status: 'none' | 'active' | 'critical') => {
+    if (status === 'critical') return 0;
+    if (status === 'active') return 1;
+    return 2;
+  };
+
   const sortedData = [...filteredData].sort((a, b) => {
-    if (!sortColumn) return 0;
+    // If user clicked a column header, use that sorting
+    if (sortColumn) {
+      let aVal: any = a[sortColumn as keyof typeof a];
+      let bVal: any = b[sortColumn as keyof typeof b];
 
-    let aVal: any = a[sortColumn as keyof typeof a];
-    let bVal: any = b[sortColumn as keyof typeof b];
+      // Handle null values
+      if (aVal === null) return 1;
+      if (bVal === null) return -1;
 
-    // Handle null values
-    if (aVal === null) return 1;
-    if (bVal === null) return -1;
+      // String comparison
+      if (typeof aVal === 'string') {
+        aVal = aVal.toLowerCase();
+        bVal = bVal.toLowerCase();
+      }
 
-    // String comparison
-    if (typeof aVal === 'string') {
-      aVal = aVal.toLowerCase();
-      bVal = bVal.toLowerCase();
+      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
     }
 
-    if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
-    if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
-    return 0;
+    // Default sort: escalation priority first, then go-live date ascending
+    const escPriorityA = getEscalationPriority(a.escalation_status);
+    const escPriorityB = getEscalationPriority(b.escalation_status);
+
+    if (escPriorityA !== escPriorityB) {
+      return escPriorityA - escPriorityB;
+    }
+
+    // Within same escalation priority, sort by planned go-live date ascending
+    const dateA = a.planned_go_live_date ? new Date(a.planned_go_live_date).getTime() : Infinity;
+    const dateB = b.planned_go_live_date ? new Date(b.planned_go_live_date).getTime() : Infinity;
+    return dateA - dateB;
   });
 
   const handleRowClick = (projectId: string) => {

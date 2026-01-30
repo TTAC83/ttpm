@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { useMemo } from "react";
 import { fetchExecutiveSummaryData } from "@/lib/executiveSummaryService";
 import {
   Table,
@@ -10,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 import { Smile, Frown, Bug, TrendingUp, TrendingDown, AlertTriangle, Hammer, GraduationCap, Rocket } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
@@ -28,6 +30,45 @@ export default function ExecutiveSummary() {
     row.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     row.project_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Compute stats from summary data
+  const stats = useMemo(() => {
+    const total = summaryData.length;
+    const greenHealth = summaryData.filter(r => r.customer_health === 'green').length;
+    const redHealth = summaryData.filter(r => r.customer_health === 'red').length;
+    const noHealth = total - greenHealth - redHealth;
+    
+    const onTrack = summaryData.filter(r => r.project_on_track === 'on_track').length;
+    const offTrack = summaryData.filter(r => r.project_on_track === 'off_track').length;
+    const noStatus = total - onTrack - offTrack;
+    
+    const installation = summaryData.filter(r => r.phase_installation).length;
+    const onboarding = summaryData.filter(r => r.phase_onboarding).length;
+    const live = summaryData.filter(r => r.phase_live).length;
+    
+    const productGapsCritical = summaryData.filter(r => r.product_gaps_status === 'critical').length;
+    const productGapsNonCritical = summaryData.filter(r => r.product_gaps_status === 'non_critical').length;
+    
+    const escalationsCritical = summaryData.filter(r => r.escalation_status === 'critical').length;
+    const escalationsActive = summaryData.filter(r => r.escalation_status === 'active').length;
+    
+    return {
+      total,
+      greenHealth,
+      redHealth,
+      noHealth,
+      onTrack,
+      offTrack,
+      noStatus,
+      installation,
+      onboarding,
+      live,
+      productGapsCritical,
+      productGapsNonCritical,
+      escalationsCritical,
+      escalationsActive
+    };
+  }, [summaryData]);
 
   // Sort data
   const [sortColumn, setSortColumn] = useState<string | null>(null);
@@ -162,6 +203,76 @@ export default function ExecutiveSummary() {
           className="max-w-sm"
         />
       </div>
+
+      {/* KPI Stats Banner */}
+      <Card className="p-4">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-primary">
+              {stats.total}
+            </div>
+            <div className="text-sm text-muted-foreground">Total Projects</div>
+          </div>
+          
+          <div className="text-center">
+            <div className="text-lg">
+              <span className="text-green-600 font-semibold">{stats.greenHealth}</span>
+              {" / "}
+              <span className="text-red-600 font-semibold">{stats.redHealth}</span>
+              {" / "}
+              <span className="text-muted-foreground">{stats.noHealth}</span>
+            </div>
+            <div className="text-sm text-muted-foreground">Health (G/R/–)</div>
+          </div>
+          
+          <div className="text-center">
+            <div className="text-lg">
+              <span className="text-green-600 font-semibold">{stats.onTrack}</span>
+              {" / "}
+              <span className="text-red-600 font-semibold">{stats.offTrack}</span>
+              {" / "}
+              <span className="text-muted-foreground">{stats.noStatus}</span>
+            </div>
+            <div className="text-sm text-muted-foreground">On Track (Y/N/–)</div>
+          </div>
+          
+          <div className="text-center">
+            <div className="text-lg flex justify-center gap-2">
+              <span className="flex items-center gap-1">
+                <Hammer className="h-4 w-4 text-orange-500" />
+                <span className="font-semibold">{stats.installation}</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <GraduationCap className="h-4 w-4 text-blue-500" />
+                <span className="font-semibold">{stats.onboarding}</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <Rocket className="h-4 w-4 text-green-500" />
+                <span className="font-semibold">{stats.live}</span>
+              </span>
+            </div>
+            <div className="text-sm text-muted-foreground">Phases</div>
+          </div>
+          
+          <div className="text-center">
+            <div className="text-lg">
+              <span className="text-red-600 font-semibold">{stats.productGapsCritical}</span>
+              {" / "}
+              <span className="text-green-600 font-semibold">{stats.productGapsNonCritical}</span>
+            </div>
+            <div className="text-sm text-muted-foreground">Product Gaps (Crit/Non)</div>
+          </div>
+          
+          <div className="text-center">
+            <div className="text-lg">
+              <span className="text-red-600 font-semibold">{stats.escalationsCritical}</span>
+              {" / "}
+              <span className="text-foreground font-semibold">{stats.escalationsActive}</span>
+            </div>
+            <div className="text-sm text-muted-foreground">Escalations (Crit/Active)</div>
+          </div>
+        </div>
+      </Card>
 
       <div className="border rounded-lg">
         <Table>

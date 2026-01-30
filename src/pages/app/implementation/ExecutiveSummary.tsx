@@ -297,10 +297,15 @@ export default function ExecutiveSummary() {
                 Weekly Review
               </TableHead>
               <TableHead 
-                colSpan={4} 
-                className="text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                colSpan={3} 
+                className="text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-r"
               >
                 Status
+              </TableHead>
+              <TableHead 
+                className="text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+              >
+                Product Gaps
               </TableHead>
             </TableRow>
             {/* Column header row */}
@@ -338,14 +343,14 @@ export default function ExecutiveSummary() {
               <TableHead className="text-center">
                 <GraduationCap className="h-4 w-4 mx-auto text-blue-500" />
               </TableHead>
-              <TableHead className="text-center">
+              <TableHead className="text-center border-r">
                 <Rocket className="h-4 w-4 mx-auto text-green-500" />
               </TableHead>
               <TableHead 
                 className="text-center cursor-pointer hover:bg-muted/50"
                 onClick={() => handleSort('product_gaps_status')}
               >
-                Gaps {sortColumn === 'product_gaps_status' && (sortDirection === 'asc' ? '↑' : '↓')}
+                {sortColumn === 'product_gaps_status' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -384,7 +389,7 @@ export default function ExecutiveSummary() {
                   <TableCell className="text-center">
                     {renderPhaseIcon('onboarding', row.phase_onboarding)}
                   </TableCell>
-                  <TableCell className="text-center">
+                  <TableCell className="text-center border-r">
                     {renderPhaseIcon('live', row.phase_live)}
                   </TableCell>
                   <TableCell className="text-center">

@@ -6,6 +6,7 @@ export interface ExecutiveSummaryRow {
   customer_name: string;
   project_name: string;
   customer_health: 'green' | 'red' | null;
+  reason_code: string | null;
   project_on_track: 'on_track' | 'off_track' | null;
   product_gaps_status: 'none' | 'non_critical' | 'critical';
   escalation_status: 'none' | 'active' | 'critical';
@@ -35,7 +36,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
   // Fetch weekly reviews for current week (only for customer health and project status)
   const { data: reviews, error: reviewsError } = await supabase
     .from('impl_weekly_reviews')
-    .select('company_id, customer_health, project_status, week_start')
+    .select('company_id, customer_health, project_status, reason_code, week_start')
     .eq('week_start', mondayISO);
 
   if (reviewsError) throw reviewsError;
@@ -58,13 +59,14 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
 
   if (escalationsError) throw escalationsError;
 
-  // Create a map of company reviews (only for health and project status)
+  // Create a map of company reviews (for health, project status, and reason code)
   const reviewMap = new Map(
     (reviews || []).map(r => [
       r.company_id,
       {
         health: r.customer_health,
-        status: r.project_status
+        status: r.project_status,
+        reason_code: r.reason_code
       }
     ])
   );
@@ -116,6 +118,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       customer_name: project.companies?.name || 'N/A',
       project_name: project.name,
       customer_health: review?.health || null,
+      reason_code: review?.reason_code || null,
       project_on_track: review?.status || null,
       product_gaps_status,
       escalation_status,

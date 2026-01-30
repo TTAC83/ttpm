@@ -290,6 +290,12 @@ export default function ExecutiveSummary() {
               >
                 Project {sortColumn === 'project_name' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
+              <TableHead 
+                className="text-center cursor-pointer hover:bg-muted/50"
+                onClick={() => handleSort('escalation_status')}
+              >
+                Escalations {sortColumn === 'escalation_status' && (sortDirection === 'asc' ? '↑' : '↓')}
+              </TableHead>
               <TableHead className="text-center">Customer Health</TableHead>
               <TableHead>Reason Code</TableHead>
               <TableHead className="text-center">Project On Track</TableHead>
@@ -301,12 +307,6 @@ export default function ExecutiveSummary() {
                 onClick={() => handleSort('product_gaps_status')}
               >
                 Product Gaps {sortColumn === 'product_gaps_status' && (sortDirection === 'asc' ? '↑' : '↓')}
-              </TableHead>
-              <TableHead 
-                className="text-center cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort('escalation_status')}
-              >
-                Escalations {sortColumn === 'escalation_status' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
               <TableHead 
                 className="cursor-pointer hover:bg-muted/50"
@@ -333,6 +333,9 @@ export default function ExecutiveSummary() {
                   <TableCell className="font-medium">{row.customer_name}</TableCell>
                   <TableCell>{row.project_name}</TableCell>
                   <TableCell className="text-center">
+                    {renderEscalationIcon(row.escalation_status)}
+                  </TableCell>
+                  <TableCell className="text-center">
                     {renderHealthIcon(row.customer_health)}
                   </TableCell>
                   <TableCell>{row.reason_code || ''}</TableCell>
@@ -350,9 +353,6 @@ export default function ExecutiveSummary() {
                   </TableCell>
                   <TableCell className="text-center">
                     {renderProductGapsIcon(row.product_gaps_status)}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {renderEscalationIcon(row.escalation_status)}
                   </TableCell>
                   <TableCell>
                     {row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : ''}

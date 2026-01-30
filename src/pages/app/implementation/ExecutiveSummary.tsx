@@ -187,18 +187,12 @@ export default function ExecutiveSummary() {
               >
                 Planned Go Live {sortColumn === 'planned_go_live_date' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
-              <TableHead 
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort('current_status')}
-              >
-                Current Status {sortColumn === 'current_status' && (sortDirection === 'asc' ? '↑' : '↓')}
-              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   No implementation projects found.
                 </TableCell>
               </TableRow>
@@ -226,9 +220,6 @@ export default function ExecutiveSummary() {
                   </TableCell>
                   <TableCell>
                     {row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : ''}
-                  </TableCell>
-                  <TableCell>
-                    {row.current_status || ''}
                   </TableCell>
                 </TableRow>
               ))

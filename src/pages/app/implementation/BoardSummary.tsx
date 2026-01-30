@@ -94,8 +94,7 @@ export default function BoardSummary() {
       'Customer Name',
       'Project',
       'Product Gaps',
-      'Planned Go Live',
-      'Current Status'
+      'Planned Go Live'
     ];
     
     const data = sortedData.map(row => [
@@ -103,14 +102,13 @@ export default function BoardSummary() {
       row.project_name,
       row.product_gaps_status === 'critical' ? 'Critical' : 
         row.product_gaps_status === 'non_critical' ? 'Non-Critical' : 'None',
-      row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : '',
-      row.current_status || ''
+      row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : ''
     ]);
     
     // Add table using autoTable (requires jspdf-autotable plugin, so we'll do it manually)
     let y = 30;
     const lineHeight = 7;
-    const colWidths = [50, 50, 30, 35, 55];
+    const colWidths = [50, 50, 30, 35];
     
     // Draw headers
     doc.setFontSize(10);
@@ -150,8 +148,7 @@ export default function BoardSummary() {
       'Project': row.project_name,
       'Product Gaps': row.product_gaps_status === 'critical' ? 'Critical' : 
         row.product_gaps_status === 'non_critical' ? 'Non-Critical' : 'None',
-      'Planned Go Live': row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : '',
-      'Current Status': row.current_status || ''
+      'Planned Go Live': row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : ''
     }));
     
     const worksheet = XLSX.utils.json_to_sheet(data);
@@ -163,8 +160,7 @@ export default function BoardSummary() {
       { wch: 30 }, // Customer Name
       { wch: 30 }, // Project
       { wch: 15 }, // Product Gaps
-      { wch: 20 }, // Planned Go Live
-      { wch: 30 }  // Current Status
+      { wch: 20 }  // Planned Go Live
     ];
     worksheet['!cols'] = colWidths;
     
@@ -234,18 +230,12 @@ export default function BoardSummary() {
               >
                 Planned Go Live {sortColumn === 'planned_go_live_date' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
-              <TableHead 
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort('current_status')}
-              >
-                Current Status {sortColumn === 'current_status' && (sortDirection === 'asc' ? '↑' : '↓')}
-              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                   No implementation projects found.
                 </TableCell>
               </TableRow>
@@ -263,9 +253,6 @@ export default function BoardSummary() {
                   </TableCell>
                   <TableCell>
                     {row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : ''}
-                  </TableCell>
-                  <TableCell>
-                    {row.current_status || ''}
                   </TableCell>
                 </TableRow>
               ))

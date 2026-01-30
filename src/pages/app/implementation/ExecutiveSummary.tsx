@@ -381,6 +381,7 @@ export default function ExecutiveSummary() {
                 Project Details
               </TableHead>
               <TableHead 
+                colSpan={2}
                 className="text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-r"
               >
                 Escalations
@@ -424,11 +425,12 @@ export default function ExecutiveSummary() {
                 Go Live {sortColumn === 'planned_go_live_date' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
               <TableHead 
-                className="text-center cursor-pointer hover:bg-muted/50 border-r"
+                className="text-center cursor-pointer hover:bg-muted/50"
                 onClick={() => handleSort('escalation_status')}
               >
                 {sortColumn === 'escalation_status' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
+              <TableHead className="border-r">Reason</TableHead>
               <TableHead className="text-center">Health</TableHead>
               <TableHead className="text-center">On Track</TableHead>
               <TableHead className="border-r">Reason</TableHead>
@@ -452,7 +454,7 @@ export default function ExecutiveSummary() {
           <TableBody>
             {sortedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
                   No implementation projects found.
                 </TableCell>
               </TableRow>
@@ -468,8 +470,15 @@ export default function ExecutiveSummary() {
                   <TableCell className="border-r">
                     {row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yy') : ''}
                   </TableCell>
-                  <TableCell className="text-center border-r">
+                  <TableCell className="text-center">
                     {renderEscalationIcon(row.escalation_status)}
+                  </TableCell>
+                  <TableCell className="border-r text-sm">
+                    {escalations
+                      .filter(e => e.project_id === row.project_id)
+                      .map(e => e.reason_code)
+                      .filter(Boolean)
+                      .join(', ')}
                   </TableCell>
                   <TableCell className="text-center">
                     {renderHealthIcon(row.customer_health)}

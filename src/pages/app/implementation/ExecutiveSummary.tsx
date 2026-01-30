@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Smile, Frown, Bug, TrendingUp, TrendingDown, CheckCircle, Clock, Star, Minus, AlertTriangle } from "lucide-react";
+import { Smile, Frown, Bug, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
 
@@ -103,21 +103,6 @@ export default function ExecutiveSummary() {
     return <AlertTriangle className="h-6 w-6 text-foreground" />;
   };
 
-  const renderReferenceIcon = (status: 'Active' | 'Promised' | 'Priority' | 'N/A' | null) => {
-    if (!status || status === 'N/A') {
-      return <Minus className="h-6 w-6 text-muted-foreground" />;
-    }
-    if (status === 'Active') {
-      return <CheckCircle className="h-6 w-6 text-green-600" />;
-    }
-    if (status === 'Promised') {
-      return <Clock className="h-6 w-6 text-amber-600" />;
-    }
-    if (status === 'Priority') {
-      return <Star className="h-6 w-6 text-blue-600" />;
-    }
-    return null;
-  };
 
   if (isLoading) {
     return (
@@ -176,24 +161,6 @@ export default function ExecutiveSummary() {
               </TableHead>
               <TableHead 
                 className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort('segment')}
-              >
-                Segment {sortColumn === 'segment' && (sortDirection === 'asc' ? '↑' : '↓')}
-              </TableHead>
-              <TableHead 
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort('expansion_opportunity')}
-              >
-                Expansion {sortColumn === 'expansion_opportunity' && (sortDirection === 'asc' ? '↑' : '↓')}
-              </TableHead>
-              <TableHead 
-                className="text-center cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort('reference_status')}
-              >
-                Reference {sortColumn === 'reference_status' && (sortDirection === 'asc' ? '↑' : '↓')}
-              </TableHead>
-              <TableHead 
-                className="cursor-pointer hover:bg-muted/50"
                 onClick={() => handleSort('planned_go_live_date')}
               >
                 Planned Go Live {sortColumn === 'planned_go_live_date' && (sortDirection === 'asc' ? '↑' : '↓')}
@@ -209,7 +176,7 @@ export default function ExecutiveSummary() {
           <TableBody>
             {sortedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   No implementation projects found.
                 </TableCell>
               </TableRow>
@@ -234,10 +201,8 @@ export default function ExecutiveSummary() {
                   <TableCell className="text-center">
                     {renderEscalationIcon(row.escalation_status)}
                   </TableCell>
-                  <TableCell>{row.segment || '-'}</TableCell>
-                  <TableCell>{row.expansion_opportunity || '-'}</TableCell>
-                  <TableCell className="text-center">
-                    {row.reference_status || '-'}
+                  <TableCell>
+                    {row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : ''}
                   </TableCell>
                   <TableCell>
                     {row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : ''}

@@ -146,6 +146,7 @@ export default function ExecutiveSummary() {
                 Project {sortColumn === 'project_name' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
               <TableHead className="text-center">Customer Health</TableHead>
+              <TableHead>Reason Code</TableHead>
               <TableHead className="text-center">Project On Track</TableHead>
               <TableHead 
                 className="text-center cursor-pointer hover:bg-muted/50"
@@ -176,7 +177,7 @@ export default function ExecutiveSummary() {
           <TableBody>
             {sortedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                   No implementation projects found.
                 </TableCell>
               </TableRow>
@@ -192,6 +193,7 @@ export default function ExecutiveSummary() {
                   <TableCell className="text-center">
                     {renderHealthIcon(row.customer_health)}
                   </TableCell>
+                  <TableCell>{row.reason_code || ''}</TableCell>
                   <TableCell className="text-center">
                     {renderOnTrackIcon(row.project_on_track)}
                   </TableCell>
@@ -200,9 +202,6 @@ export default function ExecutiveSummary() {
                   </TableCell>
                   <TableCell className="text-center">
                     {renderEscalationIcon(row.escalation_status)}
-                  </TableCell>
-                  <TableCell>
-                    {row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : ''}
                   </TableCell>
                   <TableCell>
                     {row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : ''}

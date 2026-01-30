@@ -211,6 +211,15 @@ export default function ExecutiveSummary() {
     return dateA - dateB;
   });
 
+  // Create a project order map for sorting the sub-tables in same sequence as summary
+  const projectOrderMap = useMemo(() => {
+    const map = new Map<string, number>();
+    sortedData.forEach((row, index) => {
+      map.set(row.project_id, index);
+    });
+    return map;
+  }, [sortedData]);
+
   const handleRowClick = (projectId: string) => {
     navigate(`/app/projects/${projectId}`);
   };
@@ -518,12 +527,9 @@ export default function ExecutiveSummary() {
               <TableBody>
               {[...escalations]
                 .sort((a, b) => {
-                  const customerA = (a.customer_name || '').toLowerCase();
-                  const customerB = (b.customer_name || '').toLowerCase();
-                  if (customerA !== customerB) return customerA.localeCompare(customerB);
-                  const projectA = (a.project_name || '').toLowerCase();
-                  const projectB = (b.project_name || '').toLowerCase();
-                  return projectA.localeCompare(projectB);
+                  const orderA = projectOrderMap.get(a.project_id || '') ?? Infinity;
+                  const orderB = projectOrderMap.get(b.project_id || '') ?? Infinity;
+                  return orderA - orderB;
                 })
                 .map((esc) => (
                   <TableRow 
@@ -591,12 +597,9 @@ export default function ExecutiveSummary() {
               <TableBody>
                 {[...actions]
                   .sort((a, b) => {
-                    const customerA = (a.projects?.companies?.name || '').toLowerCase();
-                    const customerB = (b.projects?.companies?.name || '').toLowerCase();
-                    if (customerA !== customerB) return customerA.localeCompare(customerB);
-                    const projectA = (a.projects?.name || '').toLowerCase();
-                    const projectB = (b.projects?.name || '').toLowerCase();
-                    return projectA.localeCompare(projectB);
+                    const orderA = projectOrderMap.get(a.project_id || '') ?? Infinity;
+                    const orderB = projectOrderMap.get(b.project_id || '') ?? Infinity;
+                    return orderA - orderB;
                   })
                   .map((action) => {
                   const ukToday = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
@@ -673,12 +676,9 @@ export default function ExecutiveSummary() {
               <TableBody>
                 {[...productGaps]
                   .sort((a, b) => {
-                    const customerA = (a.company_name || '').toLowerCase();
-                    const customerB = (b.company_name || '').toLowerCase();
-                    if (customerA !== customerB) return customerA.localeCompare(customerB);
-                    const projectA = (a.project_name || '').toLowerCase();
-                    const projectB = (b.project_name || '').toLowerCase();
-                    return projectA.localeCompare(projectB);
+                    const orderA = projectOrderMap.get(a.project_id || '') ?? Infinity;
+                    const orderB = projectOrderMap.get(b.project_id || '') ?? Infinity;
+                    return orderA - orderB;
                   })
                   .map((gap) => (
                   <TableRow 

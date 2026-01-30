@@ -516,7 +516,16 @@ export default function ExecutiveSummary() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {escalations.map((esc) => (
+              {[...escalations]
+                .sort((a, b) => {
+                  const customerA = (a.customer_name || '').toLowerCase();
+                  const customerB = (b.customer_name || '').toLowerCase();
+                  if (customerA !== customerB) return customerA.localeCompare(customerB);
+                  const projectA = (a.project_name || '').toLowerCase();
+                  const projectB = (b.project_name || '').toLowerCase();
+                  return projectA.localeCompare(projectB);
+                })
+                .map((esc) => (
                   <TableRow 
                     key={esc.id}
                     className={esc.is_critical ? "bg-red-100 dark:bg-red-950/30 border-l-4 border-l-red-500" : ""}
@@ -580,7 +589,16 @@ export default function ExecutiveSummary() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {actions.map((action) => {
+                {[...actions]
+                  .sort((a, b) => {
+                    const customerA = (a.projects?.companies?.name || '').toLowerCase();
+                    const customerB = (b.projects?.companies?.name || '').toLowerCase();
+                    if (customerA !== customerB) return customerA.localeCompare(customerB);
+                    const projectA = (a.projects?.name || '').toLowerCase();
+                    const projectB = (b.projects?.name || '').toLowerCase();
+                    return projectA.localeCompare(projectB);
+                  })
+                  .map((action) => {
                   const ukToday = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
                   const isOverdue = action.planned_date && action.planned_date < ukToday;
                   return (
@@ -653,7 +671,16 @@ export default function ExecutiveSummary() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {productGaps.map((gap) => (
+                {[...productGaps]
+                  .sort((a, b) => {
+                    const customerA = (a.company_name || '').toLowerCase();
+                    const customerB = (b.company_name || '').toLowerCase();
+                    if (customerA !== customerB) return customerA.localeCompare(customerB);
+                    const projectA = (a.project_name || '').toLowerCase();
+                    const projectB = (b.project_name || '').toLowerCase();
+                    return projectA.localeCompare(projectB);
+                  })
+                  .map((gap) => (
                   <TableRow 
                     key={gap.id}
                     className={gap.is_critical ? "bg-red-100 dark:bg-red-950/30 border-l-4 border-l-red-500" : ""}

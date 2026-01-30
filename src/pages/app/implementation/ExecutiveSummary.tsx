@@ -274,15 +274,42 @@ export default function ExecutiveSummary() {
         </div>
       </Card>
 
-      <div className="border rounded-lg">
+      <div className="border rounded-lg overflow-hidden">
         <Table>
           <TableHeader>
+            {/* Group header row */}
+            <TableRow className="bg-muted/30 border-b-0">
+              <TableHead 
+                colSpan={3} 
+                className="text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-r"
+              >
+                Project Details
+              </TableHead>
+              <TableHead 
+                className="text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-r"
+              >
+                Escalations
+              </TableHead>
+              <TableHead 
+                colSpan={3} 
+                className="text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-r"
+              >
+                Weekly Review
+              </TableHead>
+              <TableHead 
+                colSpan={4} 
+                className="text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+              >
+                Status
+              </TableHead>
+            </TableRow>
+            {/* Column header row */}
             <TableRow>
               <TableHead 
-                className="cursor-pointer hover:bg-muted/50"
+                className="cursor-pointer hover:bg-muted/50 border-r-0"
                 onClick={() => handleSort('customer_name')}
               >
-                Customer Name {sortColumn === 'customer_name' && (sortDirection === 'asc' ? '↑' : '↓')}
+                Customer {sortColumn === 'customer_name' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
               <TableHead 
                 className="cursor-pointer hover:bg-muted/50"
@@ -291,28 +318,34 @@ export default function ExecutiveSummary() {
                 Project {sortColumn === 'project_name' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
               <TableHead 
-                className="cursor-pointer hover:bg-muted/50"
+                className="cursor-pointer hover:bg-muted/50 border-r"
                 onClick={() => handleSort('planned_go_live_date')}
               >
-                Planned Go Live {sortColumn === 'planned_go_live_date' && (sortDirection === 'asc' ? '↑' : '↓')}
+                Go Live {sortColumn === 'planned_go_live_date' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
               <TableHead 
-                className="text-center cursor-pointer hover:bg-muted/50"
+                className="text-center cursor-pointer hover:bg-muted/50 border-r"
                 onClick={() => handleSort('escalation_status')}
               >
-                Escalations {sortColumn === 'escalation_status' && (sortDirection === 'asc' ? '↑' : '↓')}
+                {sortColumn === 'escalation_status' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
-              <TableHead className="text-center">Customer Health</TableHead>
-              <TableHead>Reason Code</TableHead>
-              <TableHead className="text-center">Project On Track</TableHead>
-              <TableHead className="text-center">Installation</TableHead>
-              <TableHead className="text-center">Onboarding</TableHead>
-              <TableHead className="text-center">Live</TableHead>
+              <TableHead className="text-center">Health</TableHead>
+              <TableHead className="text-center">On Track</TableHead>
+              <TableHead className="border-r">Reason</TableHead>
+              <TableHead className="text-center">
+                <Hammer className="h-4 w-4 mx-auto text-orange-500" />
+              </TableHead>
+              <TableHead className="text-center">
+                <GraduationCap className="h-4 w-4 mx-auto text-blue-500" />
+              </TableHead>
+              <TableHead className="text-center">
+                <Rocket className="h-4 w-4 mx-auto text-green-500" />
+              </TableHead>
               <TableHead 
                 className="text-center cursor-pointer hover:bg-muted/50"
                 onClick={() => handleSort('product_gaps_status')}
               >
-                Product Gaps {sortColumn === 'product_gaps_status' && (sortDirection === 'asc' ? '↑' : '↓')}
+                Gaps {sortColumn === 'product_gaps_status' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -332,19 +365,19 @@ export default function ExecutiveSummary() {
                 >
                   <TableCell className="font-medium">{row.customer_name}</TableCell>
                   <TableCell>{row.project_name}</TableCell>
-                  <TableCell>
-                    {row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : ''}
+                  <TableCell className="border-r">
+                    {row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yy') : ''}
                   </TableCell>
-                  <TableCell className="text-center">
+                  <TableCell className="text-center border-r">
                     {renderEscalationIcon(row.escalation_status)}
                   </TableCell>
                   <TableCell className="text-center">
                     {renderHealthIcon(row.customer_health)}
                   </TableCell>
-                  <TableCell>{row.reason_code || ''}</TableCell>
                   <TableCell className="text-center">
                     {renderOnTrackIcon(row.project_on_track)}
                   </TableCell>
+                  <TableCell className="border-r">{row.reason_code || ''}</TableCell>
                   <TableCell className="text-center">
                     {renderPhaseIcon('installation', row.phase_installation)}
                   </TableCell>

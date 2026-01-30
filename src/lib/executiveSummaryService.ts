@@ -9,9 +9,6 @@ export interface ExecutiveSummaryRow {
   project_on_track: 'on_track' | 'off_track' | null;
   product_gaps_status: 'none' | 'non_critical' | 'critical';
   escalation_status: 'none' | 'active' | 'critical';
-  segment: string | null;
-  expansion_opportunity: string | null;
-  reference_status: 'Active' | 'Promised' | 'Priority' | 'N/A' | null;
   planned_go_live_date: string | null;
   current_status: string | null;
 }
@@ -26,7 +23,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
   // Fetch all implementation projects with company info and go-live data from projects table
   const { data: projects, error: projectsError } = await supabase
     .from('projects')
-    .select('id, name, company_id, segment, expansion_opportunity, reference_status, domain, planned_go_live_date, current_status, churn_risk, companies(name)')
+    .select('id, name, company_id, planned_go_live_date, current_status, companies(name)')
     .in('domain', ['IoT', 'Vision', 'Hybrid'])
     .order('name');
 
@@ -122,10 +119,6 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       project_on_track: review?.status || null,
       product_gaps_status,
       escalation_status,
-      segment: project.segment,
-      expansion_opportunity: project.expansion_opportunity,
-      reference_status: project.reference_status || null,
-      // Get planned_go_live_date and current_status from projects table instead of weekly reviews
       planned_go_live_date: project.planned_go_live_date || null,
       current_status: project.current_status || null
     };

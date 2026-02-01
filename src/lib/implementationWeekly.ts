@@ -21,8 +21,8 @@ export async function ensureWeeks(): Promise<void> {
  * Returns dynamically generated weeks (current + recent 4 weeks by default)
  * No longer depends on impl_weekly_weeks table
  */
-export function listWeeks(recentCount: number = 4): ImplWeek[] {
-  const weeks = generateAvailableWeeks(recentCount, 0);
+export function listWeeks(recentCount: number = 4, futureCount: number = 1): ImplWeek[] {
+  const weeks = generateAvailableWeeks(recentCount, futureCount);
   return weeks.map(w => ({
     week_start: w.week_start,
     week_end: w.week_end,

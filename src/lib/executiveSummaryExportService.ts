@@ -92,15 +92,15 @@ export function exportExecutiveSummaryToPDF(data: ExportData): void {
     row.customer_name,
     row.project_name,
     row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yy') : '',
-    row.escalation_status === 'critical' ? '⚠ CRITICAL' : row.escalation_status === 'active' ? '⚠' : '',
+    row.escalation_status === 'critical' ? 'CRITICAL' : row.escalation_status === 'active' ? 'Active' : '',
     escalationReasonMap.get(row.project_id) || '',
-    row.customer_health === 'green' ? '😊' : row.customer_health === 'red' ? '😞' : '',
-    row.project_on_track === 'on_track' ? '↑' : row.project_on_track === 'off_track' ? '↓' : '',
+    row.customer_health === 'green' ? 'Green' : row.customer_health === 'red' ? 'Red' : '',
+    row.project_on_track === 'on_track' ? 'Yes' : row.project_on_track === 'off_track' ? 'No' : '',
     row.reason_code || '',
-    row.phase_installation ? '✓' : '',
-    row.phase_onboarding ? '✓' : '',
-    row.phase_live ? '✓' : '',
-    row.product_gaps_status === 'critical' ? '🐛 CRIT' : row.product_gaps_status === 'non_critical' ? '🐛' : ''
+    row.phase_installation ? 'Y' : '',
+    row.phase_onboarding ? 'Y' : '',
+    row.phase_live ? 'Y' : '',
+    row.product_gaps_status === 'critical' ? 'CRITICAL' : row.product_gaps_status === 'non_critical' ? 'Yes' : ''
   ]);
 
   autoTable(doc, {
@@ -134,15 +134,36 @@ export function exportExecutiveSummaryToPDF(data: ExportData): void {
     },
     didParseCell: function(data) {
       // Highlight critical escalations
-      if (data.column.index === 3 && data.cell.raw === '⚠ CRITICAL') {
+      if (data.column.index === 3 && data.cell.raw === 'CRITICAL') {
         data.cell.styles.fillColor = [254, 202, 202];
         data.cell.styles.textColor = [153, 27, 27];
         data.cell.styles.fontStyle = 'bold';
       }
-      // Highlight critical gaps
-      if (data.column.index === 11 && data.cell.raw === '🐛 CRIT') {
+      // Highlight red health
+      if (data.column.index === 5 && data.cell.raw === 'Red') {
         data.cell.styles.fillColor = [254, 202, 202];
         data.cell.styles.textColor = [153, 27, 27];
+      }
+      // Highlight green health
+      if (data.column.index === 5 && data.cell.raw === 'Green') {
+        data.cell.styles.fillColor = [187, 247, 208];
+        data.cell.styles.textColor = [22, 101, 52];
+      }
+      // Highlight off track
+      if (data.column.index === 6 && data.cell.raw === 'No') {
+        data.cell.styles.fillColor = [254, 202, 202];
+        data.cell.styles.textColor = [153, 27, 27];
+      }
+      // Highlight on track
+      if (data.column.index === 6 && data.cell.raw === 'Yes') {
+        data.cell.styles.fillColor = [187, 247, 208];
+        data.cell.styles.textColor = [22, 101, 52];
+      }
+      // Highlight critical gaps
+      if (data.column.index === 11 && data.cell.raw === 'CRITICAL') {
+        data.cell.styles.fillColor = [254, 202, 202];
+        data.cell.styles.textColor = [153, 27, 27];
+        data.cell.styles.fontStyle = 'bold';
       }
     }
   });

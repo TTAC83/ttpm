@@ -131,6 +131,27 @@ export default function MyProjects() {
     row.project_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Get filtered project IDs for filtering related tables
+  const filteredProjectIds = useMemo(() => new Set(filteredData.map(p => p.project_id)), [filteredData]);
+
+  // Filter escalations based on search
+  const filteredEscalations = useMemo(() => 
+    escalations.filter(e => filteredProjectIds.has(e.project_id || '')),
+    [escalations, filteredProjectIds]
+  );
+
+  // Filter actions based on search
+  const filteredActions = useMemo(() => 
+    actions.filter(a => filteredProjectIds.has(a.project_id || '')),
+    [actions, filteredProjectIds]
+  );
+
+  // Filter product gaps based on search
+  const filteredProductGaps = useMemo(() => 
+    productGaps.filter(g => filteredProjectIds.has(g.project_id || '')),
+    [productGaps, filteredProjectIds]
+  );
+
   // Compute stats from summary data
   const stats = useMemo(() => {
     const total = summaryData.length;
@@ -462,13 +483,13 @@ export default function MyProjects() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5" />
-                Escalations ({escalations.length})
+                Escalations ({filteredEscalations.length})
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {escalationsLoading ? (
                 <div className="p-4 text-muted-foreground">Loading escalations...</div>
-              ) : escalations.length === 0 ? (
+              ) : filteredEscalations.length === 0 ? (
                 <div className="p-4 text-muted-foreground">No live escalations.</div>
               ) : (
                 <Table>
@@ -485,7 +506,7 @@ export default function MyProjects() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {[...escalations]
+                    {[...filteredEscalations]
                       .sort((a, b) => {
                         const orderA = projectOrderMap.get(a.project_id || '') ?? Infinity;
                         const orderB = projectOrderMap.get(b.project_id || '') ?? Infinity;
@@ -534,13 +555,13 @@ export default function MyProjects() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-orange-500" />
-                Actions - Critical & Overdue ({actions.length})
+                Actions - Critical & Overdue ({filteredActions.length})
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {actionsLoading ? (
                 <div className="p-4 text-muted-foreground">Loading actions...</div>
-              ) : actions.length === 0 ? (
+              ) : filteredActions.length === 0 ? (
                 <div className="p-4 text-muted-foreground">No critical or overdue actions.</div>
               ) : (
                 <Table>
@@ -556,7 +577,7 @@ export default function MyProjects() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {[...actions]
+                    {[...filteredActions]
                       .sort((a, b) => {
                         const orderA = projectOrderMap.get(a.project_id || '') ?? Infinity;
                         const orderB = projectOrderMap.get(b.project_id || '') ?? Infinity;
@@ -614,13 +635,13 @@ export default function MyProjects() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Bug className="h-5 w-5" />
-                Product Gaps ({productGaps.length})
+                Product Gaps ({filteredProductGaps.length})
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {productGapsLoading ? (
                 <div className="p-4 text-muted-foreground">Loading product gaps...</div>
-              ) : productGaps.length === 0 ? (
+              ) : filteredProductGaps.length === 0 ? (
                 <div className="p-4 text-muted-foreground">No live product gaps.</div>
               ) : (
                 <Table>
@@ -636,7 +657,7 @@ export default function MyProjects() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {[...productGaps]
+                    {[...filteredProductGaps]
                       .sort((a, b) => {
                         const orderA = projectOrderMap.get(a.project_id || '') ?? Infinity;
                         const orderB = projectOrderMap.get(b.project_id || '') ?? Infinity;

@@ -45,6 +45,40 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
   
   console.log('🔍 Found reviews for', mondayISO, ':', reviews?.length || 0, reviews);
 
+  // Fetch the most recent review for each company (for fallback/inheritance)
+  // Get reviews before or equal to current week, ordered by week descending
+  const { data: allRecentReviews, error: recentError } = await supabase
+    .from('impl_weekly_reviews')
+    .select('company_id, customer_health, project_status, reason_code, phase_installation, phase_onboarding, phase_live, week_start')
+    .lte('week_start', mondayISO)
+    .order('week_start', { ascending: false });
+
+  if (recentError) throw recentError;
+
+  // Build a map of the most recent review per company (for fallback)
+  const mostRecentReviewMap = new Map<string, {
+    health: string | null;
+    status: string | null;
+    reason_code: string | null;
+    phase_installation: boolean | null;
+    phase_onboarding: boolean | null;
+    phase_live: boolean | null;
+  }>();
+  
+  (allRecentReviews || []).forEach(r => {
+    // Only set if not already set (first occurrence is most recent due to ordering)
+    if (!mostRecentReviewMap.has(r.company_id)) {
+      mostRecentReviewMap.set(r.company_id, {
+        health: r.customer_health,
+        status: r.project_status,
+        reason_code: r.reason_code,
+        phase_installation: r.phase_installation,
+        phase_onboarding: r.phase_onboarding,
+        phase_live: r.phase_live
+      });
+    }
+  });
+
   // Fetch product gaps grouped by project
   const { data: productGaps, error: gapsError } = await supabase
     .from('product_gaps')
@@ -61,7 +95,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
 
   if (escalationsError) throw escalationsError;
 
-  // Create a map of company reviews (for health, project status, reason code, and phases)
+  // Create a map of current week reviews (for health, project status, reason code, and phases)
   const reviewMap = new Map(
     (reviews || []).map(r => [
       r.company_id,
@@ -100,12 +134,18 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
   // Build the summary rows
   return projects.map(project => {
     // Get project's company review by company_id (for health and status only)
-    const review = reviewMap.get(project.company_id);
+    const currentWeekReview = reviewMap.get(project.company_id);
+    const mostRecentReview = mostRecentReviewMap.get(project.company_id);
+    
+    // Use current week review if available, otherwise fall back to most recent
+    const review = currentWeekReview || mostRecentReview;
+    
     const gaps = gapsMap.get(project.id);
     const escData = escalationsMap.get(project.id);
     
     if (review) {
-      console.log('✅ Found review for project', project.name, 'company_id:', project.company_id, review);
+      console.log('✅ Found review for project', project.name, 'company_id:', project.company_id, 
+        currentWeekReview ? '(current week)' : '(inherited from previous)', review);
     }
 
     let product_gaps_status: 'none' | 'non_critical' | 'critical' = 'none';
@@ -122,9 +162,9 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       project_id: project.id,
       customer_name: project.companies?.name || 'N/A',
       project_name: project.name,
-      customer_health: review?.health || null,
+      customer_health: (review?.health as 'green' | 'red' | null) || null,
       reason_code: review?.reason_code || null,
-      project_on_track: review?.status || null,
+      project_on_track: (review?.status as 'on_track' | 'off_track' | null) || null,
       phase_installation: review?.phase_installation ?? null,
       phase_onboarding: review?.phase_onboarding ?? null,
       phase_live: review?.phase_live ?? null,

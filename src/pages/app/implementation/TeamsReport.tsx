@@ -42,7 +42,6 @@ interface Project {
 const ROLE_COLUMNS = [
   { key: 'salesperson', label: 'Salesperson' },
   { key: 'solutions_consultant', label: 'Solutions Consultant' },
-  { key: 'customer_project_lead', label: 'Customer Project Lead' },
   { key: 'implementation_lead', label: 'Implementation Lead' },
   { key: 'account_manager', label: 'Account Manager' },
   { key: 'ai_iot_engineer', label: 'AI/IoT Engineer' },

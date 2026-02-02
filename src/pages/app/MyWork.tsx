@@ -432,15 +432,27 @@ export default function MyWork() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Live Escalations</p>
+                <p className="text-2xl font-bold text-destructive">{stats.liveEscalations}</p>
+              </div>
+              <ShieldAlert className="h-8 w-8 text-destructive" />
+            </div>
+          </CardContent>
+        </Card>
+        
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Overdue Tasks</p>
-                <p className="text-2xl font-bold text-red-600">{stats.overdueTasks}</p>
+                <p className="text-2xl font-bold text-destructive">{stats.overdueTasks}</p>
               </div>
-              <AlertCircle className="h-8 w-8 text-red-600" />
+              <AlertCircle className="h-8 w-8 text-destructive" />
             </div>
           </CardContent>
         </Card>
@@ -450,9 +462,9 @@ export default function MyWork() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Today's Tasks</p>
-                <p className="text-2xl font-bold text-blue-600">{stats.todayTasks}</p>
+                <p className="text-2xl font-bold text-primary">{stats.todayTasks}</p>
               </div>
-              <Clock className="h-8 w-8 text-blue-600" />
+              <Clock className="h-8 w-8 text-primary" />
             </div>
           </CardContent>
         </Card>

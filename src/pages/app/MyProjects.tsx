@@ -21,12 +21,14 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Smile, Frown, Bug, TrendingUp, TrendingDown, AlertTriangle, Hammer, GraduationCap, Rocket, FileDown, Calendar, ListTodo } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Smile, Frown, Bug, TrendingUp, TrendingDown, AlertTriangle, Hammer, GraduationCap, Rocket, FileDown, Calendar, ListTodo, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { BlockerDrawer } from "@/components/BlockerDrawer";
 import { ProductGapDrawer } from "@/components/ProductGapDrawer";
 import { EditActionDialog } from "@/components/EditActionDialog";
 import { formatDateUK } from "@/lib/dateUtils";
+import { toast } from "sonner";
 
 export default function MyProjects() {
   const navigate = useNavigate();
@@ -41,6 +43,10 @@ export default function MyProjects() {
   const [productGapDrawerOpen, setProductGapDrawerOpen] = useState(false);
   const [selectedAction, setSelectedAction] = useState<any | null>(null);
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
+  
+  // Multi-select state for tasks
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
+  const [isMarkingComplete, setIsMarkingComplete] = useState(false);
 
   const { data: summaryData = [], isLoading } = useQuery({
     queryKey: ['my-projects-summary', user?.id],
@@ -197,6 +203,69 @@ export default function MyProjects() {
       queryClient.invalidateQueries({ queryKey: ['my-projects-actions'] });
     } catch (error) {
       console.error('Error updating action:', error);
+    }
+  };
+
+  // Handle bulk mark complete for tasks
+  const handleBulkMarkComplete = async () => {
+    if (selectedTaskIds.size === 0) return;
+    
+    setIsMarkingComplete(true);
+    try {
+      const ukToday = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+      const taskIdsArray = Array.from(selectedTaskIds);
+      
+      // Update each task using the edge function
+      const results = await Promise.all(
+        taskIdsArray.map(async (taskId) => {
+          const { error } = await supabase.functions.invoke('update-task', {
+            body: {
+              id: taskId,
+              status: 'Done',
+              actual_end: ukToday
+            }
+          });
+          return { taskId, error };
+        })
+      );
+      
+      const failed = results.filter(r => r.error);
+      if (failed.length > 0) {
+        toast.error(`Failed to update ${failed.length} task(s)`);
+      } else {
+        toast.success(`Marked ${taskIdsArray.length} task(s) as complete`);
+      }
+      
+      setSelectedTaskIds(new Set());
+      queryClient.invalidateQueries({ queryKey: ['my-projects-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['my-projects-completion'] });
+    } catch (error) {
+      console.error('Error marking tasks complete:', error);
+      toast.error('Failed to mark tasks as complete');
+    } finally {
+      setIsMarkingComplete(false);
+    }
+  };
+
+  // Toggle task selection
+  const toggleTaskSelection = (taskId: string) => {
+    setSelectedTaskIds(prev => {
+      const next = new Set(prev);
+      if (next.has(taskId)) {
+        next.delete(taskId);
+      } else {
+        next.add(taskId);
+      }
+      return next;
+    });
+  };
+
+  // Toggle all tasks selection
+  const toggleAllTasks = (tasks: any[]) => {
+    if (selectedTaskIds.size === tasks.length) {
+      setSelectedTaskIds(new Set());
+    } else {
+      setSelectedTaskIds(new Set(tasks.map(t => t.id)));
     }
   };
 
@@ -872,11 +941,22 @@ export default function MyProjects() {
 
           {/* Tasks Table */}
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
               <CardTitle className="flex items-center gap-2">
                 <ListTodo className="h-5 w-5 text-purple-500" />
                 Tasks - Blocked & Overdue ({filteredTasks.length})
               </CardTitle>
+              {selectedTaskIds.size > 0 && (
+                <Button
+                  onClick={handleBulkMarkComplete}
+                  disabled={isMarkingComplete}
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  {isMarkingComplete ? 'Marking...' : `Mark Complete (${selectedTaskIds.size})`}
+                </Button>
+              )}
             </CardHeader>
             <CardContent className="p-0">
               {tasksLoading ? (
@@ -887,6 +967,13 @@ export default function MyProjects() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={selectedTaskIds.size === filteredTasks.length && filteredTasks.length > 0}
+                          onCheckedChange={() => toggleAllTasks(filteredTasks)}
+                          aria-label="Select all tasks"
+                        />
+                      </TableHead>
                       <TableHead>Customer</TableHead>
                       <TableHead>Project</TableHead>
                       <TableHead>Task</TableHead>
@@ -908,6 +995,13 @@ export default function MyProjects() {
                           key={task.id}
                           className={task.is_critical ? "bg-red-100 dark:bg-red-950/30 border-l-4 border-l-red-500" : task.is_overdue ? "bg-amber-50 dark:bg-amber-950/20" : ""}
                         >
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedTaskIds.has(task.id)}
+                              onCheckedChange={() => toggleTaskSelection(task.id)}
+                              aria-label={`Select ${task.task_title}`}
+                            />
+                          </TableCell>
                           <TableCell className="font-medium">{task.company_name}</TableCell>
                           <TableCell>{task.project_name}</TableCell>
                           <TableCell>

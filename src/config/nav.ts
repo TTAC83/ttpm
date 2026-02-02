@@ -42,7 +42,16 @@ export const NAV: NavItem[] = [
     matchPaths: ["/app/my-work"]
   },
 
-  // 2) Global Dashboards
+  // 2) My Projects
+  {
+    label: "My Projects",
+    iconName: "Briefcase",
+    to: "/app/my-projects",
+    roles: ["internal_admin", "internal_user", "external_admin", "external_user"],
+    matchPaths: ["/app/my-projects"]
+  },
+
+  // 3) Global Dashboards
   {
     label: "Global Dashboards",
     iconName: "BarChart3",

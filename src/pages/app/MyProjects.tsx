@@ -5,8 +5,10 @@ import { fetchMyProjectsData } from "@/lib/myProjectsService";
 import { exportExecutiveSummaryToPDF } from "@/lib/executiveSummaryExportService";
 import { blockersService, ImplementationBlocker } from "@/lib/blockersService";
 import { productGapsService, ProductGap } from "@/lib/productGapsService";
+import { calculateMultipleProjectCompletions, ProjectCompletion } from "@/lib/projectCompletionService";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { Progress } from "@/components/ui/progress";
 import {
   Table,
   TableBody,
@@ -48,6 +50,13 @@ export default function MyProjects() {
 
   // Get project IDs for filtering related data
   const myProjectIds = useMemo(() => summaryData.map(p => p.project_id), [summaryData]);
+
+  // Fetch completion percentages for all projects
+  const { data: completionData = new Map<string, ProjectCompletion>() } = useQuery({
+    queryKey: ['my-projects-completion', myProjectIds],
+    queryFn: () => calculateMultipleProjectCompletions(myProjectIds),
+    enabled: myProjectIds.length > 0,
+  });
 
   // Fetch escalations (Live only, filtered to my projects)
   const { data: escalations = [], isLoading: escalationsLoading } = useQuery({
@@ -486,7 +495,7 @@ export default function MyProjects() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/30 border-b-0">
-                  <TableHead colSpan={3} className="text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-r">
+                  <TableHead colSpan={4} className="text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-r">
                     Project Details
                   </TableHead>
                   <TableHead colSpan={2} className="text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground border-r">
@@ -509,9 +518,10 @@ export default function MyProjects() {
                   <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('project_name')}>
                     Project {sortColumn === 'project_name' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </TableHead>
-                  <TableHead className="cursor-pointer hover:bg-muted/50 border-r" onClick={() => handleSort('planned_go_live_date')}>
+                  <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('planned_go_live_date')}>
                     Go Live {sortColumn === 'planned_go_live_date' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </TableHead>
+                  <TableHead className="border-r w-24">% Complete</TableHead>
                   <TableHead className="text-center cursor-pointer hover:bg-muted/50" onClick={() => handleSort('escalation_status')}>
                     {sortColumn === 'escalation_status' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </TableHead>
@@ -536,8 +546,20 @@ export default function MyProjects() {
                   >
                     <TableCell className="font-medium">{row.customer_name}</TableCell>
                     <TableCell>{row.project_name}</TableCell>
-                    <TableCell className="border-r">
+                    <TableCell>
                       {row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yy') : ''}
+                    </TableCell>
+                    <TableCell className="border-r">
+                      {(() => {
+                        const completion = completionData.get(row.project_id);
+                        const pct = completion?.completionPercentage ?? 0;
+                        return (
+                          <div className="flex items-center gap-2">
+                            <Progress value={pct} className="h-2 w-12" />
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">{pct}%</span>
+                          </div>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell className="text-center">{renderEscalationIcon(row.escalation_status)}</TableCell>
                     <TableCell className="border-r text-sm">

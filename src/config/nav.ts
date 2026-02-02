@@ -151,6 +151,12 @@ export const NAV: NavItem[] = [
             matchPaths: ["/app/product-gaps"],
             roles: ["internal_admin", "internal_user"]
           },
+          {
+            label: "Teams",
+            to: "/app/implementation/teams",
+            matchPaths: ["/app/implementation/teams"],
+            roles: ["internal_admin", "internal_user"]
+          },
         ]
       },
       {

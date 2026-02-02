@@ -55,6 +55,7 @@ import ImplementationEscalations from "./pages/app/ImplementationBlockers";
 import ProductGaps from "./pages/app/ProductGaps";
 import ExecutiveSummary from "./pages/app/implementation/ExecutiveSummary";
 import BoardSummary from "./pages/app/implementation/BoardSummary";
+import TeamsReport from "./pages/app/implementation/TeamsReport";
 import { InternalRoute } from "@/components/auth/InternalRoute";
 import ExpansionReport from "./pages/app/global-dashboards/ExpansionReport";
 import ScheduleRequired from "./pages/app/vision-models/ScheduleRequired";
@@ -195,6 +196,7 @@ const App = () => (
               <Route path="implementation/weekly-review" element={<ImplementationWeeklyReview />} />
               <Route path="implementation/executive-summary" element={<InternalRoute><ExecutiveSummary /></InternalRoute>} />
               <Route path="implementation/board-summary" element={<InternalRoute><BoardSummary /></InternalRoute>} />
+              <Route path="implementation/teams" element={<InternalRoute><TeamsReport /></InternalRoute>} />
               <Route path="implementation/wbs" element={<WBS />} />
               <Route path="implementation/blockers" element={<InternalRoute>
                 <ImplementationEscalations />

@@ -159,29 +159,87 @@ const TeamsReport = () => {
   const handleBulkUpdate = async () => {
     setBulkUpdating(true);
     try {
-      // Copy salesperson to account_manager for each project
-      const updatePromises = projects
-        .filter(project => project.salesperson) // Only update if salesperson exists
-        .map(project =>
-          supabase
-            .from('projects')
-            .update({
-              account_manager: project.salesperson,
-            })
-            .eq('id', project.id)
+      // User IDs from profiles
+      const amanId = '540ee8d7-ae77-4587-95a3-a33fd2eb46d4';
+      const imranId = 'e351243c-bd01-47fc-a134-39c7e6a2c1a6';
+      const harshId = '178fd856-d23a-44f3-a4bb-1cc66d87e897';
+      const jamesId = 'a27c65c6-e881-4a08-8a4b-8a25701d8fb6';
+      const arehmanId = '0880ce67-55b4-4ce3-a29c-cb36c8e2ee25';
+
+      // Mappings from the spreadsheet (company name -> tech_lead, tech_sponsor)
+      // Note: Abhinav, Huzaifa, Abdur, Affan are NOT in the profiles table yet
+      const mappings: Record<string, { tech_lead?: string; tech_sponsor?: string }> = {
+        'Aquascot': { tech_sponsor: amanId }, // Tech Lead = Abhinav (missing)
+        'Butternut Box': { tech_sponsor: imranId }, // Tech Lead = Huzaifa (missing)
+        'Cranswick': { tech_sponsor: imranId }, // Tech Lead = Abdur (missing)
+        'Finsbury': { tech_lead: harshId, tech_sponsor: amanId },
+        'HFUK': { tech_sponsor: imranId }, // Tech Lead = Affan (missing)
+        'Kettle Produce': { tech_sponsor: imranId }, // Tech Lead = Abdur (missing)
+        'MBC': { tech_sponsor: amanId }, // Tech Lead = Abhinav (missing)
+        'Myton': { tech_lead: jamesId },
+        'Park Cakes': { tech_lead: harshId, tech_sponsor: amanId },
+        'R&G Fresh': { tech_lead: harshId, tech_sponsor: amanId },
+        'Sofina Hull': { tech_sponsor: amanId }, // Tech Lead = Abdur (missing)
+        'Sofina Malton': { tech_sponsor: amanId }, // Tech Lead = Abdur (missing)
+        'Sofina Foods - Fraserburgh': { tech_lead: harshId, tech_sponsor: amanId },
+        'Village Bakery': { tech_sponsor: imranId }, // Tech Lead = Huzaifa (missing)
+        'Quin': { tech_lead: harshId, tech_sponsor: amanId },
+        'Delifrance': { tech_sponsor: amanId }, // Tech Lead = Abhinav (missing)
+        'Stonegate': { tech_sponsor: imranId }, // Tech Lead = Abhinav (missing)
+        'Beckets': { tech_sponsor: imranId }, // Tech Lead = Abhinav (missing)
+        'Chambers': { tech_sponsor: amanId },
+        'Grupo Bimbo': { tech_sponsor: amanId }, // Tech Lead = Huzaifa (missing)
+        // Row 10 from image: Tech Lead = A Rehman, Sponsor = Imran (need to identify which project)
+      };
+
+      const updatePromises: Promise<any>[] = [];
+      const updatedProjects: Record<string, { tech_lead?: string; tech_sponsor?: string }> = {};
+
+      for (const project of projects) {
+        const companyName = project.company?.name;
+        if (!companyName) continue;
+
+        // Find matching mapping (partial match)
+        const matchKey = Object.keys(mappings).find(key => 
+          companyName.toLowerCase().includes(key.toLowerCase())
         );
+
+        if (matchKey) {
+          const mapping = mappings[matchKey];
+          const updateData: Record<string, string | null> = {};
+
+          if (mapping.tech_lead) updateData.tech_lead = mapping.tech_lead;
+          if (mapping.tech_sponsor) updateData.tech_sponsor = mapping.tech_sponsor;
+
+          if (Object.keys(updateData).length > 0) {
+            updatePromises.push(
+              (async () => {
+                await supabase.from('projects').update(updateData).eq('id', project.id);
+              })()
+            );
+            updatedProjects[project.id] = mapping;
+          }
+        }
+      }
 
       await Promise.all(updatePromises);
 
       // Update local state
-      setProjects(prev => prev.map(p => ({
-        ...p,
-        account_manager: p.salesperson,
-      })));
+      setProjects(prev => prev.map(p => {
+        const updates = updatedProjects[p.id];
+        if (updates) {
+          return {
+            ...p,
+            tech_lead: updates.tech_lead || p.tech_lead,
+            tech_sponsor: updates.tech_sponsor || p.tech_sponsor,
+          };
+        }
+        return p;
+      }));
 
       toast({
         title: "Bulk Update Complete",
-        description: `Set account manager = salesperson for ${updatePromises.length} projects`,
+        description: `Updated tech lead/sponsor for ${updatePromises.length} projects. Note: Abhinav, Huzaifa, Abdur, Affan not in system yet.`,
       });
     } catch (error: any) {
       console.error('Error bulk updating:', error);

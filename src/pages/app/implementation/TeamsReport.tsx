@@ -45,7 +45,6 @@ const ROLE_COLUMNS = [
   { key: 'customer_project_lead', label: 'Customer Project Lead' },
   { key: 'implementation_lead', label: 'Implementation Lead' },
   { key: 'account_manager', label: 'Account Manager' },
-  { key: 'sales_lead', label: 'Sales Lead' },
   { key: 'ai_iot_engineer', label: 'AI/IoT Engineer' },
   { key: 'technical_project_lead', label: 'Technical Project Lead' },
   { key: 'project_coordinator', label: 'Project Coordinator' },

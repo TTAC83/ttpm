@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ensureWeeks, listWeeks, listAllWeeksWithData, listImplCompanies, loadOverdueTasks, loadOpenActions, loadEventsAroundWeek, loadReview, saveReview, loadWeeklyStats, loadOpenVisionModels, VisionModelRow, ImplWeek } from "@/lib/implementationWeekly";
+import { ensureWeeks, listWeeks, listAllWeeksWithData, listImplCompanies, loadOverdueTasks, loadOpenActions, loadEventsAroundWeek, loadReview, loadPreviousReview, saveReview, loadWeeklyStats, loadOpenVisionModels, VisionModelRow, ImplWeek } from "@/lib/implementationWeekly";
 import { productGapsService } from "@/lib/productGapsService";
 import { ProductGapDrawer } from "@/components/ProductGapDrawer";
 import { cn } from "@/lib/utils";
@@ -509,6 +509,13 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     queryFn: () => loadReview(companyId, weekStart),
   });
 
+  // Query for previous week's review to carry forward phases/hypercare
+  const previousReviewQ = useQuery({
+    queryKey: ["impl-previous-review", companyId, weekStart],
+    queryFn: () => loadPreviousReview(companyId, weekStart),
+    enabled: !reviewQ.isLoading && reviewQ.data === null, // Only fetch if no current review exists
+  });
+
   // Load profiles for task assignment
   useEffect(() => {
     const loadProfiles = async () => {
@@ -609,6 +616,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     if (reviewQ.isLoading) return;
     
     if (reviewQ.data) {
+      // Current week has data - use it
       setProjectStatus(reviewQ.data.project_status ?? null);
       setCustomerHealth(reviewQ.data.customer_health ?? null);
       setNotes(reviewQ.data.notes ?? "");
@@ -621,15 +629,31 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
       setPhaseLive(reviewQ.data.phase_live ?? false);
       setPhaseLiveDetails(reviewQ.data.phase_live_details ?? "");
       setHypercare(reviewQ.data.hypercare ?? false);
+      
+      // Allow auto-save after data is loaded (with a small delay to let state settle)
+      const timer = setTimeout(() => {
+        isLoadingRef.current = false;
+      }, 100);
+      return () => clearTimeout(timer);
+    } else if (!previousReviewQ.isLoading) {
+      // No current week data - carry forward phases/hypercare from previous week
+      if (previousReviewQ.data) {
+        setPhaseInstallation(previousReviewQ.data.phase_installation ?? false);
+        setPhaseInstallationDetails(previousReviewQ.data.phase_installation_details ?? "");
+        setPhaseOnboarding(previousReviewQ.data.phase_onboarding ?? false);
+        setPhaseOnboardingDetails(previousReviewQ.data.phase_onboarding_details ?? "");
+        setPhaseLive(previousReviewQ.data.phase_live ?? false);
+        setPhaseLiveDetails(previousReviewQ.data.phase_live_details ?? "");
+        setHypercare(previousReviewQ.data.hypercare ?? false);
+      }
+      
+      // Allow auto-save after data is loaded
+      const timer = setTimeout(() => {
+        isLoadingRef.current = false;
+      }, 100);
+      return () => clearTimeout(timer);
     }
-    
-    // Allow auto-save after data is loaded (with a small delay to let state settle)
-    const timer = setTimeout(() => {
-      isLoadingRef.current = false;
-    }, 100);
-    
-    return () => clearTimeout(timer);
-  }, [reviewQ.data, reviewQ.isLoading]);
+  }, [reviewQ.data, reviewQ.isLoading, previousReviewQ.data, previousReviewQ.isLoading]);
 
   const autoSaveMutation = useMutation({
     mutationFn: (params: { 

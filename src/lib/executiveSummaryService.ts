@@ -150,15 +150,19 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
     const currentWeekReview = reviewMap.get(project.company_id);
     const mostRecentReview = mostRecentReviewMap.get(project.company_id);
     
-    // Use current week review if available, otherwise fall back to most recent
-    const review = currentWeekReview || mostRecentReview;
+    // Check if current week review has actual data (health or status set)
+    const currentWeekHasData = currentWeekReview && 
+      (currentWeekReview.health !== null || currentWeekReview.status !== null);
+    
+    // Use current week review ONLY if it has actual data, otherwise fall back to most recent
+    const review = currentWeekHasData ? currentWeekReview : mostRecentReview;
     
     const gaps = gapsMap.get(project.id);
     const escData = escalationsMap.get(project.id);
     
     if (review) {
       console.log('✅ Found review for project', project.name, 'company_id:', project.company_id, 
-        currentWeekReview ? '(current week)' : '(inherited from previous)', review);
+        currentWeekHasData ? '(current week)' : '(inherited from most recent)', review);
     }
 
     let product_gaps_status: 'none' | 'non_critical' | 'critical' = 'none';

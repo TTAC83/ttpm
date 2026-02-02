@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { fetchExecutiveSummaryData } from "@/lib/executiveSummaryService";
+import { exportExecutiveSummaryToPDF } from "@/lib/executiveSummaryExportService";
 import { blockersService, ImplementationBlocker } from "@/lib/blockersService";
 import { productGapsService, ProductGap } from "@/lib/productGapsService";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Smile, Frown, Bug, TrendingUp, TrendingDown, AlertTriangle, Hammer, GraduationCap, Rocket } from "lucide-react";
+import { Smile, Frown, Bug, TrendingUp, TrendingDown, AlertTriangle, Hammer, GraduationCap, Rocket, FileDown } from "lucide-react";
 import { format } from "date-fns";
 import { BlockerDrawer } from "@/components/BlockerDrawer";
 import { ProductGapDrawer } from "@/components/ProductGapDrawer";
@@ -288,6 +289,19 @@ export default function ExecutiveSummary() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Executive Summary</h1>
+        <Button 
+          variant="outline"
+          onClick={() => exportExecutiveSummaryToPDF({
+            summaryData: sortedData,
+            escalations,
+            productGaps,
+            actions
+          })}
+          disabled={isLoading}
+        >
+          <FileDown className="h-4 w-4 mr-2" />
+          Export PDF
+        </Button>
       </div>
 
       <div className="flex gap-4 items-center">

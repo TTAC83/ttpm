@@ -159,17 +159,14 @@ const TeamsReport = () => {
   const handleBulkUpdate = async () => {
     setBulkUpdating(true);
     try {
-      // Willem Cawley Gelling as technical_project_lead
-      // hjohnson as project_coordinator
-      const willemId = '1d3f3a88-554a-4c2c-b1de-251783414def';
-      const hjohnsonId = '7be5ab49-cce3-4616-8a04-7e6055b12730';
+      // Jimmy as solutions_consultant
+      const jimmyId = 'e526fa27-96f2-4e2b-a538-b234eced2056';
 
       const updatePromises = projects.map(project =>
         supabase
           .from('projects')
           .update({
-            technical_project_lead: willemId,
-            project_coordinator: hjohnsonId,
+            solutions_consultant: jimmyId,
           })
           .eq('id', project.id)
       );
@@ -179,8 +176,7 @@ const TeamsReport = () => {
       // Update local state
       setProjects(prev => prev.map(p => ({
         ...p,
-        technical_project_lead: willemId,
-        project_coordinator: hjohnsonId,
+        solutions_consultant: jimmyId,
       })));
 
       toast({

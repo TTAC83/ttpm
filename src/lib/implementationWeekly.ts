@@ -294,6 +294,30 @@ export async function loadReview(companyId: string, weekStartISO: string): Promi
   } as ImplWeeklyReview : null;
 }
 
+/**
+ * Loads the most recent review for a company before the given week
+ * Used to carry forward phases and hypercare status to new weeks
+ */
+export async function loadPreviousReview(companyId: string, beforeWeekStartISO: string): Promise<ImplWeeklyReview | null> {
+  const { data, error } = await supabase
+    .from("impl_weekly_reviews")
+    .select("project_status,customer_health,churn_risk,notes,reason_code,weekly_summary,planned_go_live_date,current_status,phase_installation,phase_installation_details,phase_onboarding,phase_onboarding_details,phase_live,phase_live_details,hypercare")
+    .eq("company_id", companyId)
+    .lt("week_start", beforeWeekStartISO)
+    .order("week_start", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  
+  if (error) {
+    if ((error as any).code === "PGRST116") return null;
+    throw error;
+  }
+  return data ? {
+    ...data,
+    churn_risk: data.churn_risk as "Low" | "Medium" | "High" | "Certain" | null
+  } as ImplWeeklyReview : null;
+}
+
 export async function saveReview(params: {
   companyId: string;
   weekStartISO: string;

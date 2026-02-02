@@ -1,14 +1,24 @@
 import { useEffect, useState, useCallback } from "react";
 
+// Check if we're in production mode where PWA is available
+const isPWAEnabled = import.meta.env.PROD;
+
 export function usePWAUpdatePrompt() {
   const [needRefresh, setNeedRefresh] = useState(false);
   const [offlineReady, setOfflineReady] = useState(false);
   const [updateSW, setUpdateSW] = useState<((reloadPage?: boolean) => Promise<void>) | null>(null);
 
   useEffect(() => {
-    // Dynamic import for PWA register - works in production builds
-    import('virtual:pwa-register')
-      .then(({ registerSW }) => {
+    // Only attempt PWA registration in production
+    if (!isPWAEnabled) {
+      console.log('[PWA] Skipped - not in production mode');
+      return;
+    }
+
+    // Dynamic import for PWA register - only works in production builds
+    (async () => {
+      try {
+        const { registerSW } = await import('virtual:pwa-register');
         const sw = registerSW({
           immediate: true,
           onNeedRefresh() {
@@ -34,11 +44,10 @@ export function usePWAUpdatePrompt() {
           }
         });
         setUpdateSW(() => sw);
-      })
-      .catch((err) => {
-        // PWA not available in development
-        console.log('[PWA] Not available:', err?.message || err);
-      });
+      } catch (err) {
+        console.log('[PWA] Registration skipped:', err);
+      }
+    })();
   }, []);
 
   const reload = useCallback(() => {

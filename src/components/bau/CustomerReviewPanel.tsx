@@ -404,10 +404,11 @@ export const CustomerReviewPanel: React.FC<CustomerReviewPanelProps> = ({
                         <SelectContent className="z-50 bg-popover text-popover-foreground shadow-md">
                           <SelectItem value="data-inaccuracy">Data Inaccuracy</SelectItem>
                           <SelectItem value="feature-product-gap">Feature/Product Gap</SelectItem>
+                          <SelectItem value="hardware-issue">Hardware Issue</SelectItem>
                           <SelectItem value="implementation-delay-tt">Implementations Delay - TT</SelectItem>
                           <SelectItem value="implementation-delay-customer">Implementation Delay - Customer</SelectItem>
+                          <SelectItem value="network-issues">Network Issues</SelectItem>
                           <SelectItem value="portal-issues">Portal Issues</SelectItem>
-                          <SelectItem value="hardware-issue">Hardware Issue</SelectItem>
                           <SelectItem value="other">Other</SelectItem>
                         </SelectContent>
                       </Select>

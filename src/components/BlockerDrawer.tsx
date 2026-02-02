@@ -59,6 +59,7 @@ import { toast } from "sonner";
 const reasonCodeOptions = [
   "Data inaccuracy",
   "Hardware Failure", 
+  "Network Issues",
   "Product Gap",
   "Project Management",
   "Scoping",

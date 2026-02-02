@@ -8,7 +8,7 @@ const corsHeaders = {
 
 interface SetRoleRequest {
   target_user_id: string;
-  role: 'internal_admin' | 'internal_user' | 'customer_admin' | 'customer_user';
+  role: 'internal_admin' | 'internal_user' | 'customer_admin' | 'customer_user' | 'tech_lead' | 'tech_sponsor';
   action: 'add' | 'remove';
 }
 
@@ -106,7 +106,7 @@ serve(async (req) => {
     console.log('Role modification request:', body);
 
     // Validate role value
-    const validRoles = ['internal_admin', 'internal_user', 'customer_admin', 'customer_user'];
+    const validRoles = ['internal_admin', 'internal_user', 'customer_admin', 'customer_user', 'tech_lead', 'tech_sponsor'];
     if (!validRoles.includes(body.role)) {
       console.error('Invalid role:', body.role);
       return new Response(

@@ -124,6 +124,47 @@ export default function ImplementationWeeklyReviewPage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Query to get previous week's hypercare for fallback display
+  const previousWeekHealthQ = useQuery({
+    queryKey: ["impl-companies-health-previous", selectedWeek],
+    queryFn: async () => {
+      if (!selectedWeek) return [];
+      
+      // Get the most recent review for each company before the selected week
+      // This uses a subquery approach to get the latest hypercare status
+      const { data, error } = await supabase
+        .rpc('get_previous_week_hypercare' as any, { p_before_week: selectedWeek });
+      
+      if (error) {
+        // Fallback: query directly if RPC doesn't exist
+        console.log('RPC not available, using fallback query');
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('impl_weekly_reviews')
+          .select('company_id, hypercare, phase_installation, phase_onboarding, phase_live')
+          .lt('week_start', selectedWeek)
+          .eq('hypercare', true)
+          .order('week_start', { ascending: false });
+        
+        if (fallbackError) {
+          console.error('Error fetching previous week health:', fallbackError);
+          return [];
+        }
+        
+        // Dedupe by company_id, keeping the most recent
+        const seen = new Set<string>();
+        return (fallbackData || []).filter(r => {
+          if (seen.has(r.company_id)) return false;
+          seen.add(r.company_id);
+          return true;
+        });
+      }
+      
+      return data || [];
+    },
+    enabled: !!selectedWeek,
+    staleTime: 5 * 60 * 1000,
+  });
+
   // This effect is no longer needed - initial selection handled above
 
   useEffect(() => {
@@ -135,16 +176,23 @@ export default function ImplementationWeeklyReviewPage() {
   const filteredCompanies = useMemo(() => {
     const list = companiesQ.data ?? [];
     const healthData = companiesHealthQ.data ?? [];
+    const previousHealthData = previousWeekHealthQ.data ?? [];
     
     // Merge companies with their health status, project status, churn risk, and hypercare
     const companiesWithHealth: CompanyWithHealth[] = list.map(company => {
       const healthInfo = healthData.find(h => h.company_id === company.company_id);
+      const prevHealthInfo = previousHealthData.find((h: any) => h.company_id === company.company_id);
+      
+      // Use current week's hypercare if available, otherwise fall back to previous week's
+      const currentHypercare = (healthInfo as any)?.hypercare;
+      const inheritedHypercare = currentHypercare !== undefined ? currentHypercare : (prevHealthInfo as any)?.hypercare;
+      
       return {
         ...company,
         customer_health: healthInfo?.customer_health || null,
         project_status: healthInfo?.project_status || null,
         churn_risk: (healthInfo as any)?.churn_risk || null,
-        hypercare: (healthInfo as any)?.hypercare || null
+        hypercare: inheritedHypercare || null
       };
     });
     
@@ -162,7 +210,7 @@ export default function ImplementationWeeklyReviewPage() {
       if (!b.planned_go_live_date) return -1;
       return a.planned_go_live_date.localeCompare(b.planned_go_live_date);
     });
-  }, [companiesQ.data, companiesHealthQ.data, search]);
+  }, [companiesQ.data, companiesHealthQ.data, previousWeekHealthQ.data, search]);
 
   return (
     <div className="p-4 space-y-4">

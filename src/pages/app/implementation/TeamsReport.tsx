@@ -14,7 +14,9 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-
+import { Download } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 interface Profile {
   user_id: string;
   name: string | null;
@@ -259,6 +261,46 @@ const TeamsReport = () => {
     return profile?.name || '-';
   };
 
+  const handleExportPDF = () => {
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3' });
+    
+    const title = 'Teams Report';
+    const date = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    
+    doc.setFontSize(18);
+    doc.text(title, 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Generated: ${date}`, 14, 22);
+
+    const headers = ['Customer', 'Project', ...ROLE_COLUMNS.map(r => r.label)];
+    
+    const rows = filteredProjects.map(project => [
+      project.company?.name || '-',
+      project.name,
+      ...ROLE_COLUMNS.map(role => getProfileName(project[role.key as keyof Project] as string | null))
+    ]);
+
+    autoTable(doc, {
+      head: [headers],
+      body: rows,
+      startY: 28,
+      styles: { fontSize: 7, cellPadding: 2 },
+      headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [245, 247, 250] },
+      columnStyles: {
+        0: { cellWidth: 35 },
+        1: { cellWidth: 30 },
+      },
+    });
+
+    doc.save(`teams-report-${date.replace(/\s/g, '-')}.pdf`);
+    
+    toast({
+      title: "Export Complete",
+      description: "Teams report PDF downloaded",
+    });
+  };
+
   const filteredProjects = projects.filter(project => {
     const searchLower = searchTerm.toLowerCase();
     return (
@@ -273,7 +315,16 @@ const TeamsReport = () => {
         <CardHeader className="flex-shrink-0">
           <div className="flex items-center justify-between">
             <CardTitle className="text-2xl font-bold">Teams Report</CardTitle>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={handleExportPDF}
+                disabled={loading}
+                variant="outline"
+                size="sm"
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Export PDF
+              </Button>
               <Button
                 onClick={handleBulkUpdate}
                 disabled={bulkUpdating || loading}

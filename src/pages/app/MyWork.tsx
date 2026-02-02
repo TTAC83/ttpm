@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { tasksService } from "@/lib/tasksService";
 import { actionsService } from "@/lib/actionsService";
+import { blockersService, ImplementationBlocker } from "@/lib/blockersService";
 import { toast } from "sonner";
 import { TaskEditDialog } from "@/components/TaskEditDialog";
 import { EditActionDialog } from "@/components/EditActionDialog";
@@ -8,6 +9,7 @@ import CreateEventDialog from "@/components/CreateEventDialog";
 import { ProductGapDrawer } from "@/components/ProductGapDrawer";
 import { VisionModelDialog } from "@/components/vision-models/VisionModelDialog";
 import { FeatureRequestDialog } from "@/components/FeatureRequestDialog";
+import { BlockerDrawer } from "@/components/BlockerDrawer";
 import TaskList from "@/components/TaskList";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,7 +31,8 @@ import {
   TrendingUp,
   Filter,
   Plus,
-  Search
+  Search,
+  ShieldAlert
 } from "lucide-react";
 import { format, isAfter, isBefore, parseISO, addDays, subDays } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -132,6 +135,7 @@ interface DashboardStats {
   todayTasks: number;
   criticalActions: number;
   upcomingEvents: number;
+  liveEscalations: number;
 }
 
 export default function MyWork() {
@@ -171,6 +175,7 @@ export default function MyWork() {
   
   const [tasks, setTasks] = useState<Task[]>([]);
   const [actions, setActions] = useState<Action[]>([]);
+  const [escalations, setEscalations] = useState<ImplementationBlocker[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [productGaps, setProductGaps] = useState<ProductGap[]>([]);
   const [visionModels, setVisionModels] = useState<VisionModel[]>([]);
@@ -179,9 +184,14 @@ export default function MyWork() {
     overdueTasks: 0,
     todayTasks: 0,
     criticalActions: 0,
-    upcomingEvents: 0
+    upcomingEvents: 0,
+    liveEscalations: 0
   });
   const [loading, setLoading] = useState(true);
+  
+  // Escalation drawer states
+  const [isEscalationDrawerOpen, setIsEscalationDrawerOpen] = useState(false);
+  const [selectedEscalation, setSelectedEscalation] = useState<ImplementationBlocker | null>(null);
   
   // Fetch profiles for the task dialog
   useEffect(() => {
@@ -242,6 +252,16 @@ export default function MyWork() {
         `)
         .eq('assignee', user.id);
 
+      // Fetch escalations owned by user
+      const { data: escalationsData } = await supabase
+        .from('implementation_blockers')
+        .select(`
+          *,
+          project:projects(name, company:companies(name))
+        `)
+        .eq('owner', user.id)
+        .eq('status', 'Live');
+
       // Fetch events for user's projects
       const { data: eventsData } = await supabase
         .from('project_events')
@@ -276,6 +296,17 @@ export default function MyWork() {
 
       setTasks(tasksData || []);
       setActions(actionsData || []);
+      
+      // Transform escalations to include age_days and is_overdue
+      const transformedEscalations = (escalationsData || []).map(esc => ({
+        ...esc,
+        project_name: esc.project?.name,
+        customer_name: esc.project?.company?.name,
+        age_days: Math.floor((new Date().getTime() - new Date(esc.raised_at).getTime()) / (1000 * 60 * 60 * 24)),
+        is_overdue: esc.estimated_complete_date && new Date() > new Date(esc.estimated_complete_date)
+      }));
+      setEscalations(transformedEscalations as ImplementationBlocker[]);
+      
       setEvents((eventsData || []) as any);
       setProductGaps((productGapsData || []) as any);
       setVisionModels((visionModelsData || []) as any);
@@ -305,11 +336,14 @@ export default function MyWork() {
         isBefore(parseISO(event.start_date), addDays(today, 7))
       ).length;
 
+      const liveEscalations = (escalationsData || []).length;
+
       setStats({
         overdueTasks,
         todayTasks,
         criticalActions,
-        upcomingEvents
+        upcomingEvents,
+        liveEscalations
       });
 
     } catch (error) {
@@ -507,7 +541,11 @@ export default function MyWork() {
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
+          <TabsTrigger value="escalations" className="flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4" />
+            Escalations ({escalations.length})
+          </TabsTrigger>
           <TabsTrigger value="tasks" className="flex items-center gap-2">
             <CheckSquare className="w-4 h-4" />
             Tasks ({tasks.filter(task => task.actual_end == null).length})
@@ -536,6 +574,60 @@ export default function MyWork() {
             Features ({featureRequests.length})
           </TabsTrigger>
         </TabsList>
+
+        {/* Escalations Tab */}
+        <TabsContent value="escalations" className="space-y-4">
+          {escalations
+            .filter(esc => filterBySearch(esc.title + ' ' + (esc.description || '')))
+            .map((escalation) => (
+              <Card key={escalation.id} className={cn(
+                "transition-shadow hover:shadow-md",
+                escalation.is_critical && "border-destructive/50 bg-destructive/5"
+              )}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-semibold">{escalation.title}</h3>
+                        <Badge variant="outline">{escalation.status}</Badge>
+                        {escalation.is_critical && (
+                          <Badge variant="destructive">Critical</Badge>
+                        )}
+                        {escalation.is_overdue && (
+                          <Badge variant="destructive">Overdue</Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">{escalation.description}</p>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span>Customer: {escalation.customer_name || 'N/A'}</span>
+                        <span>Project: {escalation.project_name || 'N/A'}</span>
+                        <span>Age: {escalation.age_days} days</span>
+                        {escalation.estimated_complete_date && (
+                          <span>Target: {format(parseISO(escalation.estimated_complete_date), 'MMM dd')}</span>
+                        )}
+                        {escalation.reason_code && (
+                          <span>Reason: {escalation.reason_code}</span>
+                        )}
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => {
+                      setSelectedEscalation(escalation);
+                      setIsEscalationDrawerOpen(true);
+                    }}>
+                      Edit Escalation
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          {escalations.length === 0 && (
+            <Card>
+              <CardContent className="p-6 text-center text-muted-foreground">
+                No live escalations assigned to you
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
 
         {/* Tasks Tab */}
         <TabsContent value="tasks" className="space-y-4">
@@ -824,6 +916,21 @@ export default function MyWork() {
           featureRequest={selectedFeatureRequest}
           onSuccess={() => {
             setIsFeatureRequestDialogOpen(false);
+            fetchData();
+          }}
+        />
+      )}
+
+      {/* Escalation Drawer */}
+      {selectedEscalation && (
+        <BlockerDrawer
+          open={isEscalationDrawerOpen}
+          onOpenChange={setIsEscalationDrawerOpen}
+          projectId={selectedEscalation.project_id || ''}
+          projectType={selectedEscalation.project_type || 'implementation'}
+          blocker={selectedEscalation}
+          onSuccess={() => {
+            setIsEscalationDrawerOpen(false);
             fetchData();
           }}
         />

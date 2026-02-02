@@ -162,13 +162,9 @@ export const AppLayout = () => {
         >
           <SidebarHeader className="border-b border-sidebar-border p-4">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">TX</span>
-              </div>
+              <img src="/lovable-uploads/4fec4d14-a56e-4a44-8256-ac94aa43da5c.png" alt="Thingtrax" className="w-8 h-8" />
               <div className="group-data-[state=collapsed]:hidden">
-                <h2 className="font-sans font-semibold text-sidebar-foreground text-lg tracking-tight">
-                  thing<span className="text-primary">trax</span>
-                </h2>
+                <h2 className="font-helvetica-display font-semibold text-sidebar-foreground text-lg">thingtrax</h2>
               </div>
             </div>
             <div className="mt-3 group-data-[state=collapsed]:hidden">

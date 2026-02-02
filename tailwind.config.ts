@@ -57,18 +57,13 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        // Thingtrax 2025 Brand Colors
+        // Thingtrax Brand Colors
         thingtrax: {
-          navy: "hsl(var(--thingtrax-navy))",
-          "navy-light": "hsl(var(--thingtrax-navy-light))",
-          teal: "hsl(var(--thingtrax-teal))",
-          "teal-dark": "hsl(var(--thingtrax-teal-dark))",
+          black: "hsl(var(--thingtrax-black))",
+          green: "hsl(var(--thingtrax-green))",
+          cyan: "hsl(var(--thingtrax-cyan))",
           yellow: "hsl(var(--thingtrax-yellow))",
           red: "hsl(var(--thingtrax-red))",
-          // Legacy aliases
-          black: "hsl(var(--thingtrax-navy))",
-          green: "hsl(var(--thingtrax-teal))",
-          cyan: "hsl(var(--thingtrax-teal))",
         },
         // Semantic brand color aliases
         success: {
@@ -85,14 +80,15 @@ export default {
         },
       },
       fontFamily: {
-        'sans': ['Inter', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
-        'display': ['Inter', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
+        'helvetica-display': ['Helvetica Now Display', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
+        'helvetica': ['Helvetica Now', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
+        'sans': ['Helvetica Now', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
       },
       fontSize: {
-        'display': ['3rem', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
-        'title': ['1.5rem', { lineHeight: '1.2', letterSpacing: '-0.01em' }],
-        'heading': ['1.125rem', { lineHeight: '1.4' }],
-        'overline': ['0.75rem', { lineHeight: '1.3', letterSpacing: '0.08em' }],
+        'display': ['3.75rem', { lineHeight: '1.1', letterSpacing: '-0.02em' }], // 60px
+        'title': ['1.75rem', { lineHeight: '1.2', letterSpacing: '-0.01em' }],   // 28px
+        'heading': ['1rem', { lineHeight: '1.4' }],                              // 16px
+        'overline': ['0.75rem', { lineHeight: '1.3', letterSpacing: '0.1em' }], // 12px
       },
       spacing: {
         'micro': 'var(--spacing-micro)',

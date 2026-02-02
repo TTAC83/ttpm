@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -13,6 +12,7 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Profile {
   user_id: string;
@@ -60,6 +60,7 @@ const TeamsReport = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [updatingCell, setUpdatingCell] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -95,6 +96,8 @@ const TeamsReport = () => {
           .select('user_id, name')
           .eq('is_internal', true)
           .not('name', 'is', null)
+          .neq('name', '')
+          .order('name')
       ]);
 
       if (projectsResponse.error) throw projectsResponse.error;
@@ -111,6 +114,45 @@ const TeamsReport = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRoleChange = async (projectId: string, roleKey: string, newValue: string) => {
+    const cellKey = `${projectId}-${roleKey}`;
+    setUpdatingCell(cellKey);
+
+    try {
+      const updateData: Record<string, string | null> = {
+        [roleKey]: newValue === 'unassigned' ? null : newValue,
+      };
+
+      const { error } = await supabase
+        .from('projects')
+        .update(updateData)
+        .eq('id', projectId);
+
+      if (error) throw error;
+
+      // Update local state
+      setProjects(prev => prev.map(p => 
+        p.id === projectId 
+          ? { ...p, [roleKey]: newValue === 'unassigned' ? null : newValue }
+          : p
+      ));
+
+      toast({
+        title: "Updated",
+        description: "Team assignment updated successfully",
+      });
+    } catch (error: any) {
+      console.error('Error updating role:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update team assignment",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingCell(null);
     }
   };
 
@@ -157,7 +199,7 @@ const TeamsReport = () => {
                   <TableRow>
                     <TableHead className="sticky left-0 bg-background z-10 min-w-[200px]">Customer / Project</TableHead>
                     {ROLE_COLUMNS.map(role => (
-                      <TableHead key={role.key} className="min-w-[140px] whitespace-nowrap">
+                      <TableHead key={role.key} className="min-w-[160px] whitespace-nowrap">
                         {role.label}
                       </TableHead>
                     ))}
@@ -179,11 +221,43 @@ const TeamsReport = () => {
                             <div className="text-sm text-muted-foreground">{project.name}</div>
                           </div>
                         </TableCell>
-                        {ROLE_COLUMNS.map(role => (
-                          <TableCell key={role.key} className="whitespace-nowrap">
-                            {getProfileName(project[role.key as keyof Project] as string | null)}
-                          </TableCell>
-                        ))}
+                        {ROLE_COLUMNS.map(role => {
+                          const cellKey = `${project.id}-${role.key}`;
+                          const currentValue = project[role.key as keyof Project] as string | null;
+                          const isUpdating = updatingCell === cellKey;
+                          
+                          return (
+                            <TableCell key={role.key} className="p-1">
+                              <Select
+                                value={currentValue || 'unassigned'}
+                                onValueChange={(value) => handleRoleChange(project.id, role.key, value)}
+                                disabled={isUpdating}
+                              >
+                                <SelectTrigger className="h-8 text-xs border-0 bg-transparent hover:bg-muted/50 focus:ring-0 focus:ring-offset-0">
+                                  <SelectValue>
+                                    {isUpdating ? (
+                                      <span className="text-muted-foreground">Saving...</span>
+                                    ) : (
+                                      <span className={!currentValue ? 'text-muted-foreground' : ''}>
+                                        {getProfileName(currentValue)}
+                                      </span>
+                                    )}
+                                  </SelectValue>
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="unassigned">
+                                    <span className="text-muted-foreground">Not assigned</span>
+                                  </SelectItem>
+                                  {profiles.map(p => (
+                                    <SelectItem key={p.user_id} value={p.user_id}>
+                                      {p.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                          );
+                        })}
                       </TableRow>
                     ))
                   )}

@@ -53,8 +53,6 @@ const ROLE_COLUMNS = [
   { key: 'project_coordinator', label: 'Project Coordinator' },
   { key: 'tech_lead', label: 'Tech/Dev Lead' },
   { key: 'tech_sponsor', label: 'Tech/Dev Sponsor' },
-  { key: 'vp_customer_success', label: 'VP Customer Success' },
-  { key: 'head_of_support', label: 'Head of Support' },
 ];
 
 const TeamsReport = () => {

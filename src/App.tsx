@@ -33,6 +33,7 @@ import FeatureRequestDetail from "./pages/app/FeatureRequestDetail";
 import FeatureDashboard from "./pages/app/FeatureDashboard";
 import CompleteSignup from "./pages/CompleteSignup";
 import MyWork from "./pages/app/MyWork";
+import MyProjects from "./pages/app/MyProjects";
 import ResetPassword from "./pages/ResetPassword";
 import Actions from "./pages/app/Actions";
 import GlobalTasks from "./pages/app/GlobalTasks";
@@ -113,6 +114,7 @@ const App = () => (
               <Route index element={<Dashboard />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="my-work" element={<MyWork />} />
+              <Route path="my-projects" element={<MyProjects />} />
               <Route path="profile" element={<Profile />} />
               
               {/* Global Dashboards */}

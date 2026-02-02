@@ -8,6 +8,7 @@ import { Loader2, Plus, Trash2, Eye, Edit, Download } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { LineVisualization } from "./LineVisualization";
 import { exportLine, downloadLineExport } from "@/lib/lineExportService";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Line {
   id: string;
@@ -52,6 +53,7 @@ export const LinesTable: React.FC<LinesTableProps> = ({
   const [editLineId, setEditLineId] = useState<string | undefined>(undefined);
   const [exportingLineId, setExportingLineId] = useState<string | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     fetchLines();
@@ -107,6 +109,10 @@ export const LinesTable: React.FC<LinesTableProps> = ({
   const handleWizardComplete = () => {
     fetchLines();
     setWizardOpen(false);
+    // Invalidate line visualization cache so fresh data is fetched when viewing
+    if (editLineId) {
+      queryClient.invalidateQueries({ queryKey: ['line-visualization', editLineId] });
+    }
     setEditLineId(undefined);
   };
 

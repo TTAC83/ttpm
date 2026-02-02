@@ -190,8 +190,9 @@ export const useLineVisualization = (lineId: string) => {
         positions: transformedPositions
       };
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes - same as master data cache
-    gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache after stale
+    staleTime: 0, // Always refetch on mount - line data changes frequently
+    gcTime: 5 * 60 * 1000, // 5 minutes - keep in cache for quick back navigation
+    refetchOnMount: 'always', // Force refetch when component mounts
   });
 
   useEffect(() => {

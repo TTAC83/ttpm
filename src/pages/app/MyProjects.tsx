@@ -739,7 +739,7 @@ export default function MyProjects() {
                       <TableHead>Customer</TableHead>
                       <TableHead>Project</TableHead>
                       <TableHead>Title</TableHead>
-                      <TableHead>Assignee</TableHead>
+                      <TableHead>Owner</TableHead>
                       <TableHead>Planned Date</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
@@ -819,7 +819,7 @@ export default function MyProjects() {
                       <TableHead>Customer</TableHead>
                       <TableHead>Project</TableHead>
                       <TableHead>Product Gap</TableHead>
-                      <TableHead>Assigned To</TableHead>
+                      <TableHead>Owner</TableHead>
                       <TableHead>Est. Complete</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
@@ -977,7 +977,7 @@ export default function MyProjects() {
                       <TableHead>Customer</TableHead>
                       <TableHead>Project</TableHead>
                       <TableHead>Task</TableHead>
-                      <TableHead>Assignee</TableHead>
+                      <TableHead>Owner</TableHead>
                       <TableHead>Planned End</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>

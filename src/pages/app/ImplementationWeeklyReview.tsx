@@ -638,13 +638,51 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     } else if (!previousReviewQ.isLoading) {
       // No current week data - carry forward phases/hypercare from previous week
       if (previousReviewQ.data) {
-        setPhaseInstallation(previousReviewQ.data.phase_installation ?? false);
-        setPhaseInstallationDetails(previousReviewQ.data.phase_installation_details ?? "");
-        setPhaseOnboarding(previousReviewQ.data.phase_onboarding ?? false);
-        setPhaseOnboardingDetails(previousReviewQ.data.phase_onboarding_details ?? "");
-        setPhaseLive(previousReviewQ.data.phase_live ?? false);
-        setPhaseLiveDetails(previousReviewQ.data.phase_live_details ?? "");
-        setHypercare(previousReviewQ.data.hypercare ?? false);
+        const prevData = previousReviewQ.data;
+        const hasCarryForwardData = prevData.phase_installation || prevData.phase_onboarding || 
+                                    prevData.phase_live || prevData.hypercare ||
+                                    prevData.phase_installation_details || prevData.phase_onboarding_details ||
+                                    prevData.phase_live_details;
+        
+        setPhaseInstallation(prevData.phase_installation ?? false);
+        setPhaseInstallationDetails(prevData.phase_installation_details ?? "");
+        setPhaseOnboarding(prevData.phase_onboarding ?? false);
+        setPhaseOnboardingDetails(prevData.phase_onboarding_details ?? "");
+        setPhaseLive(prevData.phase_live ?? false);
+        setPhaseLiveDetails(prevData.phase_live_details ?? "");
+        setHypercare(prevData.hypercare ?? false);
+        
+        // If there's carried-forward data, save it to the current week immediately
+        if (hasCarryForwardData) {
+          // Allow auto-save and then trigger it
+          const timer = setTimeout(() => {
+            isLoadingRef.current = false;
+            // Trigger save with carried-forward data
+            saveReview({
+              companyId,
+              weekStartISO: weekStart,
+              projectStatus: null,
+              customerHealth: null,
+              notes: null,
+              reasonCode: null,
+              weeklySummary: null,
+              phaseInstallation: prevData.phase_installation ?? null,
+              phaseInstallationDetails: prevData.phase_installation_details ?? null,
+              phaseOnboarding: prevData.phase_onboarding ?? null,
+              phaseOnboardingDetails: prevData.phase_onboarding_details ?? null,
+              phaseLive: prevData.phase_live ?? null,
+              phaseLiveDetails: prevData.phase_live_details ?? null,
+              hypercare: prevData.hypercare ?? null,
+            }).then(() => {
+              // Invalidate to update the left pane
+              qc.invalidateQueries({ queryKey: ["impl-companies-health", weekStart] });
+              qc.invalidateQueries({ queryKey: ["impl-review", companyId, weekStart] });
+            }).catch((e) => {
+              console.error('Failed to carry forward review data:', e);
+            });
+          }, 150);
+          return () => clearTimeout(timer);
+        }
       }
       
       // Allow auto-save after data is loaded
@@ -653,7 +691,7 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [reviewQ.data, reviewQ.isLoading, previousReviewQ.data, previousReviewQ.isLoading]);
+  }, [reviewQ.data, reviewQ.isLoading, previousReviewQ.data, previousReviewQ.isLoading, companyId, weekStart, qc]);
 
   const autoSaveMutation = useMutation({
     mutationFn: (params: { 

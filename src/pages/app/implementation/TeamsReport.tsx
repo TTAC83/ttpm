@@ -169,9 +169,9 @@ const TeamsReport = () => {
   });
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
+    <div className="space-y-6 h-[calc(100vh-8rem)] flex flex-col">
+      <Card className="flex-1 flex flex-col min-h-0">
+        <CardHeader className="flex-shrink-0">
           <div className="flex items-center justify-between">
             <CardTitle className="text-2xl font-bold">Teams Report</CardTitle>
             <div className="w-64">
@@ -183,21 +183,21 @@ const TeamsReport = () => {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1 min-h-0 overflow-hidden p-0">
           {loading ? (
-            <div className="space-y-2">
+            <div className="space-y-2 p-6">
               {[...Array(5)].map((_, i) => (
                 <Skeleton key={i} className="h-12 w-full" />
               ))}
             </div>
           ) : (
-            <div className="rounded-md border overflow-x-auto">
+            <div className="h-full overflow-auto border-t">
               <Table>
-                <TableHeader>
+                <TableHeader className="sticky top-0 bg-background z-20">
                   <TableRow>
-                    <TableHead className="sticky left-0 bg-background z-10 min-w-[200px]">Customer / Project</TableHead>
+                    <TableHead className="sticky left-0 bg-background z-30 min-w-[200px]">Customer / Project</TableHead>
                     {ROLE_COLUMNS.map(role => (
-                      <TableHead key={role.key} className="min-w-[160px] whitespace-nowrap">
+                      <TableHead key={role.key} className="min-w-[140px] whitespace-nowrap bg-background">
                         {role.label}
                       </TableHead>
                     ))}
@@ -242,7 +242,7 @@ const TeamsReport = () => {
                                     )}
                                   </SelectValue>
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="bg-background z-50">
                                   <SelectItem value="unassigned">
                                     <span className="text-muted-foreground">Not assigned</span>
                                   </SelectItem>

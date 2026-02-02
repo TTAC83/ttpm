@@ -718,9 +718,17 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
       // Don't auto-save if another save is already in progress
       if (autoSaveMutation.isPending) return;
       
-      if (!projectStatusValue || !customerHealthValue) return; // Don't save if required fields are missing
+      // Check if there's any data worth saving (phases, hypercare, or status/health)
+      const hasPhaseData = phaseInstallationValue || phaseOnboardingValue || phaseLiveValue || 
+                           phaseInstallationDetailsValue.trim() || phaseOnboardingDetailsValue.trim() || phaseLiveDetailsValue.trim();
+      const hasStatusData = projectStatusValue || customerHealthValue;
+      const hasHypercare = hypercareValue;
+      const hasNotes = notesValue.trim() || weeklySummaryValue.trim();
+      
+      // Allow saving if any relevant data exists
+      if (!hasPhaseData && !hasStatusData && !hasHypercare && !hasNotes) return;
 
-      // Validate required fields when health is red
+      // Validate required fields when health is red (only if health is being set)
       if (customerHealthValue === 'red' && !reasonCodeValue.trim()) {
         return; // Don't save if validation fails
       }

@@ -159,29 +159,29 @@ const TeamsReport = () => {
   const handleBulkUpdate = async () => {
     setBulkUpdating(true);
     try {
-      // Jimmy as solutions_consultant
-      const jimmyId = 'e526fa27-96f2-4e2b-a538-b234eced2056';
-
-      const updatePromises = projects.map(project =>
-        supabase
-          .from('projects')
-          .update({
-            solutions_consultant: jimmyId,
-          })
-          .eq('id', project.id)
-      );
+      // Copy salesperson to account_manager for each project
+      const updatePromises = projects
+        .filter(project => project.salesperson) // Only update if salesperson exists
+        .map(project =>
+          supabase
+            .from('projects')
+            .update({
+              account_manager: project.salesperson,
+            })
+            .eq('id', project.id)
+        );
 
       await Promise.all(updatePromises);
 
       // Update local state
       setProjects(prev => prev.map(p => ({
         ...p,
-        solutions_consultant: jimmyId,
+        account_manager: p.salesperson,
       })));
 
       toast({
         title: "Bulk Update Complete",
-        description: `Updated ${projects.length} projects`,
+        description: `Set account manager = salesperson for ${updatePromises.length} projects`,
       });
     } catch (error: any) {
       console.error('Error bulk updating:', error);

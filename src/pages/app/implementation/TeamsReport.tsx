@@ -40,6 +40,7 @@ interface Project {
   tech_lead: string | null;
   tech_sponsor: string | null;
   vp_customer_success: string | null;
+  head_of_support: string | null;
 }
 
 const ROLE_COLUMNS = [
@@ -53,6 +54,7 @@ const ROLE_COLUMNS = [
   { key: 'tech_lead', label: 'Tech/Dev Lead' },
   { key: 'tech_sponsor', label: 'Tech/Dev Sponsor' },
   { key: 'vp_customer_success', label: 'VP Customer Success' },
+  { key: 'head_of_support', label: 'Head of Support' },
 ];
 
 const TeamsReport = () => {
@@ -90,7 +92,8 @@ const TeamsReport = () => {
             project_coordinator,
             tech_lead,
             tech_sponsor,
-            vp_customer_success
+            vp_customer_success,
+            head_of_support
           `)
           .order('name'),
         supabase

@@ -3497,6 +3497,7 @@ export type Database = {
           expansion_opportunity: string | null
           gateways_required: number | null
           hardware_fee: number | null
+          head_of_support: string | null
           id: string
           implementation_lead: string | null
           job_scheduling: string | null
@@ -3574,6 +3575,7 @@ export type Database = {
           expansion_opportunity?: string | null
           gateways_required?: number | null
           hardware_fee?: number | null
+          head_of_support?: string | null
           id?: string
           implementation_lead?: string | null
           job_scheduling?: string | null
@@ -3651,6 +3653,7 @@ export type Database = {
           expansion_opportunity?: string | null
           gateways_required?: number | null
           hardware_fee?: number | null
+          head_of_support?: string | null
           id?: string
           implementation_lead?: string | null
           job_scheduling?: string | null
@@ -3725,6 +3728,13 @@ export type Database = {
           {
             foreignKeyName: "projects_customer_project_lead_fkey"
             columns: ["customer_project_lead"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "projects_head_of_support_fkey"
+            columns: ["head_of_support"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]

@@ -13,10 +13,14 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === "development" && componentTagger(),
-    mode === "production" && VitePWA({
+    VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["/offline.html", "/icons/icon-192.png", "/icons/icon-256.png", "/icons/icon-384.png", "/icons/icon-512.png", "/icons/maskable-192.png", "/icons/maskable-512.png"],
       manifest: false,
+      // Disable service worker in development to avoid caching issues
+      devOptions: {
+        enabled: false
+      },
       workbox: {
         navigateFallback: "/",
         navigateFallbackDenylist: [/^\/api\//, /^\/rest\//, /^\/storage\//],

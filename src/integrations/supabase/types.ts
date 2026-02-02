@@ -401,6 +401,8 @@ export type Database = {
           teams_id: string | null
           teams_integration: boolean | null
           teams_webhook_url: string | null
+          tech_lead: string | null
+          tech_sponsor: string | null
           total_sites: number | null
           tv_display_devices_required: number | null
           website_url: string | null
@@ -448,6 +450,8 @@ export type Database = {
           teams_id?: string | null
           teams_integration?: boolean | null
           teams_webhook_url?: string | null
+          tech_lead?: string | null
+          tech_sponsor?: string | null
           total_sites?: number | null
           tv_display_devices_required?: number | null
           website_url?: string | null
@@ -495,6 +499,8 @@ export type Database = {
           teams_id?: string | null
           teams_integration?: boolean | null
           teams_webhook_url?: string | null
+          tech_lead?: string | null
+          tech_sponsor?: string | null
           total_sites?: number | null
           tv_display_devices_required?: number | null
           website_url?: string | null
@@ -517,6 +523,20 @@ export type Database = {
           {
             foreignKeyName: "bau_customers_primary_contact_fkey"
             columns: ["primary_contact"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "bau_customers_tech_lead_fkey"
+            columns: ["tech_lead"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "bau_customers_tech_sponsor_fkey"
+            columns: ["tech_sponsor"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
@@ -3506,6 +3526,8 @@ export type Database = {
           teams_id: string | null
           teams_integration: boolean | null
           teams_webhook_url: string | null
+          tech_lead: string | null
+          tech_sponsor: string | null
           technical_project_lead: string | null
           testimonial: boolean | null
           total_sites: number | null
@@ -3580,6 +3602,8 @@ export type Database = {
           teams_id?: string | null
           teams_integration?: boolean | null
           teams_webhook_url?: string | null
+          tech_lead?: string | null
+          tech_sponsor?: string | null
           technical_project_lead?: string | null
           testimonial?: boolean | null
           total_sites?: number | null
@@ -3654,6 +3678,8 @@ export type Database = {
           teams_id?: string | null
           teams_integration?: boolean | null
           teams_webhook_url?: string | null
+          tech_lead?: string | null
+          tech_sponsor?: string | null
           technical_project_lead?: string | null
           testimonial?: boolean | null
           total_sites?: number | null
@@ -3700,6 +3726,20 @@ export type Database = {
           {
             foreignKeyName: "projects_project_coordinator_fkey"
             columns: ["project_coordinator"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "projects_tech_lead_fkey"
+            columns: ["tech_lead"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "projects_tech_sponsor_fkey"
+            columns: ["tech_sponsor"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
@@ -4146,6 +4186,8 @@ export type Database = {
           teams_id: string | null
           teams_integration: boolean | null
           teams_webhook_url: string | null
+          tech_lead: string | null
+          tech_sponsor: string | null
           technical_project_lead: string | null
           testimonial: boolean | null
           tv_display_devices_required: number | null
@@ -4216,6 +4258,8 @@ export type Database = {
           teams_id?: string | null
           teams_integration?: boolean | null
           teams_webhook_url?: string | null
+          tech_lead?: string | null
+          tech_sponsor?: string | null
           technical_project_lead?: string | null
           testimonial?: boolean | null
           tv_display_devices_required?: number | null
@@ -4286,6 +4330,8 @@ export type Database = {
           teams_id?: string | null
           teams_integration?: boolean | null
           teams_webhook_url?: string | null
+          tech_lead?: string | null
+          tech_sponsor?: string | null
           technical_project_lead?: string | null
           testimonial?: boolean | null
           tv_display_devices_required?: number | null
@@ -4307,6 +4353,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_impl_companies"
             referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "solutions_projects_tech_lead_fkey"
+            columns: ["tech_lead"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "solutions_projects_tech_sponsor_fkey"
+            columns: ["tech_sponsor"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
         ]
       }

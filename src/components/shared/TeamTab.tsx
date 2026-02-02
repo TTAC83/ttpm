@@ -36,6 +36,8 @@ export const TeamTab = ({ data, onUpdate, type }: TeamTabProps) => {
     salesperson: data.salesperson || 'unassigned',
     solution_consultant: data.solution_consultant || data.solutions_consultant || 'unassigned',
     account_manager: data.account_manager || 'unassigned',
+    tech_lead: data.tech_lead || 'unassigned',
+    tech_sponsor: data.tech_sponsor || 'unassigned',
   });
 
   useEffect(() => {
@@ -78,6 +80,8 @@ export const TeamTab = ({ data, onUpdate, type }: TeamTabProps) => {
         salesperson: formData.salesperson === 'unassigned' ? null : formData.salesperson,
         solutions_consultant: scValue,
         account_manager: formData.account_manager === 'unassigned' ? null : formData.account_manager,
+        tech_lead: formData.tech_lead === 'unassigned' ? null : formData.tech_lead,
+        tech_sponsor: formData.tech_sponsor === 'unassigned' ? null : formData.tech_sponsor,
       };
 
       // Keep legacy column in sync for projects if present
@@ -127,6 +131,8 @@ export const TeamTab = ({ data, onUpdate, type }: TeamTabProps) => {
       salesperson: data.salesperson || 'unassigned',
       solution_consultant: data.solution_consultant || data.solutions_consultant || 'unassigned',
       account_manager: data.account_manager || 'unassigned',
+      tech_lead: data.tech_lead || 'unassigned',
+      tech_sponsor: data.tech_sponsor || 'unassigned',
     });
     setEditing(false);
   };
@@ -341,6 +347,46 @@ export const TeamTab = ({ data, onUpdate, type }: TeamTabProps) => {
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="tech_lead">Tech/Dev Lead</Label>
+                  <Select 
+                    value={formData.tech_lead} 
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, tech_lead: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unassigned">Not assigned</SelectItem>
+                      {internalProfiles.map(p => (
+                        <SelectItem key={p.user_id} value={p.user_id}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="tech_sponsor">Tech/Dev Sponsor</Label>
+                  <Select 
+                    value={formData.tech_sponsor} 
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, tech_sponsor: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unassigned">Not assigned</SelectItem>
+                      {internalProfiles.map(p => (
+                        <SelectItem key={p.user_id} value={p.user_id}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div className="flex gap-2">
@@ -391,6 +437,14 @@ export const TeamTab = ({ data, onUpdate, type }: TeamTabProps) => {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Project Coordinator</p>
                 <p className="text-sm">{getProfileName(data.project_coordinator)}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Tech/Dev Lead</p>
+                <p className="text-sm">{getProfileName(data.tech_lead)}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Tech/Dev Sponsor</p>
+                <p className="text-sm">{getProfileName(data.tech_sponsor)}</p>
               </div>
             </div>
           )}

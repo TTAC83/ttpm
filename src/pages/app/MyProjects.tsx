@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Smile, Frown, Bug, TrendingUp, TrendingDown, AlertTriangle, Hammer, GraduationCap, Rocket, FileDown } from "lucide-react";
+import { Smile, Frown, Bug, TrendingUp, TrendingDown, AlertTriangle, Hammer, GraduationCap, Rocket, FileDown, Calendar, ListTodo } from "lucide-react";
 import { format } from "date-fns";
 import { BlockerDrawer } from "@/components/BlockerDrawer";
 import { ProductGapDrawer } from "@/components/ProductGapDrawer";
@@ -93,6 +93,72 @@ export default function MyProjects() {
     enabled: myProjectIds.length > 0,
   });
 
+  // Fetch upcoming events (start_date >= today, filtered to my projects)
+  const { data: events = [], isLoading: eventsLoading } = useQuery({
+    queryKey: ['my-projects-events', myProjectIds],
+    queryFn: async () => {
+      const ukToday = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+      const { data, error } = await supabase
+        .from('project_events')
+        .select(`
+          *,
+          projects:project_id(name, companies:company_id(name))
+        `)
+        .in('project_id', myProjectIds)
+        .gte('start_date', ukToday)
+        .order('start_date', { ascending: true });
+      
+      if (error) throw error;
+      return (data || []).map(event => ({
+        ...event,
+        project_name: event.projects?.name || 'Unknown',
+        company_name: event.projects?.companies?.name || 'Unknown'
+      }));
+    },
+    enabled: myProjectIds.length > 0,
+  });
+
+  // Fetch blocked or overdue tasks (filtered to my projects)
+  const { data: tasks = [], isLoading: tasksLoading } = useQuery({
+    queryKey: ['my-projects-tasks', myProjectIds],
+    queryFn: async () => {
+      const ukToday = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+      const { data, error } = await supabase
+        .from('project_tasks')
+        .select(`
+          id,
+          task_title,
+          task_details,
+          planned_start,
+          planned_end,
+          status,
+          assignee,
+          project_id,
+          projects:project_id(name, companies:company_id(name)),
+          profiles:assignee(name)
+        `)
+        .in('project_id', myProjectIds)
+        .or(`status.eq.Blocked,and(planned_end.lt.${ukToday})`)
+        .neq('status', 'Done')
+        .order('status', { ascending: false })
+        .order('planned_end', { ascending: true });
+      
+      if (error) throw error;
+      return (data || []).map(task => {
+        const isOverdue = task.planned_end ? task.planned_end < ukToday : false;
+        return {
+          ...task,
+          project_name: task.projects?.name || 'Unknown',
+          company_name: task.projects?.companies?.name || 'Unknown',
+          assignee_name: task.profiles?.name || null,
+          is_overdue: isOverdue,
+          is_critical: task.status === 'Blocked'
+        };
+      });
+    },
+    enabled: myProjectIds.length > 0,
+  });
+
   // Fetch profiles for action editing
   const { data: profiles = [] } = useQuery({
     queryKey: ['profiles'],
@@ -150,6 +216,18 @@ export default function MyProjects() {
   const filteredProductGaps = useMemo(() => 
     productGaps.filter(g => filteredProjectIds.has(g.project_id || '')),
     [productGaps, filteredProjectIds]
+  );
+
+  // Filter events based on search
+  const filteredEvents = useMemo(() => 
+    events.filter(e => filteredProjectIds.has(e.project_id || '')),
+    [events, filteredProjectIds]
+  );
+
+  // Filter tasks based on search
+  const filteredTasks = useMemo(() => 
+    tasks.filter(t => filteredProjectIds.has(t.project_id || '')),
+    [tasks, filteredProjectIds]
   );
 
   // Compute stats from summary data
@@ -696,6 +774,142 @@ export default function MyProjects() {
                               }}
                             >
                               Edit
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Events Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-blue-500" />
+                Upcoming Events ({filteredEvents.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {eventsLoading ? (
+                <div className="p-4 text-muted-foreground">Loading events...</div>
+              ) : filteredEvents.length === 0 ? (
+                <div className="p-4 text-muted-foreground">No upcoming events.</div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Project</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Start Date</TableHead>
+                      <TableHead>End Date</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {[...filteredEvents]
+                      .sort((a, b) => {
+                        const orderA = projectOrderMap.get(a.project_id || '') ?? Infinity;
+                        const orderB = projectOrderMap.get(b.project_id || '') ?? Infinity;
+                        return orderA - orderB;
+                      })
+                      .map((event) => (
+                        <TableRow 
+                          key={event.id}
+                          className={event.is_critical ? "bg-red-100 dark:bg-red-950/30 border-l-4 border-l-red-500" : ""}
+                        >
+                          <TableCell className="font-medium">{event.company_name}</TableCell>
+                          <TableCell>{event.project_name}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span>{event.title}</span>
+                              {event.is_critical && <Badge variant="destructive" className="text-xs">CRITICAL</Badge>}
+                            </div>
+                          </TableCell>
+                          <TableCell>{formatDateUK(event.start_date)}</TableCell>
+                          <TableCell>{formatDateUK(event.end_date)}</TableCell>
+                          <TableCell>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => navigate(`/app/projects/${event.project_id}?tab=calendar`)}
+                            >
+                              View
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Tasks Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ListTodo className="h-5 w-5 text-purple-500" />
+                Tasks - Blocked & Overdue ({filteredTasks.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {tasksLoading ? (
+                <div className="p-4 text-muted-foreground">Loading tasks...</div>
+              ) : filteredTasks.length === 0 ? (
+                <div className="p-4 text-muted-foreground">No blocked or overdue tasks.</div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Project</TableHead>
+                      <TableHead>Task</TableHead>
+                      <TableHead>Assignee</TableHead>
+                      <TableHead>Planned End</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {[...filteredTasks]
+                      .sort((a, b) => {
+                        const orderA = projectOrderMap.get(a.project_id || '') ?? Infinity;
+                        const orderB = projectOrderMap.get(b.project_id || '') ?? Infinity;
+                        return orderA - orderB;
+                      })
+                      .map((task) => (
+                        <TableRow 
+                          key={task.id}
+                          className={task.is_critical ? "bg-red-100 dark:bg-red-950/30 border-l-4 border-l-red-500" : task.is_overdue ? "bg-amber-50 dark:bg-amber-950/20" : ""}
+                        >
+                          <TableCell className="font-medium">{task.company_name}</TableCell>
+                          <TableCell>{task.project_name}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span>{task.task_title}</span>
+                              {task.is_critical && <Badge variant="destructive" className="text-xs">BLOCKED</Badge>}
+                            </div>
+                          </TableCell>
+                          <TableCell>{task.assignee_name || '-'}</TableCell>
+                          <TableCell className={task.is_overdue ? "text-red-600 font-medium" : ""}>
+                            {task.planned_end ? formatDateUK(task.planned_end) : '-'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={task.status === 'Blocked' ? 'destructive' : 'secondary'}>
+                              {task.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => navigate(`/app/projects/${task.project_id}?tab=tasks`)}
+                            >
+                              View
                             </Button>
                           </TableCell>
                         </TableRow>

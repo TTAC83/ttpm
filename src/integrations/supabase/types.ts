@@ -405,6 +405,7 @@ export type Database = {
           tech_sponsor: string | null
           total_sites: number | null
           tv_display_devices_required: number | null
+          vp_customer_success: string | null
           website_url: string | null
         }
         Insert: {
@@ -454,6 +455,7 @@ export type Database = {
           tech_sponsor?: string | null
           total_sites?: number | null
           tv_display_devices_required?: number | null
+          vp_customer_success?: string | null
           website_url?: string | null
         }
         Update: {
@@ -503,6 +505,7 @@ export type Database = {
           tech_sponsor?: string | null
           total_sites?: number | null
           tv_display_devices_required?: number | null
+          vp_customer_success?: string | null
           website_url?: string | null
         }
         Relationships: [
@@ -537,6 +540,13 @@ export type Database = {
           {
             foreignKeyName: "bau_customers_tech_sponsor_fkey"
             columns: ["tech_sponsor"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "bau_customers_vp_customer_success_fkey"
+            columns: ["vp_customer_success"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
@@ -3533,6 +3543,7 @@ export type Database = {
           total_sites: number | null
           tv_display_devices_required: number | null
           useful_links: Json | null
+          vp_customer_success: string | null
           website_url: string | null
         }
         Insert: {
@@ -3609,6 +3620,7 @@ export type Database = {
           total_sites?: number | null
           tv_display_devices_required?: number | null
           useful_links?: Json | null
+          vp_customer_success?: string | null
           website_url?: string | null
         }
         Update: {
@@ -3685,6 +3697,7 @@ export type Database = {
           total_sites?: number | null
           tv_display_devices_required?: number | null
           useful_links?: Json | null
+          vp_customer_success?: string | null
           website_url?: string | null
         }
         Relationships: [
@@ -3747,6 +3760,13 @@ export type Database = {
           {
             foreignKeyName: "projects_technical_project_lead_fkey"
             columns: ["technical_project_lead"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "projects_vp_customer_success_fkey"
+            columns: ["vp_customer_success"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
@@ -4193,6 +4213,7 @@ export type Database = {
           tv_display_devices_required: number | null
           updated_at: string
           useful_links: Json | null
+          vp_customer_success: string | null
           website_url: string | null
         }
         Insert: {
@@ -4265,6 +4286,7 @@ export type Database = {
           tv_display_devices_required?: number | null
           updated_at?: string
           useful_links?: Json | null
+          vp_customer_success?: string | null
           website_url?: string | null
         }
         Update: {
@@ -4337,6 +4359,7 @@ export type Database = {
           tv_display_devices_required?: number | null
           updated_at?: string
           useful_links?: Json | null
+          vp_customer_success?: string | null
           website_url?: string | null
         }
         Relationships: [
@@ -4364,6 +4387,13 @@ export type Database = {
           {
             foreignKeyName: "solutions_projects_tech_sponsor_fkey"
             columns: ["tech_sponsor"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "solutions_projects_vp_customer_success_fkey"
+            columns: ["vp_customer_success"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]

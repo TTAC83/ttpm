@@ -38,6 +38,7 @@ export const TeamTab = ({ data, onUpdate, type }: TeamTabProps) => {
     account_manager: data.account_manager || 'unassigned',
     tech_lead: data.tech_lead || 'unassigned',
     tech_sponsor: data.tech_sponsor || 'unassigned',
+    vp_customer_success: data.vp_customer_success || 'unassigned',
   });
 
   useEffect(() => {
@@ -82,6 +83,7 @@ export const TeamTab = ({ data, onUpdate, type }: TeamTabProps) => {
         account_manager: formData.account_manager === 'unassigned' ? null : formData.account_manager,
         tech_lead: formData.tech_lead === 'unassigned' ? null : formData.tech_lead,
         tech_sponsor: formData.tech_sponsor === 'unassigned' ? null : formData.tech_sponsor,
+        vp_customer_success: formData.vp_customer_success === 'unassigned' ? null : formData.vp_customer_success,
       };
 
       // Keep legacy column in sync for projects if present
@@ -133,6 +135,7 @@ export const TeamTab = ({ data, onUpdate, type }: TeamTabProps) => {
       account_manager: data.account_manager || 'unassigned',
       tech_lead: data.tech_lead || 'unassigned',
       tech_sponsor: data.tech_sponsor || 'unassigned',
+      vp_customer_success: data.vp_customer_success || 'unassigned',
     });
     setEditing(false);
   };
@@ -387,6 +390,26 @@ export const TeamTab = ({ data, onUpdate, type }: TeamTabProps) => {
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="vp_customer_success">VP Customer Success</Label>
+                  <Select 
+                    value={formData.vp_customer_success} 
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, vp_customer_success: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unassigned">Not assigned</SelectItem>
+                      {internalProfiles.map(p => (
+                        <SelectItem key={p.user_id} value={p.user_id}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div className="flex gap-2">
@@ -445,6 +468,10 @@ export const TeamTab = ({ data, onUpdate, type }: TeamTabProps) => {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Tech/Dev Sponsor</p>
                 <p className="text-sm">{getProfileName(data.tech_sponsor)}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">VP Customer Success</p>
+                <p className="text-sm">{getProfileName(data.vp_customer_success)}</p>
               </div>
             </div>
           )}

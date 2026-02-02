@@ -46,11 +46,10 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
   console.log('🔍 Found reviews for', mondayISO, ':', reviews?.length || 0, reviews);
 
   // Fetch the most recent review for each company (for fallback/inheritance)
-  // Get reviews before or equal to current week, ordered by week descending
+  // Include ALL reviews (including future weeks) to capture the latest entered data
   const { data: allRecentReviews, error: recentError } = await supabase
     .from('impl_weekly_reviews')
     .select('company_id, customer_health, project_status, reason_code, phase_installation, phase_onboarding, phase_live, week_start')
-    .lte('week_start', mondayISO)
     .order('week_start', { ascending: false });
 
   if (recentError) throw recentError;

@@ -325,14 +325,6 @@ const TeamsReport = () => {
                 <Download className="h-4 w-4 mr-1" />
                 Export PDF
               </Button>
-              <Button
-                onClick={handleBulkUpdate}
-                disabled={bulkUpdating || loading}
-                variant="outline"
-                size="sm"
-              >
-                {bulkUpdating ? 'Updating...' : 'Apply Bulk Update'}
-              </Button>
               <div className="w-64">
                 <Input
                   placeholder="Search projects..."

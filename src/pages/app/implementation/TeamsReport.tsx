@@ -13,6 +13,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 
 interface Profile {
   user_id: string;
@@ -59,6 +60,7 @@ const TeamsReport = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [updatingCell, setUpdatingCell] = useState<string | null>(null);
+  const [bulkUpdating, setBulkUpdating] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -154,6 +156,49 @@ const TeamsReport = () => {
     }
   };
 
+  const handleBulkUpdate = async () => {
+    setBulkUpdating(true);
+    try {
+      // Willem Cawley Gelling as technical_project_lead
+      // hjohnson as project_coordinator
+      const willemId = '1d3f3a88-554a-4c2c-b1de-251783414def';
+      const hjohnsonId = '7be5ab49-cce3-4616-8a04-7e6055b12730';
+
+      const updatePromises = projects.map(project =>
+        supabase
+          .from('projects')
+          .update({
+            technical_project_lead: willemId,
+            project_coordinator: hjohnsonId,
+          })
+          .eq('id', project.id)
+      );
+
+      await Promise.all(updatePromises);
+
+      // Update local state
+      setProjects(prev => prev.map(p => ({
+        ...p,
+        technical_project_lead: willemId,
+        project_coordinator: hjohnsonId,
+      })));
+
+      toast({
+        title: "Bulk Update Complete",
+        description: `Updated ${projects.length} projects`,
+      });
+    } catch (error: any) {
+      console.error('Error bulk updating:', error);
+      toast({
+        title: "Error",
+        description: "Failed to bulk update projects",
+        variant: "destructive",
+      });
+    } finally {
+      setBulkUpdating(false);
+    }
+  };
+
   const getProfileName = (userId: string | null): string => {
     if (!userId) return '-';
     const profile = profiles.find(p => p.user_id === userId);
@@ -174,12 +219,22 @@ const TeamsReport = () => {
         <CardHeader className="flex-shrink-0">
           <div className="flex items-center justify-between">
             <CardTitle className="text-2xl font-bold">Teams Report</CardTitle>
-            <div className="w-64">
-              <Input
-                placeholder="Search projects..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={handleBulkUpdate}
+                disabled={bulkUpdating || loading}
+                variant="outline"
+                size="sm"
+              >
+                {bulkUpdating ? 'Updating...' : 'Apply Bulk Update'}
+              </Button>
+              <div className="w-64">
+                <Input
+                  placeholder="Search projects..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
             </div>
           </div>
         </CardHeader>

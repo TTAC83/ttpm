@@ -235,7 +235,7 @@ export const UserManagement = () => {
           phone: editForm.phone || null,
           avatar_url: editForm.avatar_url || null,
           company_id: editForm.company_id === 'none' ? null : editForm.company_id || null,
-          is_internal: editForm.role === 'internal_admin' || editForm.role === 'internal_user'
+          is_internal: ['internal_admin', 'internal_user', 'tech_lead', 'tech_sponsor'].includes(editForm.role)
         })
         .eq('user_id', editingUser.id);
 
@@ -318,6 +318,7 @@ export const UserManagement = () => {
 
   const getRoleBadgeVariant = (role: string | null, isInternal: boolean) => {
     if (role === 'internal_admin') return 'default';
+    if (role === 'tech_lead' || role === 'tech_sponsor') return 'secondary';
     if (isInternal) return 'secondary';
     return 'outline';
   };
@@ -533,6 +534,8 @@ export const UserManagement = () => {
                   <SelectContent>
                     <SelectItem value="internal_admin">Internal Admin</SelectItem>
                     <SelectItem value="internal_user">Internal User</SelectItem>
+                    <SelectItem value="tech_lead">Tech/Dev Lead</SelectItem>
+                    <SelectItem value="tech_sponsor">Tech/Dev Sponsor</SelectItem>
                     <SelectItem value="external_admin">External Admin</SelectItem>
                     <SelectItem value="external_user">External User</SelectItem>
                   </SelectContent>

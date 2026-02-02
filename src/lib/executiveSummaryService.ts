@@ -54,7 +54,8 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
 
   if (recentError) throw recentError;
 
-  // Build a map of the most recent review per company (for fallback)
+  // Build a map of the most recent review per company that has actual data
+  // Prioritize reviews that have health or status set (not null)
   const mostRecentReviewMap = new Map<string, {
     health: string | null;
     status: string | null;
@@ -65,8 +66,21 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
   }>();
   
   (allRecentReviews || []).forEach(r => {
-    // Only set if not already set (first occurrence is most recent due to ordering)
-    if (!mostRecentReviewMap.has(r.company_id)) {
+    const hasData = r.customer_health !== null || r.project_status !== null;
+    const existing = mostRecentReviewMap.get(r.company_id);
+    
+    // Set if no existing record, or if this one has data and the existing one doesn't
+    if (!existing) {
+      mostRecentReviewMap.set(r.company_id, {
+        health: r.customer_health,
+        status: r.project_status,
+        reason_code: r.reason_code,
+        phase_installation: r.phase_installation,
+        phase_onboarding: r.phase_onboarding,
+        phase_live: r.phase_live
+      });
+    } else if (hasData && existing.health === null && existing.status === null) {
+      // Replace empty record with one that has data
       mostRecentReviewMap.set(r.company_id, {
         health: r.customer_health,
         status: r.project_status,

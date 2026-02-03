@@ -26,13 +26,14 @@ const ALL_PROJECTS_USER_IDS = [
 /**
  * Fetches implementation projects where the current user has any team role assigned
  * Special users (like Omair) see all projects
+ * @param showAll - When true, bypasses the personal filter and returns all projects
  */
-export async function fetchMyProjectsData(userId: string): Promise<ExecutiveSummaryRow[]> {
+export async function fetchMyProjectsData(userId: string, showAll: boolean = false): Promise<ExecutiveSummaryRow[]> {
   // Get the full executive summary data
   const allSummaryData = await fetchExecutiveSummaryData();
   
-  // Special users see all projects
-  if (ALL_PROJECTS_USER_IDS.includes(userId)) {
+  // Show all projects if toggle is on or user is in the special list
+  if (showAll || ALL_PROJECTS_USER_IDS.includes(userId)) {
     return allSummaryData;
   }
   

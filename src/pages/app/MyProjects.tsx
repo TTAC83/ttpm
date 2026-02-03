@@ -23,6 +23,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Smile, Frown, Bug, TrendingUp, TrendingDown, AlertTriangle, Hammer, GraduationCap, Rocket, FileDown, Calendar, ListTodo, CheckCircle2, Lightbulb } from "lucide-react";
 import { format } from "date-fns";
 import { BlockerDrawer } from "@/components/BlockerDrawer";
@@ -36,6 +38,7 @@ export default function MyProjects() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
+  const [showAll, setShowAll] = useState(false);
   
   // Drawer states
   const [selectedEscalation, setSelectedEscalation] = useState<ImplementationBlocker | undefined>();
@@ -50,8 +53,8 @@ export default function MyProjects() {
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
 
   const { data: summaryData = [], isLoading } = useQuery({
-    queryKey: ['my-projects-summary', user?.id],
-    queryFn: () => fetchMyProjectsData(user!.id),
+    queryKey: ['my-projects-summary', user?.id, showAll],
+    queryFn: () => fetchMyProjectsData(user!.id, showAll),
     enabled: !!user?.id,
   });
 
@@ -504,6 +507,16 @@ export default function MyProjects() {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="max-w-sm"
         />
+        <div className="flex items-center gap-2">
+          <Switch
+            id="show-all"
+            checked={showAll}
+            onCheckedChange={setShowAll}
+          />
+          <Label htmlFor="show-all" className="text-sm text-muted-foreground cursor-pointer">
+            Show All Projects
+          </Label>
+        </div>
       </div>
 
       {/* KPI Stats Banner */}

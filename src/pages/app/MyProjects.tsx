@@ -538,7 +538,8 @@ export default function MyProjects() {
             productGaps,
             actions,
             events,
-            featureRequests
+            featureRequests,
+            visionModels
           })}
           disabled={isLoading}
         >

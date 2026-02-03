@@ -6,6 +6,15 @@ import { ImplementationBlocker } from './blockersService';
 import { ProductGap } from './productGapsService';
 import { formatDateUK } from './dateUtils';
 
+interface VisionModelForExport {
+  id: string;
+  status: string;
+  product_run_start?: string | null;
+  product_run_end?: string | null;
+  company_name?: string;
+  project_name?: string;
+}
+
 interface ExportData {
   summaryData: ExecutiveSummaryRow[];
   escalations: ImplementationBlocker[];
@@ -13,10 +22,11 @@ interface ExportData {
   actions: any[];
   events?: any[];
   featureRequests?: any[];
+  visionModels?: VisionModelForExport[];
 }
 
 export function exportExecutiveSummaryToPDF(data: ExportData): void {
-  const { summaryData, escalations, productGaps, actions, events = [], featureRequests = [] } = data;
+  const { summaryData, escalations, productGaps, actions, events = [], featureRequests = [], visionModels = [] } = data;
   const doc = new jsPDF('landscape', 'mm', 'a4');
   const pageWidth = doc.internal.pageSize.getWidth();
   
@@ -365,6 +375,77 @@ export function exportExecutiveSummaryToPDF(data: ExportData): void {
             data.cell.styles.fontStyle = 'bold';
           }
         }
+      }
+    });
+  }
+
+  // Vision Models by Stage table
+  if (visionModels.length > 0) {
+    doc.addPage();
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Vision Models by Stage`, 14, 15);
+    
+    // Compute effective status (Schedule Required = Footage Required + missing dates)
+    const getEffectiveStatus = (model: VisionModelForExport) => {
+      if (model.status === 'Footage Required' && (!model.product_run_start || !model.product_run_end)) {
+        return 'Schedule Required';
+      }
+      return model.status;
+    };
+
+    const stages = ['Schedule Required', 'Footage Required', 'Annotation Required', 'Processing Required', 'Deployment Required', 'Validation Required', 'Complete'] as const;
+    type Stage = typeof stages[number];
+    
+    const customerData = visionModels.reduce((acc: Record<string, Record<Stage, number>>, model) => {
+      const customer = model.company_name || 'Unknown';
+      if (!acc[customer]) {
+        acc[customer] = { 'Schedule Required': 0, 'Footage Required': 0, 'Annotation Required': 0, 'Processing Required': 0, 'Deployment Required': 0, 'Validation Required': 0, 'Complete': 0 };
+      }
+      const effectiveStatus = getEffectiveStatus(model);
+      if (stages.includes(effectiveStatus as Stage)) {
+        acc[customer][effectiveStatus as Stage]++;
+      }
+      return acc;
+    }, {} as Record<string, Record<Stage, number>>);
+    
+    const sortedCustomers = Object.keys(customerData).sort((a, b) => a.localeCompare(b));
+    
+    const visionHeaders = ['Customer', 'Schedule', 'Footage', 'Annotation', 'Processing', 'Deployment', 'Validation', 'Complete', 'Total'];
+    
+    const visionRows = sortedCustomers.map(customer => {
+      const data = customerData[customer];
+      const total = stages.reduce((sum, s) => sum + data[s], 0);
+      return [
+        customer,
+        data['Schedule Required'] > 0 ? String(data['Schedule Required']) : '-',
+        data['Footage Required'] > 0 ? String(data['Footage Required']) : '-',
+        data['Annotation Required'] > 0 ? String(data['Annotation Required']) : '-',
+        data['Processing Required'] > 0 ? String(data['Processing Required']) : '-',
+        data['Deployment Required'] > 0 ? String(data['Deployment Required']) : '-',
+        data['Validation Required'] > 0 ? String(data['Validation Required']) : '-',
+        data['Complete'] > 0 ? String(data['Complete']) : '-',
+        String(total)
+      ];
+    });
+
+    autoTable(doc, {
+      head: [visionHeaders],
+      body: visionRows,
+      startY: 20,
+      theme: 'grid',
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [99, 102, 241], fontSize: 8, fontStyle: 'bold' },
+      columnStyles: {
+        0: { cellWidth: 50 }, // Customer
+        1: { halign: 'center' },
+        2: { halign: 'center' },
+        3: { halign: 'center' },
+        4: { halign: 'center' },
+        5: { halign: 'center' },
+        6: { halign: 'center' },
+        7: { halign: 'center' },
+        8: { halign: 'center', fontStyle: 'bold' }
       }
     });
   }

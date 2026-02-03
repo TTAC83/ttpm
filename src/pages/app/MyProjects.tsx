@@ -486,7 +486,9 @@ export default function MyProjects() {
             summaryData: sortedData,
             escalations,
             productGaps,
-            actions
+            actions,
+            events,
+            featureRequests
           })}
           disabled={isLoading}
         >

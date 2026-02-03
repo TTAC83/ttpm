@@ -360,8 +360,9 @@ export default function GlobalModels() {
       </div>
 
       {/* Stage summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
         {[
+          { status: 'Schedule Required', color: 'text-gray-600 bg-gray-50 border-gray-200' },
           { status: 'Footage Required', color: 'text-red-600 bg-red-50 border-red-200' },
           { status: 'Annotation Required', color: 'text-orange-600 bg-orange-50 border-orange-200' },
           { status: 'Processing Required', color: 'text-yellow-600 bg-yellow-50 border-yellow-200' },
@@ -372,7 +373,7 @@ export default function GlobalModels() {
           const count = models.filter(m => m.status === status).length;
           return (
             <Card key={status} className={`border ${color.split(' ').slice(1).join(' ')}`}>
-              <CardContent className="p-4 text-center">
+              <CardContent className="p-3 text-center">
                 <div className={`text-2xl font-bold ${color.split(' ')[0]}`}>{count}</div>
                 <div className="text-xs text-muted-foreground mt-1">{status}</div>
               </CardContent>
@@ -383,11 +384,11 @@ export default function GlobalModels() {
 
       {/* Customer breakdown table */}
       {(() => {
-        const stages = ['Footage Required', 'Annotation Required', 'Processing Required', 'Deployment Required', 'Validation Required', 'Complete'] as const;
+        const stages = ['Schedule Required', 'Footage Required', 'Annotation Required', 'Processing Required', 'Deployment Required', 'Validation Required', 'Complete'] as const;
         const customerData = models.reduce((acc, model) => {
           const customer = model.company_name || 'Unknown';
           if (!acc[customer]) {
-            acc[customer] = { 'Footage Required': 0, 'Annotation Required': 0, 'Processing Required': 0, 'Deployment Required': 0, 'Validation Required': 0, 'Complete': 0 };
+            acc[customer] = { 'Schedule Required': 0, 'Footage Required': 0, 'Annotation Required': 0, 'Processing Required': 0, 'Deployment Required': 0, 'Validation Required': 0, 'Complete': 0 };
           }
           if (stages.includes(model.status as any)) {
             acc[customer][model.status as typeof stages[number]]++;
@@ -408,6 +409,7 @@ export default function GlobalModels() {
                   <thead>
                     <tr className="border-b bg-muted/50">
                       <th className="text-left p-3 font-medium">Customer</th>
+                      <th className="text-center p-3 font-medium text-gray-600">Schedule</th>
                       <th className="text-center p-3 font-medium text-red-600">Footage</th>
                       <th className="text-center p-3 font-medium text-orange-600">Annotation</th>
                       <th className="text-center p-3 font-medium text-yellow-600">Processing</th>
@@ -424,6 +426,7 @@ export default function GlobalModels() {
                       return (
                         <tr key={customer} className="border-b hover:bg-muted/30">
                           <td className="p-3 font-medium">{customer}</td>
+                          <td className="text-center p-3">{data['Schedule Required'] || '-'}</td>
                           <td className="text-center p-3">{data['Footage Required'] || '-'}</td>
                           <td className="text-center p-3">{data['Annotation Required'] || '-'}</td>
                           <td className="text-center p-3">{data['Processing Required'] || '-'}</td>

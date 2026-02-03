@@ -5,6 +5,7 @@ import { fetchMyProjectsData } from "@/lib/myProjectsService";
 import { exportExecutiveSummaryToPDF } from "@/lib/executiveSummaryExportService";
 import { blockersService, ImplementationBlocker } from "@/lib/blockersService";
 import { productGapsService, ProductGap } from "@/lib/productGapsService";
+import { featureRequestsService, FeatureRequestWithProfile } from "@/lib/featureRequestsService";
 import { calculateMultipleProjectCompletions, ProjectCompletion } from "@/lib/projectCompletionService";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -22,7 +23,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Smile, Frown, Bug, TrendingUp, TrendingDown, AlertTriangle, Hammer, GraduationCap, Rocket, FileDown, Calendar, ListTodo, CheckCircle2 } from "lucide-react";
+import { Smile, Frown, Bug, TrendingUp, TrendingDown, AlertTriangle, Hammer, GraduationCap, Rocket, FileDown, Calendar, ListTodo, CheckCircle2, Lightbulb } from "lucide-react";
 import { format } from "date-fns";
 import { BlockerDrawer } from "@/components/BlockerDrawer";
 import { ProductGapDrawer } from "@/components/ProductGapDrawer";
@@ -82,6 +83,17 @@ export default function MyProjects() {
       return allGaps.filter(g => g.status === 'Live' && myProjectIds.includes(g.project_id || ''));
     },
     enabled: myProjectIds.length > 0,
+  });
+
+  // Fetch open feature requests (not Complete or Rejected)
+  const { data: featureRequests = [], isLoading: featureRequestsLoading } = useQuery({
+    queryKey: ['my-projects-feature-requests'],
+    queryFn: async () => {
+      return await featureRequestsService.getFeatureRequests({
+        statuses: ['Requested', 'In Design', 'In Dev'],
+        pageSize: 100
+      });
+    },
   });
 
   // Fetch actions (critical or overdue, filtered to my projects)
@@ -294,6 +306,15 @@ export default function MyProjects() {
   const filteredProductGaps = useMemo(() => 
     productGaps.filter(g => filteredProjectIds.has(g.project_id || '')),
     [productGaps, filteredProjectIds]
+  );
+
+  // Filter feature requests based on search (search by title or problem statement)
+  const filteredFeatureRequests = useMemo(() => 
+    featureRequests.filter(fr => 
+      fr.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (fr.problem_statement?.toLowerCase().includes(searchQuery.toLowerCase()))
+    ),
+    [featureRequests, searchQuery]
   );
 
   // Filter events based on search
@@ -869,6 +890,77 @@ export default function MyProjects() {
                           </TableCell>
                         </TableRow>
                       ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Open Features Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lightbulb className="h-5 w-5 text-yellow-500" />
+                Open Features ({filteredFeatureRequests.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {featureRequestsLoading ? (
+                <div className="p-4 text-muted-foreground">Loading feature requests...</div>
+              ) : filteredFeatureRequests.length === 0 ? (
+                <div className="p-4 text-muted-foreground">No open feature requests.</div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Problem Statement</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Required Date</TableHead>
+                      <TableHead>Product Gaps</TableHead>
+                      <TableHead>Created By</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredFeatureRequests.map((feature) => (
+                      <TableRow key={feature.id}>
+                        <TableCell className="font-medium">{feature.title}</TableCell>
+                        <TableCell className="max-w-md truncate">
+                          {feature.problem_statement || '-'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={featureRequestsService.getStatusBadgeVariant(feature.status)}>
+                            {feature.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {feature.required_date ? formatDateUK(feature.required_date) : '-'}
+                        </TableCell>
+                        <TableCell>
+                          {(feature.product_gaps_total ?? 0) > 0 ? (
+                            <div className="flex items-center gap-1">
+                              <span>{feature.product_gaps_total}</span>
+                              {(feature.product_gaps_critical ?? 0) > 0 && (
+                                <Badge variant="destructive" className="text-xs">
+                                  {feature.product_gaps_critical} critical
+                                </Badge>
+                              )}
+                            </div>
+                          ) : '-'}
+                        </TableCell>
+                        <TableCell>{feature.creator?.name || '-'}</TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => navigate(`/app/feature-requests/${feature.id}`)}
+                          >
+                            View
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               )}

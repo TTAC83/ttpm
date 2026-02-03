@@ -359,6 +359,28 @@ export default function GlobalModels() {
         </div>
       </div>
 
+      {/* Stage summary cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {[
+          { status: 'Footage Required', color: 'text-red-600 bg-red-50 border-red-200' },
+          { status: 'Annotation Required', color: 'text-orange-600 bg-orange-50 border-orange-200' },
+          { status: 'Processing Required', color: 'text-yellow-600 bg-yellow-50 border-yellow-200' },
+          { status: 'Deployment Required', color: 'text-blue-600 bg-blue-50 border-blue-200' },
+          { status: 'Validation Required', color: 'text-purple-600 bg-purple-50 border-purple-200' },
+          { status: 'Complete', color: 'text-green-600 bg-green-50 border-green-200' },
+        ].map(({ status, color }) => {
+          const count = models.filter(m => m.status === status).length;
+          return (
+            <Card key={status} className={`border ${color.split(' ').slice(1).join(' ')}`}>
+              <CardContent className="p-4 text-center">
+                <div className={`text-2xl font-bold ${color.split(' ')[0]}`}>{count}</div>
+                <div className="text-xs text-muted-foreground mt-1">{status}</div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
       <div className="space-y-6">
         {renderCalendar(currentDate)}
         {renderCalendar(nextMonth)}

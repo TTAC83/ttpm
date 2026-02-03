@@ -688,6 +688,7 @@ export default function MyProjects() {
                       <TableHead>Customer</TableHead>
                       <TableHead>Project</TableHead>
                       <TableHead>Title</TableHead>
+                      <TableHead>Reason Code</TableHead>
                       <TableHead>Owner</TableHead>
                       <TableHead>Raised</TableHead>
                       <TableHead>Est. Complete</TableHead>
@@ -715,6 +716,7 @@ export default function MyProjects() {
                               {esc.is_critical && <Badge variant="destructive" className="text-xs">CRITICAL</Badge>}
                             </div>
                           </TableCell>
+                          <TableCell>{esc.reason_code || '-'}</TableCell>
                           <TableCell>{esc.owner_name}</TableCell>
                           <TableCell>{formatDateUK(esc.raised_at)}</TableCell>
                           <TableCell>{esc.estimated_complete_date ? formatDateUK(esc.estimated_complete_date) : '-'}</TableCell>

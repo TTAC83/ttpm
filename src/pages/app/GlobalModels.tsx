@@ -381,6 +381,67 @@ export default function GlobalModels() {
         })}
       </div>
 
+      {/* Customer breakdown table */}
+      {(() => {
+        const stages = ['Footage Required', 'Annotation Required', 'Processing Required', 'Deployment Required', 'Validation Required', 'Complete'] as const;
+        const customerData = models.reduce((acc, model) => {
+          const customer = model.company_name || 'Unknown';
+          if (!acc[customer]) {
+            acc[customer] = { 'Footage Required': 0, 'Annotation Required': 0, 'Processing Required': 0, 'Deployment Required': 0, 'Validation Required': 0, 'Complete': 0 };
+          }
+          if (stages.includes(model.status as any)) {
+            acc[customer][model.status as typeof stages[number]]++;
+          }
+          return acc;
+        }, {} as Record<string, Record<typeof stages[number], number>>);
+        
+        const sortedCustomers = Object.keys(customerData).sort((a, b) => a.localeCompare(b));
+        
+        return (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Models by Customer</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="text-left p-3 font-medium">Customer</th>
+                      <th className="text-center p-3 font-medium text-red-600">Footage</th>
+                      <th className="text-center p-3 font-medium text-orange-600">Annotation</th>
+                      <th className="text-center p-3 font-medium text-yellow-600">Processing</th>
+                      <th className="text-center p-3 font-medium text-blue-600">Deployment</th>
+                      <th className="text-center p-3 font-medium text-purple-600">Validation</th>
+                      <th className="text-center p-3 font-medium text-green-600">Complete</th>
+                      <th className="text-center p-3 font-medium">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedCustomers.map(customer => {
+                      const data = customerData[customer];
+                      const total = stages.reduce((sum, s) => sum + data[s], 0);
+                      return (
+                        <tr key={customer} className="border-b hover:bg-muted/30">
+                          <td className="p-3 font-medium">{customer}</td>
+                          <td className="text-center p-3">{data['Footage Required'] || '-'}</td>
+                          <td className="text-center p-3">{data['Annotation Required'] || '-'}</td>
+                          <td className="text-center p-3">{data['Processing Required'] || '-'}</td>
+                          <td className="text-center p-3">{data['Deployment Required'] || '-'}</td>
+                          <td className="text-center p-3">{data['Validation Required'] || '-'}</td>
+                          <td className="text-center p-3">{data['Complete'] || '-'}</td>
+                          <td className="text-center p-3 font-semibold">{total}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
       <div className="space-y-6">
         {renderCalendar(currentDate)}
         {renderCalendar(nextMonth)}

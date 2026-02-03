@@ -11,10 +11,12 @@ interface ExportData {
   escalations: ImplementationBlocker[];
   productGaps: ProductGap[];
   actions: any[];
+  events?: any[];
+  featureRequests?: any[];
 }
 
 export function exportExecutiveSummaryToPDF(data: ExportData): void {
-  const { summaryData, escalations, productGaps, actions } = data;
+  const { summaryData, escalations, productGaps, actions, events = [], featureRequests = [] } = data;
   const doc = new jsPDF('landscape', 'mm', 'a4');
   const pageWidth = doc.internal.pageSize.getWidth();
   
@@ -290,6 +292,78 @@ export function exportExecutiveSummaryToPDF(data: ExportData): void {
           data.cell.styles.fillColor = [254, 202, 202];
           data.cell.styles.textColor = [153, 27, 27];
           data.cell.styles.fontStyle = 'bold';
+        }
+      }
+    });
+  }
+
+  // Upcoming Events table
+  if (events.length > 0) {
+    doc.addPage();
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Upcoming Events (${events.length})`, 14, 15);
+    
+    const eventHeaders = ['Customer', 'Project', 'Event', 'Type', 'Start Date', 'End Date'];
+    
+    const sortedEvents = [...events].sort((a, b) => {
+      const orderA = projectOrderMap.get(a.project_id || '') ?? Infinity;
+      const orderB = projectOrderMap.get(b.project_id || '') ?? Infinity;
+      return orderA - orderB;
+    });
+    
+    const eventRows = sortedEvents.map(event => [
+      event.company_name || '',
+      event.project_name || '',
+      event.title || '',
+      event.event_type || '-',
+      event.start_date ? formatDateUK(event.start_date) : '-',
+      event.end_date ? formatDateUK(event.end_date) : '-'
+    ]);
+
+    autoTable(doc, {
+      head: [eventHeaders],
+      body: eventRows,
+      startY: 20,
+      theme: 'grid',
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [59, 130, 246], fontSize: 8, fontStyle: 'bold' }
+    });
+  }
+
+  // Open Features table
+  if (featureRequests.length > 0) {
+    doc.addPage();
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Open Features (${featureRequests.length})`, 14, 15);
+    
+    const featureHeaders = ['Title', 'Problem Statement', 'Status', 'Required Date', 'Product Gaps', 'Creator'];
+    
+    const featureRows = featureRequests.map(fr => [
+      fr.title || '',
+      fr.problem_statement ? (fr.problem_statement.length > 60 ? fr.problem_statement.substring(0, 60) + '...' : fr.problem_statement) : '-',
+      fr.status || '-',
+      fr.required_date ? formatDateUK(fr.required_date) : '-',
+      fr.product_gaps_count ? String(fr.product_gaps_count) : '0',
+      fr.profiles?.name || '-'
+    ]);
+
+    autoTable(doc, {
+      head: [featureHeaders],
+      body: featureRows,
+      startY: 20,
+      theme: 'grid',
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [234, 179, 8], fontSize: 8, fontStyle: 'bold' },
+      didParseCell: function(data) {
+        // Highlight critical product gaps count
+        if (data.column.index === 4) {
+          const count = parseInt(data.cell.raw as string, 10);
+          if (count > 0) {
+            data.cell.styles.fillColor = [254, 243, 199];
+            data.cell.styles.fontStyle = 'bold';
+          }
         }
       }
     });

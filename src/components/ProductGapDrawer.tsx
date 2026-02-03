@@ -127,8 +127,12 @@ export function ProductGapDrawer({ projectId, projectType = 'implementation', pr
     e.preventDefault();
     if (!title.trim()) return;
 
-    // Validation for project selection when assigning from feature request
-    if (!projectId && !selectedProjectId) {
+    // For existing product gaps, use the already-associated project
+    const existingProjectId = productGap?.project_id || productGap?.solutions_project_id;
+    const finalProjectId = projectId || selectedProjectId || existingProjectId;
+
+    // Validation for project selection when creating new product gap from feature request
+    if (!finalProjectId) {
       toast({
         title: "Error",
         description: "Please select a project for this product gap.",
@@ -150,7 +154,6 @@ export function ProductGapDrawer({ projectId, projectType = 'implementation', pr
     setIsSubmitting(true);
 
     try {
-      const finalProjectId = projectId || selectedProjectId;
       const productGapData = {
         ...(projectType === 'solutions' 
           ? { solutions_project_id: finalProjectId, project_type: 'solutions' as const }

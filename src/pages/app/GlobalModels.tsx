@@ -360,8 +360,16 @@ export default function GlobalModels() {
       </div>
 
       {/* Stage summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-        {[
+      {(() => {
+        // Schedule Required = Footage Required status + missing product run dates
+        const getEffectiveStatus = (model: VisionModel) => {
+          if (model.status === 'Footage Required' && (!model.product_run_start || !model.product_run_end)) {
+            return 'Schedule Required';
+          }
+          return model.status;
+        };
+
+        const stageConfigs = [
           { status: 'Schedule Required', color: 'text-gray-600 bg-gray-50 border-gray-200' },
           { status: 'Footage Required', color: 'text-red-600 bg-red-50 border-red-200' },
           { status: 'Annotation Required', color: 'text-orange-600 bg-orange-50 border-orange-200' },
@@ -369,32 +377,49 @@ export default function GlobalModels() {
           { status: 'Deployment Required', color: 'text-blue-600 bg-blue-50 border-blue-200' },
           { status: 'Validation Required', color: 'text-purple-600 bg-purple-50 border-purple-200' },
           { status: 'Complete', color: 'text-green-600 bg-green-50 border-green-200' },
-        ].map(({ status, color }) => {
-          const count = models.filter(m => m.status === status).length;
-          return (
-            <Card key={status} className={`border ${color.split(' ').slice(1).join(' ')}`}>
-              <CardContent className="p-3 text-center">
-                <div className={`text-2xl font-bold ${color.split(' ')[0]}`}>{count}</div>
-                <div className="text-xs text-muted-foreground mt-1">{status}</div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+        ];
+
+        return (
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+            {stageConfigs.map(({ status, color }) => {
+              const count = models.filter(m => getEffectiveStatus(m) === status).length;
+              return (
+                <Card key={status} className={`border ${color.split(' ').slice(1).join(' ')}`}>
+                  <CardContent className="p-3 text-center">
+                    <div className={`text-2xl font-bold ${color.split(' ')[0]}`}>{count}</div>
+                    <div className="text-xs text-muted-foreground mt-1">{status}</div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {/* Customer breakdown table */}
       {(() => {
+        // Schedule Required = Footage Required status + missing product run dates
+        const getEffectiveStatus = (model: VisionModel) => {
+          if (model.status === 'Footage Required' && (!model.product_run_start || !model.product_run_end)) {
+            return 'Schedule Required';
+          }
+          return model.status;
+        };
+
         const stages = ['Schedule Required', 'Footage Required', 'Annotation Required', 'Processing Required', 'Deployment Required', 'Validation Required', 'Complete'] as const;
+        type Stage = typeof stages[number];
+        
         const customerData = models.reduce((acc, model) => {
           const customer = model.company_name || 'Unknown';
           if (!acc[customer]) {
             acc[customer] = { 'Schedule Required': 0, 'Footage Required': 0, 'Annotation Required': 0, 'Processing Required': 0, 'Deployment Required': 0, 'Validation Required': 0, 'Complete': 0 };
           }
-          if (stages.includes(model.status as any)) {
-            acc[customer][model.status as typeof stages[number]]++;
+          const effectiveStatus = getEffectiveStatus(model);
+          if (stages.includes(effectiveStatus as Stage)) {
+            acc[customer][effectiveStatus as Stage]++;
           }
           return acc;
-        }, {} as Record<string, Record<typeof stages[number], number>>);
+        }, {} as Record<string, Record<Stage, number>>);
         
         const sortedCustomers = Object.keys(customerData).sort((a, b) => a.localeCompare(b));
         

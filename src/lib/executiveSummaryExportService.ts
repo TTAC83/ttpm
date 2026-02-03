@@ -175,7 +175,7 @@ export function exportExecutiveSummaryToPDF(data: ExportData): void {
     doc.setFont('helvetica', 'bold');
     doc.text(`Escalations (${escalations.length})`, 14, 15);
     
-    const escHeaders = ['Customer', 'Project', 'Title', 'Owner', 'Raised', 'Est. Complete', 'Age', 'Critical'];
+    const escHeaders = ['Customer', 'Project', 'Title', 'Reason Code', 'Owner', 'Raised', 'Est. Complete', 'Age', 'Critical'];
     
     const sortedEscalations = [...escalations].sort((a, b) => {
       const orderA = projectOrderMap.get(a.project_id || '') ?? Infinity;
@@ -187,6 +187,7 @@ export function exportExecutiveSummaryToPDF(data: ExportData): void {
       esc.customer_name || '',
       esc.project_name || '',
       esc.title,
+      esc.reason_code || '-',
       esc.owner_name || '',
       formatDateUK(esc.raised_at),
       esc.estimated_complete_date ? formatDateUK(esc.estimated_complete_date) : '-',
@@ -202,7 +203,7 @@ export function exportExecutiveSummaryToPDF(data: ExportData): void {
       styles: { fontSize: 8, cellPadding: 2 },
       headStyles: { fillColor: [239, 68, 68], fontSize: 8, fontStyle: 'bold' },
       didParseCell: function(data) {
-        if (data.column.index === 7 && data.cell.raw === 'YES') {
+        if (data.column.index === 8 && data.cell.raw === 'YES') {
           data.cell.styles.fillColor = [254, 202, 202];
           data.cell.styles.textColor = [153, 27, 27];
           data.cell.styles.fontStyle = 'bold';

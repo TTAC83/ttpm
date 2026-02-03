@@ -267,6 +267,15 @@ export const visionModelsService = {
     if (error) throw error;
   },
 
+  async bulkUpdateStatus(ids: string[], status: VisionModel['status']) {
+    const { error } = await supabase
+      .from('vision_models')
+      .update({ status, updated_at: new Date().toISOString() })
+      .in('id', ids);
+
+    if (error) throw error;
+  },
+
   async verifyLineConfiguration(
     projectId: string,
     lineName: string,

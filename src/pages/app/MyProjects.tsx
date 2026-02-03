@@ -8,6 +8,7 @@ import { productGapsService, ProductGap } from "@/lib/productGapsService";
 import { featureRequestsService, FeatureRequestWithProfile } from "@/lib/featureRequestsService";
 import { calculateMultipleProjectCompletions, ProjectCompletion } from "@/lib/projectCompletionService";
 import { supabase } from "@/integrations/supabase/client";
+import { Eye } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -184,6 +185,52 @@ export default function MyProjects() {
           is_overdue: isOverdue,
           is_critical: task.status === 'Blocked'
         };
+      });
+    },
+    enabled: myProjectIds.length > 0,
+  });
+
+  // Fetch vision models (filtered to my projects)
+  const { data: visionModels = [], isLoading: visionModelsLoading } = useQuery({
+    queryKey: ['my-projects-vision-models', myProjectIds],
+    queryFn: async () => {
+      const { data: modelsData, error: modelsErr } = await supabase
+        .from('vision_models')
+        .select('*')
+        .in('project_id', myProjectIds);
+      
+      if (modelsErr) {
+        console.error('Error fetching vision models:', modelsErr);
+        return [];
+      }
+
+      // Get unique project IDs and fetch project+company info
+      const uniqueProjectIds = Array.from(new Set((modelsData ?? []).map((m: any) => m.project_id))).filter(Boolean) as string[];
+      const projectMap = new Map<string, { name: string; company_id: string | null }>();
+      const companyMap = new Map<string, { name: string }>();
+
+      if (uniqueProjectIds.length) {
+        const { data: projectsData } = await supabase
+          .from('projects')
+          .select('id, name, company_id')
+          .in('id', uniqueProjectIds);
+        
+        projectsData?.forEach((p: any) => projectMap.set(p.id, { name: p.name, company_id: p.company_id }));
+
+        const uniqueCompanyIds = Array.from(new Set((projectsData ?? []).map((p: any) => p.company_id).filter(Boolean)));
+        if (uniqueCompanyIds.length) {
+          const { data: companiesData } = await supabase
+            .from('companies')
+            .select('id, name')
+            .in('id', uniqueCompanyIds as string[]);
+          companiesData?.forEach((c: any) => companyMap.set(c.id, { name: c.name }));
+        }
+      }
+
+      return (modelsData ?? []).map((m: any) => {
+        const p = projectMap.get(m.project_id);
+        const cName = p?.company_id ? companyMap.get(p.company_id)?.name : undefined;
+        return { ...m, project_name: p?.name, company_name: cName };
       });
     },
     enabled: myProjectIds.length > 0,
@@ -1044,6 +1091,88 @@ export default function MyProjects() {
                       ))}
                   </TableBody>
                 </Table>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Vision Models by Customer/Stage Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5 text-indigo-500" />
+                Vision Models by Stage
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {visionModelsLoading ? (
+                <div className="p-4 text-muted-foreground">Loading vision models...</div>
+              ) : visionModels.length === 0 ? (
+                <div className="p-4 text-muted-foreground">No vision models found.</div>
+              ) : (
+                (() => {
+                  const getEffectiveStatus = (model: any) => {
+                    if (model.status === 'Footage Required' && (!model.product_run_start || !model.product_run_end)) {
+                      return 'Schedule Required';
+                    }
+                    return model.status;
+                  };
+
+                  const stages = ['Schedule Required', 'Footage Required', 'Annotation Required', 'Processing Required', 'Deployment Required', 'Validation Required', 'Complete'] as const;
+                  type Stage = typeof stages[number];
+                  
+                  const customerData = visionModels.reduce((acc: Record<string, Record<Stage, number>>, model: any) => {
+                    const customer = model.company_name || 'Unknown';
+                    if (!acc[customer]) {
+                      acc[customer] = { 'Schedule Required': 0, 'Footage Required': 0, 'Annotation Required': 0, 'Processing Required': 0, 'Deployment Required': 0, 'Validation Required': 0, 'Complete': 0 };
+                    }
+                    const effectiveStatus = getEffectiveStatus(model);
+                    if (stages.includes(effectiveStatus as Stage)) {
+                      acc[customer][effectiveStatus as Stage]++;
+                    }
+                    return acc;
+                  }, {} as Record<string, Record<Stage, number>>);
+                  
+                  const sortedCustomers = Object.keys(customerData).sort((a, b) => a.localeCompare(b));
+
+                  return (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b bg-muted/50">
+                            <th className="text-left p-3 font-medium">Customer</th>
+                            <th className="text-center p-3 font-medium text-gray-600">Schedule</th>
+                            <th className="text-center p-3 font-medium text-red-600">Footage</th>
+                            <th className="text-center p-3 font-medium text-orange-600">Annotation</th>
+                            <th className="text-center p-3 font-medium text-yellow-600">Processing</th>
+                            <th className="text-center p-3 font-medium text-blue-600">Deployment</th>
+                            <th className="text-center p-3 font-medium text-purple-600">Validation</th>
+                            <th className="text-center p-3 font-medium text-green-600">Complete</th>
+                            <th className="text-center p-3 font-medium">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sortedCustomers.map(customer => {
+                            const data = customerData[customer];
+                            const total = stages.reduce((sum, s) => sum + data[s], 0);
+                            return (
+                              <tr key={customer} className="border-b hover:bg-muted/30">
+                                <td className="p-3 font-medium">{customer}</td>
+                                <td className="text-center p-3">{data['Schedule Required'] || '-'}</td>
+                                <td className="text-center p-3">{data['Footage Required'] || '-'}</td>
+                                <td className="text-center p-3">{data['Annotation Required'] || '-'}</td>
+                                <td className="text-center p-3">{data['Processing Required'] || '-'}</td>
+                                <td className="text-center p-3">{data['Deployment Required'] || '-'}</td>
+                                <td className="text-center p-3">{data['Validation Required'] || '-'}</td>
+                                <td className="text-center p-3">{data['Complete'] || '-'}</td>
+                                <td className="text-center p-3 font-semibold">{total}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })()
               )}
             </CardContent>
           </Card>

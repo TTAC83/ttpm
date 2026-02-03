@@ -24,6 +24,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { LogOut, ChevronRight } from 'lucide-react';
 import React from 'react';
 import { NAV, visibleItemsForRole, ICON_MAP, type Role, type NavItem } from '@/config/nav';
+import thingtraxLogoFull from '@/assets/thingtrax-logo-full.png';
+import thingtraxLogoIcon from '@/assets/thingtrax-logo-icon.png';
 import { useExpenseAccess } from '@/hooks/useExpenseAccess';
 import { useState, useEffect } from 'react';
 import InstallButton from '@/components/pwa/InstallButton';
@@ -162,10 +164,17 @@ export const AppLayout = () => {
         >
           <SidebarHeader className="border-b border-sidebar-border p-4">
             <div className="flex items-center gap-3">
-              <img src="/lovable-uploads/4fec4d14-a56e-4a44-8256-ac94aa43da5c.png" alt="Thingtrax" className="w-8 h-8" />
-              <div className="group-data-[state=collapsed]:hidden">
-                <h2 className="font-helvetica-display font-semibold text-sidebar-foreground text-lg">thingtrax</h2>
-              </div>
+              {/* Full logo when expanded, icon when collapsed */}
+              <img 
+                src={thingtraxLogoFull} 
+                alt="Thingtrax" 
+                className="h-8 group-data-[state=collapsed]:hidden" 
+              />
+              <img 
+                src={thingtraxLogoIcon} 
+                alt="Thingtrax" 
+                className="h-8 hidden group-data-[state=collapsed]:block" 
+              />
             </div>
             <div className="mt-3 group-data-[state=collapsed]:hidden">
               <Button 

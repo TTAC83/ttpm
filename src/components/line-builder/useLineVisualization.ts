@@ -253,9 +253,9 @@ export const useLineVisualization = (lineId: string) => {
     // Convert empty strings to null for UUID fields
     const cleanFormData = {
       ...formData,
-      light_id: formData.light_id || null,
-      plc_master_id: formData.plc_master_id || null,
-      hmi_master_id: formData.hmi_master_id || null,
+     light_id: formData.light_id && formData.light_id !== "non-standard" ? formData.light_id : null,
+     plc_master_id: formData.plc_master_id && formData.plc_master_id !== "non-standard" ? formData.plc_master_id : null,
+     hmi_master_id: formData.hmi_master_id && formData.hmi_master_id !== "non-standard" ? formData.hmi_master_id : null,
     };
 
     // Validate use case IDs

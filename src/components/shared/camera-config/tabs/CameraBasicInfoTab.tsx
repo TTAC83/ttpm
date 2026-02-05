@@ -41,6 +41,7 @@ export function CameraBasicInfoTab({ formData, masterData, updateField }: Camera
             <SelectValue placeholder="Choose camera model" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="non-standard">Non-Standard</SelectItem>
             {masterData.cameras.map((camera) => (
               <SelectItem key={camera.id} value={camera.id}>
                 {camera.manufacturer} - {camera.model_number}
@@ -60,6 +61,7 @@ export function CameraBasicInfoTab({ formData, masterData, updateField }: Camera
             <SelectValue placeholder="Choose lens model (optional)" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="non-standard">Non-Standard</SelectItem>
             {masterData.lenses.map((lens) => (
               <SelectItem key={lens.id} value={lens.id}>
                 {lens.manufacturer} - {lens.model_number}

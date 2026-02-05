@@ -41,6 +41,7 @@ export function CameraLightingTab({ formData, masterData, updateField }: CameraL
                 <SelectValue placeholder="Choose light model (optional)" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="non-standard">Non-Standard</SelectItem>
                 {masterData.lights.map((light) => (
                   <SelectItem key={light.id} value={light.id}>
                     {light.manufacturer} - {light.model_number}

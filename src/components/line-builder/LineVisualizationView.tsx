@@ -2,7 +2,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Camera, Cpu, MapPin, Edit } from "lucide-react";
+import { ArrowLeft, Camera, Cpu, MapPin, Edit, Lightbulb, Monitor, Zap } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ interface Camera {
   name: string;
   camera_type: string;
   lens_type: string;
+  light_required?: boolean;
   light_id?: string;
   plc_master_id?: string;
   hmi_master_id?: string;
@@ -241,16 +242,34 @@ export const LineVisualizationView: React.FC<LineVisualizationViewProps> = ({
                                 </div>
                                 
                                 {/* Devices */}
-                                <div className="flex gap-2 text-xs">
+                                <div className="flex flex-wrap gap-2 text-xs">
                                   {equipment.cameras.length > 0 && (
-                                    <div className="flex items-center gap-1 text-green-600">
+                                    <div className="flex items-center gap-1 text-green-600" title="Camera">
                                       <Camera className="h-3 w-3" />
                                       <span>{equipment.cameras.length}</span>
                                     </div>
                                   )}
-                                  {equipment.iot_devices.length > 0 && (
-                                    <div className="flex items-center gap-1 text-blue-600">
+                                  {/* Light indicator - check if any camera has light_required or light_id */}
+                                  {equipment.cameras.some((cam: Camera) => cam.light_required || cam.light_id) && (
+                                    <div className="flex items-center gap-1 text-yellow-600" title="Light">
+                                      <Lightbulb className="h-3 w-3" />
+                                    </div>
+                                  )}
+                                  {/* PLC indicator */}
+                                  {equipment.cameras.some((cam: Camera) => cam.plc_master_id) && (
+                                    <div className="flex items-center gap-1 text-purple-600" title="PLC">
                                       <Cpu className="h-3 w-3" />
+                                    </div>
+                                  )}
+                                  {/* HMI indicator */}
+                                  {equipment.cameras.some((cam: Camera) => cam.hmi_master_id) && (
+                                    <div className="flex items-center gap-1 text-orange-600" title="HMI">
+                                      <Monitor className="h-3 w-3" />
+                                    </div>
+                                  )}
+                                  {equipment.iot_devices.length > 0 && (
+                                    <div className="flex items-center gap-1 text-blue-600" title="IoT Device">
+                                      <Zap className="h-3 w-3" />
                                       <span>{equipment.iot_devices.length}</span>
                                     </div>
                                   )}

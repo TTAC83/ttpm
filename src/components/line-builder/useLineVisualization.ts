@@ -250,6 +250,9 @@ export const useLineVisualization = (lineId: string) => {
   const handleCameraSave = async (formData: any) => {
     if (!editingCamera) return;
 
+   // Debug logging for light_id
+   console.log('[CameraSave] Received formData.light_id:', formData.light_id);
+
     // Convert empty strings to null for UUID fields
     const cleanFormData = {
       ...formData,
@@ -257,6 +260,8 @@ export const useLineVisualization = (lineId: string) => {
      plc_master_id: formData.plc_master_id && formData.plc_master_id !== "non-standard" ? formData.plc_master_id : null,
      hmi_master_id: formData.hmi_master_id && formData.hmi_master_id !== "non-standard" ? formData.hmi_master_id : null,
     };
+
+   console.log('[CameraSave] cleanFormData.light_id:', cleanFormData.light_id);
 
     // Validate use case IDs
     let validatedUseCaseIds: string[] = [];

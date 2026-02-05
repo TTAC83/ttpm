@@ -35,6 +35,13 @@ interface Camera {
     product_flow?: string;
     description?: string;
   };
+  relay_outputs?: Array<{
+    id: string;
+    output_number: number;
+    type?: string;
+    custom_name?: string;
+    notes?: string;
+  }>;
 }
 
 interface IoTDevice {
@@ -169,7 +176,8 @@ export const useLineVisualization = (lineId: string) => {
             camera_view: cam.product_flow || cam.camera_view_description ? {
               product_flow: cam.product_flow || undefined,
               description: cam.camera_view_description || undefined
-            } : undefined
+            } : undefined,
+            relay_outputs: cam.relay_outputs || []
           })),
           iot_devices: (eq.iot_devices || [])
             .filter((d: any) => !visionAccessoryIds.has(d.hardware_master_id))
@@ -219,12 +227,19 @@ export const useLineVisualization = (lineId: string) => {
     }
   };
 
-  const handleEditCamera = (camera: any, positionName: string, equipmentName: string) => {
+  const handleEditCamera = async (camera: any, positionName: string, equipmentName: string) => {
    // Determine if light selection should show "non-standard"
    // If light_required is true but no specific light_id, it means non-standard was selected
    const lightIdValue = camera.light_id 
      ? camera.light_id 
      : (camera.light_required ? "non-standard" : "");
+
+    // Fetch relay outputs for this camera
+    const { data: relayOutputs } = await supabase
+      .from('camera_plc_outputs')
+      .select('*')
+      .eq('camera_id', camera.id)
+      .order('output_number');
 
     setCameraFormData({
       name: camera.name || "",
@@ -236,7 +251,13 @@ export const useLineVisualization = (lineId: string) => {
       light_notes: camera.light_notes || "",
       plc_attached: !!camera.plc_master_id,
       plc_master_id: camera.plc_master_id || "",
-      relay_outputs: [],
+      relay_outputs: (relayOutputs || []).map((ro: any) => ({
+        id: ro.id,
+        output_number: ro.output_number,
+        type: ro.type || "",
+        custom_name: ro.custom_name || "",
+        notes: ro.notes || "",
+      })),
       hmi_required: !!camera.hmi_master_id,
       hmi_master_id: camera.hmi_master_id || "",
       hmi_notes: camera.hmi_notes || "",
@@ -316,6 +337,11 @@ export const useLineVisualization = (lineId: string) => {
 
     const { data: originalAttributes } = await supabase
       .from('camera_attributes')
+      .select('*')
+      .eq('camera_id', editingCamera.id);
+
+    const { data: originalRelayOutputs } = await supabase
+      .from('camera_plc_outputs')
       .select('*')
       .eq('camera_id', editingCamera.id);
 
@@ -490,6 +516,48 @@ export const useLineVisualization = (lineId: string) => {
             await supabase
               .from('camera_attributes')
               .insert(originalAttributes);
+          }
+        },
+      },
+
+      // 6. Update relay outputs (PLC outputs)
+      {
+        description: "Update relay outputs",
+        execute: async () => {
+          // Delete existing
+          await supabase
+            .from('camera_plc_outputs')
+            .delete()
+            .eq('camera_id', editingCamera.id);
+
+          // Insert new
+          if (cleanFormData.relay_outputs && cleanFormData.relay_outputs.length > 0) {
+            const relayOutputs = cleanFormData.relay_outputs.map((ro: any) => ({
+              camera_id: editingCamera.id,
+              output_number: ro.output_number,
+              type: ro.type || null,
+              custom_name: ro.custom_name || null,
+              notes: ro.notes || null,
+            }));
+
+            const { error } = await supabase
+              .from('camera_plc_outputs')
+              .insert(relayOutputs);
+
+            if (error) throw error;
+          }
+          return { success: true };
+        },
+        rollback: async () => {
+          await supabase
+            .from('camera_plc_outputs')
+            .delete()
+            .eq('camera_id', editingCamera.id);
+
+          if (originalRelayOutputs && originalRelayOutputs.length > 0) {
+            await supabase
+              .from('camera_plc_outputs')
+              .insert(originalRelayOutputs);
           }
         },
       },

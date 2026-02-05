@@ -220,13 +220,19 @@ export const useLineVisualization = (lineId: string) => {
   };
 
   const handleEditCamera = (camera: any, positionName: string, equipmentName: string) => {
+   // Determine if light selection should show "non-standard"
+   // If light_required is true but no specific light_id, it means non-standard was selected
+   const lightIdValue = camera.light_id 
+     ? camera.light_id 
+     : (camera.light_required ? "non-standard" : "");
+
     setCameraFormData({
       name: camera.name || "",
       camera_ip: camera.camera_ip || "",
       camera_type: camera.camera_type || "",
       lens_type: camera.lens_type || "",
       light_required: camera.light_required || false,
-      light_id: camera.light_id || "",
+     light_id: lightIdValue,
       light_notes: camera.light_notes || "",
       plc_attached: !!camera.plc_master_id,
       plc_master_id: camera.plc_master_id || "",

@@ -274,6 +274,26 @@ export const LineVisualizationView: React.FC<LineVisualizationViewProps> = ({
                                     </div>
                                   )}
                                 </div>
+                               
+                               {/* Camera Attributes */}
+                               {equipment.cameras.some((cam: Camera) => cam.attributes && cam.attributes.length > 0) && (
+                                 <div className="mt-2 pt-2 border-t border-border/50">
+                                   <p className="text-xs font-medium text-muted-foreground mb-1">Attributes:</p>
+                                   <div className="flex flex-wrap gap-1">
+                                     {equipment.cameras.flatMap((cam: Camera) => 
+                                       (cam.attributes || []).map((attr) => (
+                                         <span 
+                                           key={attr.id} 
+                                           className="text-xs bg-muted px-1.5 py-0.5 rounded"
+                                           title={attr.description || attr.title}
+                                         >
+                                           {attr.title}
+                                         </span>
+                                       ))
+                                     )}
+                                   </div>
+                                 </div>
+                               )}
                               </div>
                             ))
                           )}

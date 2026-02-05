@@ -22,6 +22,7 @@ export function CameraLightingTab({ formData, masterData, updateField }: CameraL
             updateField("light_required", !!checked);
             if (!checked) {
               updateField("light_id", "");
+              updateField("light_notes", "");
             }
           }}
         />
@@ -31,13 +32,13 @@ export function CameraLightingTab({ formData, masterData, updateField }: CameraL
       {formData.light_required ? (
         <>
           <div>
-            <Label htmlFor="light-select">Select Light Model</Label>
+            <Label htmlFor="light-select">Select Light Model (Optional)</Label>
             <Select
               value={formData.light_id}
               onValueChange={(value) => updateField("light_id", value)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Choose light model" />
+                <SelectValue placeholder="Choose light model (optional)" />
               </SelectTrigger>
               <SelectContent>
                 {masterData.lights.map((light) => (
@@ -51,12 +52,12 @@ export function CameraLightingTab({ formData, masterData, updateField }: CameraL
           </div>
 
           <div>
-            <Label htmlFor="light-notes">Notes (Optional)</Label>
+            <Label htmlFor="light-notes">Lighting Notes</Label>
             <Textarea
               id="light-notes"
               value={formData.light_notes}
               onChange={(e) => updateField("light_notes", e.target.value)}
-              placeholder="Enter any notes about the lighting configuration"
+              placeholder="Enter lighting requirements, specifications, or notes"
               rows={3}
             />
           </div>

@@ -322,7 +322,7 @@ export const useLineVisualization = (lineId: string) => {
               camera_type: cleanFormData.camera_type,
               lens_type: cleanFormData.lens_type || '',
               light_required: cleanFormData.light_required,
-              light_id: cleanFormData.light_id,
+              light_id: cleanFormData.light_id || null,
               light_notes: cleanFormData.light_notes || null,
               plc_attached: cleanFormData.plc_attached,
               plc_master_id: cleanFormData.plc_master_id,

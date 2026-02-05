@@ -38,6 +38,13 @@ interface Camera {
     product_flow?: string;
     description?: string;
   };
+  relay_outputs?: Array<{
+    id: string;
+    output_number: number;
+    type?: string;
+    custom_name?: string;
+    notes?: string;
+  }>;
 }
 
 interface IoTDevice {
@@ -288,6 +295,26 @@ export const LineVisualizationView: React.FC<LineVisualizationViewProps> = ({
                                            title={attr.description || attr.title}
                                          >
                                            {attr.title}
+                                         </span>
+                                       ))
+                                     )}
+                                   </div>
+                                 </div>
+                               )}
+                               
+                               {/* PLC Outputs */}
+                               {equipment.cameras.some((cam: Camera) => cam.relay_outputs && cam.relay_outputs.length > 0) && (
+                                 <div className="mt-2 pt-2 border-t border-border/50">
+                                   <p className="text-xs font-medium text-muted-foreground mb-1">PLC Outputs:</p>
+                                   <div className="flex flex-wrap gap-1">
+                                     {equipment.cameras.flatMap((cam: Camera) => 
+                                       (cam.relay_outputs || []).map((output) => (
+                                         <span 
+                                           key={output.id} 
+                                           className="text-xs bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded"
+                                           title={output.notes || `Output ${output.output_number}: ${output.type || 'N/A'}`}
+                                         >
+                                           {output.custom_name || `Output ${output.output_number}`}
                                          </span>
                                        ))
                                      )}

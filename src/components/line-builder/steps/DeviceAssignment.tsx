@@ -260,14 +260,7 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       return;
     }
 
-    if (!formData.name || !formData.camera_type) {
-      toast({
-        title: "Error",
-        description: "Camera name and type are required",
-        variant: "destructive",
-      });
-      return;
-    }
+    // Camera name and type are not mandatory — gaps are tracked via the line completeness indicator
 
     const selectedCamera = cameras.find(c => c.id === formData.camera_type);
     

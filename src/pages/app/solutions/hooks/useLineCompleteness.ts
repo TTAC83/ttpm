@@ -176,23 +176,25 @@ export function useLineCompleteness(
 
           // Equipment must have devices based on solution type
           totalChecks++;
-          const needsVision = solutionType === "vision" || solutionType === "both";
-          const needsIot = solutionType === "iot" || solutionType === "both";
-          
           let deviceOk = true;
           const deviceGaps: string[] = [];
           
-          if (needsVision && cameras.length === 0) {
-            deviceOk = false;
-            deviceGaps.push(`"${eq.name}" needs a camera (Vision)`);
-          }
-          if (needsIot && iotDevices.length === 0) {
-            deviceOk = false;
-            deviceGaps.push(`"${eq.name}" needs an IoT device`);
-          }
-          if (!needsVision && !needsIot && cameras.length === 0 && iotDevices.length === 0) {
-            deviceOk = false;
-            deviceGaps.push(`"${eq.name}" needs a camera or IoT device`);
+          if (solutionType === "vision") {
+            if (cameras.length === 0) {
+              deviceOk = false;
+              deviceGaps.push(`"${eq.name}" needs a camera (Vision)`);
+            }
+          } else if (solutionType === "iot") {
+            if (iotDevices.length === 0) {
+              deviceOk = false;
+              deviceGaps.push(`"${eq.name}" needs an IoT device`);
+            }
+          } else {
+            // "both" / hybrid — needs at least one camera OR one IoT device
+            if (cameras.length === 0 && iotDevices.length === 0) {
+              deviceOk = false;
+              deviceGaps.push(`"${eq.name}" needs a camera or IoT device`);
+            }
           }
 
           if (deviceOk) {

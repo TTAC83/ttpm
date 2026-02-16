@@ -215,7 +215,7 @@ export const SolutionsLines: React.FC<SolutionsLinesProps> = ({ solutionsProject
   }
 
   if (selectedLineId) {
-    return <LineVisualization lineId={selectedLineId} onBack={() => setSelectedLineId(null)} />;
+    return <LineVisualization lineId={selectedLineId} onBack={() => { setSelectedLineId(null); setTimeout(() => refreshCompleteness(), 500); }} />;
   }
 
   return (

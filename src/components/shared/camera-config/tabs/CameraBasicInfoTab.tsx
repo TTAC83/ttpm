@@ -14,7 +14,7 @@ export function CameraBasicInfoTab({ formData, masterData, updateField }: Camera
   return (
     <TabsContent value="basic" className="space-y-4 mt-0">
       <div>
-        <Label htmlFor="camera-name">Camera Name *</Label>
+        <Label htmlFor="camera-name">Camera Name</Label>
         <Input
           id="camera-name"
           value={formData.name}
@@ -23,7 +23,7 @@ export function CameraBasicInfoTab({ formData, masterData, updateField }: Camera
         />
       </div>
       <div>
-        <Label htmlFor="camera-model">Camera Model *</Label>
+        <Label htmlFor="camera-model">Camera Model</Label>
         <Select
           value={formData.camera_type}
           onValueChange={(value) => updateField("camera_type", value)}

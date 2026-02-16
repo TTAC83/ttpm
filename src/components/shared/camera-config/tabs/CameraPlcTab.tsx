@@ -1,5 +1,5 @@
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TabsContent } from "@/components/ui/tabs";
 import { RelayOutputList } from "../shared/RelayOutputList";
@@ -23,24 +23,42 @@ export function CameraPlcTab({
   updateRelayOutput,
   deleteRelayOutput
 }: CameraPlcTabProps) {
+  const radioValue = formData.plc_attached === null ? "" : formData.plc_attached ? "yes" : "no";
+
   return (
     <TabsContent value="plc" className="space-y-4 mt-0">
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="plc-attached"
-          checked={formData.plc_attached}
-          onCheckedChange={(checked) => {
-            updateField("plc_attached", !!checked);
-            if (!checked) {
+      <div>
+        <Label className="text-sm font-medium">Is a PLC required?</Label>
+        <RadioGroup
+          value={radioValue}
+          onValueChange={(val) => {
+            const isRequired = val === "yes";
+            updateField("plc_attached", isRequired);
+            if (!isRequired) {
               updateField("plc_master_id", "");
               updateField("relay_outputs", []);
             }
           }}
-        />
-        <Label htmlFor="plc-attached">PLC Attached</Label>
+          className="flex gap-4 mt-2"
+        >
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="yes" id="plc-yes" />
+            <Label htmlFor="plc-yes">Yes</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="no" id="plc-no" />
+            <Label htmlFor="plc-no">No</Label>
+          </div>
+        </RadioGroup>
       </div>
 
-      {formData.plc_attached ? (
+      {formData.plc_attached === null && (
+        <p className="text-sm text-destructive">
+          Please confirm whether a PLC is required for this camera.
+        </p>
+      )}
+
+      {formData.plc_attached === true && (
         <>
           <div>
             <Label htmlFor="plc-select">Select PLC Model</Label>
@@ -71,9 +89,11 @@ export function CameraPlcTab({
             />
           </div>
         </>
-      ) : (
+      )}
+
+      {formData.plc_attached === false && (
         <p className="text-sm text-muted-foreground">
-          Check "PLC Attached" to configure PLC and relay outputs for this camera.
+          No PLC required for this camera.
         </p>
       )}
     </TabsContent>

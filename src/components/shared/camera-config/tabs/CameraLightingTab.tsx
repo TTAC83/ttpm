@@ -1,5 +1,5 @@
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { TabsContent } from "@/components/ui/tabs";
@@ -12,24 +12,42 @@ interface CameraLightingTabProps {
 }
 
 export function CameraLightingTab({ formData, masterData, updateField }: CameraLightingTabProps) {
+  const radioValue = formData.light_required === null ? "" : formData.light_required ? "yes" : "no";
+
   return (
     <TabsContent value="lighting" className="space-y-4 mt-0">
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="light-required"
-          checked={formData.light_required}
-          onCheckedChange={(checked) => {
-            updateField("light_required", !!checked);
-            if (!checked) {
+      <div>
+        <Label className="text-sm font-medium">Is lighting required?</Label>
+        <RadioGroup
+          value={radioValue}
+          onValueChange={(val) => {
+            const isRequired = val === "yes";
+            updateField("light_required", isRequired);
+            if (!isRequired) {
               updateField("light_id", "");
               updateField("light_notes", "");
             }
           }}
-        />
-        <Label htmlFor="light-required">Light Required</Label>
+          className="flex gap-4 mt-2"
+        >
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="yes" id="light-yes" />
+            <Label htmlFor="light-yes">Yes</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="no" id="light-no" />
+            <Label htmlFor="light-no">No</Label>
+          </div>
+        </RadioGroup>
       </div>
 
-      {formData.light_required ? (
+      {formData.light_required === null && (
+        <p className="text-sm text-destructive">
+          Please confirm whether lighting is required for this camera.
+        </p>
+      )}
+
+      {formData.light_required === true && (
         <>
           <div>
             <Label htmlFor="light-select">Select Light Model (Optional)</Label>
@@ -63,9 +81,11 @@ export function CameraLightingTab({ formData, masterData, updateField }: CameraL
             />
           </div>
         </>
-      ) : (
+      )}
+
+      {formData.light_required === false && (
         <p className="text-sm text-muted-foreground">
-          Check "Light Required" to configure lighting for this camera.
+          No lighting required for this camera.
         </p>
       )}
     </TabsContent>

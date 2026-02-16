@@ -261,30 +261,50 @@ export function useLineCompleteness(
               camGaps.push("Camera View Description");
             }
 
-            // Conditional: Light
-            if (cam.light_required) {
-              totalChecks++;
-              if (cam.light_id) {
-                passedChecks++;
-              } else {
-                camGaps.push("Light Model (required when light enabled)");
+            // Lighting confirmation
+            totalChecks++;
+            if (cam.light_required === null || cam.light_required === undefined) {
+              camGaps.push("Confirm whether lighting is required");
+            } else {
+              passedChecks++;
+              if (cam.light_required) {
+                totalChecks++;
+                if (cam.light_id) {
+                  passedChecks++;
+                } else {
+                  camGaps.push("Light Model (required when lighting enabled)");
+                }
               }
             }
 
-            // Conditional: PLC
-            if (cam.plc_attached) {
-              totalChecks++;
-              if (cam.plc_master_id) {
-                passedChecks++;
-              } else {
-                camGaps.push("PLC Model (required when PLC attached)");
+            // PLC confirmation
+            totalChecks++;
+            if (cam.plc_attached === null || cam.plc_attached === undefined) {
+              camGaps.push("Confirm whether PLC is required");
+            } else {
+              passedChecks++;
+              if (cam.plc_attached) {
+                totalChecks++;
+                if (cam.plc_master_id) {
+                  passedChecks++;
+                } else {
+                  camGaps.push("PLC Model (required when PLC enabled)");
+                }
+                totalChecks++;
+                if ((cam.relay_outputs || []).length > 0) {
+                  passedChecks++;
+                } else {
+                  camGaps.push("At least 1 Relay Output (required when PLC enabled)");
+                }
               }
-              totalChecks++;
-              if ((cam.relay_outputs || []).length > 0) {
-                passedChecks++;
-              } else {
-                camGaps.push("At least 1 Relay Output (required when PLC attached)");
-              }
+            }
+
+            // HMI confirmation
+            totalChecks++;
+            if (cam.hmi_required === null || cam.hmi_required === undefined) {
+              camGaps.push("Confirm whether HMI is required");
+            } else {
+              passedChecks++;
             }
 
             if (camGaps.length > 0) {

@@ -3,10 +3,10 @@ export interface CameraFormData {
   camera_ip: string;
   camera_type: string;
   lens_type: string;
-  light_required: boolean;
+  light_required: boolean | null;
   light_id: string;
   light_notes: string;
-  plc_attached: boolean;
+  plc_attached: boolean | null;
   plc_master_id: string;
   relay_outputs: Array<{
     id: string;
@@ -15,7 +15,7 @@ export interface CameraFormData {
     custom_name: string;
     notes: string;
   }>;
-  hmi_required: boolean;
+  hmi_required: boolean | null;
   hmi_master_id: string;
   hmi_notes: string;
   horizontal_fov: string;
@@ -46,13 +46,13 @@ export const emptyFormData: CameraFormData = {
   camera_ip: "",
   camera_type: "",
   lens_type: "",
-  light_required: false,
+  light_required: null,
   light_id: "",
   light_notes: "",
-  plc_attached: false,
+  plc_attached: null,
   plc_master_id: "",
   relay_outputs: [],
-  hmi_required: false,
+  hmi_required: null,
   hmi_master_id: "",
   hmi_notes: "",
   horizontal_fov: "",

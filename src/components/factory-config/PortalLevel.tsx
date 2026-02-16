@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,11 @@ export const PortalLevel: React.FC<Props> = ({
   const [urlEditing, setUrlEditing] = useState(!portal);
   const [newFactoryName, setNewFactoryName] = useState('');
   const [addingFactory, setAddingFactory] = useState(false);
+
+  useEffect(() => {
+    setPortalUrl(portal?.url || '');
+    setUrlEditing(!portal);
+  }, [portal]);
 
   const handleSaveUrl = async () => {
     await onSavePortalUrl(portalUrl);

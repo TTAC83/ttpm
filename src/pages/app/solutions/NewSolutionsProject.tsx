@@ -11,6 +11,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { DatePicker } from '@/components/ui/date-picker';
+import { ContactSearchCombobox, type EnrichedContact } from '@/components/contacts/ContactSearchCombobox';
+import {
+  linkContactToSolutionsProject,
+  linkContactToCompany,
+  createAndLinkContact,
+} from '@/lib/contactMatchingService';
 
 interface UserProfile {
   user_id: string;
@@ -24,6 +30,7 @@ export const NewSolutionsProject = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<UserProfile[]>([]);
+  const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     company_name: '',
     domain: '' as 'Vision' | 'IoT' | 'Hybrid' | '',
@@ -61,6 +68,29 @@ export const NewSolutionsProject = () => {
     }));
   };
 
+  const handleContactSelect = (contact: EnrichedContact | null) => {
+    if (contact) {
+      setSelectedContactId(contact.id);
+      const primaryEmail = contact.emails.find(e => e.is_primary)?.email || contact.emails[0]?.email || '';
+      setFormData(prev => ({
+        ...prev,
+        customer_lead: contact.name,
+        customer_email: primaryEmail,
+        customer_phone: contact.phone || '',
+        customer_job_title: contact.title || '',
+      }));
+    } else {
+      setSelectedContactId(null);
+      setFormData(prev => ({
+        ...prev,
+        customer_lead: '',
+        customer_email: '',
+        customer_phone: '',
+        customer_job_title: '',
+      }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -76,7 +106,7 @@ export const NewSolutionsProject = () => {
     setLoading(true);
 
     try {
-      // First, find or create the company (same as implementation projects)
+      // First, find or create the company
       let company_id;
       let { data: existingCompany } = await supabase
         .from('companies')
@@ -87,7 +117,6 @@ export const NewSolutionsProject = () => {
       if (existingCompany) {
         company_id = existingCompany.id;
       } else {
-        // Create new company
         const { data: newCompany, error: companyError } = await supabase
           .from('companies')
           .insert({ name: formData.company_name.trim(), is_internal: false })
@@ -120,6 +149,26 @@ export const NewSolutionsProject = () => {
         .single();
 
       if (error) throw error;
+
+      // Link or create contact after project creation
+      try {
+        if (selectedContactId) {
+          await linkContactToSolutionsProject(selectedContactId, data.id);
+          await linkContactToCompany(selectedContactId, company_id);
+        } else if (formData.customer_lead.trim()) {
+          await createAndLinkContact({
+            name: formData.customer_lead.trim(),
+            email: formData.customer_email || undefined,
+            phone: formData.customer_phone || undefined,
+            title: formData.customer_job_title || undefined,
+            companyId: company_id,
+            solutionsProjectId: data.id,
+            createdBy: user?.id,
+          });
+        }
+      } catch (contactErr) {
+        console.error('Error linking contact (project still created):', contactErr);
+      }
 
       toast({
         title: 'Project Created',
@@ -274,6 +323,18 @@ export const NewSolutionsProject = () => {
 
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Customer Contact Information</h3>
+              
+              <div className="space-y-2">
+                <Label>Search Existing Contact</Label>
+                <ContactSearchCombobox
+                  value={selectedContactId}
+                  onSelect={handleContactSelect}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Select an existing contact to auto-fill, or enter details manually below.
+                </p>
+              </div>
+
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="customer_lead">Customer Lead</Label>

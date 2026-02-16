@@ -1826,6 +1826,105 @@ export type Database = {
         }
         Relationships: []
       }
+      factory_group_lines: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          name: string
+          solution_type: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          name: string
+          solution_type: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          name?: string
+          solution_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "factory_group_lines_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "factory_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      factory_groups: {
+        Row: {
+          created_at: string
+          factory_id: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          factory_id: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          factory_id?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "factory_groups_factory_id_fkey"
+            columns: ["factory_id"]
+            isOneToOne: false
+            referencedRelation: "solution_factories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      factory_shifts: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          end_time: string
+          factory_id: string
+          id: string
+          shift_name: string
+          start_time: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          factory_id: string
+          id?: string
+          shift_name: string
+          start_time: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          factory_id?: string
+          id?: string
+          shift_name?: string
+          start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "factory_shifts_factory_id_fkey"
+            columns: ["factory_id"]
+            isOneToOne: false
+            referencedRelation: "solution_factories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feature_requests: {
         Row: {
           complete_date: string | null
@@ -3902,6 +4001,64 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      solution_factories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          portal_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          portal_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          portal_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solution_factories_portal_id_fkey"
+            columns: ["portal_id"]
+            isOneToOne: false
+            referencedRelation: "solution_portals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      solution_portals: {
+        Row: {
+          created_at: string
+          id: string
+          solutions_project_id: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          solutions_project_id: string
+          url?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          solutions_project_id?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solution_portals_solutions_project_id_fkey"
+            columns: ["solutions_project_id"]
+            isOneToOne: true
+            referencedRelation: "solutions_projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       solutions_lines: {
         Row: {

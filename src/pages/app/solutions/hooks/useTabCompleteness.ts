@@ -73,16 +73,16 @@ export const useTabCompleteness = (project: ProjectData | null) => {
 
     // Async checks
     const checkAsync = async () => {
-      const [contactsRes, factoryRes, linesRes] = await Promise.all([
+      const [contactsRes, portalRes, linesRes] = await Promise.all([
         supabase
           .from('contact_solutions_projects')
           .select('id', { count: 'exact', head: true })
           .eq('solutions_project_id', project.id),
         supabase
-          .from('solutions_projects')
-          .select('website_url, job_scheduling')
-          .eq('id', project.id)
-          .single(),
+          .from('solution_portals')
+          .select('id, url')
+          .eq('solutions_project_id', project.id)
+          .maybeSingle(),
         supabase
           .from('solutions_lines')
           .select('id', { count: 'exact', head: true })
@@ -90,9 +90,17 @@ export const useTabCompleteness = (project: ProjectData | null) => {
       ]);
 
       const contactsComplete = (contactsRes.count ?? 0) > 0;
-      const factoryComplete = !!(
-        factoryRes.data?.website_url && factoryRes.data?.job_scheduling
-      );
+
+      // Factory complete: portal exists with URL, and at least one factory
+      let factoryComplete = false;
+      if (portalRes.data?.url) {
+        const { count } = await supabase
+          .from('solution_factories')
+          .select('id', { count: 'exact', head: true })
+          .eq('portal_id', portalRes.data.id);
+        factoryComplete = (count ?? 0) > 0;
+      }
+
       const linesComplete = (linesRes.count ?? 0) > 0;
 
       setCompleteness(prev => ({

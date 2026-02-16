@@ -38,6 +38,9 @@ export const SolutionsLines: React.FC<SolutionsLinesProps> = ({ solutionsProject
 
   const fetchLines = async () => {
     try {
+      // First, ensure factory lines are synced to solutions_lines
+      await syncFactoryLines();
+
       // Fetch solutions_lines
       const { data, error } = await supabase
         .from("solutions_lines")
@@ -48,51 +51,108 @@ export const SolutionsLines: React.FC<SolutionsLinesProps> = ({ solutionsProject
       if (error) throw error;
       setLines(data || []);
 
-      // Fetch factory config for group names
-      const { data: portal } = await supabase
-        .from("solution_portals" as any)
-        .select("id")
-        .eq("solutions_project_id", solutionsProjectId)
-        .maybeSingle();
-
-      if (portal) {
-        const { data: factories } = await supabase
-          .from("solution_factories" as any)
-          .select("id")
-          .eq("portal_id", (portal as any).id);
-
-        const factoryList = (factories as any[] | null) ?? [];
-        if (factoryList.length > 0) {
-          const factoryIds = factoryList.map((f: any) => f.id);
-
-          const { data: groupsData } = await supabase
-            .from("factory_groups" as any)
-            .select("id, name, factory_id")
-            .in("factory_id", factoryIds);
-
-          const groupList = (groupsData as any[] | null) ?? [];
-          if (groupList.length > 0) {
-            const groupIds = groupList.map((g: any) => g.id);
-            const { data: glLines } = await supabase
-              .from("factory_group_lines" as any)
-              .select("name, group_id")
-              .in("group_id", groupIds);
-
-            // Build line_name -> group_name map
-            const map: Record<string, string> = {};
-            for (const fl of (glLines as any[] | null) ?? []) {
-              const group = groupList.find((g: any) => g.id === fl.group_id);
-              if (group) map[fl.name] = group.name;
-            }
-            setGroupMap(map);
-          }
-        }
-      }
+      // Build group map from factory config
+      await fetchGroupMap();
     } catch (error) {
       console.error("Error fetching lines:", error);
       toast({ title: "Error", description: "Failed to fetch lines", variant: "destructive" });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const syncFactoryLines = async () => {
+    try {
+      // Get factory group lines
+      const { data: portal } = await supabase
+        .from("solution_portals" as any)
+        .select("id")
+        .eq("solutions_project_id", solutionsProjectId)
+        .maybeSingle();
+      if (!portal) return;
+
+      const { data: factories } = await supabase
+        .from("solution_factories" as any)
+        .select("id")
+        .eq("portal_id", (portal as any).id);
+      const factoryList = (factories as any[] | null) ?? [];
+      if (factoryList.length === 0) return;
+
+      const { data: groupsData } = await supabase
+        .from("factory_groups" as any)
+        .select("id")
+        .in("factory_id", factoryList.map((f: any) => f.id));
+      const groupIds = ((groupsData as any[] | null) ?? []).map((g: any) => g.id);
+      if (groupIds.length === 0) return;
+
+      const { data: factoryLines } = await supabase
+        .from("factory_group_lines" as any)
+        .select("name")
+        .in("group_id", groupIds);
+      const factoryLineNames = ((factoryLines as any[] | null) ?? []).map((l: any) => l.name);
+      if (factoryLineNames.length === 0) return;
+
+      // Get existing solutions_lines names
+      const { data: existing } = await supabase
+        .from("solutions_lines")
+        .select("line_name")
+        .eq("solutions_project_id", solutionsProjectId);
+      const existingNames = new Set((existing || []).map(l => l.line_name));
+
+      // Insert missing lines
+      const toInsert = factoryLineNames
+        .filter((name: string) => !existingNames.has(name))
+        .map((name: string) => ({
+          line_name: name,
+          solutions_project_id: solutionsProjectId,
+          camera_count: 0,
+          iot_device_count: 0,
+        }));
+
+      if (toInsert.length > 0) {
+        await supabase.from("solutions_lines").insert(toInsert);
+      }
+    } catch (error) {
+      console.error("Error syncing factory lines:", error);
+    }
+  };
+
+  const fetchGroupMap = async () => {
+    try {
+      const { data: portal } = await supabase
+        .from("solution_portals" as any)
+        .select("id")
+        .eq("solutions_project_id", solutionsProjectId)
+        .maybeSingle();
+      if (!portal) return;
+
+      const { data: factories } = await supabase
+        .from("solution_factories" as any)
+        .select("id")
+        .eq("portal_id", (portal as any).id);
+      const factoryList = (factories as any[] | null) ?? [];
+      if (factoryList.length === 0) return;
+
+      const { data: groupsData } = await supabase
+        .from("factory_groups" as any)
+        .select("id, name")
+        .in("factory_id", factoryList.map((f: any) => f.id));
+      const groupList = (groupsData as any[] | null) ?? [];
+      if (groupList.length === 0) return;
+
+      const { data: glLines } = await supabase
+        .from("factory_group_lines" as any)
+        .select("name, group_id")
+        .in("group_id", groupList.map((g: any) => g.id));
+
+      const map: Record<string, string> = {};
+      for (const fl of (glLines as any[] | null) ?? []) {
+        const group = groupList.find((g: any) => g.id === fl.group_id);
+        if (group) map[fl.name] = group.name;
+      }
+      setGroupMap(map);
+    } catch (error) {
+      console.error("Error fetching group map:", error);
     }
   };
 

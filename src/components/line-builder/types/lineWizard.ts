@@ -68,6 +68,8 @@ export interface LineData {
   line_description: string;
   product_description: string;
   photos_url: string;
+  number_of_products?: number;
+  number_of_artworks?: number;
 }
 
 export interface WizardConfig {

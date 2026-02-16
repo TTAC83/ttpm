@@ -18,6 +18,8 @@ export function useLineWizard(
     line_description: "",
     product_description: "",
     photos_url: "",
+    number_of_products: undefined,
+    number_of_artworks: undefined,
   });
   const [positions, setPositions] = useState<Position[]>([]);
   const { toast } = useToast();
@@ -33,6 +35,8 @@ export function useLineWizard(
         line_description: "",
         product_description: "",
         photos_url: "",
+        number_of_products: undefined,
+        number_of_artworks: undefined,
       });
       setPositions([]);
     } else if (editLineId) {

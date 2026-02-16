@@ -288,7 +288,8 @@ export function useLineCompleteness(
             }
 
             if (camGaps.length > 0) {
-              gaps.push({ category: `Camera "${cam.mac_address || cam.name || 'Unnamed'}" on ${eq.name}`, items: camGaps });
+              const cameraDisplayName = cam.name || cam.mac_address || 'Unnamed';
+              gaps.push({ category: `Camera "${cameraDisplayName}" on ${eq.name}`, items: camGaps });
             }
           }
         }

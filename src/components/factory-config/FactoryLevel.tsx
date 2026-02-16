@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import { Plus, Trash2, ChevronRight, Layers, Clock, Pencil } from 'lucide-react';
 import { Factory, Shift, FactoryGroup, GroupLine } from './hooks/useFactoryConfig';
 import { Badge } from '@/components/ui/badge';
@@ -33,7 +33,7 @@ export const FactoryLevel: React.FC<Props> = ({
   const [addingGroup, setAddingGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [addingShift, setAddingShift] = useState(false);
-  const [newShift, setNewShift] = useState({ day_of_week: 0, shift_name: '', start_time: '06:00', end_time: '14:00' });
+  const [newShift, setNewShift] = useState({ days: [0] as number[], shift_name: '', start_time: '06:00', end_time: '14:00' });
 
   const factoryShifts = shifts.filter(s => s.factory_id === factory.id);
   const factoryGroups = groups.filter(g => g.factory_id === factory.id);
@@ -53,9 +53,11 @@ export const FactoryLevel: React.FC<Props> = ({
   };
 
   const handleAddShift = async () => {
-    if (!newShift.shift_name.trim()) return;
-    await onAddShift(factory.id, newShift);
-    setNewShift({ day_of_week: 0, shift_name: '', start_time: '06:00', end_time: '14:00' });
+    if (!newShift.shift_name.trim() || newShift.days.length === 0) return;
+    for (const day of newShift.days) {
+      await onAddShift(factory.id, { day_of_week: day, shift_name: newShift.shift_name, start_time: newShift.start_time, end_time: newShift.end_time });
+    }
+    setNewShift({ days: [0], shift_name: '', start_time: '06:00', end_time: '14:00' });
     setAddingShift(false);
   };
 
@@ -115,16 +117,32 @@ export const FactoryLevel: React.FC<Props> = ({
         <CardContent>
           {addingShift && (
             <div className="border rounded-md p-3 mb-4 space-y-3 border-dashed">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Day</Label>
-                  <Select value={String(newShift.day_of_week)} onValueChange={(v) => setNewShift(prev => ({ ...prev, day_of_week: Number(v) }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {DAYS.map((d, i) => <SelectItem key={i} value={String(i)}>{d}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Days *</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {DAYS.map((d, i) => {
+                    const isSelected = newShift.days.includes(i);
+                    return (
+                      <Button
+                        key={i}
+                        type="button"
+                        variant={isSelected ? "default" : "outline"}
+                        size="sm"
+                        className="h-7 text-xs px-2.5"
+                        onClick={() => setNewShift(prev => ({
+                          ...prev,
+                          days: isSelected
+                            ? prev.days.filter(day => day !== i)
+                            : [...prev.days, i],
+                        }))}
+                      >
+                        {d.slice(0, 3)}
+                      </Button>
+                    );
+                  })}
                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs">Shift Name *</Label>
                   <Input value={newShift.shift_name} onChange={(e) => setNewShift(prev => ({ ...prev, shift_name: e.target.value }))} placeholder="e.g. Day" />
@@ -141,7 +159,7 @@ export const FactoryLevel: React.FC<Props> = ({
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button size="sm" onClick={handleAddShift} disabled={!newShift.shift_name.trim()}>Add Shift</Button>
+                <Button size="sm" onClick={handleAddShift} disabled={!newShift.shift_name.trim() || newShift.days.length === 0}>Add Shift</Button>
                 <Button variant="ghost" size="sm" onClick={() => setAddingShift(false)}>Cancel</Button>
               </div>
             </div>

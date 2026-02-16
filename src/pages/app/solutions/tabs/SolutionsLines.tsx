@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Loader2, Eye, Edit, Download, Info, CheckCircle2, AlertCircle, ChevronDown, ChevronRight } from "lucide-react";
+import { Loader2, Eye, Edit, Download, Info, CheckCircle2, AlertCircle, ChevronDown, ChevronRight, ListChecks } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { SolutionsLineWizard } from "@/components/solutions-line-builder/SolutionsLineWizard";
@@ -42,6 +42,7 @@ export const SolutionsLines: React.FC<SolutionsLinesProps> = ({ solutionsProject
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const [exportingLineId, setExportingLineId] = useState<string | null>(null);
   const [expandedLineId, setExpandedLineId] = useState<string | null>(null);
+  const [showGaps, setShowGaps] = useState(true);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { results: completenessResults, loading: completenessLoading, refresh: refreshCompleteness } = useLineCompleteness(lines, solutionsProjectId);
@@ -219,11 +220,22 @@ export const SolutionsLines: React.FC<SolutionsLinesProps> = ({ solutionsProject
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Production Lines</CardTitle>
-        <CardDescription>
-          Lines are managed in the Factory tab. Click edit to configure each line. Indicators show configuration completeness.
-        </CardDescription>
+      <CardHeader className="flex flex-row items-start justify-between space-y-0">
+        <div>
+          <CardTitle>Production Lines</CardTitle>
+          <CardDescription>
+            Lines are managed in the Factory tab. Click edit to configure each line. Indicators show configuration completeness.
+          </CardDescription>
+        </div>
+        <Button
+          variant={showGaps ? "default" : "outline"}
+          size="sm"
+          onClick={() => setShowGaps(!showGaps)}
+          className="shrink-0"
+        >
+          <ListChecks className="h-4 w-4 mr-2" />
+          {showGaps ? "Hide Gaps" : "Show Gaps"}
+        </Button>
       </CardHeader>
       <CardContent>
         {lines.length === 0 ? (
@@ -258,7 +270,7 @@ export const SolutionsLines: React.FC<SolutionsLinesProps> = ({ solutionsProject
 
                   return (
                     <React.Fragment key={line.id}>
-                      <TableRow className="cursor-pointer" onClick={() => hasGaps && setExpandedLineId(isExpanded ? null : line.id)}>
+                      <TableRow className="cursor-pointer" onClick={() => showGaps && hasGaps && setExpandedLineId(isExpanded ? null : line.id)}>
                         <TableCell>
                           <TooltipProvider>
                             <Tooltip>
@@ -296,7 +308,7 @@ export const SolutionsLines: React.FC<SolutionsLinesProps> = ({ solutionsProject
                                 {percentage}%
                               </Badge>
                             )}
-                            {hasGaps && (
+                            {showGaps && hasGaps && (
                               isExpanded ? <ChevronDown className="h-3 w-3 text-muted-foreground" /> : <ChevronRight className="h-3 w-3 text-muted-foreground" />
                             )}
                           </div>
@@ -340,7 +352,7 @@ export const SolutionsLines: React.FC<SolutionsLinesProps> = ({ solutionsProject
                           </div>
                         </TableCell>
                       </TableRow>
-                      {isExpanded && result && result.gaps.length > 0 && (
+                      {showGaps && isExpanded && result && result.gaps.length > 0 && (
                         <TableRow>
                           <TableCell colSpan={8} className="bg-muted/30 p-0">
                             <div className="px-6 py-3">

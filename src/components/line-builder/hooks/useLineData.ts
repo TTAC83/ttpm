@@ -105,6 +105,10 @@ export function useLineData(config: WizardConfig) {
           line_description: lineData.line_description || null,
           product_description: lineData.product_description || null,
           photos_url: lineData.photos_url || null,
+          ...(config.tableName === 'solutions_lines' ? {
+            number_of_products: lineData.number_of_products || null,
+            number_of_artworks: lineData.number_of_artworks || null,
+          } : {}),
         })
         .eq('id', editLineId);
 
@@ -164,6 +168,11 @@ export function useLineData(config: WizardConfig) {
         product_description: lineData.product_description || null,
         photos_url: lineData.photos_url || null,
       };
+
+      if (config.tableName === 'solutions_lines') {
+        insertData.number_of_products = lineData.number_of_products || null;
+        insertData.number_of_artworks = lineData.number_of_artworks || null;
+      }
 
       if (config.tableName === 'lines') {
         insertData.project_id = projectId;

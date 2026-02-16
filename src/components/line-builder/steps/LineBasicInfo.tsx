@@ -12,6 +12,8 @@ interface LineBasicInfoProps {
     line_description: string;
     product_description: string;
     photos_url: string;
+    number_of_products?: number;
+    number_of_artworks?: number;
   };
   setLineData: (data: any) => void;
 }
@@ -20,28 +22,8 @@ export const LineBasicInfo: React.FC<LineBasicInfoProps> = ({
   lineData,
   setLineData,
 }) => {
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLineData({ ...lineData, name: e.target.value });
-  };
-
-  const handleMinSpeedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLineData({ ...lineData, min_speed: parseInt(e.target.value) || 0 });
-  };
-
-  const handleMaxSpeedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLineData({ ...lineData, max_speed: parseInt(e.target.value) || 0 });
-  };
-
-  const handleLineDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setLineData({ ...lineData, line_description: e.target.value });
-  };
-
-  const handleProductDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setLineData({ ...lineData, product_description: e.target.value });
-  };
-
-  const handlePhotosUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLineData({ ...lineData, photos_url: e.target.value });
+  const handleChange = (field: string, value: string | number) => {
+    setLineData({ ...lineData, [field]: value });
   };
 
   return (
@@ -50,7 +32,7 @@ export const LineBasicInfo: React.FC<LineBasicInfoProps> = ({
         <CardHeader>
           <CardTitle>Line Information</CardTitle>
           <CardDescription>
-            Enter the basic information for your production line
+            Enter the basic information for your production line. All fields contribute to configuration completeness.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -60,7 +42,7 @@ export const LineBasicInfo: React.FC<LineBasicInfoProps> = ({
               id="line-name"
               placeholder="Enter line name"
               value={lineData.name}
-              onChange={handleNameChange}
+              onChange={(e) => handleChange("name", e.target.value)}
             />
           </div>
 
@@ -71,7 +53,7 @@ export const LineBasicInfo: React.FC<LineBasicInfoProps> = ({
               type="url"
               placeholder="https://sharepoint.com/..."
               value={lineData.photos_url || ""}
-              onChange={handlePhotosUrlChange}
+              onChange={(e) => handleChange("photos_url", e.target.value)}
             />
           </div>
 
@@ -84,7 +66,7 @@ export const LineBasicInfo: React.FC<LineBasicInfoProps> = ({
                 min="0"
                 placeholder="0"
                 value={lineData.min_speed || ""}
-                onChange={handleMinSpeedChange}
+                onChange={(e) => handleChange("min_speed", parseInt(e.target.value) || 0)}
               />
             </div>
             <div className="space-y-2">
@@ -95,7 +77,32 @@ export const LineBasicInfo: React.FC<LineBasicInfoProps> = ({
                 min="0"
                 placeholder="0"
                 value={lineData.max_speed || ""}
-                onChange={handleMaxSpeedChange}
+                onChange={(e) => handleChange("max_speed", parseInt(e.target.value) || 0)}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="number-of-products">Number of Products</Label>
+              <Input
+                id="number-of-products"
+                type="number"
+                min="0"
+                placeholder="0"
+                value={lineData.number_of_products || ""}
+                onChange={(e) => handleChange("number_of_products", parseInt(e.target.value) || 0)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="number-of-artworks">Number of Artworks</Label>
+              <Input
+                id="number-of-artworks"
+                type="number"
+                min="0"
+                placeholder="0"
+                value={lineData.number_of_artworks || ""}
+                onChange={(e) => handleChange("number_of_artworks", parseInt(e.target.value) || 0)}
               />
             </div>
           </div>
@@ -107,7 +114,7 @@ export const LineBasicInfo: React.FC<LineBasicInfoProps> = ({
                 id="line-description"
                 placeholder="Describe the production line setup..."
                 value={lineData.line_description || ""}
-                onChange={handleLineDescriptionChange}
+                onChange={(e) => handleChange("line_description", e.target.value)}
                 rows={4}
               />
             </div>
@@ -117,7 +124,7 @@ export const LineBasicInfo: React.FC<LineBasicInfoProps> = ({
                 id="product-description"
                 placeholder="Describe the products being manufactured..."
                 value={lineData.product_description || ""}
-                onChange={handleProductDescriptionChange}
+                onChange={(e) => handleChange("product_description", e.target.value)}
                 rows={4}
               />
             </div>

@@ -4070,6 +4070,8 @@ export type Database = {
           line_name: string
           max_speed: number | null
           min_speed: number | null
+          number_of_artworks: number | null
+          number_of_products: number | null
           photos_url: string | null
           product_description: string | null
           solutions_project_id: string
@@ -4083,6 +4085,8 @@ export type Database = {
           line_name: string
           max_speed?: number | null
           min_speed?: number | null
+          number_of_artworks?: number | null
+          number_of_products?: number | null
           photos_url?: string | null
           product_description?: string | null
           solutions_project_id: string
@@ -4096,6 +4100,8 @@ export type Database = {
           line_name?: string
           max_speed?: number | null
           min_speed?: number | null
+          number_of_artworks?: number | null
+          number_of_products?: number | null
           photos_url?: string | null
           product_description?: string | null
           solutions_project_id?: string

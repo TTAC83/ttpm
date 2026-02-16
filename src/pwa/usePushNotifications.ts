@@ -31,7 +31,7 @@ export function usePushNotifications() {
       if ('serviceWorker' in navigator) {
         try {
           const registration = await navigator.serviceWorker.ready;
-          subscription = await registration.pushManager.getSubscription();
+          subscription = await (registration as any).pushManager.getSubscription();
           isSubscribed = !!subscription;
         } catch (error) {
           console.error('Error checking push subscription:', error);
@@ -71,7 +71,7 @@ export function usePushNotifications() {
       // You'll need to replace this with your actual VAPID public key
       const vapidPublicKey = 'YOUR_VAPID_PUBLIC_KEY_HERE';
       
-      const subscription = await registration.pushManager.subscribe({
+      const subscription = await (registration as any).pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: vapidPublicKey,
       });

@@ -192,7 +192,7 @@ const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
                 />
               ) : (
                 <Button
-                  ref={ref as React.Ref<HTMLButtonElement>}
+                  ref={ref as unknown as React.Ref<HTMLButtonElement>}
                   variant="outline"
                   disabled={disabled}
                   data-testid={testId}

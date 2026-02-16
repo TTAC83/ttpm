@@ -15,6 +15,13 @@ interface ProjectData {
   domain: string;
   site_name: string;
   site_address?: string;
+  segment?: string;
+  line_description?: string;
+  product_description?: string;
+  project_goals?: string;
+  final_scoping_complete?: boolean;
+  contract_signed?: boolean;
+  implementation_handover?: boolean;
   servers_required?: number;
   gateways_required?: number;
   tv_display_devices_required?: number;
@@ -35,12 +42,19 @@ export const useTabCompleteness = (project: ProjectData | null) => {
   useEffect(() => {
     if (!project) return;
 
-    // Overview: check key fields
+    // Overview: ALL displayed fields must be complete
     const overviewComplete = !!(
       project.companies?.name &&
       project.domain &&
       project.site_name &&
-      project.site_address
+      project.site_address &&
+      project.segment &&
+      project.line_description &&
+      project.product_description &&
+      project.project_goals &&
+      project.final_scoping_complete &&
+      project.contract_signed &&
+      project.implementation_handover
     );
 
     // Hardware Summary: at least one quantity > 0

@@ -168,3 +168,49 @@ export async function unlinkContactFromSolutionsProject(
   }
   return true;
 }
+
+/**
+ * Create a new contact record and link it to a company and solutions project.
+ * Returns the new contact ID, or null on failure.
+ */
+export async function createAndLinkContact(params: {
+  name: string;
+  email?: string;
+  phone?: string;
+  title?: string;
+  companyId: string;
+  solutionsProjectId: string;
+  createdBy?: string;
+}): Promise<string | null> {
+  const { name, email, phone, title, companyId, solutionsProjectId, createdBy } = params;
+
+  // Build the emails JSON array
+  const emails = email ? [{ email: email.toLowerCase().trim(), is_primary: true }] : [];
+
+  // 1. Create the contact
+  const { data: newContact, error: contactError } = await supabase
+    .from('contacts')
+    .insert({
+      name,
+      phone: phone || null,
+      title: title || null,
+      emails,
+      company_id: companyId,
+      created_by: createdBy || null,
+    })
+    .select('id')
+    .single();
+
+  if (contactError || !newContact) {
+    console.error('Error creating contact:', contactError);
+    return null;
+  }
+
+  // 2. Link to company
+  await linkContactToCompany(newContact.id, companyId, true);
+
+  // 3. Link to solutions project
+  await linkContactToSolutionsProject(newContact.id, solutionsProjectId);
+
+  return newContact.id;
+}

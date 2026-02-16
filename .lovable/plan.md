@@ -1,45 +1,55 @@
 
 
-## Reorder Solutions Project Tabs and Add Completeness Indicators
+## Overview
 
-### What Will Change
+Currently, the Lighting, PLC, and HMI tabs use simple checkboxes that default to "not required." The user wants consultants to explicitly confirm whether each is required or not. If no selection is made, it should appear as a configuration gap.
 
-**1. Tab Reordering (Row 1)**
+## Changes
 
-The first row of tabs will be reordered to:
-- Customer Overview | Contacts | Factory | Lines | Hardware Summary
+### 1. Update the form data types
 
-All remaining tabs stay in subsequent rows in their current order.
+In `src/components/shared/camera-config/types.ts`:
+- Change `light_required`, `plc_attached`, and `hmi_required` from `boolean` to `boolean | null`
+- Update `emptyFormData` to set all three to `null` instead of `false`
 
-**2. Visual Completeness Indicators on Each Tab**
+### 2. Update the three tab components to use Yes/No radio buttons instead of checkboxes
 
-Each of the five Row 1 tabs will display a small colored dot (green or red) next to the tab label, indicating whether the data in that tab is complete or has missing fields.
+**Lighting tab** (`src/components/shared/camera-config/tabs/CameraLightingTab.tsx`):
+- Replace the checkbox with a Yes/No radio group (or two-button toggle)
+- When neither is selected (null state), show a prompt like "Please confirm whether lighting is required"
+- When "Yes" is selected, show the light model selector and notes
+- When "No" is selected, show a brief confirmation message
 
-Completeness rules per tab:
-- **Customer Overview**: Green if `name`, `domain`, `site_name`, and `site_address` are all populated
-- **Contacts**: Green if at least one contact is linked to the project (query `contact_solutions_projects`)
-- **Factory**: Green if factory configuration record exists with key fields populated (`website_url`, `job_scheduling`)
-- **Lines**: Green if at least one line exists for the project (query `solutions_lines`)
-- **Hardware Summary**: Green if hardware quantity fields are populated (`servers_required`, `gateways_required`, etc., with at least one > 0)
+**PLC tab** (`src/components/shared/camera-config/tabs/CameraPlcTab.tsx`):
+- Same pattern: replace checkbox with Yes/No selection
+- Null state prompts the user to decide
+- "Yes" shows PLC model and relay outputs
+- "No" shows confirmation
 
-### Technical Details
+**HMI tab** (`src/components/shared/camera-config/tabs/CameraHmiTab.tsx`):
+- Same pattern as above
 
-**File to modify:**
-- `src/pages/app/solutions/SolutionsProjectDetail.tsx`
+### 3. Update the completeness checker
 
-**Changes:**
-1. Reorder the `TabsTrigger` elements in Row 1 to: `overview`, `contacts`, `factory`, `lines`, `hardware-summary`
-2. Move other tabs (`contract`, `team`, `account`) to Row 2 alongside the existing Row 2 tabs
-3. Add a `useEffect` that runs completeness checks against the project data and Supabase queries for contacts, factory config, and lines
-4. Store completeness state as a record like `{ overview: boolean, contacts: boolean, factory: boolean, lines: boolean, hardwareSummary: boolean }`
-5. Render a small circle indicator (green/red) inside each Row 1 `TabsTrigger` using a `span` with conditional Tailwind classes (`bg-green-500` / `bg-red-500`, `h-2 w-2 rounded-full inline-block ml-1.5`)
+In `src/pages/app/solutions/hooks/useLineCompleteness.ts`:
+- Add checks for when `light_required`, `plc_attached`, and `hmi_required` are `null` (undecided) -- these become config gaps
+- Keep existing conditional checks: if light is required but no model selected, that's a gap; if PLC is required but no model or relay outputs, that's a gap; if HMI is required but no model, that's a gap
 
-**Data fetching for indicators:**
-- Overview completeness: derived from `project` state already loaded (no extra query)
-- Contacts: `supabase.from('contact_solutions_projects').select('id', { count: 'exact', head: true }).eq('solutions_project_id', id)`
-- Factory: `supabase.from('solutions_factory_config').select('*').eq('solutions_project_id', id).maybeSingle()` (or equivalent table)
-- Lines: `supabase.from('solutions_lines').select('id', { count: 'exact', head: true }).eq('solutions_project_id', id)`
-- Hardware Summary: derived from `project` state (check if any of `servers_required`, `gateways_required`, `tv_display_devices_required`, `receivers_required`, `lines_required` is > 0)
+### 4. Update data loading to preserve null
 
-All queries run once on mount (alongside `fetchProject`) and results are stored in a `tabCompleteness` state object.
+In `src/components/line-builder/hooks/useLineData.ts`:
+- Change the fallback from `false` to preserving `null` when loading camera data (e.g., `cam.light_required ?? null` instead of `cam.light_required || false`)
+
+### 5. Update data saving to persist null
+
+In `src/components/line-builder/hooks/useLineData.ts`:
+- When saving, allow `null` values to pass through for these three fields instead of defaulting to `false`
+
+---
+
+## Technical Detail
+
+The database columns (`light_required`, `plc_attached`, `hmi_required`) are already nullable booleans with a default of `false`. Existing cameras will show as `false` (No), so existing data is unaffected. Only newly created cameras will start as `null` (undecided) and require explicit confirmation.
+
+The UI for Yes/No selection will use the existing `RadioGroup` component from the UI library, keeping the design consistent.
 

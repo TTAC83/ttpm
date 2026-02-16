@@ -270,7 +270,7 @@ export const SolutionsLines: React.FC<SolutionsLinesProps> = ({ solutionsProject
 
                   return (
                     <React.Fragment key={line.id}>
-                      <TableRow className="cursor-pointer" onClick={() => showGaps && hasGaps && setExpandedLineId(isExpanded ? null : line.id)}>
+                      <TableRow>
                         <TableCell>
                           <TooltipProvider>
                             <Tooltip>
@@ -307,9 +307,6 @@ export const SolutionsLines: React.FC<SolutionsLinesProps> = ({ solutionsProject
                               <Badge variant="outline" className={`text-xs ${getStatusBgColor(percentage)}`}>
                                 {percentage}%
                               </Badge>
-                            )}
-                            {showGaps && hasGaps && (
-                              isExpanded ? <ChevronDown className="h-3 w-3 text-muted-foreground" /> : <ChevronRight className="h-3 w-3 text-muted-foreground" />
                             )}
                           </div>
                         </TableCell>
@@ -352,7 +349,7 @@ export const SolutionsLines: React.FC<SolutionsLinesProps> = ({ solutionsProject
                           </div>
                         </TableCell>
                       </TableRow>
-                      {showGaps && isExpanded && result && result.gaps.length > 0 && (
+                      {showGaps && hasGaps && result && result.gaps.length > 0 && (
                         <TableRow>
                           <TableCell colSpan={8} className="bg-muted/30 p-0">
                             <div className="px-6 py-3">

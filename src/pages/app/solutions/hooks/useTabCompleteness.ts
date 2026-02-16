@@ -91,14 +91,48 @@ export const useTabCompleteness = (project: ProjectData | null) => {
 
       const contactsComplete = (contactsRes.count ?? 0) > 0;
 
-      // Factory complete: portal exists with URL, and at least one factory
+      // Factory complete: portal URL, every factory has ≥1 shift + ≥1 group, every group has ≥1 line
       let factoryComplete = false;
       if (portalRes.data?.url) {
-        const { count } = await supabase
-          .from('solution_factories')
-          .select('id', { count: 'exact', head: true })
-          .eq('portal_id', portalRes.data.id);
-        factoryComplete = (count ?? 0) > 0;
+        const portalId = portalRes.data.id;
+        const { data: factories } = await supabase
+          .from('solution_factories' as any)
+          .select('id')
+          .eq('portal_id', portalId);
+
+        const factoryList = (factories as any[] | null) ?? [];
+        if (factoryList.length > 0) {
+          const factoryIds = factoryList.map((f: any) => f.id);
+
+          const [shiftsRes, groupsRes] = await Promise.all([
+            supabase.from('factory_shifts' as any).select('factory_id').in('factory_id', factoryIds),
+            supabase.from('factory_groups' as any).select('id, factory_id').in('factory_id', factoryIds),
+          ]);
+
+          const shiftsData = (shiftsRes.data as any[] | null) ?? [];
+          const groupsData = (groupsRes.data as any[] | null) ?? [];
+
+          const allFactoriesHaveShifts = factoryIds.every((fid: string) =>
+            shiftsData.some((s: any) => s.factory_id === fid)
+          );
+          const allFactoriesHaveGroups = factoryIds.every((fid: string) =>
+            groupsData.some((g: any) => g.factory_id === fid)
+          );
+
+          if (allFactoriesHaveShifts && allFactoriesHaveGroups && groupsData.length > 0) {
+            const groupIds = groupsData.map((g: any) => g.id);
+            const { data: glLines } = await supabase
+              .from('factory_group_lines' as any)
+              .select('group_id')
+              .in('group_id', groupIds);
+
+            const linesData = (glLines as any[] | null) ?? [];
+            const allGroupsHaveLines = groupIds.every((gid: string) =>
+              linesData.some((l: any) => l.group_id === gid)
+            );
+            factoryComplete = allGroupsHaveLines;
+          }
+        }
       }
 
       const linesComplete = (linesRes.count ?? 0) > 0;

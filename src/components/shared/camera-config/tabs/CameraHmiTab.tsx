@@ -1,4 +1,5 @@
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -38,6 +39,20 @@ export function CameraHmiTab({ formData, masterData, updateField }: CameraHmiTab
             <Label htmlFor="hmi-no">No</Label>
           </div>
         </RadioGroup>
+        {formData.hmi_required !== null && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-xs mt-1"
+            onClick={() => {
+              updateField("hmi_required", null);
+              updateField("hmi_master_id", "");
+            }}
+          >
+            Clear selection
+          </Button>
+        )}
       </div>
 
       {formData.hmi_required === null && (

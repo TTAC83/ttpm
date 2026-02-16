@@ -56,15 +56,7 @@ export const CameraConfigDialog: React.FC<CameraConfigDialogProps> = ({
   }, [open, cameraData, resetForm]);
 
   const handleSave = () => {
-    // Validate required fields
-    if (!formData.name || !formData.camera_type) {
-      toast({
-        title: "Validation Error",
-        description: "Camera name and type are required",
-        variant: "destructive",
-      });
-      return;
-    }
+    // No fields are mandatory — completeness is tracked via the line config indicator
 
     // Validate use cases exist in master data
     if (formData.use_case_ids.length > 0) {

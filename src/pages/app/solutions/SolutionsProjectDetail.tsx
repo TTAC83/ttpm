@@ -14,7 +14,7 @@ import { ProjectContacts } from '@/pages/app/projects/tabs/ProjectContacts';
 import { ContractInformationTab } from '@/components/shared/ContractInformationTab';
 import { TeamTab } from '@/components/shared/TeamTab';
 import { AccountInfoTab } from '@/components/shared/AccountInfoTab';
-import { FactoryConfigurationTab } from '@/components/shared/FactoryConfigurationTab';
+import { SolutionsFactoryConfig } from '@/components/factory-config/SolutionsFactoryConfig';
 import { ProjectHardware } from '../projects/tabs/ProjectHardware';
 import ProjectGantt from '../projects/tabs/ProjectGantt';
 import ProjectTasks from '../projects/tabs/ProjectTasks';
@@ -335,7 +335,7 @@ export const SolutionsProjectDetail = () => {
         </TabsContent>
 
         <TabsContent value="factory" className="space-y-4">
-          <FactoryConfigurationTab projectId={project.id} type="solutions" projectDomain={project.domain} onUpdate={fetchProject} />
+          <SolutionsFactoryConfig projectId={project.id} />
         </TabsContent>
 
         <TabsContent value="lines" className="space-y-4">

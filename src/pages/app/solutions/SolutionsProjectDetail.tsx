@@ -26,6 +26,7 @@ import { SharedProductGapsTab } from '@/components/shared/tabs/SharedProductGaps
 import { SharedBlockersTab } from '@/components/shared/tabs/SharedBlockersTab';
 import { GanttChart } from '@/features/gantt/components/GanttChart';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useTabCompleteness } from './hooks/useTabCompleteness';
 
 interface SolutionsProject {
   id: string;
@@ -62,6 +63,7 @@ export const SolutionsProjectDetail = () => {
   const [project, setProject] = useState<SolutionsProject | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const completeness = useTabCompleteness(project);
 
   const fetchProject = async () => {
     if (!id) return;
@@ -254,32 +256,47 @@ export const SolutionsProjectDetail = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="space-y-2">
-          {/* Row 1 */}
+          {/* Row 1 - Key tabs with completeness indicators */}
           <TabsList className="flex flex-wrap gap-2">
-            <TabsTrigger value="overview">Customer Overview</TabsTrigger>
-            <TabsTrigger value="contract">Contract Info</TabsTrigger>
-            <TabsTrigger value="team">Team</TabsTrigger>
-            <TabsTrigger value="account">Account Info</TabsTrigger>
-            <TabsTrigger value="contacts">Contacts</TabsTrigger>
-            <TabsTrigger value="hardware-summary">Hardware Summary</TabsTrigger>
+            <TabsTrigger value="overview">
+              Customer Overview
+              <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.overview ? 'bg-green-500' : 'bg-red-500'}`} />
+            </TabsTrigger>
+            <TabsTrigger value="contacts">
+              Contacts
+              <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.contacts ? 'bg-green-500' : 'bg-red-500'}`} />
+            </TabsTrigger>
+            <TabsTrigger value="factory">
+              Factory
+              <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.factory ? 'bg-green-500' : 'bg-red-500'}`} />
+            </TabsTrigger>
+            <TabsTrigger value="lines">
+              Lines
+              <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.lines ? 'bg-green-500' : 'bg-red-500'}`} />
+            </TabsTrigger>
+            <TabsTrigger value="hardware-summary">
+              Hardware Summary
+              <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.hardwareSummary ? 'bg-green-500' : 'bg-red-500'}`} />
+            </TabsTrigger>
           </TabsList>
 
           {/* Row 2 */}
           <TabsList className="flex flex-wrap gap-2">
+            <TabsTrigger value="contract">Contract Info</TabsTrigger>
+            <TabsTrigger value="team">Team</TabsTrigger>
+            <TabsTrigger value="account">Account Info</TabsTrigger>
             <TabsTrigger value="wbs">WBS Gantt</TabsTrigger>
             <TabsTrigger value="wbs-v2">Gantt (Beta)</TabsTrigger>
             <TabsTrigger value="actions">Actions</TabsTrigger>
             <TabsTrigger value="calendar">Calendar</TabsTrigger>
-            <TabsTrigger value="product-gaps">Feature Requirements</TabsTrigger>
-            <TabsTrigger value="blockers">Escalations</TabsTrigger>
           </TabsList>
 
-          {/* Row 3 - remaining tabs */}
+          {/* Row 3 */}
           <TabsList className="flex flex-wrap gap-2">
             <TabsTrigger value="hardware">Factory Hardware</TabsTrigger>
-            <TabsTrigger value="factory">Factory</TabsTrigger>
-            <TabsTrigger value="lines">Lines</TabsTrigger>
             <TabsTrigger value="vision-models">Vision Models</TabsTrigger>
+            <TabsTrigger value="product-gaps">Feature Requirements</TabsTrigger>
+            <TabsTrigger value="blockers">Escalations</TabsTrigger>
             <TabsTrigger value="audit">Audit</TabsTrigger>
           </TabsList>
         </div>

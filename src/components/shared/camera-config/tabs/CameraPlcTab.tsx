@@ -1,4 +1,5 @@
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TabsContent } from "@/components/ui/tabs";
@@ -50,6 +51,21 @@ export function CameraPlcTab({
             <Label htmlFor="plc-no">No</Label>
           </div>
         </RadioGroup>
+        {formData.plc_attached !== null && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-xs mt-1"
+            onClick={() => {
+              updateField("plc_attached", null);
+              updateField("plc_master_id", "");
+              updateField("relay_outputs", []);
+            }}
+          >
+            Clear selection
+          </Button>
+        )}
       </div>
 
       {formData.plc_attached === null && (

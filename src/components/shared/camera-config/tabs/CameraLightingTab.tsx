@@ -1,4 +1,5 @@
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,6 +40,21 @@ export function CameraLightingTab({ formData, masterData, updateField }: CameraL
             <Label htmlFor="light-no">No</Label>
           </div>
         </RadioGroup>
+        {formData.light_required !== null && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-xs mt-1"
+            onClick={() => {
+              updateField("light_required", null);
+              updateField("light_id", "");
+              updateField("light_notes", "");
+            }}
+          >
+            Clear selection
+          </Button>
+        )}
       </div>
 
       {formData.light_required === null && (

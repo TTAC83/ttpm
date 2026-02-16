@@ -1,5 +1,5 @@
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { TabsContent } from "@/components/ui/tabs";
@@ -12,23 +12,41 @@ interface CameraHmiTabProps {
 }
 
 export function CameraHmiTab({ formData, masterData, updateField }: CameraHmiTabProps) {
+  const radioValue = formData.hmi_required === null ? "" : formData.hmi_required ? "yes" : "no";
+
   return (
     <TabsContent value="hmi" className="space-y-4 mt-0">
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="hmi-required"
-          checked={formData.hmi_required}
-          onCheckedChange={(checked) => {
-            updateField("hmi_required", !!checked);
-            if (!checked) {
+      <div>
+        <Label className="text-sm font-medium">Is an HMI required?</Label>
+        <RadioGroup
+          value={radioValue}
+          onValueChange={(val) => {
+            const isRequired = val === "yes";
+            updateField("hmi_required", isRequired);
+            if (!isRequired) {
               updateField("hmi_master_id", "");
             }
           }}
-        />
-        <Label htmlFor="hmi-required">HMI Required</Label>
+          className="flex gap-4 mt-2"
+        >
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="yes" id="hmi-yes" />
+            <Label htmlFor="hmi-yes">Yes</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="no" id="hmi-no" />
+            <Label htmlFor="hmi-no">No</Label>
+          </div>
+        </RadioGroup>
       </div>
 
-      {formData.hmi_required ? (
+      {formData.hmi_required === null && (
+        <p className="text-sm text-destructive">
+          Please confirm whether an HMI is required for this camera.
+        </p>
+      )}
+
+      {formData.hmi_required === true && (
         <>
           <div>
             <Label htmlFor="hmi-select">Select HMI Model</Label>
@@ -60,9 +78,11 @@ export function CameraHmiTab({ formData, masterData, updateField }: CameraHmiTab
             />
           </div>
         </>
-      ) : (
+      )}
+
+      {formData.hmi_required === false && (
         <p className="text-sm text-muted-foreground">
-          Check "HMI Required" to configure HMI for this camera.
+          No HMI required for this camera.
         </p>
       )}
     </TabsContent>

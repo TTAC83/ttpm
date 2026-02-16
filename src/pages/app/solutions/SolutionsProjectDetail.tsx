@@ -34,12 +34,16 @@ interface SolutionsProject {
   domain: string;
   site_name: string;
   site_address?: string;
+  segment?: string;
   salesperson?: string;
   solutions_consultant?: string;
   customer_lead?: string;
   customer_email?: string;
   customer_phone?: string;
   customer_job_title?: string;
+  line_description?: string;
+  product_description?: string;
+  project_goals?: string;
   servers_required?: number;
   gateways_required?: number;
   tv_display_devices_required?: number;

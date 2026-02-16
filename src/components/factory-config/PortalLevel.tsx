@@ -163,6 +163,93 @@ export const PortalLevel: React.FC<Props> = ({
           })}
         </div>
       </div>
+
+      {/* Organogram */}
+      {factories.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Site Structure</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col items-center gap-0">
+              {/* Portal node */}
+              <div className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium">
+                {portal?.url || 'Portal'}
+              </div>
+              {factories.length > 0 && (
+                <div className="w-px h-4 bg-border" />
+              )}
+              {/* Factories row */}
+              <div className="relative flex justify-center w-full">
+                {factories.length > 1 && (
+                  <div
+                    className="absolute top-0 h-px bg-border"
+                    style={{
+                      left: `${50 / factories.length}%`,
+                      right: `${50 / factories.length}%`,
+                    }}
+                  />
+                )}
+                <div className="flex gap-8 flex-wrap justify-center">
+                  {factories.map((factory) => {
+                    const factoryGroups = groups.filter(g => g.factory_id === factory.id);
+                    return (
+                      <div key={factory.id} className="flex flex-col items-center gap-0">
+                        {factories.length > 1 && <div className="w-px h-4 bg-border" />}
+                        <div className="px-3 py-1.5 rounded-md bg-accent text-accent-foreground text-xs font-medium border">
+                          {factory.name}
+                        </div>
+                        {factoryGroups.length > 0 && (
+                          <>
+                            <div className="w-px h-3 bg-border" />
+                            <div className="flex gap-4 flex-wrap justify-center relative">
+                              {factoryGroups.length > 1 && (
+                                <div
+                                  className="absolute top-0 h-px bg-border"
+                                  style={{
+                                    left: `${100 / (factoryGroups.length * 2)}%`,
+                                    right: `${100 / (factoryGroups.length * 2)}%`,
+                                  }}
+                                />
+                              )}
+                              {factoryGroups.map((group) => {
+                                const groupLines = lines.filter(l => l.group_id === group.id);
+                                return (
+                                  <div key={group.id} className="flex flex-col items-center gap-0">
+                                    {factoryGroups.length > 1 && <div className="w-px h-3 bg-border" />}
+                                    <div className="px-2.5 py-1 rounded-md bg-muted text-muted-foreground text-xs border">
+                                      {group.name}
+                                    </div>
+                                    {groupLines.length > 0 && (
+                                      <>
+                                        <div className="w-px h-2.5 bg-border" />
+                                        <div className="flex gap-2 flex-wrap justify-center">
+                                          {groupLines.map((line) => (
+                                            <div
+                                              key={line.id}
+                                              className="px-2 py-0.5 rounded text-[10px] bg-secondary text-secondary-foreground border"
+                                            >
+                                              {line.name}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

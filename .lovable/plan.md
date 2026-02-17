@@ -1,97 +1,81 @@
 
 
-## Camera-to-Server Assignment on Factory Hardware Tab
+## Feasibility Gate Sign-Off Feature
 
 ### Overview
 
-After completing line configuration, users need to assign each camera to a server on the Factory Hardware "Vision" sub-tab. This requires a new database join table and a UI that shows servers as expandable cards with an "Assign Cameras" action, presenting unassigned cameras in a rich, informative table.
+Transform the "Feasibility Gate" badge from a passive indicator into an interactive sign-off workflow. When all gate items are green, the Solutions Consultant can click the badge, review a summary, and formally sign off by entering their password.
 
 ### Database Change
 
-Create a new join table `camera_server_assignments`:
+Add columns to `solutions_projects`:
 
 ```text
-camera_server_assignments
-- id (uuid, PK)
-- camera_id (uuid, FK -> cameras.id, UNIQUE)
-- server_requirement_id (uuid, FK -> project_iot_requirements.id)
-- created_at (timestamptz)
+feasibility_signed_off        boolean   DEFAULT false
+feasibility_signed_off_by     uuid      FK -> auth.users(id)
+feasibility_signed_off_at     timestamptz
 ```
 
-The UNIQUE constraint on `camera_id` enforces one-server-per-camera. RLS policies will mirror existing `project_iot_requirements` access patterns.
+No new table needed -- this is a single sign-off event per project.
 
-### UX Design
+### UX Flow
 
-Each server card in the Vision sub-tab gets an expandable section:
+1. **Feasibility Gate badge** becomes clickable (a button). It shows three visual states:
+   - Red: Not all tabs are green -- clicking shows which items are incomplete
+   - Amber/pulsing: All tabs are green but not yet signed off -- ready for sign-off
+   - Green with a shield/check icon: Signed off
 
-```text
-+---------------------------------------------------------------+
-| Server 1  |  Dell PowerEdge R750 - SKU-123       Qty: 1       |
-| [Assign Cameras]                            [x Delete]        |
-|                                                               |
-| Assigned Cameras (2/5)                                        |
-| +-----------------------------------------------------------+ |
-| | Line       | Position | Equipment | Camera   | Use Cases  | |
-| |------------|----------|-----------|----------|------------| |
-| | Line A     | Pos 1    | Equip 1   | Cam-001  | Label, QC  | |
-| | Line A     | Pos 2    | Equip 3   | Cam-004  | Barcode    | |
-| +-----------------------------------------------------------+ |
-|                                                 [Unassign]    |
-+---------------------------------------------------------------+
-```
+2. **Clicking the badge** opens a Dialog with two sections:
 
-Clicking "Assign Cameras" opens a dialog/sheet showing **unassigned cameras only**, displayed in a table with columns:
+   **Section A -- High-Level Summary** (read-only cards):
+   - Number of Lines (count from `solutions_lines`)
+   - Number of Cameras (count from `cameras` via line traversal)
+   - Number of IoT Devices (count from `iot_devices` via line traversal)
+   - Distinct Use Cases list: vision use case names from `camera_use_cases` joined to `vision_use_cases_master`, plus "IoT" if any IoT devices exist
 
-| Column | Source |
-|--------|--------|
-| Line | `solutions_lines.line_name` |
-| Position | `positions.name` |
-| Equipment | `equipment.name` |
-| Camera Name | `cameras.mac_address` (used as display name) |
-| Use Cases | Joined from `camera_use_cases` -> `vision_use_cases_master.name` |
-| Attributes | Joined from `camera_attributes.title` as badges |
+   **Section B -- Sign-Off** (only visible when all tabs are green):
+   - Text: "By signing off, you confirm the feasibility assessment is complete."
+   - Shows the assigned Solutions Consultant name
+   - Password input field (only the assigned Solutions Consultant can sign off)
+   - "Sign Off" button
+   - If the current user is not the assigned Solutions Consultant, show a message: "Only the assigned Solutions Consultant can sign off."
 
-Users select cameras via checkboxes and confirm to bulk-assign them to the server.
+3. **Password verification**: Call `supabase.auth.signInWithPassword()` using the current user's email and the entered password. If successful, update the project record. This re-authenticates the current session user -- it does not log them out.
+
+4. **After sign-off**: The badge turns green with a check/shield icon. The dialog shows who signed off and when. The sign-off is permanent (no undo from UI).
+
+### Visual States for the Badge
+
+| State | Appearance |
+|-------|------------|
+| Tabs incomplete | Red badge, text "Feasibility Gate" |
+| All tabs green, not signed off | Amber/orange badge, clickable |
+| Signed off | Green badge with shield-check icon |
 
 ### Technical Changes
 
-**1. New migration** -- Create `camera_server_assignments` table with foreign keys, unique constraint, and RLS policies.
+**1. Migration** -- Add three columns to `solutions_projects`.
 
-**2. Regenerate Supabase types** -- The new table will appear in `types.ts` after migration.
+**2. `useTabCompleteness.ts`** -- No changes needed (existing logic already tracks tab completeness).
 
-**3. `src/pages/app/projects/tabs/ProjectHardware.tsx`** -- Main changes:
+**3. New component: `FeasibilityGateDialog.tsx`**
+   - Receives: `projectId`, `solutionsConsultantId`, `allTabsGreen`, `signedOff`, `signedOffBy`, `signedOffAt`
+   - Fetches summary data (line/camera/IoT/use-case counts) via Supabase queries
+   - Renders summary cards and sign-off form
+   - Handles password verification and project update
 
-- Add a new query to fetch all cameras for the project with their full context (line name, position name, equipment name, use cases, attributes) by traversing: `solutions_lines` -> `positions` -> `equipment` -> `cameras` -> `camera_use_cases` / `camera_attributes`.
-- Add a query for `camera_server_assignments` to know which cameras are already assigned and to which server.
-- For each server card in the Vision tab, render:
-  - A count badge showing "X cameras assigned".
-  - A collapsible table of assigned cameras with an "Unassign" action per row.
-  - An "Assign Cameras" button that opens a dialog.
-- Create an `AssignCamerasDialog` component (inline or separate file) containing:
-  - A table of unassigned cameras with checkbox selection.
-  - Columns: Line, Position, Equipment, Camera Name, Use Cases (as comma-separated text), Attributes (as small badges).
-  - A "Select All" header checkbox.
-  - An "Assign Selected" confirmation button.
-- Add mutations for inserting/deleting rows in `camera_server_assignments`.
-
-**4. Query structure for camera context** (pseudocode):
-
-```text
-solutions_lines (where solutions_project_id = projectId)
-  -> positions (where line_id in lineIds)
-    -> equipment (where position_id in positionIds)
-      -> cameras (where equipment_id in equipmentIds)
-        -> camera_use_cases -> vision_use_cases_master (name)
-        -> camera_attributes (title)
-```
-
-This reuses the same traversal pattern already established in the existing `iotDevicesFromLines` query in this file.
+**4. `SolutionsProjectDetail.tsx`**
+   - Replace the static Feasibility Gate `<span>` with a clickable `<Button>` that opens `FeasibilityGateDialog`
+   - Add the `feasibility_signed_off`, `feasibility_signed_off_by`, `feasibility_signed_off_at` fields to the project query and interface
+   - Pass sign-off state to the badge for visual styling
+   - Fetch the Solutions Consultant's profile name for display
 
 ### Files Affected
 
 | File | Change |
 |------|--------|
-| `supabase/migrations/[new]` | New `camera_server_assignments` table |
+| `supabase/migrations/[new]` | Add 3 columns to `solutions_projects` |
 | `src/integrations/supabase/types.ts` | Auto-regenerated |
-| `src/pages/app/projects/tabs/ProjectHardware.tsx` | Server cards get assigned cameras list, assign button, and dialog |
+| `src/components/FeasibilityGateDialog.tsx` | New component |
+| `src/pages/app/solutions/SolutionsProjectDetail.tsx` | Badge becomes interactive button, opens dialog |
 

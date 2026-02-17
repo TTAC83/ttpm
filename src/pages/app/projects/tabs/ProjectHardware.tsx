@@ -232,8 +232,8 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
       const lineIds = solutionsLines.map(l => l.id);
       const { data: positions, error: posError } = await supabase
         .from('positions')
-        .select('id, name, line_id')
-        .in('line_id', lineIds);
+        .select('id, name, solutions_line_id')
+        .in('solutions_line_id', lineIds);
       if (posError) throw posError;
       if (!positions || positions.length === 0) return [];
 
@@ -288,7 +288,7 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
       }
 
       const lineMap = new Map(solutionsLines.map(l => [l.id, l.line_name]));
-      const posMap = new Map(positions.map(p => [p.id, { name: p.name, line_id: p.line_id }]));
+      const posMap = new Map(positions.map(p => [p.id, { name: p.name, line_id: p.solutions_line_id }]));
       const eqMap = new Map(equipment.map(e => [e.id, { name: e.name, position_id: e.position_id }]));
 
       return cameras.map(cam => {

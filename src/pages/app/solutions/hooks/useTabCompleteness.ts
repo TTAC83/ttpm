@@ -6,7 +6,6 @@ interface TabCompleteness {
   contacts: boolean;
   factory: boolean;
   lines: boolean;
-  hardwareSummary: boolean;
   featureRequirements: boolean;
   factoryHardware: boolean;
 }
@@ -38,7 +37,6 @@ export const useTabCompleteness = (project: ProjectData | null) => {
     contacts: false,
     factory: false,
     lines: false,
-    hardwareSummary: false,
     featureRequirements: false,
     factoryHardware: false,
   });
@@ -61,18 +59,9 @@ export const useTabCompleteness = (project: ProjectData | null) => {
       project.implementation_handover
     );
 
-    // Hardware Summary: at least one quantity > 0
-    const hardwareSummaryComplete =
-      (project.servers_required ?? 0) > 0 ||
-      (project.gateways_required ?? 0) > 0 ||
-      (project.tv_display_devices_required ?? 0) > 0 ||
-      (project.receivers_required ?? 0) > 0 ||
-      (project.lines_required ?? 0) > 0;
-
     setCompleteness(prev => ({
       ...prev,
       overview: overviewComplete,
-      hardwareSummary: hardwareSummaryComplete,
     }));
 
     // Async checks
@@ -242,7 +231,6 @@ export const useTabCompleteness = (project: ProjectData | null) => {
       setCompleteness(prev => ({
         ...prev,
         overview: overviewComplete,
-        hardwareSummary: hardwareSummaryComplete,
         contacts: contactsComplete,
         factory: factoryComplete,
         lines: linesComplete,

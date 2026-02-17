@@ -72,7 +72,7 @@ export const SolutionsProjectDetail = () => {
   const [hwCompleteness, setHwCompleteness] = useState<{ iot: boolean; vision: boolean } | null>(null);
   const completeness = useTabCompleteness(project);
 
-  const allTabsGreen = completeness.overview && completeness.contacts && completeness.factory && completeness.lines && completeness.hardwareSummary;
+  const allTabsGreen = completeness.overview && completeness.contacts && completeness.factory && completeness.lines;
   const feasibilitySignedOff = (project as any)?.feasibility_signed_off ?? false;
   const feasibilitySignedOffBy = (project as any)?.feasibility_signed_off_by ?? null;
   const feasibilitySignedOffAt = (project as any)?.feasibility_signed_off_at ?? null;
@@ -304,10 +304,6 @@ export const SolutionsProjectDetail = () => {
               Factory Hardware
               <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${(hwCompleteness ? (hwCompleteness.iot && hwCompleteness.vision) : completeness.factoryHardware) ? 'bg-green-500' : 'bg-red-500'}`} />
             </TabsTrigger>
-            <TabsTrigger value="hardware-summary">
-              Hardware Summary
-              <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.hardwareSummary ? 'bg-green-500' : 'bg-red-500'}`} />
-            </TabsTrigger>
             <TabsTrigger value="product-gaps">
               Feature Requirements
               {completeness.featureRequirements ? (
@@ -330,6 +326,7 @@ export const SolutionsProjectDetail = () => {
             <TabsTrigger value="wbs-v2">Gantt (Beta)</TabsTrigger>
             <TabsTrigger value="actions">Actions</TabsTrigger>
             <TabsTrigger value="calendar">Calendar</TabsTrigger>
+            <TabsTrigger value="hardware-summary">Hardware Summary</TabsTrigger>
           </TabsList>
 
           {/* Row 3 - Technical */}

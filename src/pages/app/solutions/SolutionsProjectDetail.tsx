@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Building, Calendar, MapPin, Check, X } from 'lucide-react';
+import { ArrowLeft, Building, Calendar, MapPin, Check, X, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { SolutionsLines } from './tabs/SolutionsLines';
@@ -263,7 +263,7 @@ export const SolutionsProjectDetail = () => {
           {/* Row 1 - Feasibility Gate */}
           <TabsList className="w-full justify-start h-auto flex-wrap gap-1.5 p-1">
             <span className={`inline-flex items-center px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider text-white select-none ${
-              completeness.overview && completeness.contacts && completeness.factory && completeness.lines && completeness.hardwareSummary && completeness.featureRequirements
+              completeness.overview && completeness.contacts && completeness.factory && completeness.lines && completeness.hardwareSummary
                 ? 'bg-green-600' : 'bg-red-600'
             }`}>
               Feasibility Gate
@@ -290,7 +290,11 @@ export const SolutionsProjectDetail = () => {
             </TabsTrigger>
             <TabsTrigger value="product-gaps">
               Feature Requirements
-              <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.featureRequirements ? 'bg-green-500' : 'bg-red-500'}`} />
+              {completeness.featureRequirements ? (
+                <Check className="h-3.5 w-3.5 ml-1.5 text-green-500" />
+              ) : (
+                <AlertTriangle className="h-3.5 w-3.5 ml-1.5 text-amber-500" />
+              )}
             </TabsTrigger>
           </TabsList>
 

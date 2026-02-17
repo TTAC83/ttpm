@@ -1092,6 +1092,42 @@ export type Database = {
         }
         Relationships: []
       }
+      camera_server_assignments: {
+        Row: {
+          camera_id: string
+          created_at: string
+          id: string
+          server_requirement_id: string
+        }
+        Insert: {
+          camera_id: string
+          created_at?: string
+          id?: string
+          server_requirement_id: string
+        }
+        Update: {
+          camera_id?: string
+          created_at?: string
+          id?: string
+          server_requirement_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "camera_server_assignments_camera_id_fkey"
+            columns: ["camera_id"]
+            isOneToOne: true
+            referencedRelation: "cameras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "camera_server_assignments_server_requirement_id_fkey"
+            columns: ["server_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "project_iot_requirements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       camera_use_cases: {
         Row: {
           camera_id: string

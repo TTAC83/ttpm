@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Cpu, Camera, Monitor, Server, HardDrive, Network, ChevronDown, X } from 'lucide-react';
+import { Plus, Trash2, Cpu, Camera, Monitor, Server, HardDrive, Network, ChevronDown, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { AssignCamerasDialog, type CameraWithContext } from '@/components/AssignCamerasDialog';
 import { AssignDevicesDialog, type IoTDeviceWithContext } from '@/components/AssignDevicesDialog';
@@ -21,6 +21,7 @@ import { AssignReceiversDialog } from '@/components/AssignReceiversDialog';
 interface ProjectHardwareProps {
   projectId: string;
   type: 'project' | 'solutions' | 'bau';
+  onCompletenessChange?: (complete: { iot: boolean; vision: boolean }) => void;
 }
 
 interface HardwareRequirement {
@@ -55,7 +56,7 @@ interface HardwareRequirement {
   } | null;
 }
 
-export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
+export function ProjectHardware({ projectId, type, onCompletenessChange }: ProjectHardwareProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -696,6 +697,52 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
   const storageRequirements = requirements.filter(r => r.hardware_type === 'storage');
   const vpnRequirements = requirements.filter(r => r.hardware_type === 'vpn');
 
+  // --- Completeness computation ---
+  const assignedDeviceIds = new Set(deviceReceiverAssignments.map((a: any) => a.iot_device_id));
+  const assignedReceiverIds = new Set(receiverGatewayAssignments.map((a: any) => a.receiver_requirement_id));
+  const assignedCameraIds = new Set(cameraAssignments.map((a: any) => a.camera_id));
+
+  const unassignedDevices = iotDevicesWithContext.filter(d => !assignedDeviceIds.has(d.id));
+  const unassignedReceivers = receiverRequirements.filter(r => !assignedReceiverIds.has(r.id));
+  const unassignedCameras = camerasWithContext.filter(c => !assignedCameraIds.has(c.id));
+
+  const hasIotHardware = iotDevicesWithContext.length > 0 || receiverRequirements.length > 0 || gatewayRequirements.length > 0;
+  const hasVisionHardware = camerasWithContext.length > 0 || serverRequirements.length > 0;
+
+  const iotComplete = !hasIotHardware || (unassignedDevices.length === 0 && unassignedReceivers.length === 0);
+  const visionComplete = !hasVisionHardware || unassignedCameras.length === 0;
+
+  // Notify parent of completeness changes
+  const prevCompletenessRef = useState({ iot: iotComplete, vision: visionComplete })[0];
+  if (onCompletenessChange && (prevCompletenessRef.iot !== iotComplete || prevCompletenessRef.vision !== visionComplete)) {
+    prevCompletenessRef.iot = iotComplete;
+    prevCompletenessRef.vision = visionComplete;
+    // Use setTimeout to avoid setState during render
+    setTimeout(() => onCompletenessChange({ iot: iotComplete, vision: visionComplete }), 0);
+  }
+
+  const iotGaps: { category: string; items: string[] }[] = [];
+  if (unassignedDevices.length > 0) {
+    iotGaps.push({
+      category: `${unassignedDevices.length} IoT device${unassignedDevices.length > 1 ? 's' : ''} not assigned to a receiver`,
+      items: unassignedDevices.map(d => `${d.name || d.mac_address} (${d.line_name})`),
+    });
+  }
+  if (unassignedReceivers.length > 0) {
+    iotGaps.push({
+      category: `${unassignedReceivers.length} receiver${unassignedReceivers.length > 1 ? 's' : ''} not assigned to a gateway`,
+      items: unassignedReceivers.map(r => r.name || r.receivers_master?.model_number || 'Unnamed receiver'),
+    });
+  }
+
+  const visionGaps: { category: string; items: string[] }[] = [];
+  if (unassignedCameras.length > 0) {
+    visionGaps.push({
+      category: `${unassignedCameras.length} camera${unassignedCameras.length > 1 ? 's' : ''} not assigned to a server`,
+      items: unassignedCameras.map(c => `${c.mac_address} (${c.line_name})`),
+    });
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -730,15 +777,52 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
               <TabsTrigger value="iot" className="flex items-center gap-2">
                 <Cpu className="h-4 w-4" />
                 IoT ({gatewayRequirements.length + receiverRequirements.length + iotDevicesFromLines.length})
+                {type === 'solutions' && <span className={`h-2 w-2 rounded-full ${iotComplete ? 'bg-green-500' : 'bg-red-500'}`} />}
               </TabsTrigger>
               <TabsTrigger value="vision" className="flex items-center gap-2">
                 <Server className="h-4 w-4" />
                 Vision ({serverRequirements.length + sfpAddonRequirements.length + loadBalancerRequirements.length + storageRequirements.length + vpnRequirements.length})
+                {type === 'solutions' && <span className={`h-2 w-2 rounded-full ${visionComplete ? 'bg-green-500' : 'bg-red-500'}`} />}
               </TabsTrigger>
             </TabsList>
 
             {/* IoT Requirements Tab */}
             <TabsContent value="iot" className="space-y-6 mt-6">
+              {/* IoT Configuration Gaps Panel */}
+              {type === 'solutions' && hasIotHardware && (
+                <div className={`rounded-lg border p-4 ${iotComplete ? 'border-green-500/30 bg-green-500/5' : 'border-amber-500/30 bg-amber-500/5'}`}>
+                  {iotComplete ? (
+                    <div className="flex items-center gap-2 text-green-600">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <p className="text-sm font-medium">All IoT hardware assignments complete</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 text-amber-600 mb-3">
+                        <AlertTriangle className="h-4 w-4" />
+                        <p className="text-xs font-semibold uppercase tracking-wider">
+                          Configuration Gaps — {iotGaps.reduce((sum, g) => sum + g.items.length, 0)} items remaining
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {iotGaps.map((gap, idx) => (
+                          <div key={idx} className="rounded-md border border-amber-500/20 bg-amber-500/5 p-3">
+                            <p className="text-xs font-semibold mb-1.5">{gap.category}</p>
+                            <ul className="space-y-0.5">
+                              {gap.items.map((item, iIdx) => (
+                                <li key={iIdx} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                                  <span className="mt-1 h-1 w-1 rounded-full bg-current shrink-0" />
+                                  {item}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
           {/* IoT Gateways */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -1013,6 +1097,41 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
 
             {/* Vision Requirements Tab */}
             <TabsContent value="vision" className="space-y-6 mt-6">
+              {/* Vision Configuration Gaps Panel */}
+              {type === 'solutions' && hasVisionHardware && (
+                <div className={`rounded-lg border p-4 ${visionComplete ? 'border-green-500/30 bg-green-500/5' : 'border-amber-500/30 bg-amber-500/5'}`}>
+                  {visionComplete ? (
+                    <div className="flex items-center gap-2 text-green-600">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <p className="text-sm font-medium">All Vision hardware assignments complete</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 text-amber-600 mb-3">
+                        <AlertTriangle className="h-4 w-4" />
+                        <p className="text-xs font-semibold uppercase tracking-wider">
+                          Configuration Gaps — {visionGaps.reduce((sum, g) => sum + g.items.length, 0)} items remaining
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {visionGaps.map((gap, idx) => (
+                          <div key={idx} className="rounded-md border border-amber-500/20 bg-amber-500/5 p-3">
+                            <p className="text-xs font-semibold mb-1.5">{gap.category}</p>
+                            <ul className="space-y-0.5">
+                              {gap.items.map((item, iIdx) => (
+                                <li key={iIdx} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                                  <span className="mt-1 h-1 w-1 rounded-full bg-current shrink-0" />
+                                  {item}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
               {/* Servers */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">

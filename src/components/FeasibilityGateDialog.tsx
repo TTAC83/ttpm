@@ -4,7 +4,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ShieldCheck, Layers, Camera, Cpu, Eye, Lock, CheckCircle2 } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { ShieldCheck, Layers, Camera, Cpu, Eye, Lock, CheckCircle2, Globe, Factory, FolderOpen, Cable } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -21,11 +22,31 @@ interface FeasibilityGateDialogProps {
   onSignedOff: () => void;
 }
 
+interface HierarchyLine {
+  id: string;
+  name: string;
+  solution_type: string;
+}
+
+interface HierarchyGroup {
+  id: string;
+  name: string;
+  lines: HierarchyLine[];
+}
+
+interface HierarchyFactory {
+  id: string;
+  name: string;
+  groups: HierarchyGroup[];
+}
+
 interface SummaryData {
   lineCount: number;
   cameraCount: number;
   iotDeviceCount: number;
   useCases: string[];
+  portal: { url: string } | null;
+  factories: HierarchyFactory[];
 }
 
 export const FeasibilityGateDialog = ({
@@ -41,7 +62,7 @@ export const FeasibilityGateDialog = ({
 }: FeasibilityGateDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [summary, setSummary] = useState<SummaryData>({ lineCount: 0, cameraCount: 0, iotDeviceCount: 0, useCases: [] });
+  const [summary, setSummary] = useState<SummaryData>({ lineCount: 0, cameraCount: 0, iotDeviceCount: 0, useCases: [], portal: null, factories: [] });
   const [consultantName, setConsultantName] = useState<string | null>(null);
   const [signedOffByName, setSignedOffByName] = useState<string | null>(null);
   const [password, setPassword] = useState('');
@@ -83,7 +104,6 @@ export const FeasibilityGateDialog = ({
       const useCaseSet = new Set<string>();
 
       if (lineIds.length > 0) {
-        // Get positions for these lines
         const { data: positions } = await supabase
           .from('positions')
           .select('id')
@@ -91,7 +111,6 @@ export const FeasibilityGateDialog = ({
         const positionIds = (positions ?? []).map(p => p.id);
 
         if (positionIds.length > 0) {
-          // Get equipment for positions
           const { data: equipment } = await supabase
             .from('equipment')
             .select('id')
@@ -99,14 +118,12 @@ export const FeasibilityGateDialog = ({
           const equipmentIds = (equipment ?? []).map(e => e.id);
 
           if (equipmentIds.length > 0) {
-            // Count cameras
             const { count: camCount } = await supabase
               .from('cameras')
               .select('id', { count: 'exact', head: true })
               .in('equipment_id', equipmentIds);
             cameraCount = camCount ?? 0;
 
-            // Count IoT devices
             const { count: iotCount } = await supabase
               .from('iot_devices')
               .select('id', { count: 'exact', head: true })
@@ -115,7 +132,6 @@ export const FeasibilityGateDialog = ({
 
             if (iotDeviceCount > 0) useCaseSet.add('IoT');
 
-            // Get camera IDs for use cases
             if (cameraCount > 0) {
               const { data: cameras } = await supabase
                 .from('cameras')
@@ -143,7 +159,74 @@ export const FeasibilityGateDialog = ({
         }
       }
 
-      setSummary({ lineCount, cameraCount, iotDeviceCount, useCases: [...useCaseSet].sort() });
+      // Fetch factory hierarchy
+      const { data: portalData } = await supabase
+        .from('solution_portals')
+        .select('url')
+        .eq('solutions_project_id', projectId)
+        .maybeSingle();
+
+      let factoryHierarchy: HierarchyFactory[] = [];
+
+      if (portalData) {
+        const { data: portalRow } = await supabase
+          .from('solution_portals')
+          .select('id')
+          .eq('solutions_project_id', projectId)
+          .single();
+
+        if (portalRow) {
+          const { data: factoriesData } = await supabase
+            .from('solution_factories')
+            .select('id, name')
+            .eq('portal_id', portalRow.id)
+            .order('created_at');
+
+          if (factoriesData && factoriesData.length > 0) {
+            const factoryIds = factoriesData.map(f => f.id);
+
+            const [groupsRes, linesGroupRes] = await Promise.all([
+              supabase.from('factory_groups').select('id, name, factory_id').in('factory_id', factoryIds).order('created_at'),
+              // We'll fetch lines after we have group IDs
+              Promise.resolve(null),
+            ]);
+
+            const allGroups = groupsRes.data ?? [];
+            const groupIds = allGroups.map(g => g.id);
+
+            let allLines: { id: string; name: string; group_id: string; solution_type: string }[] = [];
+            if (groupIds.length > 0) {
+              const { data: linesData } = await supabase
+                .from('factory_group_lines')
+                .select('id, name, group_id, solution_type')
+                .in('group_id', groupIds)
+                .order('created_at');
+              allLines = (linesData ?? []) as typeof allLines;
+            }
+
+            factoryHierarchy = factoriesData.map(f => ({
+              id: f.id,
+              name: f.name,
+              groups: allGroups
+                .filter(g => g.factory_id === f.id)
+                .map(g => ({
+                  id: g.id,
+                  name: g.name,
+                  lines: allLines
+                    .filter(l => l.group_id === g.id)
+                    .map(l => ({ id: l.id, name: l.name, solution_type: l.solution_type })),
+                })),
+            }));
+          }
+        }
+      }
+
+      setSummary({
+        lineCount, cameraCount, iotDeviceCount,
+        useCases: [...useCaseSet].sort(),
+        portal: portalData ? { url: portalData.url } : null,
+        factories: factoryHierarchy,
+      });
     } catch (e) {
       console.error('Error fetching summary:', e);
     } finally {
@@ -155,7 +238,6 @@ export const FeasibilityGateDialog = ({
     if (!user?.email || !password) return;
     setSubmitting(true);
     try {
-      // Re-authenticate
       const { error: authError } = await supabase.auth.signInWithPassword({
         email: user.email,
         password,
@@ -165,7 +247,6 @@ export const FeasibilityGateDialog = ({
         return;
       }
 
-      // Update project
       const { error: updateError } = await supabase
         .from('solutions_projects')
         .update({
@@ -187,9 +268,15 @@ export const FeasibilityGateDialog = ({
     }
   };
 
+  const solutionTypeBadge = (type: string) => {
+    const label = type === 'both' ? 'Vision + IoT' : type === 'iot' ? 'IoT' : 'Vision';
+    const variant = type === 'both' ? 'default' : 'secondary';
+    return <Badge variant={variant} className="text-[10px] px-1.5 py-0">{label}</Badge>;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ShieldCheck className="h-5 w-5" />
@@ -197,102 +284,162 @@ export const FeasibilityGateDialog = ({
           </DialogTitle>
         </DialogHeader>
 
-        {/* Summary Section */}
-        <div className="space-y-3">
-          <p className="text-sm font-medium text-muted-foreground">Project Summary</p>
-          {loading ? (
-            <div className="flex justify-center py-6">
-              <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary" />
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-3 gap-3">
-                <Card>
-                  <CardContent className="pt-4 pb-3 text-center">
-                    <Layers className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
-                    <p className="text-2xl font-bold">{summary.lineCount}</p>
-                    <p className="text-xs text-muted-foreground">Lines</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-4 pb-3 text-center">
-                    <Camera className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
-                    <p className="text-2xl font-bold">{summary.cameraCount}</p>
-                    <p className="text-xs text-muted-foreground">Cameras</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-4 pb-3 text-center">
-                    <Cpu className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
-                    <p className="text-2xl font-bold">{summary.iotDeviceCount}</p>
-                    <p className="text-xs text-muted-foreground">IoT Devices</p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {summary.useCases.length > 0 && (
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1">
-                    <Eye className="h-3.5 w-3.5" /> Use Cases
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {summary.useCases.map(uc => (
-                      <Badge key={uc} variant="secondary" className="text-xs">{uc}</Badge>
-                    ))}
+        <ScrollArea className="flex-1 pr-3">
+          <div className="space-y-4">
+            {/* KPI Cards */}
+            <div>
+              <p className="text-sm font-medium text-muted-foreground mb-2">Project Summary</p>
+              {loading ? (
+                <div className="flex justify-center py-6">
+                  <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary" />
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-3 gap-3">
+                    <Card>
+                      <CardContent className="pt-4 pb-3 text-center">
+                        <Layers className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
+                        <p className="text-2xl font-bold">{summary.lineCount}</p>
+                        <p className="text-xs text-muted-foreground">Lines</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="pt-4 pb-3 text-center">
+                        <Camera className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
+                        <p className="text-2xl font-bold">{summary.cameraCount}</p>
+                        <p className="text-xs text-muted-foreground">Cameras</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="pt-4 pb-3 text-center">
+                        <Cpu className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
+                        <p className="text-2xl font-bold">{summary.iotDeviceCount}</p>
+                        <p className="text-xs text-muted-foreground">IoT Devices</p>
+                      </CardContent>
+                    </Card>
                   </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
 
-        {/* Sign-off Section */}
-        {signedOff ? (
-          <div className="rounded-md border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/30 p-4 space-y-1">
-            <p className="text-sm font-medium flex items-center gap-1.5 text-green-700 dark:text-green-400">
-              <CheckCircle2 className="h-4 w-4" /> Signed Off
-            </p>
-            <p className="text-xs text-muted-foreground">
-              By {signedOffByName || 'Unknown'} on {signedOffAt ? new Date(signedOffAt).toLocaleString() : ''}
-            </p>
-          </div>
-        ) : allTabsGreen ? (
-          <div className="space-y-3 border-t pt-4">
-            <p className="text-sm text-muted-foreground">
-              By signing off, you confirm the feasibility assessment is complete.
-            </p>
-            {consultantName && (
-              <p className="text-sm">Solutions Consultant: <span className="font-medium">{consultantName}</span></p>
-            )}
-            {isConsultant ? (
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Lock className="h-3.5 w-3.5" /> Enter your password to confirm
-                </div>
-                <Input
-                  type="password"
-                  placeholder="Password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && password) handleSignOff(); }}
-                />
-                <Button onClick={handleSignOff} disabled={!password || submitting} className="w-full">
-                  {submitting ? 'Verifying…' : 'Sign Off'}
-                </Button>
+                  {summary.useCases.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1">
+                        <Eye className="h-3.5 w-3.5" /> Use Cases
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {summary.useCases.map(uc => (
+                          <Badge key={uc} variant="secondary" className="text-xs">{uc}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Site Structure Tree */}
+                  {summary.portal && (
+                    <div className="mt-4">
+                      <p className="text-sm font-medium text-muted-foreground mb-2">Site Structure</p>
+                      <div className="rounded-md border p-3 bg-muted/30">
+                        {/* Portal root */}
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                          <Globe className="h-4 w-4 text-primary shrink-0" />
+                          <span className="truncate">{summary.portal.url || 'Portal'}</span>
+                        </div>
+
+                        {summary.factories.length > 0 ? (
+                          <div className="ml-2 mt-1 border-l-2 border-border pl-4 space-y-1">
+                            {summary.factories.map((factory, fi) => (
+                              <div key={factory.id}>
+                                <div className="flex items-center gap-2 text-sm py-0.5">
+                                  <Factory className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                  <span className="font-medium">{factory.name}</span>
+                                </div>
+
+                                {factory.groups.length > 0 ? (
+                                  <div className="ml-2 border-l-2 border-border pl-4 space-y-0.5">
+                                    {factory.groups.map(group => (
+                                      <div key={group.id}>
+                                        <div className="flex items-center gap-2 text-sm py-0.5">
+                                          <FolderOpen className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                          <span>{group.name}</span>
+                                        </div>
+
+                                        {group.lines.length > 0 && (
+                                          <div className="ml-2 border-l-2 border-border pl-4 space-y-0.5">
+                                            {group.lines.map(line => (
+                                              <div key={line.id} className="flex items-center gap-2 text-sm py-0.5">
+                                                <Cable className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                                <span className="text-muted-foreground">{line.name}</span>
+                                                {solutionTypeBadge(line.solution_type)}
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="ml-6 text-xs text-muted-foreground italic">No groups</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="ml-6 mt-1 text-xs text-muted-foreground italic">No factories configured</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Sign-off Section */}
+            {signedOff ? (
+              <div className="rounded-md border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/30 p-4 space-y-1">
+                <p className="text-sm font-medium flex items-center gap-1.5 text-green-700 dark:text-green-400">
+                  <CheckCircle2 className="h-4 w-4" /> Signed Off
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  By {signedOffByName || 'Unknown'} on {signedOffAt ? new Date(signedOffAt).toLocaleString() : ''}
+                </p>
+              </div>
+            ) : allTabsGreen ? (
+              <div className="space-y-3 border-t pt-4">
+                <p className="text-sm text-muted-foreground">
+                  By signing off, you confirm the feasibility assessment is complete.
+                </p>
+                {consultantName && (
+                  <p className="text-sm">Solutions Consultant: <span className="font-medium">{consultantName}</span></p>
+                )}
+                {isConsultant ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Lock className="h-3.5 w-3.5" /> Enter your password to confirm
+                    </div>
+                    <Input
+                      type="password"
+                      placeholder="Password"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter' && password) handleSignOff(); }}
+                    />
+                    <Button onClick={handleSignOff} disabled={!password || submitting} className="w-full">
+                      {submitting ? 'Verifying…' : 'Sign Off'}
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-sm text-amber-600 dark:text-amber-400">
+                    Only the assigned Solutions Consultant can sign off.
+                  </p>
+                )}
               </div>
             ) : (
-              <p className="text-sm text-amber-600 dark:text-amber-400">
-                Only the assigned Solutions Consultant can sign off.
-              </p>
+              <div className="border-t pt-4">
+                <p className="text-sm text-muted-foreground">
+                  All feasibility tabs must be complete (green) before sign-off is available.
+                </p>
+              </div>
             )}
           </div>
-        ) : (
-          <div className="border-t pt-4">
-            <p className="text-sm text-muted-foreground">
-              All feasibility tabs must be complete (green) before sign-off is available.
-            </p>
-          </div>
-        )}
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

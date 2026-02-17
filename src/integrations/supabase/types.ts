@@ -1626,6 +1626,42 @@ export type Database = {
           },
         ]
       }
+      device_receiver_assignments: {
+        Row: {
+          created_at: string
+          id: string
+          iot_device_id: string
+          receiver_requirement_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          iot_device_id: string
+          receiver_requirement_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          iot_device_id?: string
+          receiver_requirement_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_receiver_assignments_iot_device_id_fkey"
+            columns: ["iot_device_id"]
+            isOneToOne: true
+            referencedRelation: "iot_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_receiver_assignments_receiver_requirement_id_fkey"
+            columns: ["receiver_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "project_iot_requirements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       equipment: {
         Row: {
           created_at: string
@@ -3915,6 +3951,42 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      receiver_gateway_assignments: {
+        Row: {
+          created_at: string
+          gateway_requirement_id: string
+          id: string
+          receiver_requirement_id: string
+        }
+        Insert: {
+          created_at?: string
+          gateway_requirement_id: string
+          id?: string
+          receiver_requirement_id: string
+        }
+        Update: {
+          created_at?: string
+          gateway_requirement_id?: string
+          id?: string
+          receiver_requirement_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receiver_gateway_assignments_gateway_requirement_id_fkey"
+            columns: ["gateway_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "project_iot_requirements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiver_gateway_assignments_receiver_requirement_id_fkey"
+            columns: ["receiver_requirement_id"]
+            isOneToOne: true
+            referencedRelation: "project_iot_requirements"
+            referencedColumns: ["id"]
           },
         ]
       }

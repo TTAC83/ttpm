@@ -15,6 +15,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, Cpu, Camera, Monitor, Server, HardDrive, Network, ChevronDown, X } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { AssignCamerasDialog, type CameraWithContext } from '@/components/AssignCamerasDialog';
+import { AssignDevicesDialog, type IoTDeviceWithContext } from '@/components/AssignDevicesDialog';
+import { AssignReceiversDialog } from '@/components/AssignReceiversDialog';
 
 interface ProjectHardwareProps {
   projectId: string;
@@ -65,7 +67,12 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [assignTargetServerId, setAssignTargetServerId] = useState<string>('');
   const [assignTargetServerName, setAssignTargetServerName] = useState<string>('');
-
+  const [assignDevicesDialogOpen, setAssignDevicesDialogOpen] = useState(false);
+  const [assignDevicesTargetId, setAssignDevicesTargetId] = useState<string>('');
+  const [assignDevicesTargetName, setAssignDevicesTargetName] = useState<string>('');
+  const [assignReceiversDialogOpen, setAssignReceiversDialogOpen] = useState(false);
+  const [assignReceiversTargetId, setAssignReceiversTargetId] = useState<string>('');
+  const [assignReceiversTargetName, setAssignReceiversTargetName] = useState<string>('');
   // Fetch hardware requirements
   const { data: requirements = [], isLoading } = useQuery({
     queryKey: ['project-iot-requirements', projectId, type],
@@ -363,6 +370,167 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
     },
   });
 
+  // Fetch IoT devices with full context for device-receiver assignment
+  const { data: iotDevicesWithContext = [] } = useQuery<IoTDeviceWithContext[]>({
+    queryKey: ['project-iot-devices-context', projectId, type],
+    queryFn: async () => {
+      if (type !== 'solutions') return [];
+
+      const { data: solutionsLines, error: linesError } = await supabase
+        .from('solutions_lines')
+        .select('id, line_name')
+        .eq('solutions_project_id', projectId);
+      if (linesError) throw linesError;
+      if (!solutionsLines || solutionsLines.length === 0) return [];
+
+      const lineIds = solutionsLines.map(l => l.id);
+      const { data: positions, error: posError } = await supabase
+        .from('positions')
+        .select('id, name, solutions_line_id')
+        .in('solutions_line_id', lineIds);
+      if (posError) throw posError;
+      if (!positions || positions.length === 0) return [];
+
+      const positionIds = positions.map(p => p.id);
+      const { data: equipment, error: eqError } = await supabase
+        .from('equipment')
+        .select('id, name, position_id')
+        .in('position_id', positionIds);
+      if (eqError) throw eqError;
+      if (!equipment || equipment.length === 0) return [];
+
+      const equipmentIds = equipment.map(e => e.id);
+      const { data: iotDevices, error: iotError } = await supabase
+        .from('iot_devices')
+        .select('id, name, mac_address, equipment_id, hardware_master(id, product_name)')
+        .in('equipment_id', equipmentIds);
+      if (iotError) throw iotError;
+      if (!iotDevices || iotDevices.length === 0) return [];
+
+      const lineMap = new Map(solutionsLines.map(l => [l.id, l.line_name]));
+      const posMap = new Map(positions.map(p => [p.id, { name: p.name, line_id: p.solutions_line_id }]));
+      const eqMap = new Map(equipment.map(e => [e.id, { name: e.name, position_id: e.position_id }]));
+
+      return iotDevices.map(dev => {
+        const eq = eqMap.get(dev.equipment_id);
+        const pos = eq ? posMap.get(eq.position_id) : undefined;
+        const lineName = pos ? lineMap.get(pos.line_id) || 'Unknown' : 'Unknown';
+        return {
+          id: dev.id,
+          name: dev.name,
+          mac_address: dev.mac_address || '',
+          equipment_name: eq?.name || 'Unknown',
+          line_name: lineName,
+          position_name: pos?.name || 'Unknown',
+          hardware_model: (dev.hardware_master as any)?.product_name || null,
+        };
+      });
+    },
+    enabled: type === 'solutions',
+  });
+
+  // Fetch device-receiver assignments
+  const { data: deviceReceiverAssignments = [] } = useQuery({
+    queryKey: ['device-receiver-assignments', projectId],
+    queryFn: async () => {
+      const receiverReqs = requirements.filter(r => r.hardware_type === 'receiver');
+      if (receiverReqs.length === 0) return [];
+      const { data, error } = await supabase
+        .from('device_receiver_assignments')
+        .select('id, iot_device_id, receiver_requirement_id')
+        .in('receiver_requirement_id', receiverReqs.map(r => r.id));
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: type === 'solutions' && requirements.length > 0,
+  });
+
+  // Fetch receiver-gateway assignments
+  const { data: receiverGatewayAssignments = [] } = useQuery({
+    queryKey: ['receiver-gateway-assignments', projectId],
+    queryFn: async () => {
+      const gatewayReqs = requirements.filter(r => r.hardware_type === 'gateway');
+      if (gatewayReqs.length === 0) return [];
+      const { data, error } = await supabase
+        .from('receiver_gateway_assignments')
+        .select('id, receiver_requirement_id, gateway_requirement_id')
+        .in('gateway_requirement_id', gatewayReqs.map(r => r.id));
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: type === 'solutions' && requirements.length > 0,
+  });
+
+  // Assign devices to receiver mutation
+  const assignDevicesMutation = useMutation({
+    mutationFn: async ({ deviceIds, receiverId }: { deviceIds: string[]; receiverId: string }) => {
+      const rows = deviceIds.map(iot_device_id => ({
+        iot_device_id,
+        receiver_requirement_id: receiverId,
+      }));
+      const { error } = await supabase.from('device_receiver_assignments').insert(rows);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['device-receiver-assignments', projectId] });
+      toast({ title: 'Devices assigned successfully' });
+      setAssignDevicesDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  // Unassign device from receiver
+  const unassignDeviceMutation = useMutation({
+    mutationFn: async (assignmentId: string) => {
+      const { error } = await supabase.from('device_receiver_assignments').delete().eq('id', assignmentId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['device-receiver-assignments', projectId] });
+      toast({ title: 'Device unassigned' });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  // Assign receivers to gateway mutation
+  const assignReceiversMutation = useMutation({
+    mutationFn: async ({ receiverIds, gatewayId }: { receiverIds: string[]; gatewayId: string }) => {
+      const rows = receiverIds.map(receiver_requirement_id => ({
+        receiver_requirement_id,
+        gateway_requirement_id: gatewayId,
+      }));
+      const { error } = await supabase.from('receiver_gateway_assignments').insert(rows);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['receiver-gateway-assignments', projectId] });
+      toast({ title: 'Receivers assigned successfully' });
+      setAssignReceiversDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  // Unassign receiver from gateway
+  const unassignReceiverMutation = useMutation({
+    mutationFn: async (assignmentId: string) => {
+      const { error } = await supabase.from('receiver_gateway_assignments').delete().eq('id', assignmentId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['receiver-gateway-assignments', projectId] });
+      toast({ title: 'Receiver unassigned' });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    },
+  });
+
   // Fetch gateways
   const { data: gateways = [] } = useQuery({
     queryKey: ['gateways-master'],
@@ -584,38 +752,98 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
               <p className="text-sm text-muted-foreground">No gateways added yet</p>
             ) : (
               <div className="space-y-2">
-                {gatewayRequirements.map((req) => (
-                  <Card key={req.id}>
-                    <CardContent className="pt-6">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1 flex-1">
-                          {req.name && (
-                            <p className="text-lg font-semibold">{req.name}</p>
-                          )}
-                          <p className="font-medium">
-                            {req.gateways_master?.manufacturer} - {req.gateways_master?.model_number}
-                          </p>
-                          {req.gateways_master?.description && (
-                            <p className="text-sm text-muted-foreground">{req.gateways_master.description}</p>
-                          )}
-                          <p className="text-sm">
-                            <span className="font-medium">Quantity:</span> {req.quantity}
-                          </p>
-                          {req.notes && (
-                            <p className="text-sm text-muted-foreground">{req.notes}</p>
-                          )}
+                {gatewayRequirements.map((req) => {
+                  const assignedToThis = receiverGatewayAssignments.filter(a => a.gateway_requirement_id === req.id);
+                  const assignedReceiverIds = new Set(assignedToThis.map(a => a.receiver_requirement_id));
+                  const assignedReceiverReqs = receiverRequirements.filter(r => assignedReceiverIds.has(r.id));
+
+                  return (
+                    <Card key={req.id}>
+                      <CardContent className="pt-6">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1 flex-1">
+                            {req.name && (
+                              <p className="text-lg font-semibold">{req.name}</p>
+                            )}
+                            <p className="font-medium">
+                              {req.gateways_master?.manufacturer} - {req.gateways_master?.model_number}
+                            </p>
+                            {req.gateways_master?.description && (
+                              <p className="text-sm text-muted-foreground">{req.gateways_master.description}</p>
+                            )}
+                            <p className="text-sm">
+                              <span className="font-medium">Quantity:</span> {req.quantity}
+                            </p>
+                            {req.notes && (
+                              <p className="text-sm text-muted-foreground">{req.notes}</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {type === 'solutions' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setAssignReceiversTargetId(req.id);
+                                  setAssignReceiversTargetName(req.name || `${req.gateways_master?.manufacturer} ${req.gateways_master?.model_number}` || 'Gateway');
+                                  setAssignReceiversDialogOpen(true);
+                                }}
+                              >
+                                <Network className="h-4 w-4 mr-1" />
+                                Assign Receivers
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate(req.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteMutation.mutate(req.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+
+                        {type === 'solutions' && (
+                          <Collapsible className="mt-4">
+                            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:underline">
+                              <ChevronDown className="h-4 w-4" />
+                              Assigned Receivers ({assignedReceiverReqs.length}/{receiverRequirements.length})
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="mt-2">
+                              {assignedReceiverReqs.length === 0 ? (
+                                <p className="text-sm text-muted-foreground pl-6">No receivers assigned to this gateway yet.</p>
+                              ) : (
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead>Name</TableHead>
+                                      <TableHead>Manufacturer</TableHead>
+                                      <TableHead>Model</TableHead>
+                                      <TableHead className="w-10"></TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {assignedReceiverReqs.map(rec => {
+                                      const assignment = assignedToThis.find(a => a.receiver_requirement_id === rec.id);
+                                      return (
+                                        <TableRow key={rec.id}>
+                                          <TableCell className="font-medium">{rec.name || '—'}</TableCell>
+                                          <TableCell>{rec.receivers_master?.manufacturer}</TableCell>
+                                          <TableCell>{rec.receivers_master?.model_number}</TableCell>
+                                          <TableCell>
+                                            <Button variant="ghost" size="sm" onClick={() => assignment && unassignReceiverMutation.mutate(assignment.id)}>
+                                              <X className="h-3 w-3" />
+                                            </Button>
+                                          </TableCell>
+                                        </TableRow>
+                                      );
+                                    })}
+                                  </TableBody>
+                                </Table>
+                              )}
+                            </CollapsibleContent>
+                          </Collapsible>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -633,38 +861,103 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
               <p className="text-sm text-muted-foreground">No receivers added yet</p>
             ) : (
               <div className="space-y-2">
-                {receiverRequirements.map((req) => (
-                  <Card key={req.id}>
-                    <CardContent className="pt-6">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1 flex-1">
-                          {req.name && (
-                            <p className="text-lg font-semibold">{req.name}</p>
-                          )}
-                          <p className="font-medium">
-                            {req.receivers_master?.manufacturer} - {req.receivers_master?.model_number}
-                          </p>
-                          {req.receivers_master?.description && (
-                            <p className="text-sm text-muted-foreground">{req.receivers_master.description}</p>
-                          )}
-                          <p className="text-sm">
-                            <span className="font-medium">Quantity:</span> {req.quantity}
-                          </p>
-                          {req.notes && (
-                            <p className="text-sm text-muted-foreground">{req.notes}</p>
-                          )}
+                {receiverRequirements.map((req) => {
+                  const assignedToThis = deviceReceiverAssignments.filter(a => a.receiver_requirement_id === req.id);
+                  const assignedDevices = assignedToThis
+                    .map(a => iotDevicesWithContext.find(d => d.id === a.iot_device_id))
+                    .filter(Boolean) as IoTDeviceWithContext[];
+
+                  return (
+                    <Card key={req.id}>
+                      <CardContent className="pt-6">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1 flex-1">
+                            {req.name && (
+                              <p className="text-lg font-semibold">{req.name}</p>
+                            )}
+                            <p className="font-medium">
+                              {req.receivers_master?.manufacturer} - {req.receivers_master?.model_number}
+                            </p>
+                            {req.receivers_master?.description && (
+                              <p className="text-sm text-muted-foreground">{req.receivers_master.description}</p>
+                            )}
+                            <p className="text-sm">
+                              <span className="font-medium">Quantity:</span> {req.quantity}
+                            </p>
+                            {req.notes && (
+                              <p className="text-sm text-muted-foreground">{req.notes}</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {type === 'solutions' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setAssignDevicesTargetId(req.id);
+                                  setAssignDevicesTargetName(req.name || `${req.receivers_master?.manufacturer} ${req.receivers_master?.model_number}` || 'Receiver');
+                                  setAssignDevicesDialogOpen(true);
+                                }}
+                              >
+                                <Cpu className="h-4 w-4 mr-1" />
+                                Assign Devices
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate(req.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteMutation.mutate(req.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+
+                        {type === 'solutions' && (
+                          <Collapsible className="mt-4">
+                            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:underline">
+                              <ChevronDown className="h-4 w-4" />
+                              Assigned Devices ({assignedDevices.length}/{iotDevicesWithContext.length})
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="mt-2">
+                              {assignedDevices.length === 0 ? (
+                                <p className="text-sm text-muted-foreground pl-6">No devices assigned to this receiver yet.</p>
+                              ) : (
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead>Line</TableHead>
+                                      <TableHead>Position</TableHead>
+                                      <TableHead>Equipment</TableHead>
+                                      <TableHead>Device</TableHead>
+                                      <TableHead>MAC</TableHead>
+                                      <TableHead className="w-10"></TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {assignedDevices.map(dev => {
+                                      const assignment = assignedToThis.find(a => a.iot_device_id === dev.id);
+                                      return (
+                                        <TableRow key={dev.id}>
+                                          <TableCell className="font-medium">{dev.line_name}</TableCell>
+                                          <TableCell>{dev.position_name}</TableCell>
+                                          <TableCell>{dev.equipment_name}</TableCell>
+                                          <TableCell>{dev.name}</TableCell>
+                                          <TableCell className="font-mono text-xs">{dev.mac_address || '—'}</TableCell>
+                                          <TableCell>
+                                            <Button variant="ghost" size="sm" onClick={() => assignment && unassignDeviceMutation.mutate(assignment.id)}>
+                                              <X className="h-3 w-3" />
+                                            </Button>
+                                          </TableCell>
+                                        </TableRow>
+                                      );
+                                    })}
+                                  </TableBody>
+                                </Table>
+                              )}
+                            </CollapsibleContent>
+                          </Collapsible>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -1138,6 +1431,39 @@ export function ProjectHardware({ projectId, type }: ProjectHardwareProps) {
         }
         isPending={assignCamerasMutation.isPending}
         serverName={assignTargetServerName}
+      />
+
+      {/* Assign Devices to Receiver Dialog */}
+      <AssignDevicesDialog
+        open={assignDevicesDialogOpen}
+        onOpenChange={setAssignDevicesDialogOpen}
+        unassignedDevices={iotDevicesWithContext.filter(
+          d => !deviceReceiverAssignments.some(a => a.iot_device_id === d.id)
+        )}
+        onAssign={(deviceIds) =>
+          assignDevicesMutation.mutate({ deviceIds, receiverId: assignDevicesTargetId })
+        }
+        isPending={assignDevicesMutation.isPending}
+        targetName={assignDevicesTargetName}
+      />
+
+      {/* Assign Receivers to Gateway Dialog */}
+      <AssignReceiversDialog
+        open={assignReceiversDialogOpen}
+        onOpenChange={setAssignReceiversDialogOpen}
+        unassignedReceivers={receiverRequirements
+          .filter(r => !receiverGatewayAssignments.some(a => a.receiver_requirement_id === r.id))
+          .map(r => ({
+            id: r.id,
+            name: r.name,
+            manufacturer: r.receivers_master?.manufacturer || '',
+            model: r.receivers_master?.model_number || '',
+          }))}
+        onAssign={(receiverIds) =>
+          assignReceiversMutation.mutate({ receiverIds, gatewayId: assignReceiversTargetId })
+        }
+        isPending={assignReceiversMutation.isPending}
+        targetName={assignReceiversTargetName}
       />
     </div>
   );

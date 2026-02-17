@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Building, Calendar, MapPin, Check, X, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Building, Calendar, MapPin, Check, X, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { SolutionsLines } from './tabs/SolutionsLines';
@@ -27,6 +27,7 @@ import { SharedBlockersTab } from '@/components/shared/tabs/SharedBlockersTab';
 import { GanttChart } from '@/features/gantt/components/GanttChart';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTabCompleteness } from './hooks/useTabCompleteness';
+import { FeasibilityGateDialog } from '@/components/FeasibilityGateDialog';
 
 interface SolutionsProject {
   id: string;
@@ -67,7 +68,13 @@ export const SolutionsProjectDetail = () => {
   const [project, setProject] = useState<SolutionsProject | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [gateDialogOpen, setGateDialogOpen] = useState(false);
   const completeness = useTabCompleteness(project);
+
+  const allTabsGreen = completeness.overview && completeness.contacts && completeness.factory && completeness.lines && completeness.hardwareSummary;
+  const feasibilitySignedOff = (project as any)?.feasibility_signed_off ?? false;
+  const feasibilitySignedOffBy = (project as any)?.feasibility_signed_off_by ?? null;
+  const feasibilitySignedOffAt = (project as any)?.feasibility_signed_off_at ?? null;
 
   const fetchProject = async () => {
     if (!id) return;
@@ -262,12 +269,20 @@ export const SolutionsProjectDetail = () => {
         <div className="space-y-2">
           {/* Row 1 - Feasibility Gate */}
           <TabsList className="w-full justify-start h-auto flex-wrap gap-1.5 p-1">
-            <span className={`inline-flex items-center px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider text-white select-none ${
-              completeness.overview && completeness.contacts && completeness.factory && completeness.lines && completeness.hardwareSummary
-                ? 'bg-green-600' : 'bg-red-600'
-            }`}>
+            <button
+              type="button"
+              onClick={() => setGateDialogOpen(true)}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider text-white select-none cursor-pointer transition-colors ${
+                feasibilitySignedOff
+                  ? 'bg-green-600 hover:bg-green-700'
+                  : allTabsGreen
+                    ? 'bg-amber-500 hover:bg-amber-600 animate-pulse'
+                    : 'bg-red-600 hover:bg-red-700'
+              }`}
+            >
+              {feasibilitySignedOff && <ShieldCheck className="h-3.5 w-3.5" />}
               Feasibility Gate
-            </span>
+            </button>
             <TabsTrigger value="overview">
               Customer Overview
               <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.overview ? 'bg-green-500' : 'bg-red-500'}`} />
@@ -397,6 +412,17 @@ export const SolutionsProjectDetail = () => {
           <SharedBlockersTab projectId={project.id} projectType="solutions" />
         </TabsContent>
       </Tabs>
+      <FeasibilityGateDialog
+        open={gateDialogOpen}
+        onOpenChange={setGateDialogOpen}
+        projectId={project.id}
+        solutionsConsultantId={project.solutions_consultant ?? null}
+        allTabsGreen={allTabsGreen}
+        signedOff={feasibilitySignedOff}
+        signedOffBy={feasibilitySignedOffBy}
+        signedOffAt={feasibilitySignedOffAt}
+        onSignedOff={fetchProject}
+      />
     </div>
   );
 };

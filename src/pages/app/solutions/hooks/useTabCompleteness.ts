@@ -7,6 +7,7 @@ interface TabCompleteness {
   factory: boolean;
   lines: boolean;
   hardwareSummary: boolean;
+  featureRequirements: boolean;
 }
 
 interface ProjectData {
@@ -37,6 +38,7 @@ export const useTabCompleteness = (project: ProjectData | null) => {
     factory: false,
     lines: false,
     hardwareSummary: false,
+    featureRequirements: false,
   });
 
   useEffect(() => {
@@ -73,7 +75,7 @@ export const useTabCompleteness = (project: ProjectData | null) => {
 
     // Async checks
     const checkAsync = async () => {
-      const [contactsRes, portalRes, linesRes] = await Promise.all([
+      const [contactsRes, portalRes, linesRes, productGapsRes] = await Promise.all([
         supabase
           .from('contact_solutions_projects')
           .select('id', { count: 'exact', head: true })
@@ -87,6 +89,11 @@ export const useTabCompleteness = (project: ProjectData | null) => {
           .from('solutions_lines')
           .select('id', { count: 'exact', head: true })
           .eq('solutions_project_id', project.id),
+        supabase
+          .from('product_gaps')
+          .select('id', { count: 'exact', head: true })
+          .eq('solutions_project_id', project.id)
+          .is('resolved_at', null),
       ]);
 
       const contactsComplete = (contactsRes.count ?? 0) > 0;
@@ -136,6 +143,8 @@ export const useTabCompleteness = (project: ProjectData | null) => {
       }
 
       const linesComplete = (linesRes.count ?? 0) > 0;
+      // Feature Requirements complete = no unresolved product gaps
+      const featureRequirementsComplete = (productGapsRes.count ?? 0) === 0;
 
       setCompleteness(prev => ({
         ...prev,
@@ -144,6 +153,7 @@ export const useTabCompleteness = (project: ProjectData | null) => {
         contacts: contactsComplete,
         factory: factoryComplete,
         lines: linesComplete,
+        featureRequirements: featureRequirementsComplete,
       }));
     };
 

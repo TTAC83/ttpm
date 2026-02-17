@@ -260,29 +260,43 @@ export const SolutionsProjectDetail = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="space-y-2">
-          {/* Row 1 - Key tabs with completeness indicators */}
-          <TabsList className="flex flex-wrap gap-2">
-            <TabsTrigger value="overview">
-              Customer Overview
-              <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.overview ? 'bg-green-500' : 'bg-red-500'}`} />
-            </TabsTrigger>
-            <TabsTrigger value="contacts">
-              Contacts
-              <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.contacts ? 'bg-green-500' : 'bg-red-500'}`} />
-            </TabsTrigger>
-            <TabsTrigger value="factory">
-              Factory
-              <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.factory ? 'bg-green-500' : 'bg-red-500'}`} />
-            </TabsTrigger>
-            <TabsTrigger value="lines">
-              Lines
-              <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.lines ? 'bg-green-500' : 'bg-red-500'}`} />
-            </TabsTrigger>
-            <TabsTrigger value="hardware-summary">
-              Hardware Summary
-              <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.hardwareSummary ? 'bg-green-500' : 'bg-red-500'}`} />
-            </TabsTrigger>
-          </TabsList>
+          {/* Row 1 - Feasibility Gate */}
+          {(() => {
+            const allGreen = completeness.overview && completeness.contacts && completeness.factory && completeness.lines && completeness.hardwareSummary && completeness.featureRequirements;
+            return (
+              <div className="space-y-1">
+                <p className={`text-xs font-semibold uppercase tracking-wide ${allGreen ? 'text-green-600' : 'text-red-600'}`}>
+                  Feasibility Gate
+                </p>
+                <TabsList className="flex flex-wrap gap-2">
+                  <TabsTrigger value="overview">
+                    Customer Overview
+                    <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.overview ? 'bg-green-500' : 'bg-red-500'}`} />
+                  </TabsTrigger>
+                  <TabsTrigger value="contacts">
+                    Contacts
+                    <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.contacts ? 'bg-green-500' : 'bg-red-500'}`} />
+                  </TabsTrigger>
+                  <TabsTrigger value="factory">
+                    Factory
+                    <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.factory ? 'bg-green-500' : 'bg-red-500'}`} />
+                  </TabsTrigger>
+                  <TabsTrigger value="lines">
+                    Lines
+                    <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.lines ? 'bg-green-500' : 'bg-red-500'}`} />
+                  </TabsTrigger>
+                  <TabsTrigger value="hardware-summary">
+                    Hardware Summary
+                    <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.hardwareSummary ? 'bg-green-500' : 'bg-red-500'}`} />
+                  </TabsTrigger>
+                  <TabsTrigger value="product-gaps">
+                    Feature Requirements
+                    <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.featureRequirements ? 'bg-green-500' : 'bg-red-500'}`} />
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+            );
+          })()}
 
           {/* Row 2 */}
           <TabsList className="flex flex-wrap gap-2">
@@ -299,7 +313,6 @@ export const SolutionsProjectDetail = () => {
           <TabsList className="flex flex-wrap gap-2">
             <TabsTrigger value="hardware">Factory Hardware</TabsTrigger>
             <TabsTrigger value="vision-models">Vision Models</TabsTrigger>
-            <TabsTrigger value="product-gaps">Feature Requirements</TabsTrigger>
             <TabsTrigger value="blockers">Escalations</TabsTrigger>
             <TabsTrigger value="audit">Audit</TabsTrigger>
           </TabsList>

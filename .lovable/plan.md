@@ -1,86 +1,113 @@
 
 
-## Factory Hardware Completeness Indicators and Configuration Gaps
+## Line-by-Line Summary Section in Feasibility Gate Dialog
 
 ### Overview
 
-Add red/green completeness indicators to the IoT and Vision sub-tabs within the Factory Hardware page, and a top-level indicator on the "Factory Hardware" tab in the navigation. Also add a Configuration Gaps info box (matching the style from the Lines page) that tells the user exactly what needs attention.
+Add a new "Line Detail" section to the Feasibility Gate dialog that provides a breakdown of each line showing its positions, equipment, and attached hardware (cameras with use cases/attributes/lights/PLCs, and IoT devices with HMI/energy monitoring status).
 
-### Completeness Rules
+Given the dialog is already content-heavy, the recommended approach is to **widen the dialog to `max-w-4xl`** and organise the content into **horizontal tabs** (Summary | Line Detail | Network Topology). This keeps each section focused and avoids an endlessly scrolling popup. A carousel would feel odd here as each "slide" has different heights and content types -- tabs give users direct access to the section they need.
 
-**IoT tab is green when:**
-- Every IoT device (from lines) is assigned to a receiver
-- Every receiver is assigned to a gateway
-- If there are no IoT devices AND no receivers AND no gateways, treat as green (nothing to configure)
+### Layout Change
 
-**Vision tab is green when:**
-- Every camera (from lines) is assigned to a server
-- If there are no cameras AND no servers, treat as green (nothing to configure)
+The dialog currently uses `max-w-2xl`. It will be widened to `max-w-4xl` and the existing content will be split into three tabs:
 
-**Factory Hardware nav tab is green when:**
-- Both IoT and Vision sub-tabs are green
+| Tab | Content |
+|-----|---------|
+| **Summary** | KPI cards, use cases, site structure (existing content) |
+| **Line Detail** | New line-by-line hardware breakdown |
+| **Network** | Network topology and unassigned hardware (existing content) |
 
-### Configuration Gaps Info Box
+The sign-off section remains fixed at the bottom, outside the tabs.
 
-A collapsible panel at the top of each sub-tab (IoT / Vision), styled like the existing "Configuration Gaps" pattern on the Lines page. It lists specific unresolved items:
+### Line Detail Tab Content
 
-**IoT gaps examples:**
-- "3 IoT devices not assigned to a receiver" (with device names)
-- "2 receivers not assigned to a gateway" (with receiver names)
+For each solutions line, render a collapsible card:
 
-**Vision gaps examples:**
-- "4 cameras not assigned to a server" (with camera MAC/line info)
+```
+Line 1 Name
+  Position 1 > Equipment A (Camera)
+    Use Cases: Label Check, OCR
+    Attributes: Colour, Orientation
+    Light: Yes (model name)
+    PLC: Yes (model name) - 3 outputs
+    HMI: Yes (model name)
+  Position 2 > Equipment B (IoT)
+    Device: Sensor X
+    HMI/Energy: Yes (model name)
+```
 
-When all items are assigned, the panel shows a green "All hardware assignments complete" message instead.
+Each piece of equipment shows:
+- **Cameras**: use cases (from `camera_use_cases` + `vision_use_cases_master`), attributes (from `camera_attributes`), light status (resolved from `hardware_master` if `light_id` set), PLC status (resolved from `hardware_master` if `plc_master_id` set) with relay output count, HMI status (resolved from `tv_displays_master` if `hmi_master_id` set)
+- **IoT Devices**: device name, hardware model (from `hardware_master`), HMI/energy monitoring indicated by presence of `hmi_master_id` on the parent camera or co-located equipment
+
+### Data Fetching
+
+Extend `fetchSummary` to also collect:
+1. All positions per line (via `solutions_line_id`)
+2. Equipment per position (via `position_id`)
+3. Cameras per equipment with: use cases, attributes, light/PLC/HMI master IDs
+4. IoT devices per equipment with: name, hardware model
+5. Resolve master IDs to names in bulk from `hardware_master`, `tv_displays_master`, `vision_use_cases_master`
+
+All fetched in parallel where possible to minimise load time.
 
 ### Technical Changes
 
-**1. `src/pages/app/projects/tabs/ProjectHardware.tsx`**
+**File: `src/components/FeasibilityGateDialog.tsx`**
 
-- Compute `iotComplete` and `visionComplete` booleans from existing query data already loaded in the component:
-  - Compare `iotDevicesFromLines` against `deviceReceiverAssignments` to find unassigned devices
-  - Compare `receiverRequirements` against `receiverGatewayAssignments` to find unassigned receivers
-  - Compare `camerasWithContext` against `cameraAssignments` to find unassigned cameras
-- Add red/green dot indicators to the IoT and Vision `TabsTrigger` elements (same style as the nav tabs)
-- Add a Configuration Gaps panel at the top of each `TabsContent` that lists specific unresolved items
-- Export `iotComplete` and `visionComplete` (or a combined `hardwareComplete`) so the parent can use it -- achieved by accepting an optional `onCompletenessChange` callback prop
+1. **Widen dialog**: Change `max-w-2xl` to `max-w-4xl`
+2. **Add Tabs**: Wrap existing content sections in a `Tabs` component with three tabs: Summary, Line Detail, Network
+3. **New interfaces**: Add `LineDetail`, `PositionDetail`, `EquipmentDetail` types to the summary data
+4. **Extended fetch**: In `fetchSummary`, after existing queries, fetch the full position/equipment/camera/device hierarchy with related master data
+5. **Line Detail rendering**: Collapsible cards per line, with nested position > equipment > hardware detail using the same tree-style indentation pattern as the site structure section
+6. **Icons**: Camera icon for vision equipment, MonitorSmartphone for IoT, Lightbulb for lights, Cpu for PLC, Monitor for HMI, with colour-coded badges matching the process flow chart conventions (green camera, yellow light, purple PLC, orange HMI)
+7. **Sign-off section**: Moved outside the tabs so it's always visible regardless of which tab is active
 
-**2. `src/pages/app/solutions/hooks/useTabCompleteness.ts`**
+### New Data Structures
 
-- Add `factoryHardware: boolean` to the `TabCompleteness` interface
-- Add an async check that mirrors the assignment logic: fetch IoT devices, cameras, and their assignments to determine completeness
-- This value will drive the nav tab indicator
+```typescript
+interface LineDetailData {
+  id: string;
+  name: string;
+  positions: PositionDetailData[];
+}
 
-**3. `src/pages/app/solutions/SolutionsProjectDetail.tsx`**
+interface PositionDetailData {
+  id: string;
+  name: string;
+  equipment: EquipmentDetailData[];
+}
 
-- Add a red/green dot to the "Factory Hardware" `TabsTrigger`, driven by `completeness.factoryHardware`
+interface EquipmentDetailData {
+  id: string;
+  name: string;
+  type: string; // equipment_type
+  cameras: CameraDetailData[];
+  iotDevices: IoTDeviceDetailData[];
+}
 
-### Visual Design
+interface CameraDetailData {
+  id: string;
+  mac_address: string;
+  camera_model: string; // resolved from hardware_master
+  use_cases: string[];
+  attributes: { title: string; description: string }[];
+  light: { required: boolean; model?: string } | null;
+  plc: { attached: boolean; model?: string; outputCount: number } | null;
+  hmi: { required: boolean; model?: string } | null;
+}
 
-The sub-tab indicators will look like:
-
-```text
-[IoT (3) *green*]  [Vision (5) *red*]
-```
-
-The gaps panel will match the existing Lines pattern:
-
-```text
-+------------------------------------------------------+
-| CONFIGURATION GAPS -- 3 items remaining              |
-|                                                      |
-| [Unassigned Devices]        [Unassigned Receivers]   |
-| * Sensor A (Line 1)        * Receiver 1              |
-| * Sensor B (Line 2)        * Receiver 2              |
-| * Sensor C (Line 3)                                  |
-+------------------------------------------------------+
+interface IoTDeviceDetailData {
+  id: string;
+  name: string;
+  hardware_model: string; // resolved from hardware_master
+}
 ```
 
 ### Files Affected
 
 | File | Change |
 |------|--------|
-| `src/pages/app/projects/tabs/ProjectHardware.tsx` | Add completeness computation, sub-tab indicators, gaps panels, and `onCompletenessChange` callback |
-| `src/pages/app/solutions/hooks/useTabCompleteness.ts` | Add `factoryHardware` field with assignment-based completeness check |
-| `src/pages/app/solutions/SolutionsProjectDetail.tsx` | Add red/green dot to "Factory Hardware" tab trigger |
+| `src/components/FeasibilityGateDialog.tsx` | Widen dialog, add tabs, add line detail data fetching, add line detail tab rendering |
 

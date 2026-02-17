@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ShieldCheck, Layers, Camera, Cpu, Eye, Lock, CheckCircle2, Globe, Factory, FolderOpen, Cable, Cloud, Server, Radio, Wifi, MonitorSmartphone } from 'lucide-react';
+import { ShieldCheck, Layers, Camera, Cpu, Eye, Lock, CheckCircle2, Globe, Factory, FolderOpen, Cable, Cloud, Server, Radio, Wifi, MonitorSmartphone, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -41,11 +41,14 @@ interface SummaryData {
   factories: HierarchyFactory[];
   servers: NetworkServer[];
   gateways: NetworkGateway[];
+  unassignedCameras: NetworkCamera[];
+  unassignedDevices: NetworkIoTDevice[];
 }
 
 const emptySummary: SummaryData = {
   lineCount: 0, cameraCount: 0, iotDeviceCount: 0, useCases: [],
   portal: null, factories: [], servers: [], gateways: [],
+  unassignedCameras: [], unassignedDevices: [],
 };
 
 export const FeasibilityGateDialog = ({
@@ -151,42 +154,65 @@ export const FeasibilityGateDialog = ({
       const gatewayRows = hwList.filter(h => h.hardware_type === 'gateway');
       const receiverRows = hwList.filter(h => h.hardware_type === 'receiver');
 
-      // Fetch assignments in parallel
       const serverIds = serverRows.map(s => s.id);
       const gatewayIds = gatewayRows.map(g => g.id);
       const receiverIds = receiverRows.map(r => r.id);
 
-      const [camAssignRes, recGwRes, devRecRes] = await Promise.all([
+      // Fetch all project cameras & IoT devices via equipment chain
+      const equipmentIds: string[] = lineIds.length > 0
+        ? await (async (): Promise<string[]> => {
+            const { data: positions } = await supabase.from('positions').select('id').in('solutions_line_id', lineIds);
+            const posIds = (positions ?? []).map(p => p.id);
+            if (posIds.length === 0) return [];
+            const { data: eq } = await supabase.from('equipment').select('id').in('position_id', posIds);
+            return (eq ?? []).map(e => e.id);
+          })()
+        : [];
+
+      const [allCamerasRes, allIoTDevicesRes, camAssignRes, recGwRes, devRecRes] = await Promise.all([
+        equipmentIds.length > 0
+          ? supabase.from('cameras').select('id, mac_address, camera_type, plc_attached').in('equipment_id', equipmentIds)
+          : Promise.resolve({ data: [] as any[] }),
+        equipmentIds.length > 0
+          ? supabase.from('iot_devices').select('id, name').in('equipment_id', equipmentIds)
+          : Promise.resolve({ data: [] as any[] }),
         serverIds.length > 0
           ? supabase.from('camera_server_assignments').select('camera_id, server_requirement_id').in('server_requirement_id', serverIds)
-          : Promise.resolve({ data: [] as { camera_id: string; server_requirement_id: string }[] }),
+          : Promise.resolve({ data: [] as any[] }),
         gatewayIds.length > 0
           ? supabase.from('receiver_gateway_assignments').select('receiver_requirement_id, gateway_requirement_id').in('gateway_requirement_id', gatewayIds)
-          : Promise.resolve({ data: [] as { receiver_requirement_id: string; gateway_requirement_id: string }[] }),
+          : Promise.resolve({ data: [] as any[] }),
         receiverIds.length > 0
           ? supabase.from('device_receiver_assignments').select('iot_device_id, receiver_requirement_id').in('receiver_requirement_id', receiverIds)
-          : Promise.resolve({ data: [] as { iot_device_id: string; receiver_requirement_id: string }[] }),
+          : Promise.resolve({ data: [] as any[] }),
       ]);
 
+      const allCameras = (allCamerasRes as any).data ?? [];
+      const allIoTDevices = (allIoTDevicesRes as any).data ?? [];
       const camAssigns = (camAssignRes as any).data ?? [];
       const recGwAssigns = (recGwRes as any).data ?? [];
       const devRecAssigns = (devRecRes as any).data ?? [];
 
-      // Fetch camera details for assigned cameras
-      const assignedCameraIds = camAssigns.map((a: any) => a.camera_id);
-      let cameraDetails: { id: string; mac_address: string; camera_type: string; plc_attached: boolean | null }[] = [];
-      if (assignedCameraIds.length > 0) {
-        const { data } = await supabase.from('cameras').select('id, mac_address, camera_type, plc_attached').in('id', assignedCameraIds);
-        cameraDetails = data ?? [];
+      // Resolve camera_type UUIDs to model names from hardware_master
+      const cameraTypeIds: string[] = Array.from(new Set(allCameras.map((c: any) => String(c.camera_type)).filter((v: string) => v && v !== 'undefined')));
+      let cameraTypeMap: Record<string, string> = {};
+      if (cameraTypeIds.length > 0) {
+        const { data: hwNames } = await supabase.from('hardware_master').select('id, product_name, sku_no').in('id', cameraTypeIds);
+        (hwNames ?? []).forEach((h: any) => {
+          cameraTypeMap[h.id] = `${h.product_name} ${h.sku_no}`.trim();
+        });
       }
 
-      // Fetch IoT device details
-      const assignedDeviceIds = devRecAssigns.map((a: any) => a.iot_device_id);
-      let deviceDetails: { id: string; name: string | null }[] = [];
-      if (assignedDeviceIds.length > 0) {
-        const { data } = await supabase.from('iot_devices').select('id, name').in('id', assignedDeviceIds);
-        deviceDetails = data ?? [];
-      }
+      const mapCam = (cam: any): NetworkCamera => ({
+        id: cam.id,
+        mac_address: cam.mac_address,
+        camera_type: cameraTypeMap[cam.camera_type] || cam.camera_type || 'Unknown',
+        plc_attached: !!cam.plc_attached,
+      });
+
+      // Build assigned sets
+      const assignedCameraIds = new Set(camAssigns.map((a: any) => a.camera_id));
+      const assignedDeviceIds = new Set(devRecAssigns.map((a: any) => a.iot_device_id));
 
       // Build server topology
       const servers: NetworkServer[] = serverRows.map(s => ({
@@ -195,8 +221,8 @@ export const FeasibilityGateDialog = ({
         cameras: camAssigns
           .filter((a: any) => a.server_requirement_id === s.id)
           .map((a: any) => {
-            const cam = cameraDetails.find(c => c.id === a.camera_id);
-            return cam ? { id: cam.id, mac_address: cam.mac_address, camera_type: cam.camera_type, plc_attached: !!cam.plc_attached } : null;
+            const cam = allCameras.find((c: any) => c.id === a.camera_id);
+            return cam ? mapCam(cam) : null;
           })
           .filter(Boolean) as NetworkCamera[],
       }));
@@ -215,17 +241,25 @@ export const FeasibilityGateDialog = ({
               devices: devRecAssigns
                 .filter((d: any) => d.receiver_requirement_id === a.receiver_requirement_id)
                 .map((d: any) => {
-                  const dev = deviceDetails.find(dd => dd.id === d.iot_device_id);
+                  const dev = allIoTDevices.find((dd: any) => dd.id === d.iot_device_id);
                   return { id: d.iot_device_id, name: dev?.name ?? null };
                 }),
             };
           }),
       }));
 
+      // Unassigned hardware
+      const unassignedCameras: NetworkCamera[] = allCameras
+        .filter((c: any) => !assignedCameraIds.has(c.id))
+        .map(mapCam);
+      const unassignedDevices: NetworkIoTDevice[] = allIoTDevices
+        .filter((d: any) => !assignedDeviceIds.has(d.id))
+        .map((d: any) => ({ id: d.id, name: d.name }));
+
       setSummary({
         lineCount, cameraCount, iotDeviceCount, useCases: [...useCaseSet].sort(),
         portal: portalData ? { url: portalData.url } : null, factories: factoryHierarchy,
-        servers, gateways,
+        servers, gateways, unassignedCameras, unassignedDevices,
       });
     } catch (e) {
       console.error('Error fetching summary:', e);
@@ -263,7 +297,7 @@ export const FeasibilityGateDialog = ({
     return <Badge variant={type === 'both' ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0">{label}</Badge>;
   };
 
-  const hasNetworkData = summary.servers.length > 0 || summary.gateways.length > 0;
+  const hasNetworkData = summary.servers.length > 0 || summary.gateways.length > 0 || summary.unassignedCameras.length > 0 || summary.unassignedDevices.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -447,6 +481,36 @@ export const FeasibilityGateDialog = ({
                               )}
                             </div>
                           ))}
+
+                          {/* Unassigned hardware */}
+                          {(summary.unassignedCameras.length > 0 || summary.unassignedDevices.length > 0) && (
+                            <div>
+                              <div className="flex items-center gap-2 text-sm py-0.5">
+                                <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                                <span className="font-medium text-amber-600 dark:text-amber-400">Unassigned</span>
+                              </div>
+                              <div className="ml-2 border-l-2 border-amber-300 dark:border-amber-700 pl-4 space-y-0.5">
+                                {summary.unassignedCameras.map(cam => (
+                                  <div key={cam.id} className="flex items-center gap-2 text-sm py-0.5">
+                                    <Camera className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                    <span className="text-muted-foreground">{cam.mac_address}</span>
+                                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{cam.camera_type}</Badge>
+                                    {cam.plc_attached && (
+                                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 flex items-center gap-0.5">
+                                        <Cpu className="h-2.5 w-2.5" /> PLC
+                                      </Badge>
+                                    )}
+                                  </div>
+                                ))}
+                                {summary.unassignedDevices.map(dev => (
+                                  <div key={dev.id} className="flex items-center gap-2 text-sm py-0.5">
+                                    <MonitorSmartphone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                    <span className="text-muted-foreground">{dev.name || 'Device'}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

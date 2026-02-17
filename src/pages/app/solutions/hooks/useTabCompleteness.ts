@@ -8,6 +8,7 @@ interface TabCompleteness {
   lines: boolean;
   hardwareSummary: boolean;
   featureRequirements: boolean;
+  factoryHardware: boolean;
 }
 
 interface ProjectData {
@@ -39,6 +40,7 @@ export const useTabCompleteness = (project: ProjectData | null) => {
     lines: false,
     hardwareSummary: false,
     featureRequirements: false,
+    factoryHardware: false,
   });
 
   useEffect(() => {
@@ -143,8 +145,101 @@ export const useTabCompleteness = (project: ProjectData | null) => {
       }
 
       const linesComplete = (linesRes.count ?? 0) > 0;
-      // Feature Requirements complete = no unresolved product gaps
       const featureRequirementsComplete = (productGapsRes.count ?? 0) === 0;
+
+      // Factory Hardware completeness check
+      let factoryHardwareComplete = true;
+      // Get solutions lines for this project
+      const { data: solLines } = await supabase
+        .from('solutions_lines')
+        .select('id')
+        .eq('solutions_project_id', project.id);
+      const solLineIds = (solLines || []).map(l => l.id);
+
+      if (solLineIds.length > 0) {
+        const { data: positions } = await (supabase
+          .from('positions')
+          .select('id') as any)
+          .in('solutions_line_id', solLineIds);
+        const posIds = ((positions as any[]) || []).map((p: any) => p.id);
+
+        if (posIds.length > 0) {
+          const { data: eq } = await supabase
+            .from('equipment')
+            .select('id')
+            .in('position_id', posIds);
+          const eqIds = (eq || []).map(e => e.id);
+
+          if (eqIds.length > 0) {
+            // Check cameras and IoT devices
+            const [camerasRes, iotRes] = await Promise.all([
+              supabase.from('cameras').select('id').in('equipment_id', eqIds),
+              supabase.from('iot_devices').select('id').in('equipment_id', eqIds),
+            ]);
+
+            const cameraIds = (camerasRes.data || []).map(c => c.id);
+            const iotDeviceIds = (iotRes.data || []).map(d => d.id);
+
+            // Get hardware requirements for this project
+            const { data: hwReqs } = await supabase
+              .from('project_iot_requirements')
+              .select('id, hardware_type')
+              .eq('solutions_project_id', project.id);
+            const reqList = hwReqs || [];
+            const serverIds = reqList.filter(r => r.hardware_type === 'server').map(r => r.id);
+            const receiverIds = reqList.filter(r => r.hardware_type === 'receiver').map(r => r.id);
+            const gatewayIds = reqList.filter(r => r.hardware_type === 'gateway').map(r => r.id);
+
+            // Vision: all cameras assigned to servers
+            if (cameraIds.length > 0) {
+              if (serverIds.length === 0) {
+                factoryHardwareComplete = false;
+              } else {
+                const { data: camAssigns } = await supabase
+                  .from('camera_server_assignments')
+                  .select('camera_id')
+                  .in('server_requirement_id', serverIds);
+                const assignedCamIds = new Set((camAssigns || []).map((a: any) => a.camera_id));
+                if (cameraIds.some(id => !assignedCamIds.has(id))) {
+                  factoryHardwareComplete = false;
+                }
+              }
+            }
+
+            // IoT: all devices assigned to receivers
+            if (factoryHardwareComplete && iotDeviceIds.length > 0) {
+              if (receiverIds.length === 0) {
+                factoryHardwareComplete = false;
+              } else {
+                const { data: devAssigns } = await supabase
+                  .from('device_receiver_assignments')
+                  .select('iot_device_id')
+                  .in('receiver_requirement_id', receiverIds);
+                const assignedDevIds = new Set((devAssigns || []).map((a: any) => a.iot_device_id));
+                if (iotDeviceIds.some(id => !assignedDevIds.has(id))) {
+                  factoryHardwareComplete = false;
+                }
+              }
+            }
+
+            // IoT: all receivers assigned to gateways
+            if (factoryHardwareComplete && receiverIds.length > 0) {
+              if (gatewayIds.length === 0) {
+                factoryHardwareComplete = false;
+              } else {
+                const { data: recAssigns } = await supabase
+                  .from('receiver_gateway_assignments')
+                  .select('receiver_requirement_id')
+                  .in('gateway_requirement_id', gatewayIds);
+                const assignedRecIds = new Set((recAssigns || []).map((a: any) => a.receiver_requirement_id));
+                if (receiverIds.some(id => !assignedRecIds.has(id))) {
+                  factoryHardwareComplete = false;
+                }
+              }
+            }
+          }
+        }
+      }
 
       setCompleteness(prev => ({
         ...prev,
@@ -154,6 +249,7 @@ export const useTabCompleteness = (project: ProjectData | null) => {
         factory: factoryComplete,
         lines: linesComplete,
         featureRequirements: featureRequirementsComplete,
+        factoryHardware: factoryHardwareComplete,
       }));
     };
 

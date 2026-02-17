@@ -299,7 +299,10 @@ export const SolutionsProjectDetail = () => {
               Lines
               <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.lines ? 'bg-green-500' : 'bg-red-500'}`} />
             </TabsTrigger>
-            <TabsTrigger value="hardware">Factory Hardware</TabsTrigger>
+            <TabsTrigger value="hardware">
+              Factory Hardware
+              <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.factoryHardware ? 'bg-green-500' : 'bg-red-500'}`} />
+            </TabsTrigger>
             <TabsTrigger value="hardware-summary">
               Hardware Summary
               <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.hardwareSummary ? 'bg-green-500' : 'bg-red-500'}`} />

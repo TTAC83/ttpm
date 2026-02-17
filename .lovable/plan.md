@@ -1,71 +1,71 @@
 
 
-## Add Factory Structure Diagram to Feasibility Gate Summary
+## Fix: Network Topology Not Showing Cameras or PLCs
 
-### Overview
+### Root Cause
 
-Add a visual tree/organogram diagram to the Feasibility Gate dialog that renders the full factory hierarchy: Portal URL -> Factories -> Groups -> Lines. This diagram will be built using pure CSS/HTML (nested flex containers with connector lines), matching the existing Site Structure pattern used on the Factory Configuration page.
+The network topology diagram only displays cameras that have been explicitly assigned to a server via the `camera_server_assignments` join table. Currently, no assignment rows exist for this project -- the camera exists but hasn't been mapped to a server yet. So the diagram shows "Server 1 (0 cams)" with no camera nodes beneath it.
 
-### Data Fetching
+The same issue applies to IoT devices -- they only appear if assigned through the receiver/gateway chain.
 
-The `FeasibilityGateDialog` already queries `solutions_lines` for counts. We will add queries for the factory config tables in the same `fetchSummary` function:
+### Solution
 
-- `solution_portals` (filtered by `solutions_project_id`)
-- `solution_factories` (filtered by `portal_id`)
-- `factory_groups` (filtered by `factory_id` in fetched factories)
-- `factory_group_lines` (filtered by `group_id` in fetched groups)
+Change the topology to always show **all project cameras and IoT devices**, regardless of assignment status:
 
-This reuses the same table structure as `useFactoryConfig.ts` but in a read-only, flat fetch within the dialog.
+1. **Assigned hardware** appears under its parent (camera under its server, device under its receiver/gateway)
+2. **Unassigned hardware** appears in a separate "Unassigned" section at the bottom of the topology, so nothing is hidden
 
-### Visual Design
-
-A collapsible tree rendered below the existing KPI cards and above the sign-off section:
-
-```text
-Portal: customer.thingtrax.com
-  |
-  +-- Factory A
-  |     |
-  |     +-- Group 1
-  |     |     +-- Line X (Vision)
-  |     |     +-- Line Y (IoT)
-  |     |
-  |     +-- Group 2
-  |           +-- Line Z (Both)
-  |
-  +-- Factory B
-        |
-        +-- Group 3
-              +-- Line W (Vision)
-```
-
-Each node will use small icons and badges for solution type. The tree uses nested `div` elements with left-border connector lines (CSS-only, no external library needed).
+This ensures the feasibility summary always reflects the full hardware picture.
 
 ### Technical Changes
 
-**`src/components/FeasibilityGateDialog.tsx`**:
+**File: `src/components/FeasibilityGateDialog.tsx`**
 
-1. Extend `SummaryData` interface to include factory hierarchy data:
-   - `portal: { url: string } | null`
-   - `factories: { id, name, groups: { id, name, lines: { id, name, solution_type }[] }[] }[]`
+1. In `fetchSummary`, fetch **all project cameras** (via solutions_lines -> positions -> equipment -> cameras) instead of only those in `camera_server_assignments`. Same for IoT devices.
 
-2. In `fetchSummary`, add queries for `solution_portals`, `solution_factories`, `factory_groups`, `factory_group_lines` and nest them into the hierarchical shape above.
+2. Build the server topology as before (cameras matched via `camera_server_assignments`), but then collect any cameras NOT found in assignments into an "Unassigned Cameras" list.
 
-3. Add a new "Site Structure" section between the KPI cards and the sign-off area, rendering the tree with:
-   - Globe icon + portal URL as the root
-   - Factory icon + factory name as level 2
-   - Folder icon + group name as level 3
-   - Line/cable icon + line name + solution type badge as leaves
-   - Left-border lines (`border-l-2`) and padding to create the tree visual
+3. Same pattern for IoT devices: devices assigned through the receiver/gateway chain appear nested; unassigned devices appear in a separate section.
 
-4. Widen the dialog from `max-w-lg` to `max-w-2xl` to accommodate the tree.
+4. Also resolve `camera_type` from the master table to show the actual model name instead of a UUID.
 
-5. Wrap the content in a `ScrollArea` so large hierarchies don't overflow.
+5. In the render section, add an "Unassigned" node below servers/gateways if any unassigned cameras or devices exist, visually distinguished with an amber/warning style.
+
+6. Always show the Network Topology section when the project has any cameras, IoT devices, servers, or gateways -- not just when servers/gateways exist.
+
+### Updated Data Flow
+
+```text
+All project cameras (via line -> position -> equipment -> cameras)
+  |
+  +-- Matched to server via camera_server_assignments? --> Show under that server
+  +-- Not matched? --> Show in "Unassigned" section
+
+All project IoT devices (via line -> position -> equipment -> iot_devices)  
+  |
+  +-- Matched to receiver via device_receiver_assignments? --> Show under receiver/gateway
+  +-- Not matched? --> Show in "Unassigned" section
+```
+
+### Visual Result
+
+```text
+Cloud
+  |
+  +-- Server 1
+  |     +-- Camera 1 [Vision] [PLC]
+  |
+  +-- Gateway 1
+  |     +-- Receiver 1
+  |           +-- Device A
+  |
+  +-- Unassigned (if any)
+        +-- Camera 2 (not yet assigned)
+```
 
 ### Files Affected
 
 | File | Change |
 |------|--------|
-| `src/components/FeasibilityGateDialog.tsx` | Add factory hierarchy fetch + tree diagram rendering |
+| `src/components/FeasibilityGateDialog.tsx` | Fetch all project cameras/devices; split into assigned vs unassigned; resolve camera_type UUID to name; always show topology when hardware exists |
 
-No new files or database changes needed.

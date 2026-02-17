@@ -1,71 +1,86 @@
 
 
-## Fix: Network Topology Not Showing Cameras or PLCs
+## Factory Hardware Completeness Indicators and Configuration Gaps
 
-### Root Cause
+### Overview
 
-The network topology diagram only displays cameras that have been explicitly assigned to a server via the `camera_server_assignments` join table. Currently, no assignment rows exist for this project -- the camera exists but hasn't been mapped to a server yet. So the diagram shows "Server 1 (0 cams)" with no camera nodes beneath it.
+Add red/green completeness indicators to the IoT and Vision sub-tabs within the Factory Hardware page, and a top-level indicator on the "Factory Hardware" tab in the navigation. Also add a Configuration Gaps info box (matching the style from the Lines page) that tells the user exactly what needs attention.
 
-The same issue applies to IoT devices -- they only appear if assigned through the receiver/gateway chain.
+### Completeness Rules
 
-### Solution
+**IoT tab is green when:**
+- Every IoT device (from lines) is assigned to a receiver
+- Every receiver is assigned to a gateway
+- If there are no IoT devices AND no receivers AND no gateways, treat as green (nothing to configure)
 
-Change the topology to always show **all project cameras and IoT devices**, regardless of assignment status:
+**Vision tab is green when:**
+- Every camera (from lines) is assigned to a server
+- If there are no cameras AND no servers, treat as green (nothing to configure)
 
-1. **Assigned hardware** appears under its parent (camera under its server, device under its receiver/gateway)
-2. **Unassigned hardware** appears in a separate "Unassigned" section at the bottom of the topology, so nothing is hidden
+**Factory Hardware nav tab is green when:**
+- Both IoT and Vision sub-tabs are green
 
-This ensures the feasibility summary always reflects the full hardware picture.
+### Configuration Gaps Info Box
+
+A collapsible panel at the top of each sub-tab (IoT / Vision), styled like the existing "Configuration Gaps" pattern on the Lines page. It lists specific unresolved items:
+
+**IoT gaps examples:**
+- "3 IoT devices not assigned to a receiver" (with device names)
+- "2 receivers not assigned to a gateway" (with receiver names)
+
+**Vision gaps examples:**
+- "4 cameras not assigned to a server" (with camera MAC/line info)
+
+When all items are assigned, the panel shows a green "All hardware assignments complete" message instead.
 
 ### Technical Changes
 
-**File: `src/components/FeasibilityGateDialog.tsx`**
+**1. `src/pages/app/projects/tabs/ProjectHardware.tsx`**
 
-1. In `fetchSummary`, fetch **all project cameras** (via solutions_lines -> positions -> equipment -> cameras) instead of only those in `camera_server_assignments`. Same for IoT devices.
+- Compute `iotComplete` and `visionComplete` booleans from existing query data already loaded in the component:
+  - Compare `iotDevicesFromLines` against `deviceReceiverAssignments` to find unassigned devices
+  - Compare `receiverRequirements` against `receiverGatewayAssignments` to find unassigned receivers
+  - Compare `camerasWithContext` against `cameraAssignments` to find unassigned cameras
+- Add red/green dot indicators to the IoT and Vision `TabsTrigger` elements (same style as the nav tabs)
+- Add a Configuration Gaps panel at the top of each `TabsContent` that lists specific unresolved items
+- Export `iotComplete` and `visionComplete` (or a combined `hardwareComplete`) so the parent can use it -- achieved by accepting an optional `onCompletenessChange` callback prop
 
-2. Build the server topology as before (cameras matched via `camera_server_assignments`), but then collect any cameras NOT found in assignments into an "Unassigned Cameras" list.
+**2. `src/pages/app/solutions/hooks/useTabCompleteness.ts`**
 
-3. Same pattern for IoT devices: devices assigned through the receiver/gateway chain appear nested; unassigned devices appear in a separate section.
+- Add `factoryHardware: boolean` to the `TabCompleteness` interface
+- Add an async check that mirrors the assignment logic: fetch IoT devices, cameras, and their assignments to determine completeness
+- This value will drive the nav tab indicator
 
-4. Also resolve `camera_type` from the master table to show the actual model name instead of a UUID.
+**3. `src/pages/app/solutions/SolutionsProjectDetail.tsx`**
 
-5. In the render section, add an "Unassigned" node below servers/gateways if any unassigned cameras or devices exist, visually distinguished with an amber/warning style.
+- Add a red/green dot to the "Factory Hardware" `TabsTrigger`, driven by `completeness.factoryHardware`
 
-6. Always show the Network Topology section when the project has any cameras, IoT devices, servers, or gateways -- not just when servers/gateways exist.
+### Visual Design
 
-### Updated Data Flow
+The sub-tab indicators will look like:
 
 ```text
-All project cameras (via line -> position -> equipment -> cameras)
-  |
-  +-- Matched to server via camera_server_assignments? --> Show under that server
-  +-- Not matched? --> Show in "Unassigned" section
-
-All project IoT devices (via line -> position -> equipment -> iot_devices)  
-  |
-  +-- Matched to receiver via device_receiver_assignments? --> Show under receiver/gateway
-  +-- Not matched? --> Show in "Unassigned" section
+[IoT (3) *green*]  [Vision (5) *red*]
 ```
 
-### Visual Result
+The gaps panel will match the existing Lines pattern:
 
 ```text
-Cloud
-  |
-  +-- Server 1
-  |     +-- Camera 1 [Vision] [PLC]
-  |
-  +-- Gateway 1
-  |     +-- Receiver 1
-  |           +-- Device A
-  |
-  +-- Unassigned (if any)
-        +-- Camera 2 (not yet assigned)
++------------------------------------------------------+
+| CONFIGURATION GAPS -- 3 items remaining              |
+|                                                      |
+| [Unassigned Devices]        [Unassigned Receivers]   |
+| * Sensor A (Line 1)        * Receiver 1              |
+| * Sensor B (Line 2)        * Receiver 2              |
+| * Sensor C (Line 3)                                  |
++------------------------------------------------------+
 ```
 
 ### Files Affected
 
 | File | Change |
 |------|--------|
-| `src/components/FeasibilityGateDialog.tsx` | Fetch all project cameras/devices; split into assigned vs unassigned; resolve camera_type UUID to name; always show topology when hardware exists |
+| `src/pages/app/projects/tabs/ProjectHardware.tsx` | Add completeness computation, sub-tab indicators, gaps panels, and `onCompletenessChange` callback |
+| `src/pages/app/solutions/hooks/useTabCompleteness.ts` | Add `factoryHardware` field with assignment-based completeness check |
+| `src/pages/app/solutions/SolutionsProjectDetail.tsx` | Add red/green dot to "Factory Hardware" tab trigger |
 

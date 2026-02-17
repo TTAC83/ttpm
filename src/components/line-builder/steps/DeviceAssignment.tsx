@@ -863,25 +863,6 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
             </Select>
           </div>
 
-          <div>
-            <Label htmlFor="receiver-model">Receiver (Optional)</Label>
-            <Select
-              value={iotForm.receiver_master_id}
-              onValueChange={(value) => setIotForm({ ...iotForm, receiver_master_id: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Choose receiver model" />
-              </SelectTrigger>
-              <SelectContent>
-                {receivers.map((receiver) => (
-                  <SelectItem key={receiver.id} value={receiver.id}>
-                    {receiver.model_number}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           <div className="flex items-center space-x-2">
             <Checkbox
               id="energy-monitoring"

@@ -1,81 +1,71 @@
 
 
-## Feasibility Gate Sign-Off Feature
+## Add Factory Structure Diagram to Feasibility Gate Summary
 
 ### Overview
 
-Transform the "Feasibility Gate" badge from a passive indicator into an interactive sign-off workflow. When all gate items are green, the Solutions Consultant can click the badge, review a summary, and formally sign off by entering their password.
+Add a visual tree/organogram diagram to the Feasibility Gate dialog that renders the full factory hierarchy: Portal URL -> Factories -> Groups -> Lines. This diagram will be built using pure CSS/HTML (nested flex containers with connector lines), matching the existing Site Structure pattern used on the Factory Configuration page.
 
-### Database Change
+### Data Fetching
 
-Add columns to `solutions_projects`:
+The `FeasibilityGateDialog` already queries `solutions_lines` for counts. We will add queries for the factory config tables in the same `fetchSummary` function:
+
+- `solution_portals` (filtered by `solutions_project_id`)
+- `solution_factories` (filtered by `portal_id`)
+- `factory_groups` (filtered by `factory_id` in fetched factories)
+- `factory_group_lines` (filtered by `group_id` in fetched groups)
+
+This reuses the same table structure as `useFactoryConfig.ts` but in a read-only, flat fetch within the dialog.
+
+### Visual Design
+
+A collapsible tree rendered below the existing KPI cards and above the sign-off section:
 
 ```text
-feasibility_signed_off        boolean   DEFAULT false
-feasibility_signed_off_by     uuid      FK -> auth.users(id)
-feasibility_signed_off_at     timestamptz
+Portal: customer.thingtrax.com
+  |
+  +-- Factory A
+  |     |
+  |     +-- Group 1
+  |     |     +-- Line X (Vision)
+  |     |     +-- Line Y (IoT)
+  |     |
+  |     +-- Group 2
+  |           +-- Line Z (Both)
+  |
+  +-- Factory B
+        |
+        +-- Group 3
+              +-- Line W (Vision)
 ```
 
-No new table needed -- this is a single sign-off event per project.
-
-### UX Flow
-
-1. **Feasibility Gate badge** becomes clickable (a button). It shows three visual states:
-   - Red: Not all tabs are green -- clicking shows which items are incomplete
-   - Amber/pulsing: All tabs are green but not yet signed off -- ready for sign-off
-   - Green with a shield/check icon: Signed off
-
-2. **Clicking the badge** opens a Dialog with two sections:
-
-   **Section A -- High-Level Summary** (read-only cards):
-   - Number of Lines (count from `solutions_lines`)
-   - Number of Cameras (count from `cameras` via line traversal)
-   - Number of IoT Devices (count from `iot_devices` via line traversal)
-   - Distinct Use Cases list: vision use case names from `camera_use_cases` joined to `vision_use_cases_master`, plus "IoT" if any IoT devices exist
-
-   **Section B -- Sign-Off** (only visible when all tabs are green):
-   - Text: "By signing off, you confirm the feasibility assessment is complete."
-   - Shows the assigned Solutions Consultant name
-   - Password input field (only the assigned Solutions Consultant can sign off)
-   - "Sign Off" button
-   - If the current user is not the assigned Solutions Consultant, show a message: "Only the assigned Solutions Consultant can sign off."
-
-3. **Password verification**: Call `supabase.auth.signInWithPassword()` using the current user's email and the entered password. If successful, update the project record. This re-authenticates the current session user -- it does not log them out.
-
-4. **After sign-off**: The badge turns green with a check/shield icon. The dialog shows who signed off and when. The sign-off is permanent (no undo from UI).
-
-### Visual States for the Badge
-
-| State | Appearance |
-|-------|------------|
-| Tabs incomplete | Red badge, text "Feasibility Gate" |
-| All tabs green, not signed off | Amber/orange badge, clickable |
-| Signed off | Green badge with shield-check icon |
+Each node will use small icons and badges for solution type. The tree uses nested `div` elements with left-border connector lines (CSS-only, no external library needed).
 
 ### Technical Changes
 
-**1. Migration** -- Add three columns to `solutions_projects`.
+**`src/components/FeasibilityGateDialog.tsx`**:
 
-**2. `useTabCompleteness.ts`** -- No changes needed (existing logic already tracks tab completeness).
+1. Extend `SummaryData` interface to include factory hierarchy data:
+   - `portal: { url: string } | null`
+   - `factories: { id, name, groups: { id, name, lines: { id, name, solution_type }[] }[] }[]`
 
-**3. New component: `FeasibilityGateDialog.tsx`**
-   - Receives: `projectId`, `solutionsConsultantId`, `allTabsGreen`, `signedOff`, `signedOffBy`, `signedOffAt`
-   - Fetches summary data (line/camera/IoT/use-case counts) via Supabase queries
-   - Renders summary cards and sign-off form
-   - Handles password verification and project update
+2. In `fetchSummary`, add queries for `solution_portals`, `solution_factories`, `factory_groups`, `factory_group_lines` and nest them into the hierarchical shape above.
 
-**4. `SolutionsProjectDetail.tsx`**
-   - Replace the static Feasibility Gate `<span>` with a clickable `<Button>` that opens `FeasibilityGateDialog`
-   - Add the `feasibility_signed_off`, `feasibility_signed_off_by`, `feasibility_signed_off_at` fields to the project query and interface
-   - Pass sign-off state to the badge for visual styling
-   - Fetch the Solutions Consultant's profile name for display
+3. Add a new "Site Structure" section between the KPI cards and the sign-off area, rendering the tree with:
+   - Globe icon + portal URL as the root
+   - Factory icon + factory name as level 2
+   - Folder icon + group name as level 3
+   - Line/cable icon + line name + solution type badge as leaves
+   - Left-border lines (`border-l-2`) and padding to create the tree visual
+
+4. Widen the dialog from `max-w-lg` to `max-w-2xl` to accommodate the tree.
+
+5. Wrap the content in a `ScrollArea` so large hierarchies don't overflow.
 
 ### Files Affected
 
 | File | Change |
 |------|--------|
-| `supabase/migrations/[new]` | Add 3 columns to `solutions_projects` |
-| `src/integrations/supabase/types.ts` | Auto-regenerated |
-| `src/components/FeasibilityGateDialog.tsx` | New component |
-| `src/pages/app/solutions/SolutionsProjectDetail.tsx` | Badge becomes interactive button, opens dialog |
+| `src/components/FeasibilityGateDialog.tsx` | Add factory hierarchy fetch + tree diagram rendering |
 
+No new files or database changes needed.

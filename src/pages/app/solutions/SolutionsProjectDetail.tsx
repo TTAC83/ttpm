@@ -284,6 +284,7 @@ export const SolutionsProjectDetail = () => {
               Lines
               <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.lines ? 'bg-green-500' : 'bg-red-500'}`} />
             </TabsTrigger>
+            <TabsTrigger value="hardware">Factory Hardware</TabsTrigger>
             <TabsTrigger value="hardware-summary">
               Hardware Summary
               <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.hardwareSummary ? 'bg-green-500' : 'bg-red-500'}`} />
@@ -317,7 +318,6 @@ export const SolutionsProjectDetail = () => {
             <span className="inline-flex items-center px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted-foreground/10 select-none">
               Technical
             </span>
-            <TabsTrigger value="hardware">Factory Hardware</TabsTrigger>
             <TabsTrigger value="vision-models">Vision Models</TabsTrigger>
             <TabsTrigger value="blockers">Escalations</TabsTrigger>
             <TabsTrigger value="audit">Audit</TabsTrigger>

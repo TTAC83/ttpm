@@ -122,7 +122,7 @@ export function ProjectHardware({ projectId, type, onCompletenessChange }: Proje
         const { data: positions, error: positionsError } = await supabase
           .from('positions')
           .select('id')
-          .in('line_id', lineIds);
+          .in('solutions_line_id', lineIds);
 
         if (positionsError) throw positionsError;
         if (!positions || positions.length === 0) return [];

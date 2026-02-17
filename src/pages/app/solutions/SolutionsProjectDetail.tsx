@@ -69,6 +69,7 @@ export const SolutionsProjectDetail = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [gateDialogOpen, setGateDialogOpen] = useState(false);
+  const [hwCompleteness, setHwCompleteness] = useState<{ iot: boolean; vision: boolean } | null>(null);
   const completeness = useTabCompleteness(project);
 
   const allTabsGreen = completeness.overview && completeness.contacts && completeness.factory && completeness.lines && completeness.hardwareSummary;
@@ -301,7 +302,7 @@ export const SolutionsProjectDetail = () => {
             </TabsTrigger>
             <TabsTrigger value="hardware">
               Factory Hardware
-              <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.factoryHardware ? 'bg-green-500' : 'bg-red-500'}`} />
+              <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${(hwCompleteness ? (hwCompleteness.iot && hwCompleteness.vision) : completeness.factoryHardware) ? 'bg-green-500' : 'bg-red-500'}`} />
             </TabsTrigger>
             <TabsTrigger value="hardware-summary">
               Hardware Summary
@@ -368,7 +369,7 @@ export const SolutionsProjectDetail = () => {
         </TabsContent>
 
         <TabsContent value="hardware" className="space-y-4">
-          <ProjectHardware projectId={project.id} type="solutions" />
+          <ProjectHardware projectId={project.id} type="solutions" onCompletenessChange={setHwCompleteness} />
         </TabsContent>
 
         <TabsContent value="factory" className="space-y-4">

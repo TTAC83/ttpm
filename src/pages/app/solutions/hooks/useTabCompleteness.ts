@@ -157,11 +157,9 @@ export const useTabCompleteness = (project: ProjectData | null) => {
       const solLineIds = (solLines || []).map(l => l.id);
 
       if (solLineIds.length > 0) {
-        const { data: positions } = await (supabase
-          .from('positions')
-          .select('id') as any)
-          .in('solutions_line_id', solLineIds);
-        const posIds = ((positions as any[]) || []).map((p: any) => p.id);
+        const posQuery = supabase.from('positions').select('id');
+        const { data: posData } = await (posQuery as any).in('solutions_line_id', solLineIds);
+        const posIds: string[] = ((posData as any[]) || []).map((p: any) => p.id);
 
         if (posIds.length > 0) {
           const { data: eq } = await supabase

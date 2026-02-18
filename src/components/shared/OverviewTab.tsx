@@ -250,41 +250,10 @@ export const OverviewTab = ({ data, onUpdate, type }: OverviewTabProps) => {
             />
           </div>
 
-          {type === 'solutions' && (
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="final_scoping_complete"
-                  checked={formData.final_scoping_complete}
-                  onCheckedChange={(checked) => handleSwitchChange('final_scoping_complete', checked)}
-                  disabled={!canEdit}
-                />
-                <Label htmlFor="final_scoping_complete">Final Scoping Complete</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="contract_signed"
-                  checked={formData.contract_signed}
-                  onCheckedChange={(checked) => handleSwitchChange('contract_signed', checked)}
-                  disabled={!canEdit}
-                />
-                <Label htmlFor="contract_signed">Contract Signed</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="implementation_handover"
-                  checked={formData.implementation_handover}
-                  onCheckedChange={(checked) => handleSwitchChange('implementation_handover', checked)}
-                  disabled={!canEdit}
-                />
-                <Label htmlFor="implementation_handover">Implementation Handover</Label>
-              </div>
-            </div>
-          )}
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="line_description">Line Description</Label>
+              <Label htmlFor="line_description">Process Description</Label>
               <Textarea
                 id="line_description"
                 value={formData.line_description}

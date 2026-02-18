@@ -54,9 +54,8 @@ export const useTabCompleteness = (project: ProjectData | null) => {
       project.line_description &&
       project.product_description &&
       project.project_goals &&
-      project.final_scoping_complete &&
-      project.contract_signed &&
-      project.implementation_handover
+      project.line_description &&
+      project.product_description
     );
 
     setCompleteness(prev => ({

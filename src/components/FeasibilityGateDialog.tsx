@@ -452,9 +452,6 @@ export const FeasibilityGateDialog = ({
                 if (!projectData.project_goals) missing.push('project goals');
                 if (!projectData.line_description) missing.push('line description');
                 if (!projectData.product_description) missing.push('product description');
-                if (!projectData.final_scoping_complete) missing.push('final scoping not confirmed');
-                if (!projectData.contract_signed) missing.push('contract not signed');
-                if (!projectData.implementation_handover) missing.push('implementation not handed over');
                 if (missing.length > 0) gaps.push(`Overview: Missing ${missing.join(', ')}`);
               } else if (completeness && !completeness.overview) {
                 gaps.push('Overview: Incomplete fields');

@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 export interface HardwareItem {
   id: string;
   hardware_type: string;
-  category?: string; // The "Type" field from hardware_master
+  category?: string;
   source: 'direct' | 'line';
   line_name?: string;
   equipment_name?: string;
@@ -15,8 +15,8 @@ export interface HardwareItem {
   model_number?: string;
   description?: string;
   price?: number;
+  rrp?: number;
   hardware_master_id?: string;
-  invoice_status?: 'not_raised' | 'raised' | 'received';
   supplier_name?: string;
   supplier_person?: string;
   supplier_email?: string;
@@ -104,6 +104,7 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
                 model_number: master?.sku_no,
                 description: master?.description,
                 price: master?.price_gbp,
+                rrp: master?.rrp_gbp,
                 hardware_master_id: master?.id,
               });
 
@@ -124,6 +125,7 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
                     manufacturer: lightMaster.manufacturer,
                     description: lightMaster.description,
                     price: lightMaster.price_gbp,
+                    rrp: lightMaster.rrp_gbp,
                     supplier_name: lightMaster.supplier_name,
                     supplier_person: lightMaster.supplier_person,
                     supplier_email: lightMaster.supplier_email,
@@ -151,6 +153,7 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
                     manufacturer: plcMaster.manufacturer,
                     description: plcMaster.description,
                     price: plcMaster.price_gbp,
+                    rrp: plcMaster.rrp_gbp,
                     supplier_name: plcMaster.supplier_name,
                     supplier_person: plcMaster.supplier_person,
                     supplier_email: plcMaster.supplier_email,
@@ -178,6 +181,7 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
                     manufacturer: hmiMaster.manufacturer,
                     description: hmiMaster.description,
                     price: hmiMaster.price_gbp,
+                    rrp: hmiMaster.rrp_gbp,
                     supplier_name: hmiMaster.supplier_name,
                     supplier_person: hmiMaster.supplier_person,
                     supplier_email: hmiMaster.supplier_email,
@@ -233,6 +237,7 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
                 model_number: master?.sku_no,
                 description: master?.description || master?.product_name,
                 price: master?.price_gbp,
+                rrp: master?.rrp_gbp,
                 hardware_master_id: master?.id,
               });
             }
@@ -338,6 +343,7 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
               model_number: master?.model_number || master?.sku_no,
               description: master?.description,
               price: master?.price || master?.price_gbp,
+              rrp: master?.rrp_gbp,
               supplier_name: master?.supplier_name,
               supplier_person: master?.supplier_person,
               supplier_email: master?.supplier_email,
@@ -349,49 +355,7 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
         });
       }
 
-      const hardwareMasterIdsSet = new Set<string>();
-      allHardware.forEach(item => {
-        if (item.hardware_master_id) {
-          hardwareMasterIdsSet.add(item.hardware_master_id);
-        }
-      });
-      const hardwareMasterIds = Array.from(hardwareMasterIdsSet);
-
-      const invoiceStatusMap = new Map<string, 'not_raised' | 'raised' | 'received'>();
-
-      if (hardwareMasterIds.length > 0) {
-        const { data: invoiceRows, error: invoiceError } = await (supabase
-          .from('solutions_project_hardware_invoice_status' as any)
-          .select('hardware_master_id, invoice_status')
-          .eq('solutions_project_id', solutionsProjectId)
-          .in('hardware_master_id', hardwareMasterIds));
-
-        if (invoiceError) {
-          console.error('Error fetching solutions project hardware invoice status:', invoiceError);
-        } else if (invoiceRows) {
-          invoiceRows.forEach((row: any) => {
-            if (row.invoice_status) {
-              invoiceStatusMap.set(
-                row.hardware_master_id,
-                row.invoice_status as 'not_raised' | 'raised' | 'received',
-              );
-            }
-          });
-        }
-      }
-
-      const hardwareWithStatus = allHardware.map(item => {
-        const invoiceStatus: 'not_raised' | 'raised' | 'received' = item.hardware_master_id
-          ? invoiceStatusMap.get(item.hardware_master_id) ?? 'not_raised'
-          : 'not_raised';
-
-        return {
-          ...item,
-          invoice_status: invoiceStatus,
-        };
-      });
-
-      setHardware(hardwareWithStatus);
+      setHardware(allHardware);
     } catch (error) {
       console.error('Error fetching hardware:', error);
       toast({

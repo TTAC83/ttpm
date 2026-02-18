@@ -1217,6 +1217,10 @@ export type Database = {
           light_notes: string | null
           light_required: boolean | null
           mac_address: string
+          placement_camera_can_fit: boolean | null
+          placement_fabrication_confirmed: boolean | null
+          placement_fov_suitable: boolean | null
+          placement_position_description: string | null
           plc_attached: boolean | null
           plc_master_id: string | null
           updated_at: string
@@ -1235,6 +1239,10 @@ export type Database = {
           light_notes?: string | null
           light_required?: boolean | null
           mac_address: string
+          placement_camera_can_fit?: boolean | null
+          placement_fabrication_confirmed?: boolean | null
+          placement_fov_suitable?: boolean | null
+          placement_position_description?: string | null
           plc_attached?: boolean | null
           plc_master_id?: string | null
           updated_at?: string
@@ -1253,6 +1261,10 @@ export type Database = {
           light_notes?: string | null
           light_required?: boolean | null
           mac_address?: string
+          placement_camera_can_fit?: boolean | null
+          placement_fabrication_confirmed?: boolean | null
+          placement_fov_suitable?: boolean | null
+          placement_position_description?: string | null
           plc_attached?: boolean | null
           plc_master_id?: string | null
           updated_at?: string

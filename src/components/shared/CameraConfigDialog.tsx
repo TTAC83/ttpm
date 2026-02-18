@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Lightbulb, Cpu, Monitor } from "lucide-react";
+import { Lightbulb, Cpu, Monitor, MapPin } from "lucide-react";
 import { useCameraForm } from "./camera-config/useCameraForm";
 import { CameraBasicInfoTab } from "./camera-config/tabs/CameraBasicInfoTab";
 import { CameraMeasurementsTab } from "./camera-config/tabs/CameraMeasurementsTab";
@@ -11,6 +11,7 @@ import { CameraViewTab } from "./camera-config/tabs/CameraViewTab";
 import { CameraLightingTab } from "./camera-config/tabs/CameraLightingTab";
 import { CameraPlcTab } from "./camera-config/tabs/CameraPlcTab";
 import { CameraHmiTab } from "./camera-config/tabs/CameraHmiTab";
+import { CameraPlacementTab } from "./camera-config/tabs/CameraPlacementTab";
 import { CameraFormData, MasterData } from "./camera-config/types";
 import { useToast } from "@/hooks/use-toast";
 
@@ -104,6 +105,10 @@ export const CameraConfigDialog: React.FC<CameraConfigDialogProps> = ({
               <Monitor className="h-4 w-4 mr-1" />
               HMI
             </TabsTrigger>
+            <TabsTrigger value="placement">
+              <MapPin className="h-4 w-4 mr-1" />
+              Placement
+            </TabsTrigger>
           </TabsList>
 
           <div className="flex-1 overflow-y-auto mt-4">
@@ -132,6 +137,7 @@ export const CameraConfigDialog: React.FC<CameraConfigDialogProps> = ({
               deleteRelayOutput={deleteRelayOutput}
             />
             <CameraHmiTab formData={formData} masterData={masterData} updateField={updateField} />
+            <CameraPlacementTab formData={formData} updateField={updateField} />
           </div>
         </Tabs>
 

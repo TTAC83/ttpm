@@ -59,6 +59,10 @@ export function useLineData(config: WizardConfig) {
             attributes: cam.attributes || [],
             product_flow: cam.product_flow || "",
             camera_view_description: cam.camera_view_description || "",
+            placement_camera_can_fit: cam.placement_camera_can_fit ?? null,
+            placement_fabrication_confirmed: cam.placement_fabrication_confirmed ?? null,
+            placement_fov_suitable: cam.placement_fov_suitable ?? null,
+            placement_position_description: cam.placement_position_description || "",
           })),
           iot_devices: (eq.iot_devices || []).map((iot: any) => ({
             id: iot.id,
@@ -257,6 +261,10 @@ export function useLineData(config: WizardConfig) {
               hmi_required: camera.hmi_required ?? null,
               hmi_master_id: camera.hmi_master_id || null,
               hmi_notes: camera.hmi_notes || null,
+              placement_camera_can_fit: camera.placement_camera_can_fit ?? null,
+              placement_fabrication_confirmed: camera.placement_fabrication_confirmed ?? null,
+              placement_fov_suitable: camera.placement_fov_suitable ?? null,
+              placement_position_description: camera.placement_position_description || null,
             })
             .select()
             .single();

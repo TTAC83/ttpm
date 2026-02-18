@@ -266,27 +266,42 @@ export const SolutionsProjectDetail = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* Row 2 - Project Management */}
+          {/* Row 2 - Sale & Launch Gate */}
+          <TabsList className="w-full justify-start h-auto flex-wrap gap-1.5 p-1">
+            <span className="inline-flex items-center px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted-foreground/10 select-none">
+              Sale &amp; Launch Gate
+            </span>
+            <TabsTrigger value="hardware-summary">Hardware Summary</TabsTrigger>
+            <TabsTrigger value="contract">Contract Info</TabsTrigger>
+            <TabsTrigger value="account">Account Info</TabsTrigger>
+            <TabsTrigger value="team">Team</TabsTrigger>
+            <TabsTrigger value="launch">Launch</TabsTrigger>
+          </TabsList>
+
+          {/* Row 3 - Readiness Gate */}
+          <TabsList className="w-full justify-start h-auto flex-wrap gap-1.5 p-1">
+            <span className="inline-flex items-center px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted-foreground/10 select-none">
+              Readiness Gate
+            </span>
+          </TabsList>
+
+          {/* Row 4 - Go Live Gate */}
+          <TabsList className="w-full justify-start h-auto flex-wrap gap-1.5 p-1">
+            <span className="inline-flex items-center px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted-foreground/10 select-none">
+              Go Live Gate
+            </span>
+            <TabsTrigger value="vision-models">Vision Models</TabsTrigger>
+          </TabsList>
+
+          {/* Row 5 - Project Management */}
           <TabsList className="w-full justify-start h-auto flex-wrap gap-1.5 p-1">
             <span className="inline-flex items-center px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted-foreground/10 select-none">
               Project Management
             </span>
-            <TabsTrigger value="contract">Contract Info</TabsTrigger>
-            <TabsTrigger value="team">Team</TabsTrigger>
-            <TabsTrigger value="account">Account Info</TabsTrigger>
             <TabsTrigger value="wbs">WBS Gantt</TabsTrigger>
             <TabsTrigger value="wbs-v2">Gantt (Beta)</TabsTrigger>
             <TabsTrigger value="actions">Actions</TabsTrigger>
             <TabsTrigger value="calendar">Calendar</TabsTrigger>
-            <TabsTrigger value="hardware-summary">Hardware Summary</TabsTrigger>
-          </TabsList>
-
-          {/* Row 3 - Technical */}
-          <TabsList className="w-full justify-start h-auto flex-wrap gap-1.5 p-1">
-            <span className="inline-flex items-center px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted-foreground/10 select-none">
-              Technical
-            </span>
-            <TabsTrigger value="vision-models">Vision Models</TabsTrigger>
             <TabsTrigger value="blockers">Escalations</TabsTrigger>
             <TabsTrigger value="audit">Audit</TabsTrigger>
           </TabsList>
@@ -363,6 +378,14 @@ export const SolutionsProjectDetail = () => {
 
         <TabsContent value="blockers" className="space-y-4">
           <SharedBlockersTab projectId={project.id} projectType="solutions" />
+        </TabsContent>
+
+        <TabsContent value="launch" className="space-y-4">
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-muted-foreground text-center py-8">Launch tab — coming soon</p>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
       <FeasibilityGateDialog

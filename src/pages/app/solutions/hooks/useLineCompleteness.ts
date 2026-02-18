@@ -307,6 +307,35 @@ export function useLineCompleteness(
               passedChecks++;
             }
 
+            // Placement checks
+            totalChecks++;
+            if (cam.placement_camera_can_fit === true) {
+              passedChecks++;
+            } else {
+              camGaps.push("Confirm camera can fit");
+            }
+
+            totalChecks++;
+            if (cam.placement_fabrication_confirmed === true) {
+              passedChecks++;
+            } else {
+              camGaps.push("Confirm fabrication/bracketry with customer");
+            }
+
+            totalChecks++;
+            if (cam.placement_fov_suitable === true) {
+              passedChecks++;
+            } else {
+              camGaps.push("Confirm FOV suitable for all artworks/product types");
+            }
+
+            totalChecks++;
+            if (cam.placement_position_description) {
+              passedChecks++;
+            } else {
+              camGaps.push("Position Description");
+            }
+
             if (camGaps.length > 0) {
               const cameraDisplayName = cam.name || cam.mac_address || 'Unnamed';
               gaps.push({ category: `Camera "${cameraDisplayName}" on ${eq.name}`, items: camGaps });

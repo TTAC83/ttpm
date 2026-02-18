@@ -30,6 +30,10 @@ export interface CameraFormData {
   }>;
   product_flow: string;
   camera_view_description: string;
+  placement_camera_can_fit: boolean | null;
+  placement_fabrication_confirmed: boolean | null;
+  placement_fov_suitable: boolean | null;
+  placement_position_description: string;
 }
 
 export interface MasterData {
@@ -63,4 +67,8 @@ export const emptyFormData: CameraFormData = {
   attributes: [],
   product_flow: "",
   camera_view_description: "",
+  placement_camera_can_fit: null,
+  placement_fabrication_confirmed: null,
+  placement_fov_suitable: null,
+  placement_position_description: "",
 };

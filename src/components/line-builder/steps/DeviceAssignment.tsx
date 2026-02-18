@@ -176,6 +176,11 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
     // New fields for camera view
     product_flow: "",
     camera_view_description: "",
+    // Placement fields
+    placement_camera_can_fit: null as boolean | null,
+    placement_fabrication_confirmed: null as boolean | null,
+    placement_fov_suitable: null as boolean | null,
+    placement_position_description: "",
   });
   
   // IoT form state
@@ -385,6 +390,10 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       attributes: [],
       product_flow: "",
       camera_view_description: "",
+      placement_camera_can_fit: null,
+      placement_fabrication_confirmed: null,
+      placement_fov_suitable: null,
+      placement_position_description: "",
     });
     setCameraEditMode(false);
     setEditingCameraId("");
@@ -600,6 +609,10 @@ export const DeviceAssignment: React.FC<DeviceAssignmentProps> = ({
       attributes: camera.attributes || [],
       product_flow: camera.product_flow || "",
       camera_view_description: camera.camera_view_description || "",
+      placement_camera_can_fit: camera.placement_camera_can_fit ?? null,
+      placement_fabrication_confirmed: camera.placement_fabrication_confirmed ?? null,
+      placement_fov_suitable: camera.placement_fov_suitable ?? null,
+      placement_position_description: camera.placement_position_description || "",
     });
     setCameraDialogOpen(true);
   };

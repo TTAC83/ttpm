@@ -22,6 +22,22 @@ interface FeasibilityGateDialogProps {
   signedOffBy: string | null;
   signedOffAt: string | null;
   onSignedOff: () => void;
+  completeness?: {
+    overview: boolean;
+    contacts: boolean;
+    factory: boolean;
+    lines: boolean;
+  };
+  projectData?: {
+    site_address?: string;
+    segment?: string;
+    project_goals?: string;
+    line_description?: string;
+    product_description?: string;
+    final_scoping_complete?: boolean;
+    contract_signed?: boolean;
+    implementation_handover?: boolean;
+  };
 }
 
 interface HierarchyLine { id: string; name: string; solution_type: string; }
@@ -95,6 +111,7 @@ const emptySummary: SummaryData = {
 export const FeasibilityGateDialog = ({
   open, onOpenChange, projectId, solutionsConsultantId,
   allTabsGreen, signedOff, signedOffBy, signedOffAt, onSignedOff,
+  completeness, projectData,
 }: FeasibilityGateDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -423,6 +440,93 @@ export const FeasibilityGateDialog = ({
           </div>
         ) : (
           <Tabs defaultValue="summary" className="flex-1 flex flex-col min-h-0">
+            {/* Gaps Panel */}
+            {!signedOff && (() => {
+              const gaps: string[] = [];
+              
+              // Overview gaps
+              if (completeness && !completeness.overview && projectData) {
+                const missing: string[] = [];
+                if (!projectData.site_address) missing.push('site address');
+                if (!projectData.segment) missing.push('segment');
+                if (!projectData.project_goals) missing.push('project goals');
+                if (!projectData.line_description) missing.push('line description');
+                if (!projectData.product_description) missing.push('product description');
+                if (!projectData.final_scoping_complete) missing.push('final scoping not confirmed');
+                if (!projectData.contract_signed) missing.push('contract not signed');
+                if (!projectData.implementation_handover) missing.push('implementation not handed over');
+                if (missing.length > 0) gaps.push(`Overview: Missing ${missing.join(', ')}`);
+              } else if (completeness && !completeness.overview) {
+                gaps.push('Overview: Incomplete fields');
+              }
+
+              // Contacts gaps
+              if (completeness && !completeness.contacts) {
+                gaps.push('Contacts: No contacts linked to this project');
+              }
+
+              // Factory gaps
+              if (completeness && !completeness.factory) {
+                const factoryGaps: string[] = [];
+                if (!summary.portal) {
+                  factoryGaps.push('No portal URL configured');
+                } else {
+                  if (summary.factories.length === 0) {
+                    factoryGaps.push('No factories configured');
+                  } else {
+                    summary.factories.forEach(f => {
+                      if (f.groups.length === 0) factoryGaps.push(`Factory "${f.name}" has no groups`);
+                      f.groups.forEach(g => {
+                        if (g.lines.length === 0) factoryGaps.push(`Group "${g.name}" has no lines`);
+                      });
+                    });
+                  }
+                }
+                if (factoryGaps.length > 0) {
+                  gaps.push(`Factory: ${factoryGaps.join('; ')}`);
+                } else {
+                  gaps.push('Factory: Configuration incomplete');
+                }
+              }
+
+              // Lines gaps
+              if (completeness && !completeness.lines) {
+                gaps.push('Lines: No lines configured');
+              }
+
+              if (gaps.length === 0 && allTabsGreen) {
+                return (
+                  <div className="rounded-lg border border-green-500/50 bg-green-500/10 p-3 mb-3 flex items-start gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
+                    <p className="text-sm text-green-700 dark:text-green-400 font-medium">All sections complete — ready for sign-off below</p>
+                  </div>
+                );
+              }
+
+              if (gaps.length > 0) {
+                return (
+                  <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 mb-3">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium text-amber-700 dark:text-amber-400">Gaps to Complete ({gaps.length} remaining)</p>
+                        <ul className="mt-1.5 space-y-1">
+                          {gaps.map((gap, i) => (
+                            <li key={i} className="text-sm text-amber-700/80 dark:text-amber-400/80 flex items-start gap-1.5">
+                              <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />
+                              {gap}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              return null;
+            })()}
+
             <TabsList className="w-full justify-start shrink-0">
               <TabsTrigger value="summary">Summary</TabsTrigger>
               <TabsTrigger value="line-detail">Line Detail</TabsTrigger>

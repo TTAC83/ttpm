@@ -423,6 +423,13 @@ export const SolutionsProjectDetail = () => {
         signedOffBy={feasibilitySignedOffBy}
         signedOffAt={feasibilitySignedOffAt}
         onSignedOff={fetchProject}
+        completeness={{
+          overview: completeness.overview,
+          contacts: completeness.contacts,
+          factory: completeness.factory,
+          lines: completeness.lines,
+        }}
+        projectData={project}
       />
     </div>
   );

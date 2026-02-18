@@ -109,7 +109,7 @@ export const LineBasicInfo: React.FC<LineBasicInfoProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="line-description">Line Description</Label>
+              <Label htmlFor="line-description">Process Description</Label>
               <Textarea
                 id="line-description"
                 placeholder="Describe the production line setup..."

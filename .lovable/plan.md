@@ -1,81 +1,47 @@
 
 
-## Add Feasibility Gaps Panel to Feasibility Gate Dialog
+## Rename "Line Description" and Remove Three Checkboxes
 
 ### Overview
 
-When the Feasibility Gate dialog opens and the gate is not yet signed off, show a prominent "Gaps to Complete" panel at the top of the dialog (above the tabs) listing exactly which sections still need attention. This gives users an immediate, actionable checklist without needing to navigate back through each tab.
+Two changes:
+1. Rename the label "Line Description" to "Process Description" everywhere it appears in the UI
+2. Remove the three checkboxes (Final Scoping Complete, Contract Signed, Implementation Handover) from the Overview page and all places they feed into across the app
 
-### What the User Will See
+### Changes
 
-When feasibility is incomplete, a bordered amber/warning panel appears between the dialog header and the tabs:
-
-```
- ! Gaps to Complete (3 remaining)
-   - Overview: Missing site address, segment, project goals
-   - Contacts: No contacts linked to this project
-   - Factory: No factory groups configured
-```
-
-When all tabs are green but sign-off hasn't happened, the panel turns green with a tick:
-
-```
- All sections complete -- ready for sign-off below
-```
-
-Once signed off, no panel is shown (the existing signed-off badge handles it).
-
-### Gap Detail per Section
-
-| Section | Green when | Gap messages when incomplete |
-|---------|-----------|---------------------------|
-| **Overview** | All key fields populated + 3 checkboxes ticked | Lists each missing field by name (e.g. "Missing site address", "Final scoping not confirmed") |
-| **Contacts** | At least 1 contact linked | "No contacts linked to this project" |
-| **Factory** | Portal URL set, every factory has shifts + groups, every group has lines | Specific message: "No portal URL", "Factory X has no shifts", "Group Y has no lines" |
-| **Lines** | At least 1 solutions line exists | "No lines configured" |
-
-### Technical Approach
-
-**1. Pass completeness data to the dialog**
-
-Currently `FeasibilityGateDialog` receives a single `allTabsGreen` boolean. We will add an optional `completeness` prop with the individual tab statuses:
-
-```typescript
-interface FeasibilityGateDialogProps {
-  // ... existing props
-  completeness?: {
-    overview: boolean;
-    contacts: boolean;
-    factory: boolean;
-    lines: boolean;
-  };
-}
-```
-
-Passed from `SolutionsProjectDetail.tsx` where `useTabCompleteness` already provides these values.
-
-**2. Compute detailed gap messages inside the dialog**
-
-The dialog already fetches all the data it needs in `fetchSummary`. After that fetch completes, compute a `gaps: string[]` array:
-
-- Overview gaps: check the project fields (passed via a new `projectData` prop or inferred from summary)
-- Contacts gap: if `completeness.contacts === false`, add message
-- Factory gaps: use `summary.portal` and `summary.factories` to identify missing portal URL, empty groups, or missing lines
-- Lines gap: if `summary.lineCount === 0`, add message
-
-Store `gaps` in component state, computed after `fetchSummary` resolves.
-
-**3. Render the gaps panel**
-
-Above the `<Tabs>` component, render a conditionally-visible panel:
-- If `signedOff` is true: hide the panel entirely
-- If gaps exist: amber-bordered card with `AlertTriangle` icon, listing each gap as a bullet
-- If no gaps (all green): green-bordered card with `CheckCircle2` icon and "Ready for sign-off" message
-
-### Files to Change
+**1. Rename "Line Description" to "Process Description"**
 
 | File | Change |
 |------|--------|
-| `src/components/FeasibilityGateDialog.tsx` | Add `completeness` and `projectData` props, compute gap messages from summary data, render gaps panel above tabs |
-| `src/pages/app/solutions/SolutionsProjectDetail.tsx` | Pass `completeness` object and `project` data to `FeasibilityGateDialog` |
+| `src/components/shared/OverviewTab.tsx` (line 287) | Change label from "Line Description" to "Process Description" |
+| `src/components/line-builder/steps/LineBasicInfo.tsx` (line 95) | Change label from "Line Description" to "Process Description" |
+
+The underlying database column (`line_description`) stays the same -- only the display label changes.
+
+**2. Remove the three checkboxes from OverviewTab**
+
+| File | Change |
+|------|--------|
+| `src/components/shared/OverviewTab.tsx` (lines 253-283) | Remove the `{type === 'solutions' && ...}` block containing the three Switch toggles for `final_scoping_complete`, `contract_signed`, and `implementation_handover` |
+
+**3. Remove checkbox indicators from Solutions list and detail pages**
+
+| File | Change |
+|------|--------|
+| `src/pages/app/solutions/SolutionsProjectDetail.tsx` | Remove the three circular icon indicators (green/grey) for Final Scoping, Contract Signed, and Implementation Handover from the project header area |
+| `src/pages/app/solutions/SolutionsList.tsx` | Remove the three circular icon indicators from each project card in the list view |
+
+**4. Remove from completeness / feasibility logic**
+
+| File | Change |
+|------|--------|
+| `src/pages/app/solutions/hooks/useTabCompleteness.ts` (lines 57-59) | Remove `final_scoping_complete`, `contract_signed`, and `implementation_handover` from the overview completeness check. Overview will be green based on the remaining fields only |
+| `src/components/FeasibilityGateDialog.tsx` (lines 455-457) | Remove the three gap messages ("final scoping not confirmed", "contract not signed", "implementation not handed over") from the gaps panel |
+
+### What stays
+
+- The database columns remain untouched (no migration needed)
+- The `formData` properties can be cleaned up from `buildFormData` in OverviewTab since they are no longer rendered, but the columns will simply be unused
+- The field `line_description` in the database keeps its name; only the UI label changes
 

@@ -1,47 +1,61 @@
 
 
-## Rename "Line Description" and Remove Three Checkboxes
+## Add Camera Placement Tab -- Complete the Wiring
 
 ### Overview
 
-Two changes:
-1. Rename the label "Line Description" to "Process Description" everywhere it appears in the UI
-2. Remove the three checkboxes (Final Scoping Complete, Contract Signed, Implementation Handover) from the Overview page and all places they feed into across the app
+The previous attempt added the UI components (CameraPlacementTab, types, form state) and database columns but was cancelled before the data persistence and completeness validation were connected. This plan completes the remaining work.
 
-### Changes
+### What Already Exists
 
-**1. Rename "Line Description" to "Process Description"**
+- Database columns on `cameras` table: `placement_camera_can_fit`, `placement_fabrication_confirmed`, `placement_fov_suitable`, `placement_position_description`
+- UI component: `CameraPlacementTab.tsx` with 3 checkboxes and position description textarea
+- Types and empty form defaults in `types.ts`
+- CameraConfigDialog already renders the Placement tab
+- DeviceAssignment.tsx already maps placement fields in its local state
+
+### What Still Needs to Be Done
+
+**1. Update `get_line_full_data` RPC to return placement fields**
+
+The RPC function builds camera JSON but does not include the four placement columns. The camera object construction needs to add `placement_camera_can_fit`, `placement_fabrication_confirmed`, `placement_fov_suitable`, and `placement_position_description` from the `cameras` table (which already has these columns).
+
+**2. Update `save_camera_full` RPC to persist placement fields**
+
+The RPC's `INSERT ... ON CONFLICT` for the cameras table needs to include the four placement columns so they are saved when the camera is created or updated.
+
+**3. Update `useLineData.ts` -- load path (line ~39-61)**
+
+When mapping camera data from the RPC response, add the four placement fields so they flow through to the edit form.
+
+**4. Update `useLineData.ts` -- save path (line ~244-260)**
+
+When inserting a new camera row via direct SQL, include the four placement fields in the insert statement.
+
+**5. Update Equipment camera interface in `DeviceAssignment.tsx` (line ~29-62)**
+
+Add the four optional placement properties to the camera type definition inside the Equipment interface.
+
+**6. Update `useLineCompleteness.ts` -- add placement checks**
+
+After the existing HMI check block (~line 303-308), add four new completeness checks:
+- `placement_camera_can_fit` must be `true`
+- `placement_fabrication_confirmed` must be `true`
+- `placement_fov_suitable` must be `true`
+- `placement_position_description` must be non-empty
+
+This ensures the Lines tab only goes green when all placement fields are complete, which in turn gates the Feasibility sign-off.
+
+### Files to Change
 
 | File | Change |
 |------|--------|
-| `src/components/shared/OverviewTab.tsx` (line 287) | Change label from "Line Description" to "Process Description" |
-| `src/components/line-builder/steps/LineBasicInfo.tsx` (line 95) | Change label from "Line Description" to "Process Description" |
+| Database migration | Update `save_camera_full` and `get_line_full_data` RPC functions to include placement fields |
+| `src/components/line-builder/hooks/useLineData.ts` | Map placement fields on load (~line 61) and save (~line 260) |
+| `src/components/line-builder/steps/DeviceAssignment.tsx` | Add placement fields to the Equipment camera interface (~line 29-62) |
+| `src/pages/app/solutions/hooks/useLineCompleteness.ts` | Add 4 placement completeness checks after the HMI block |
 
-The underlying database column (`line_description`) stays the same -- only the display label changes.
+### Non-mandatory but Required for Completeness
 
-**2. Remove the three checkboxes from OverviewTab**
-
-| File | Change |
-|------|--------|
-| `src/components/shared/OverviewTab.tsx` (lines 253-283) | Remove the `{type === 'solutions' && ...}` block containing the three Switch toggles for `final_scoping_complete`, `contract_signed`, and `implementation_handover` |
-
-**3. Remove checkbox indicators from Solutions list and detail pages**
-
-| File | Change |
-|------|--------|
-| `src/pages/app/solutions/SolutionsProjectDetail.tsx` | Remove the three circular icon indicators (green/grey) for Final Scoping, Contract Signed, and Implementation Handover from the project header area |
-| `src/pages/app/solutions/SolutionsList.tsx` | Remove the three circular icon indicators from each project card in the list view |
-
-**4. Remove from completeness / feasibility logic**
-
-| File | Change |
-|------|--------|
-| `src/pages/app/solutions/hooks/useTabCompleteness.ts` (lines 57-59) | Remove `final_scoping_complete`, `contract_signed`, and `implementation_handover` from the overview completeness check. Overview will be green based on the remaining fields only |
-| `src/components/FeasibilityGateDialog.tsx` (lines 455-457) | Remove the three gap messages ("final scoping not confirmed", "contract not signed", "implementation not handed over") from the gaps panel |
-
-### What stays
-
-- The database columns remain untouched (no migration needed)
-- The `formData` properties can be cleaned up from `buildFormData` in OverviewTab since they are no longer rendered, but the columns will simply be unused
-- The field `line_description` in the database keeps its name; only the UI label changes
+The placement fields remain non-mandatory when saving the camera form (users can save partial data at any time). However, the Lines tab completeness indicator will show gaps for any unfilled placement fields, and the Feasibility Gate will not allow sign-off until they are all filled.
 

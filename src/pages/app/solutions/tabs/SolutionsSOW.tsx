@@ -51,7 +51,10 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
 
   // Role-based access check
   const userRole = profile?.role as string | undefined;
-  const canGenerate = SOW_ALLOWED_ROLES.includes(userRole || '') && feasibilitySignedOff && (validation?.ready ?? false);
+  const hasRole = SOW_ALLOWED_ROLES.includes(userRole || '');
+  const canGenerate = hasRole && feasibilitySignedOff;
+  const isFullyReady = canGenerate && (validation?.ready ?? false);
+  const isDraft = canGenerate && !isFullyReady;
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -214,16 +217,16 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
 
       // 6. Infrastructure
       addSection(isVision ? '6' : '5', 'INFRASTRUCTURE REQUIREMENTS');
-      if (sowData.infraDetail.internetSpeedMbps) addField('Internet Speed', `${sowData.infraDetail.internetSpeedMbps} Mbps`);
-      if (sowData.infraDetail.lanSpeedGbps) addField('Internal LAN Speed', `${sowData.infraDetail.lanSpeedGbps} Gbps per camera`);
-      if (sowData.infraDetail.switchUplinkGbps) addField('Switch to Server Uplink', `${sowData.infraDetail.switchUplinkGbps} Gbps`);
-      addField('Cable Specification', sowData.infraDetail.cableSpec);
-      if (sowData.infraDetail.maxCableDistanceM) addField('Max Cable Distance', `${sowData.infraDetail.maxCableDistanceM}m`);
-      if (sowData.infraDetail.poeRequired) addField('PoE Required', 'Yes');
-      if (sowData.infraDetail.dhcpReservation) addField('DHCP IP Reservation', 'Yes');
-      addField('Remote Access Method', sowData.infraDetail.remoteAccessMethod);
-      addField('Server Mounting', sowData.infraDetail.serverMounting);
-      addField('Server Power Supply', sowData.infraDetail.serverPowerSupply);
+      if (sowData.infraDetail?.internetSpeedMbps) addField('Internet Speed', `${sowData.infraDetail.internetSpeedMbps} Mbps`);
+      if (sowData.infraDetail?.lanSpeedGbps) addField('Internal LAN Speed', `${sowData.infraDetail.lanSpeedGbps} Gbps per camera`);
+      if (sowData.infraDetail?.switchUplinkGbps) addField('Switch to Server Uplink', `${sowData.infraDetail.switchUplinkGbps} Gbps`);
+      addField('Cable Specification', sowData.infraDetail?.cableSpec);
+      if (sowData.infraDetail?.maxCableDistanceM) addField('Max Cable Distance', `${sowData.infraDetail.maxCableDistanceM}m`);
+      if (sowData.infraDetail?.poeRequired) addField('PoE Required', 'Yes');
+      if (sowData.infraDetail?.dhcpReservation) addField('DHCP IP Reservation', 'Yes');
+      addField('Remote Access Method', sowData.infraDetail?.remoteAccessMethod);
+      addField('Server Mounting', sowData.infraDetail?.serverMounting);
+      addField('Server Power Supply', sowData.infraDetail?.serverPowerSupply);
       addText('Installation will not proceed until infrastructure readiness is validated.', margin + 4, { fontSize: 8 });
 
       // 7. Model Training (Vision)
@@ -310,13 +313,15 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
 
   return (
     <div className="space-y-6">
-      {/* Validation Blocker */}
+      {/* Validation Info */}
       {validation && !validation.ready && (
         <Card className="border-amber-500">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2 text-amber-600">
               <ShieldAlert className="h-4 w-4" />
-              SOW cannot be generated until all mandatory feasibility and performance fields are complete.
+              {isDraft
+                ? 'Draft mode — the following fields are incomplete and will be highlighted in red.'
+                : 'SOW cannot be generated until all mandatory fields are complete.'}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -341,10 +346,10 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              {SOW_ALLOWED_ROLES.includes(userRole || '') && (
-                <Button onClick={handleGenerate} disabled={generating || !canGenerate}>
+              {hasRole && feasibilitySignedOff && (
+                <Button onClick={handleGenerate} disabled={generating}>
                   {generating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-                  {currentSOW ? 'Regenerate SOW' : 'Generate SOW'}
+                  {currentSOW ? (isDraft ? 'Regenerate Draft' : 'Regenerate SOW') : (isDraft ? 'Generate Draft SOW' : 'Generate SOW')}
                 </Button>
               )}
               {currentSOW && currentSOW.status === 'current' && (
@@ -377,7 +382,13 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
       {currentSOW && (
         <Card>
           <CardContent className="pt-6">
-            <SOWDocument data={currentSOW.sow_data as SOWData} sowId={currentSOW.id} version={currentSOW.version} feasibilityGateId={projectId} />
+            {isDraft && (
+              <div className="bg-amber-50 border border-amber-300 rounded-lg px-4 py-2 mb-4 text-amber-800 text-sm font-medium flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                DRAFT — Missing information is highlighted in red below
+              </div>
+            )}
+            <SOWDocument data={currentSOW.sow_data as SOWData} sowId={currentSOW.id} version={currentSOW.version} feasibilityGateId={projectId} draft={isDraft} />
           </CardContent>
         </Card>
       )}

@@ -1,55 +1,48 @@
 
 
-## Add Infrastructure Tab to Feasibility Gate
-
-Move all 8 infrastructure requirement fields into a new dedicated "Infrastructure" tab within the Feasibility Gate row, with completeness tracking and Feasibility Gate integration.
+## Add SKU Count to Factory Configuration and Feasibility Gate
 
 ### What Changes
 
 | File | Action |
 |------|--------|
-| `src/pages/app/solutions/tabs/SolutionsInfrastructure.tsx` | **New** -- Form with 8 infrastructure selects (Required / Not Required), auto-saves on change |
-| `src/pages/app/solutions/SolutionsProjectDetail.tsx` | **Edit** -- Add "Infrastructure" tab trigger + content in Feasibility Gate row, pass data, include completeness dot |
-| `src/pages/app/solutions/hooks/useTabCompleteness.ts` | **Edit** -- Add `infrastructure: boolean` to completeness, check all 8 `infra_*` fields are set |
-| `src/components/FeasibilityGateDialog.tsx` | **Edit** -- Accept and display `infrastructure` in the gaps panel; include in `allTabsGreen` requirement |
+| `src/components/shared/FactoryConfigurationTab.tsx` | **Edit** -- Add SKU Count numeric input field to the form |
+| `src/pages/app/solutions/SolutionsProjectDetail.tsx` | **Edit** -- Add `FactoryConfigurationTab` below `SolutionsFactoryConfig` in the Factory tab content |
+| `src/pages/app/solutions/hooks/useTabCompleteness.ts` | **Edit** -- Add `factoryConfig` completeness check requiring `sow_sku_count` to be set |
+| `src/components/FeasibilityGateDialog.tsx` | **Edit** -- Add `factoryConfig` to completeness interface and gaps panel |
+| Database | **No migration** -- Reuse existing `sow_sku_count` column on `solutions_projects` |
+| Database | **Data update** -- Reset feasibility sign-off for project `9a1c8fd7-0ef0-404b-a9ae-a29df3d71717` |
 
-### Infrastructure Tab Form
+### Detail
 
-The new `SolutionsInfrastructure.tsx` component will display 8 fields, each as a select dropdown with three states:
+**1. SKU Count field in FactoryConfigurationTab**
 
-- **Blank** (unset) -- default, blocks completeness
-- **Required**
-- **Not Required**
+Add a numeric input labelled "SKU Count" to the Factory Configuration form. The field maps to the existing `sow_sku_count` column on `solutions_projects`. It will appear after Modules and Features. Required for completeness (must be > 0).
 
-Fields:
-1. Network Ports (`infra_network_ports`)
-2. VLAN (`infra_vlan`)
-3. Static IP (`infra_static_ip`)
-4. 10Gb Connection (`infra_10gb_connection`)
-5. Mount Fabrication (`infra_mount_fabrication`)
-6. VPN (`infra_vpn`)
-7. Storage (`infra_storage`)
-8. Load Balancer (`infra_load_balancer`)
+The component already queries by table name based on `type` prop, so it will work for Solutions without code changes to the query logic -- just need to add `sow_sku_count` to the select and update payloads. For Implementation/BAU projects this field will also appear but won't affect their workflows.
 
-Each field auto-saves to `solutions_projects` on selection change (matching the existing OverviewTab pattern).
+**2. Factory tab in Solutions**
 
-### Completeness Logic
+Currently the Factory tab only renders `SolutionsFactoryConfig` (the portal/factory hierarchy). The `FactoryConfigurationTab` component will be added below it, giving the user access to the configuration fields including the new SKU Count.
 
-A green dot requires **all 8** `infra_*` fields to be either "Required" or "Not Required" (no nulls/blanks). This check is added to `useTabCompleteness`.
+**3. Completeness logic**
 
-### Feasibility Gate Integration
+A new `factoryConfig` boolean will be added to `useTabCompleteness`. It checks that `sow_sku_count` is set and greater than 0. This will be combined into `allTabsGreen` in `SolutionsProjectDetail.tsx`.
 
-- The `allTabsGreen` calculation in `SolutionsProjectDetail.tsx` will be updated to include `completeness.infrastructure`.
-- The Feasibility Gate dialog's gaps panel will show "Infrastructure requirements incomplete" when the infrastructure tab is not green.
-- The completeness prop passed to `FeasibilityGateDialog` will include `infrastructure`.
+A red/green dot will appear on the Factory tab trigger. The Factory tab dot will require BOTH the existing factory hierarchy completeness AND the new factoryConfig completeness to show green.
 
-### Tab Placement
+**4. Feasibility Gate gaps**
 
-The "Infrastructure" tab trigger will appear in Feasibility Gate row 1, after "Lines" and before "Factory Hardware", with a red/green completeness dot.
+The `FeasibilityGateDialog` completeness interface will include `factoryConfig`. When incomplete, the gaps panel will show: "Factory Configuration: SKU Count is required".
 
-### Technical Details
+**5. Feasibility reset**
 
-- The form reads initial values from `project` data already fetched by `SolutionsProjectDetail` (the `infra_*` columns are on `solutions_projects`).
-- On select change, a targeted `.update({ [field]: value })` is performed against Supabase.
-- The `SolutionsProject` interface in `SolutionsProjectDetail.tsx` will be extended with the 8 `infra_*` fields.
-- No database migrations needed -- all columns already exist.
+After implementation, the feasibility sign-off for project `9a1c8fd7-0ef0-404b-a9ae-a29df3d71717` will be reset so you can re-test the full flow.
+
+### Technical Notes
+
+- Reusing `sow_sku_count` avoids data duplication -- this is the same SKU count referenced in the SOW document.
+- The `FactoryConfigurationTab` component already supports `type='solutions'` and queries `solutions_projects` accordingly.
+- The select query in `FactoryConfigurationTab` will be extended to include `sow_sku_count`.
+- No new database columns or migrations are needed.
+

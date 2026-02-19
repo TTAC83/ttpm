@@ -1,140 +1,55 @@
 
 
-## SOW Hardening Update
+## Add Infrastructure Tab to Feasibility Gate
 
-This plan converts the current SOW from a debug-level data dump into a contractual execution document. The DB columns needed (sow_*, infra_*) already exist from a previous migration.
+Move all 8 infrastructure requirement fields into a new dedicated "Infrastructure" tab within the Feasibility Gate row, with completeness tracking and Feasibility Gate integration.
 
-### Overview of Changes
-
-**3 files rewritten, 1 file edited:**
+### What Changes
 
 | File | Action |
 |------|--------|
-| `src/lib/sowService.ts` | Major rewrite: add validation, read new DB fields, strip internal IDs, add executive summary generation |
-| `src/components/sow/SOWDocument.tsx` | Full rewrite: new section structure (12 sections), remove all internal fields, add Executive Summary, Performance Envelope, Assumptions, Exclusions, Milestones |
-| `src/pages/app/solutions/tabs/SolutionsSOW.tsx` | Major rewrite: add pre-generation validation UI, role-based access (Solutions Architect, Sr Solutions Architect, VP Customer Success), validation blocker panel |
-| `src/pages/app/solutions/SolutionsProjectDetail.tsx` | Minor edit: pass additional project fields to SolutionsSOW |
+| `src/pages/app/solutions/tabs/SolutionsInfrastructure.tsx` | **New** -- Form with 8 infrastructure selects (Required / Not Required), auto-saves on change |
+| `src/pages/app/solutions/SolutionsProjectDetail.tsx` | **Edit** -- Add "Infrastructure" tab trigger + content in Feasibility Gate row, pass data, include completeness dot |
+| `src/pages/app/solutions/hooks/useTabCompleteness.ts` | **Edit** -- Add `infrastructure: boolean` to completeness, check all 8 `infra_*` fields are set |
+| `src/components/FeasibilityGateDialog.tsx` | **Edit** -- Accept and display `infrastructure` in the gaps panel; include in `allTabsGreen` requirement |
 
-No database migrations needed -- all required columns already exist.
+### Infrastructure Tab Form
 
----
+The new `SolutionsInfrastructure.tsx` component will display 8 fields, each as a select dropdown with three states:
 
-### 1. Validation Gate (sowService.ts)
+- **Blank** (unset) -- default, blocks completeness
+- **Required**
+- **Not Required**
 
-Add a `validateSOWReadiness()` function that checks:
+Fields:
+1. Network Ports (`infra_network_ports`)
+2. VLAN (`infra_vlan`)
+3. Static IP (`infra_static_ip`)
+4. 10Gb Connection (`infra_10gb_connection`)
+5. Mount Fabrication (`infra_mount_fabrication`)
+6. VPN (`infra_vpn`)
+7. Storage (`infra_storage`)
+8. Load Balancer (`infra_load_balancer`)
 
-**Vision/Hybrid deployments:**
-- `sow_sku_count` is set
-- Lines have min_speed AND max_speed > 0
-- `sow_complexity_tier` is set (Green/Amber/Red)
-- `sow_detection_accuracy_target` is set
-- `sow_false_positive_rate` is set
-- `sow_go_live_definition` is set
+Each field auto-saves to `solutions_projects` on selection change (matching the existing OverviewTab pattern).
 
-**All deployments:**
-- All 8 `infra_*` fields are either "Required" or "Not Required" (no nulls/blanks)
-- `sow_acceptance_criteria` is set
-- `feasibility_signed_off` = true
+### Completeness Logic
 
-Returns a list of missing field names. If any are missing, SOW generation is blocked.
+A green dot requires **all 8** `infra_*` fields to be either "Required" or "Not Required" (no nulls/blanks). This check is added to `useTabCompleteness`.
 
-### 2. Strip Internal Fields (sowService.ts)
+### Feasibility Gate Integration
 
-Remove from SOWData interface and aggregation:
-- All `id` fields from hardware, cameras, IoT devices
-- `hardwareMasterId` from IoT devices
-- `receiverMacAddress` from IoT devices
-- `cameraIp` from cameras
-- Camera `name` field (which is actually the MAC address)
-- `userId` from contacts
-- Replace any empty/null string rendering with omission rather than "Not provided"/"Not configured"
+- The `allTabsGreen` calculation in `SolutionsProjectDetail.tsx` will be updated to include `completeness.infrastructure`.
+- The Feasibility Gate dialog's gaps panel will show "Infrastructure requirements incomplete" when the infrastructure tab is not green.
+- The completeness prop passed to `FeasibilityGateDialog` will include `infrastructure`.
 
-### 3. Read Real DB Fields (sowService.ts)
+### Tab Placement
 
-Update `aggregateSOWData()` to read the actual `sow_*` and `infra_*` columns from `solutions_projects` instead of hardcoded "Not configured" stubs:
-- `sow_sku_count`, `sow_complexity_tier`, `sow_detection_accuracy_target`, `sow_false_positive_rate`
-- `sow_go_live_definition`, `sow_acceptance_criteria`
-- `sow_stability_period`, `sow_hypercare_window`
-- `sow_initial_training_cycle`, `sow_validation_period`, `sow_retraining_exclusions`
-- `sow_product_presentation_assumptions`, `sow_environmental_stability_assumptions`
-- All 8 `infra_*` fields
+The "Infrastructure" tab trigger will appear in Feasibility Gate row 1, after "Lines" and before "Factory Hardware", with a red/green completeness dot.
 
-### 4. Executive Summary (SOWDocument.tsx)
+### Technical Details
 
-New Section 1: Auto-generated narrative paragraph:
-
-> "This Statement of Work defines the scope for a {deploymentType} deployment at {customerLegalName}, {siteAddress}. The deployment covers {lineCount} production line(s) operating at {minSpeed}-{maxSpeed} ppm, with {cameraCount} vision inspection point(s) across {useCaseList}. The intended outcome is: {projectGoals}."
-
-### 5. New SOW Document Sections (SOWDocument.tsx)
-
-Restructured section numbering:
-
-1. Executive Summary (new, auto-generated)
-2. Deployment Overview (existing, cleaned)
-3. Inspection and Monitoring Scope (existing, cleaned -- no MACs, IPs, internal IDs)
-4. Hardware Architecture (existing, cleaned -- no IDs)
-5. Operational Performance Envelope (new)
-6. Infrastructure Requirements (redesigned -- Required/Not Required only)
-7. Model Training Scope (vision only, reads real DB fields)
-8. Acceptance and Go-Live Criteria (new, reads real DB fields)
-9. Assumptions (new, auto-generated)
-10. Exclusions (new, auto-generated)
-11. Delivery Milestones (new, indicative sequence)
-12. Governance and Version Control (existing)
-
-### 6. Operational Performance Envelope (Section 5)
-
-Display: throughput range, SKU count, complexity tier, product presentation assumptions, environmental stability assumptions. Add contractual clause: "Performance commitments apply only within the defined operational envelope."
-
-### 7. Infrastructure Redesign (Section 6)
-
-Each of the 8 infra fields displays as "Required" or "Not Required". Add clause: "Installation will not proceed until infrastructure readiness is validated."
-
-### 8. Model Training Scope (Section 7)
-
-Read from DB: SKU count, initial training cycle, validation period, retraining exclusions.
-
-### 9. Assumptions Section (Section 9)
-
-Auto-generated list:
-- Stable and consistent lighting conditions
-- Stable camera mounting and positioning
-- Consistent product presentation and orientation
-- Accurate ERP inputs (if ERP integration applicable)
-- Plus any custom assumptions from `sow_product_presentation_assumptions` and `sow_environmental_stability_assumptions`
-
-### 10. Exclusions Section (Section 10)
-
-Auto-generated:
-- New SKU onboarding beyond the defined count
-- Additional inspection types not specified in this SOW
-- Mechanical redesign of mounting or conveyor systems
-- Environmental changes affecting lighting or product presentation
-- ERP system expansion or reconfiguration
-
-### 11. Delivery Milestones (Section 11)
-
-Indicative sequence (no dates):
-1. Portal Provision
-2. Hardware Dispatch
-3. Installation
-4. Model Training
-5. Go-Live Target
-
-### 12. Role-Based Permissions (SolutionsSOW.tsx)
-
-Replace the current `profile?.is_internal === true` check with a role whitelist:
-- Solutions Consultant (existing `solutions_consultant` field)
-- Senior Solutions Architect (via profile role)
-- VP Customer Success (existing `vp_customer_success` field)
-
-The check will verify that the current user's profile role matches one of: `solutions_consultant`, `senior_solutions_architect`, `vp_customer_success`, OR that they are an `internal_admin`.
-
-### 13. Validation UI (SolutionsSOW.tsx)
-
-When validation fails, display a card listing all missing fields with the message: "SOW cannot be generated until all mandatory feasibility and performance fields are complete." The Generate button remains disabled.
-
-### 14. PDF Export Update (SolutionsSOW.tsx)
-
-The PDF export logic will be updated to match the new section structure, removing internal fields and including all new sections.
-
+- The form reads initial values from `project` data already fetched by `SolutionsProjectDetail` (the `infra_*` columns are on `solutions_projects`).
+- On select change, a targeted `.update({ [field]: value })` is performed against Supabase.
+- The `SolutionsProject` interface in `SolutionsProjectDetail.tsx` will be extended with the 8 `infra_*` fields.
+- No database migrations needed -- all columns already exist.

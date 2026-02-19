@@ -26,6 +26,7 @@ import { SharedProductGapsTab } from '@/components/shared/tabs/SharedProductGaps
 import { SharedBlockersTab } from '@/components/shared/tabs/SharedBlockersTab';
 import { GanttChart } from '@/features/gantt/components/GanttChart';
 import { SolutionsSOW } from './tabs/SolutionsSOW';
+import { SolutionsInfrastructure } from './tabs/SolutionsInfrastructure';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTabCompleteness } from './hooks/useTabCompleteness';
 import { FeasibilityGateDialog } from '@/components/FeasibilityGateDialog';
@@ -74,7 +75,7 @@ export const SolutionsProjectDetail = () => {
   const [completenessRefreshKey, setCompletenessRefreshKey] = useState(0);
   const completeness = useTabCompleteness(project, completenessRefreshKey);
 
-  const allTabsGreen = completeness.overview && completeness.contacts && completeness.factory && completeness.lines;
+  const allTabsGreen = completeness.overview && completeness.contacts && completeness.factory && completeness.lines && completeness.infrastructure;
   const feasibilitySignedOff = (project as any)?.feasibility_signed_off ?? false;
   const feasibilitySignedOffBy = (project as any)?.feasibility_signed_off_by ?? null;
   const feasibilitySignedOffAt = (project as any)?.feasibility_signed_off_at ?? null;
@@ -254,6 +255,10 @@ export const SolutionsProjectDetail = () => {
               Lines
               <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.lines ? 'bg-green-500' : 'bg-red-500'}`} />
             </TabsTrigger>
+            <TabsTrigger value="infrastructure">
+              Infrastructure
+              <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.infrastructure ? 'bg-green-500' : 'bg-red-500'}`} />
+            </TabsTrigger>
             <TabsTrigger value="hardware">
               Factory Hardware
               <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${(hwCompleteness ? (hwCompleteness.iot && hwCompleteness.vision) : completeness.factoryHardware) ? 'bg-green-500' : 'bg-red-500'}`} />
@@ -335,6 +340,10 @@ export const SolutionsProjectDetail = () => {
           />
         </TabsContent>
 
+        <TabsContent value="infrastructure" className="space-y-4">
+          <SolutionsInfrastructure projectId={project.id} projectData={project} onUpdate={fetchProject} />
+        </TabsContent>
+
         <TabsContent value="hardware" className="space-y-4">
           <ProjectHardware projectId={project.id} type="solutions" onCompletenessChange={setHwCompleteness} />
         </TabsContent>
@@ -410,6 +419,7 @@ export const SolutionsProjectDetail = () => {
           contacts: completeness.contacts,
           factory: completeness.factory,
           lines: completeness.lines,
+          infrastructure: completeness.infrastructure,
         }}
         projectData={project}
       />

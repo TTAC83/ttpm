@@ -27,6 +27,7 @@ interface FeasibilityGateDialogProps {
     contacts: boolean;
     factory: boolean;
     lines: boolean;
+    infrastructure: boolean;
   };
   projectData?: {
     site_address?: string;
@@ -489,6 +490,11 @@ export const FeasibilityGateDialog = ({
               // Lines gaps
               if (completeness && !completeness.lines) {
                 gaps.push('Lines: No lines configured');
+              }
+
+              // Infrastructure gaps
+              if (completeness && !completeness.infrastructure) {
+                gaps.push('Infrastructure: Requirements incomplete — all fields must be set to Required or Not Required');
               }
 
               if (gaps.length === 0 && allTabsGreen) {

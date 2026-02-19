@@ -63,10 +63,21 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
       project.product_description
     );
 
-    // Infrastructure: cable spec + at least one bandwidth field + customer confirmation
-    const infraComplete = !!(project as any).infra_cable_spec &&
-      (!!((project as any).infra_internet_speed_mbps) || !!((project as any).infra_lan_speed_gbps) || !!((project as any).infra_switch_uplink_gbps)) &&
-      !!(project as any).infra_customer_confirmed;
+    // Infrastructure: ALL fields and checkboxes must be complete
+    const p = project as any;
+    const infraComplete = !!(
+      p.infra_internet_speed_mbps &&
+      p.infra_lan_speed_gbps &&
+      p.infra_switch_uplink_gbps &&
+      p.infra_cable_spec &&
+      p.infra_max_cable_distance_m &&
+      p.infra_poe_required !== null && p.infra_poe_required !== undefined &&
+      p.infra_dhcp_reservation !== null && p.infra_dhcp_reservation !== undefined &&
+      p.infra_remote_access_method &&
+      p.infra_server_mounting &&
+      p.infra_server_power_supply &&
+      p.infra_customer_confirmed
+    );
 
     // Factory config: SKU count must be set and > 0
     const factoryConfigComplete = ((project as any).sow_sku_count ?? 0) > 0;

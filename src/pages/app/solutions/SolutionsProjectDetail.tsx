@@ -71,7 +71,8 @@ export const SolutionsProjectDetail = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [gateDialogOpen, setGateDialogOpen] = useState(false);
   const [hwCompleteness, setHwCompleteness] = useState<{ iot: boolean; vision: boolean } | null>(null);
-  const completeness = useTabCompleteness(project);
+  const [completenessRefreshKey, setCompletenessRefreshKey] = useState(0);
+  const completeness = useTabCompleteness(project, completenessRefreshKey);
 
   const allTabsGreen = completeness.overview && completeness.contacts && completeness.factory && completeness.lines;
   const feasibilitySignedOff = (project as any)?.feasibility_signed_off ?? false;
@@ -219,7 +220,7 @@ export const SolutionsProjectDetail = () => {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <Tabs value={activeTab} onValueChange={(tab) => { setActiveTab(tab); setCompletenessRefreshKey(k => k + 1); }} className="space-y-4">
         <div className="space-y-2">
           {/* Row 1 - Feasibility Gate */}
           <TabsList className="w-full justify-start h-auto flex-wrap gap-1.5 p-1">

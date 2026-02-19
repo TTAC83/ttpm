@@ -27,6 +27,7 @@ interface FactoryData {
   teams_webhook_url: string;
   tablet_use_cases: string;
   modules_and_features: string;
+  sow_sku_count: number | null;
 }
 
 const MODULES_OPTIONS = ['Maintenance', 'Quality'];
@@ -46,6 +47,7 @@ export const FactoryConfigurationTab = ({ projectId, type, projectDomain = '', o
     teams_webhook_url: '',
     tablet_use_cases: 'None',
     modules_and_features: '',
+    sow_sku_count: null,
   });
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
 
@@ -58,9 +60,12 @@ export const FactoryConfigurationTab = ({ projectId, type, projectDomain = '', o
       setLoading(true);
       const tableName = type === 'project' ? 'projects' : type === 'bau' ? 'bau_customers' : 'solutions_projects';
       
-      const { data, error } = await supabase
-        .from(tableName)
-        .select('website_url, job_scheduling, job_scheduling_notes, s3_bucket_required, teams_integration, teams_id, teams_webhook_url, tablet_use_cases, modules_and_features')
+      const baseFields = 'website_url, job_scheduling, job_scheduling_notes, s3_bucket_required, teams_integration, teams_id, teams_webhook_url, tablet_use_cases, modules_and_features';
+      const selectFields = type === 'solutions' ? `${baseFields}, sow_sku_count` : baseFields;
+
+      const { data, error } = await (supabase
+        .from(tableName) as any)
+        .select(selectFields)
         .eq('id', projectId)
         .single();
 
@@ -77,6 +82,7 @@ export const FactoryConfigurationTab = ({ projectId, type, projectDomain = '', o
           teams_webhook_url: data.teams_webhook_url || '',
           tablet_use_cases: data.tablet_use_cases || 'None',
           modules_and_features: data.modules_and_features || '',
+          sow_sku_count: data.sow_sku_count ?? null,
         });
         
         if (data.modules_and_features) {
@@ -172,19 +178,24 @@ export const FactoryConfigurationTab = ({ projectId, type, projectDomain = '', o
       setSaving(true);
       const tableName = type === 'project' ? 'projects' : type === 'bau' ? 'bau_customers' : 'solutions_projects';
       
-      const { error } = await supabase
-        .from(tableName)
-        .update({
-          website_url: formData.website_url ? normalizeUrl(formData.website_url) : null,
-          job_scheduling: formData.job_scheduling,
-          job_scheduling_notes: formData.job_scheduling_notes || null,
-          s3_bucket_required: formData.s3_bucket_required,
-          teams_integration: formData.teams_integration,
-          teams_id: formData.teams_integration ? formData.teams_id : null,
-          teams_webhook_url: formData.teams_integration ? normalizeUrl(formData.teams_webhook_url) : null,
-          tablet_use_cases: formData.tablet_use_cases,
-          modules_and_features: selectedModules.join(','),
-        })
+      const updatePayload: any = {
+        website_url: formData.website_url ? normalizeUrl(formData.website_url) : null,
+        job_scheduling: formData.job_scheduling,
+        job_scheduling_notes: formData.job_scheduling_notes || null,
+        s3_bucket_required: formData.s3_bucket_required,
+        teams_integration: formData.teams_integration,
+        teams_id: formData.teams_integration ? formData.teams_id : null,
+        teams_webhook_url: formData.teams_integration ? normalizeUrl(formData.teams_webhook_url) : null,
+        tablet_use_cases: formData.tablet_use_cases,
+        modules_and_features: selectedModules.join(','),
+      };
+      if (type === 'solutions') {
+        updatePayload.sow_sku_count = formData.sow_sku_count && formData.sow_sku_count > 0 ? formData.sow_sku_count : null;
+      }
+
+      const { error } = await (supabase
+        .from(tableName) as any)
+        .update(updatePayload)
         .eq('id', projectId);
 
       if (error) throw error;
@@ -388,6 +399,19 @@ export const FactoryConfigurationTab = ({ projectId, type, projectDomain = '', o
               Selected: {selectedModules.join(', ')}
             </p>
           )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="sow_sku_count">SKU Count *</Label>
+          <Input
+            id="sow_sku_count"
+            type="number"
+            min={0}
+            value={formData.sow_sku_count ?? ''}
+            onChange={(e) => setFormData({ ...formData, sow_sku_count: e.target.value ? parseInt(e.target.value, 10) : null })}
+            disabled={!isEditing}
+            placeholder="Enter number of SKUs"
+          />
         </div>
       </CardContent>
     </Card>

@@ -15,6 +15,7 @@ import { ContractInformationTab } from '@/components/shared/ContractInformationT
 import { TeamTab } from '@/components/shared/TeamTab';
 import { AccountInfoTab } from '@/components/shared/AccountInfoTab';
 import { SolutionsFactoryConfig } from '@/components/factory-config/SolutionsFactoryConfig';
+import { FactoryConfigurationTab } from '@/components/shared/FactoryConfigurationTab';
 import { ProjectHardware } from '../projects/tabs/ProjectHardware';
 import ProjectGantt from '../projects/tabs/ProjectGantt';
 import ProjectTasks from '../projects/tabs/ProjectTasks';
@@ -75,7 +76,7 @@ export const SolutionsProjectDetail = () => {
   const [completenessRefreshKey, setCompletenessRefreshKey] = useState(0);
   const completeness = useTabCompleteness(project, completenessRefreshKey);
 
-  const allTabsGreen = completeness.overview && completeness.contacts && completeness.factory && completeness.lines && completeness.infrastructure;
+  const allTabsGreen = completeness.overview && completeness.contacts && completeness.factory && completeness.factoryConfig && completeness.lines && completeness.infrastructure;
   const feasibilitySignedOff = (project as any)?.feasibility_signed_off ?? false;
   const feasibilitySignedOffBy = (project as any)?.feasibility_signed_off_by ?? null;
   const feasibilitySignedOffAt = (project as any)?.feasibility_signed_off_at ?? null;
@@ -249,7 +250,7 @@ export const SolutionsProjectDetail = () => {
             </TabsTrigger>
             <TabsTrigger value="factory">
               Factory
-              <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.factory ? 'bg-green-500' : 'bg-red-500'}`} />
+              <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${(completeness.factory && completeness.factoryConfig) ? 'bg-green-500' : 'bg-red-500'}`} />
             </TabsTrigger>
             <TabsTrigger value="lines">
               Lines
@@ -350,6 +351,7 @@ export const SolutionsProjectDetail = () => {
 
         <TabsContent value="factory" className="space-y-4">
           <SolutionsFactoryConfig projectId={project.id} />
+          <FactoryConfigurationTab projectId={project.id} type="solutions" projectDomain={project.domain} onUpdate={() => { fetchProject(); setCompletenessRefreshKey(k => k + 1); }} />
         </TabsContent>
 
         <TabsContent value="lines" className="space-y-4">
@@ -417,9 +419,10 @@ export const SolutionsProjectDetail = () => {
         completeness={{
           overview: completeness.overview,
           contacts: completeness.contacts,
-          factory: completeness.factory,
+          factory: completeness.factory && completeness.factoryConfig,
           lines: completeness.lines,
           infrastructure: completeness.infrastructure,
+          factoryConfig: completeness.factoryConfig,
         }}
         projectData={project}
       />

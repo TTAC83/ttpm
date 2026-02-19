@@ -28,6 +28,7 @@ interface FeasibilityGateDialogProps {
     factory: boolean;
     lines: boolean;
     infrastructure: boolean;
+    factoryConfig?: boolean;
   };
   projectData?: {
     site_address?: string;
@@ -479,6 +480,9 @@ export const FeasibilityGateDialog = ({
                       });
                     });
                   }
+                }
+                if (completeness.factoryConfig === false) {
+                  factoryGaps.push('SKU Count is required');
                 }
                 if (factoryGaps.length > 0) {
                   gaps.push(`Factory: ${factoryGaps.join('; ')}`);

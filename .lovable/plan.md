@@ -1,48 +1,101 @@
 
 
-## Add SKU Count to Factory Configuration and Feasibility Gate
+## Enhance Infrastructure Tab and SOW with Detailed Network Requirements
+
+This plan enriches the current Infrastructure tab from simple "Required/Not Required" toggles into a comprehensive network specification form based on the ThingTrax Security & Network document. It also updates the SOW document to include the detailed network specifications.
+
+### Current State
+
+The Infrastructure tab has 8 binary fields (Required/Not Required):
+- Network Ports, VLAN, Static IP, 10Gb Connection, Mount Fabrication, VPN, Storage, Load Balancer
+
+The SOW simply echoes "Required" or "Not Required" for each.
 
 ### What Changes
 
+#### 1. New Database Columns (Migration)
+
+Add detailed network specification fields to `solutions_projects`:
+
+| Column | Type | Purpose |
+|--------|------|---------|
+| `infra_internet_speed_mbps` | integer | Minimum internet speed (default guidance: 2-3 Mbps) |
+| `infra_lan_speed_gbps` | integer | Internal LAN speed per camera (default: 1 Gbps) |
+| `infra_switch_uplink_gbps` | integer | Switch-to-server uplink (5-10 Gbps) |
+| `infra_cable_spec` | text | Cable specification (Cat 6 / Cat 7) |
+| `infra_max_cable_distance_m` | integer | Max cable run distance in metres |
+| `infra_poe_required` | boolean | PoE cameras |
+| `infra_dhcp_reservation` | boolean | DHCP IP reservation required |
+| `infra_remote_access_method` | text | Remote access method (e.g. "Cloud VNC") |
+| `infra_server_mounting` | text | Server mounting type (Wall / Rack) |
+| `infra_server_power_supply` | text | Power supply spec |
+| `infra_notes` | text | Free-text notes for additional requirements |
+
+#### 2. Infrastructure Tab UI Update (`SolutionsInfrastructure.tsx`)
+
+Restructure into sections:
+
+**Section 1 -- General Requirements** (existing toggles)
+Keep the 8 existing Required/Not Required dropdowns as-is.
+
+**Section 2 -- Bandwidth & Cabling** (new)
+- Internet Speed (Mbps) -- numeric input with helper text "Minimum 2-3 Mbps recommended"
+- Internal LAN Speed (Gbps per camera) -- numeric, default hint "1 Gbps per camera (GigE)"
+- Switch to Server Uplink (Gbps) -- numeric, helper "5 Gbps min, 10 Gbps max recommended"
+- Cable Specification -- select: Cat 5e / Cat 6 / Cat 7
+- Max Cable Distance (m) -- numeric, helper "100m max for Cat6; additional switch needed beyond"
+- PoE Required -- checkbox
+
+**Section 3 -- IP & Remote Access** (new)
+- DHCP IP Reservation Required -- checkbox, with note "ThingTrax provides MAC addresses for DHCP reservation"
+- Remote Access Method -- text input, default suggestion "Cloud VNC"
+- Server Mounting -- select: Wall Mount / Rack Mount
+- Server Power Supply -- text input, hint "DC 19-36V single supply"
+
+**Section 4 -- Additional Notes** (new)
+- Free-text textarea for any customer-specific network requirements
+
+**Section 5 -- Customer Confirmation** (existing checkbox, moved to bottom)
+
+#### 3. SOW Document Update (`SOWDocument.tsx` and `sowService.ts`)
+
+Expand the Infrastructure section of the SOW to include:
+
+- All existing Required/Not Required items
+- New subsection: **Bandwidth & Cabling Specifications**
+  - Internet speed, LAN speed, switch uplink, cable spec, max distance, PoE
+- New subsection: **IP Management & Remote Access**
+  - DHCP reservation, remote access method, server mounting, power supply
+- New subsection: **Port Requirements** (static reference table rendered in the SOW)
+  - Inbound: Port 22 (internal VLAN only)
+  - Outbound: Port 8883 (Azure IoT), Port 443 (multiple destinations), Port 123 (NTP), Port 554 (RTSP)
+  - This is standard across all deployments and will be hardcoded in the SOW template (not editable per project)
+- Additional notes if provided
+
+The `SOWData` interface in `sowService.ts` will be extended with the new fields. The `aggregateSOWData` function will read them from the project record.
+
+#### 4. SOW Validation Update (`sowService.ts`)
+
+The `validateSOWReadiness` function will NOT require the new detailed fields -- they are informational enrichment. The existing 8 infrastructure toggles remain the mandatory gate. This avoids blocking existing projects.
+
+#### 5. No Changes to Feasibility Gate or Completeness
+
+The feasibility gate and tab completeness logic remain unchanged -- they still check the 8 existing infrastructure toggles and customer confirmation. The new fields are additive detail for the SOW document.
+
+### Files Changed
+
 | File | Action |
 |------|--------|
-| `src/components/shared/FactoryConfigurationTab.tsx` | **Edit** -- Add SKU Count numeric input field to the form |
-| `src/pages/app/solutions/SolutionsProjectDetail.tsx` | **Edit** -- Add `FactoryConfigurationTab` below `SolutionsFactoryConfig` in the Factory tab content |
-| `src/pages/app/solutions/hooks/useTabCompleteness.ts` | **Edit** -- Add `factoryConfig` completeness check requiring `sow_sku_count` to be set |
-| `src/components/FeasibilityGateDialog.tsx` | **Edit** -- Add `factoryConfig` to completeness interface and gaps panel |
-| Database | **No migration** -- Reuse existing `sow_sku_count` column on `solutions_projects` |
-| Database | **Data update** -- Reset feasibility sign-off for project `9a1c8fd7-0ef0-404b-a9ae-a29df3d71717` |
-
-### Detail
-
-**1. SKU Count field in FactoryConfigurationTab**
-
-Add a numeric input labelled "SKU Count" to the Factory Configuration form. The field maps to the existing `sow_sku_count` column on `solutions_projects`. It will appear after Modules and Features. Required for completeness (must be > 0).
-
-The component already queries by table name based on `type` prop, so it will work for Solutions without code changes to the query logic -- just need to add `sow_sku_count` to the select and update payloads. For Implementation/BAU projects this field will also appear but won't affect their workflows.
-
-**2. Factory tab in Solutions**
-
-Currently the Factory tab only renders `SolutionsFactoryConfig` (the portal/factory hierarchy). The `FactoryConfigurationTab` component will be added below it, giving the user access to the configuration fields including the new SKU Count.
-
-**3. Completeness logic**
-
-A new `factoryConfig` boolean will be added to `useTabCompleteness`. It checks that `sow_sku_count` is set and greater than 0. This will be combined into `allTabsGreen` in `SolutionsProjectDetail.tsx`.
-
-A red/green dot will appear on the Factory tab trigger. The Factory tab dot will require BOTH the existing factory hierarchy completeness AND the new factoryConfig completeness to show green.
-
-**4. Feasibility Gate gaps**
-
-The `FeasibilityGateDialog` completeness interface will include `factoryConfig`. When incomplete, the gaps panel will show: "Factory Configuration: SKU Count is required".
-
-**5. Feasibility reset**
-
-After implementation, the feasibility sign-off for project `9a1c8fd7-0ef0-404b-a9ae-a29df3d71717` will be reset so you can re-test the full flow.
+| `supabase/migrations/[new].sql` | **Create** -- Add new columns to `solutions_projects` |
+| `src/pages/app/solutions/tabs/SolutionsInfrastructure.tsx` | **Edit** -- Add new form sections |
+| `src/lib/sowService.ts` | **Edit** -- Extend `SOWData` interface and `aggregateSOWData` |
+| `src/components/sow/SOWDocument.tsx` | **Edit** -- Expand Infrastructure section with new subsections and port table |
+| `src/integrations/supabase/types.ts` | **Edit** -- Regenerate types |
 
 ### Technical Notes
 
-- Reusing `sow_sku_count` avoids data duplication -- this is the same SKU count referenced in the SOW document.
-- The `FactoryConfigurationTab` component already supports `type='solutions'` and queries `solutions_projects` accordingly.
-- The select query in `FactoryConfigurationTab` will be extended to include `sow_sku_count`.
-- No new database columns or migrations are needed.
+- The port requirements table (Section 5 of the network doc) is standardised across all ThingTrax deployments. It will be rendered as a static reference in the SOW document rather than stored per-project. This ensures accuracy and avoids data entry burden.
+- The VNC service endpoints table is also standard and will be included as a static appendix section in the SOW.
+- Cable specification guidance (Cat 6 for up to 55m, Cat 7 for up to 100m) will be shown as helper text on the form.
+- The bandwidth formula (cameras x 1Gbps = minimum switch uplink) can be auto-calculated and shown as a recommendation based on camera count from the lines data.
 

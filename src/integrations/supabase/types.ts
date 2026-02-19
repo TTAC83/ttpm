@@ -4472,6 +4472,14 @@ export type Database = {
           id: string
           implementation_handover: boolean
           implementation_lead: string | null
+          infra_10gb_connection: string | null
+          infra_load_balancer: string | null
+          infra_mount_fabrication: string | null
+          infra_network_ports: string | null
+          infra_static_ip: string | null
+          infra_storage: string | null
+          infra_vlan: string | null
+          infra_vpn: string | null
           job_scheduling: string | null
           job_scheduling_notes: string | null
           line_description: string | null
@@ -4497,6 +4505,19 @@ export type Database = {
           site_name: string
           site_visit: boolean | null
           solutions_consultant: string | null
+          sow_acceptance_criteria: string | null
+          sow_complexity_tier: string | null
+          sow_detection_accuracy_target: number | null
+          sow_environmental_stability_assumptions: string | null
+          sow_false_positive_rate: number | null
+          sow_go_live_definition: string | null
+          sow_hypercare_window: string | null
+          sow_initial_training_cycle: string | null
+          sow_product_presentation_assumptions: string | null
+          sow_retraining_exclusions: string | null
+          sow_sku_count: number | null
+          sow_stability_period: string | null
+          sow_validation_period: string | null
           standard_terms: boolean | null
           tablet_use_cases: string | null
           teams_id: string | null
@@ -4548,6 +4569,14 @@ export type Database = {
           id?: string
           implementation_handover?: boolean
           implementation_lead?: string | null
+          infra_10gb_connection?: string | null
+          infra_load_balancer?: string | null
+          infra_mount_fabrication?: string | null
+          infra_network_ports?: string | null
+          infra_static_ip?: string | null
+          infra_storage?: string | null
+          infra_vlan?: string | null
+          infra_vpn?: string | null
           job_scheduling?: string | null
           job_scheduling_notes?: string | null
           line_description?: string | null
@@ -4573,6 +4602,19 @@ export type Database = {
           site_name: string
           site_visit?: boolean | null
           solutions_consultant?: string | null
+          sow_acceptance_criteria?: string | null
+          sow_complexity_tier?: string | null
+          sow_detection_accuracy_target?: number | null
+          sow_environmental_stability_assumptions?: string | null
+          sow_false_positive_rate?: number | null
+          sow_go_live_definition?: string | null
+          sow_hypercare_window?: string | null
+          sow_initial_training_cycle?: string | null
+          sow_product_presentation_assumptions?: string | null
+          sow_retraining_exclusions?: string | null
+          sow_sku_count?: number | null
+          sow_stability_period?: string | null
+          sow_validation_period?: string | null
           standard_terms?: boolean | null
           tablet_use_cases?: string | null
           teams_id?: string | null
@@ -4624,6 +4666,14 @@ export type Database = {
           id?: string
           implementation_handover?: boolean
           implementation_lead?: string | null
+          infra_10gb_connection?: string | null
+          infra_load_balancer?: string | null
+          infra_mount_fabrication?: string | null
+          infra_network_ports?: string | null
+          infra_static_ip?: string | null
+          infra_storage?: string | null
+          infra_vlan?: string | null
+          infra_vpn?: string | null
           job_scheduling?: string | null
           job_scheduling_notes?: string | null
           line_description?: string | null
@@ -4649,6 +4699,19 @@ export type Database = {
           site_name?: string
           site_visit?: boolean | null
           solutions_consultant?: string | null
+          sow_acceptance_criteria?: string | null
+          sow_complexity_tier?: string | null
+          sow_detection_accuracy_target?: number | null
+          sow_environmental_stability_assumptions?: string | null
+          sow_false_positive_rate?: number | null
+          sow_go_live_definition?: string | null
+          sow_hypercare_window?: string | null
+          sow_initial_training_cycle?: string | null
+          sow_product_presentation_assumptions?: string | null
+          sow_retraining_exclusions?: string | null
+          sow_sku_count?: number | null
+          sow_stability_period?: string | null
+          sow_validation_period?: string | null
           standard_terms?: boolean | null
           tablet_use_cases?: string | null
           teams_id?: string | null

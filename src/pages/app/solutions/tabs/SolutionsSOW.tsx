@@ -12,8 +12,10 @@ import {
   fetchSOWHistory,
   fetchSolutionsLines,
   validateSOWReadiness,
+  computeSOWStatus,
   type SOWData,
   type SOWValidationResult,
+  type SOWStatus,
 } from '@/lib/sowService';
 import { supabase } from '@/integrations/supabase/client';
 import jsPDF from 'jspdf';
@@ -46,6 +48,7 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
   const [generating, setGenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [validation, setValidation] = useState<SOWValidationResult | null>(null);
+  const [sowStatus, setSowStatus] = useState<SOWStatus>('draft');
 
   const feasibilitySignedOff = projectData?.feasibility_signed_off ?? false;
 
@@ -53,13 +56,10 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
   const userRole = profile?.role as string | undefined;
   const hasRole = SOW_ALLOWED_ROLES.includes(userRole || '');
   const canGenerate = hasRole && feasibilitySignedOff;
-  const isFullyReady = canGenerate && (validation?.ready ?? false);
-  const isDraft = canGenerate && !isFullyReady;
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch full project data with sow_* fields for validation
       const [sow, hist, lines, projRes] = await Promise.all([
         fetchCurrentSOW(projectId),
         fetchSOWHistory(projectId),
@@ -71,6 +71,10 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
 
       if (projRes.data) {
         setValidation(validateSOWReadiness(projRes.data, lines));
+      }
+
+      if (sow?.sow_data) {
+        setSowStatus(computeSOWStatus(sow.sow_data as SOWData));
       }
     } catch (err) {
       console.error('Error loading SOW data:', err);
@@ -100,6 +104,9 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
     setExporting(true);
     try {
       const sowData = currentSOW.sow_data as SOWData;
+      const status = computeSOWStatus(sowData);
+      const isDraftExport = status === 'draft';
+
       const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
@@ -143,30 +150,43 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
       addText(`SOW-${currentSOW.id.slice(0, 8).toUpperCase()} | Version ${currentSOW.version} | ${new Date(sowData.generatedAt).toLocaleDateString()}`, margin, { fontSize: 8 });
       y += 4;
 
+      if (isDraftExport) {
+        addText('STATUS: DRAFT — INCOMPLETE', margin, { fontSize: 10, fontStyle: 'bold' });
+        y += 2;
+      }
+
       const isVision = sowData.deploymentType === 'Vision' || sowData.deploymentType === 'Hybrid';
       const allMin = Math.min(...sowData.lines.map(l => l.minSpeed).filter(s => s > 0), Infinity);
       const allMax = Math.max(...sowData.lines.map(l => l.maxSpeed).filter(s => s > 0), 0);
       const allUC = [...new Set(sowData.lines.flatMap(l => l.positions.flatMap(p => p.equipment.flatMap(e => e.cameras.flatMap(c => c.useCases)))))];
 
+      let sn = 0;
+      const sec = () => String(++sn);
+
       // 1. Executive Summary
-      addSection('1', 'EXECUTIVE SUMMARY');
-      let summary = `This Statement of Work defines the scope for a ${sowData.deploymentType} deployment at ${sowData.customerLegalName}, ${sowData.siteAddress || 'TBC'}. The deployment covers ${sowData.lines.length} production line(s)`;
-      if (allMin < Infinity && allMax > 0) summary += ` operating at ${allMin}-${allMax} ppm`;
-      if (sowData.hardware.totalCameras > 0) summary += `, with ${sowData.hardware.totalCameras} vision inspection point(s)`;
-      if (allUC.length > 0) summary += ` across ${allUC.join(', ')}`;
+      addSection(sec(), 'EXECUTIVE SUMMARY');
+      let summary = `This Statement of Work defines the deployment of a ${sowData.deploymentType} system at ${sowData.customerLegalName}, ${sowData.siteAddress || 'TBC'}. The deployment covers ${sowData.lines.length} production line(s)`;
+      if (allMin < Infinity && allMax > 0) summary += ` operating between ${Math.min(allMin, allMax)}-${Math.max(allMin, allMax)} ppm`;
+      if (sowData.hardware.totalCameras > 0) summary += `, encompassing ${sowData.hardware.totalCameras} vision inspection point(s)`;
+      if (allUC.length > 0) summary += ` covering ${allUC.join(', ')}`;
       summary += '.';
-      if (sowData.projectGoals) summary += ` The intended outcome is: ${sowData.projectGoals}`;
+      if (sowData.projectGoals) {
+        const goals = sowData.projectGoals.split(/[\n;]/).map(g => g.replace(/^\s*[\d]+[.)]\s*/, '').replace(/^[-•]\s*/, '').trim()).filter(Boolean);
+        if (goals.length > 0) {
+          const joined = goals.map(g => g.charAt(0).toLowerCase() + g.slice(1).replace(/\.$/, ''));
+          summary += ` The system will ${joined.length > 1 ? joined.slice(0, -1).join(', ') + ' and ' + joined[joined.length - 1] : joined[0]} within the defined operational envelope.`;
+        }
+      }
       addText(summary, margin, { fontSize: 9 });
 
       // 2. Deployment Overview
-      addSection('2', 'DEPLOYMENT OVERVIEW');
+      addSection(sec(), 'DEPLOYMENT OVERVIEW');
       addField('Customer', sowData.customerLegalName);
       addField('Site Address', sowData.siteAddress);
       addField('Deployment Type', sowData.deploymentType);
       addField('Segment', sowData.segment);
       addField('Process Description', sowData.processDescription);
       addField('Product Description', sowData.productDescription);
-      addField('Project Goals', sowData.projectGoals);
       if (sowData.contacts.length > 0) {
         y += 2;
         addText('Project Team', margin, { fontSize: 10, fontStyle: 'bold' });
@@ -174,8 +194,8 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
       }
 
       // 3. Inspection & Monitoring Scope
-      addSection('3', 'INSPECTION & MONITORING SCOPE');
-      for (const line of sowData.lines) {
+      addSection(sec(), 'INSPECTION & MONITORING SCOPE');
+      for (const line of sowData.lines.filter(l => l.positions.length > 0 || l.lineName)) {
         checkPage(30);
         addText(`Line: ${line.lineName} (${line.deploymentType})`, margin, { fontSize: 10, fontStyle: 'bold' });
         if (line.minSpeed > 0) addText(`Speed: ${line.minSpeed}-${line.maxSpeed} ppm | Products: ${line.numberOfProducts ?? 'N/A'} | Artworks: ${line.numberOfArtworks ?? 'N/A'}`, margin + 4, { fontSize: 8 });
@@ -199,15 +219,15 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
       }
 
       // 4. Hardware Architecture
-      addSection('4', 'HARDWARE ARCHITECTURE');
+      addSection(sec(), 'HARDWARE ARCHITECTURE');
       addText(`Total Cameras: ${sowData.hardware.totalCameras} | Total IoT Devices: ${sowData.hardware.totalIotDevices}`, margin + 4, { fontSize: 9 });
-      for (const s of sowData.hardware.servers) { addText(`Server: ${s.name} (${s.model}) - ${s.assignedCameras} cameras`, margin + 4, { fontSize: 8 }); y += 1; }
-      for (const g of sowData.hardware.gateways) { addText(`Gateway: ${g.name} (${g.model})`, margin + 4, { fontSize: 8 }); y += 1; }
+      for (const s of sowData.hardware.servers.filter(s => s.name || s.model)) { addText(`Server: ${s.name} (${s.model}) - ${s.assignedCameras} cameras`, margin + 4, { fontSize: 8 }); y += 1; }
+      for (const g of sowData.hardware.gateways.filter(g => g.name || g.model)) { addText(`Gateway: ${g.name} (${g.model})`, margin + 4, { fontSize: 8 }); y += 1; }
 
       // 5. Performance Envelope (Vision)
       if (isVision) {
-        addSection('5', 'OPERATIONAL PERFORMANCE ENVELOPE');
-        if (allMin < Infinity) addField('Throughput Range', `${allMin}-${allMax} ppm`);
+        addSection(sec(), 'OPERATIONAL PERFORMANCE ENVELOPE');
+        if (allMin < Infinity) addField('Throughput Range', `${Math.min(allMin, allMax)}-${Math.max(allMin, allMax)} ppm`);
         addField('SKU Count', sowData.skuCount);
         addField('Complexity Tier', sowData.complexityTier);
         addField('Detection Accuracy Target', sowData.detectionAccuracyTarget != null ? `${sowData.detectionAccuracyTarget}%` : null);
@@ -215,38 +235,79 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
         addText('Performance commitments apply only within the defined operational envelope.', margin + 4, { fontSize: 8 });
       }
 
-      // 6. Infrastructure
-      addSection(isVision ? '6' : '5', 'INFRASTRUCTURE REQUIREMENTS');
+      // Infrastructure
+      addSection(sec(), 'INFRASTRUCTURE REQUIREMENTS');
       if (sowData.infraDetail?.internetSpeedMbps) addField('Internet Speed', `${sowData.infraDetail.internetSpeedMbps} Mbps`);
       if (sowData.infraDetail?.lanSpeedGbps) addField('Internal LAN Speed', `${sowData.infraDetail.lanSpeedGbps} Gbps per camera`);
       if (sowData.infraDetail?.switchUplinkGbps) addField('Switch to Server Uplink', `${sowData.infraDetail.switchUplinkGbps} Gbps`);
       addField('Cable Specification', sowData.infraDetail?.cableSpec);
       if (sowData.infraDetail?.maxCableDistanceM) addField('Max Cable Distance', `${sowData.infraDetail.maxCableDistanceM}m`);
-      if (sowData.infraDetail?.poeRequired) addField('PoE Required', 'Yes');
-      if (sowData.infraDetail?.dhcpReservation) addField('DHCP IP Reservation', 'Yes');
+      addField('PoE', sowData.infraDetail?.poeRequired ? 'Required' : 'Not Required');
+      addField('DHCP IP Reservation', sowData.infraDetail?.dhcpReservation ? 'Required' : 'Not Required');
       addField('Remote Access Method', sowData.infraDetail?.remoteAccessMethod);
       addField('Server Mounting', sowData.infraDetail?.serverMounting);
       addField('Server Power Supply', sowData.infraDetail?.serverPowerSupply);
       addText('Installation will not proceed until infrastructure readiness is validated.', margin + 4, { fontSize: 8 });
 
-      // 7. Model Training (Vision)
+      // Responsibilities Matrix
+      addSection(sec(), 'RESPONSIBILITIES MATRIX');
+      const respRows = [
+        ['Hardware Procurement', 'ThingTrax'],
+        ['Network Infrastructure', 'Customer'],
+        ['Power Supply to Server Location', 'Customer'],
+        ['Software Deployment', 'ThingTrax'],
+        ['Network Configuration (VLAN/Firewall)', 'Customer'],
+        ['Production Line Access', 'Customer'],
+        ['Ongoing Maintenance', 'ThingTrax'],
+      ];
       if (isVision) {
-        addSection('7', 'MODEL TRAINING SCOPE');
+        respRows.push(['Camera Installation & Alignment', 'ThingTrax'], ['Vision Model Training', 'ThingTrax'], ['Sample Product Provision', 'Customer']);
+      }
+      respRows.push(['IoT Device Installation', 'ThingTrax']);
+      for (const [task, owner] of respRows) {
+        addText(`${task}: ${owner}`, margin + 4, { fontSize: 8 });
+        y += 1;
+      }
+
+      // Model Training (Vision)
+      if (isVision) {
+        addSection(sec(), 'MODEL TRAINING SCOPE');
         addField('SKU Count', sowData.skuCount);
         addField('Initial Training Cycle', sowData.initialTrainingCycle);
         addField('Validation Period', sowData.validationPeriod);
         addField('Retraining Exclusions', sowData.retrainingExclusions);
       }
 
-      // 8. Acceptance
-      addSection(isVision ? '8' : '6', 'ACCEPTANCE & GO-LIVE CRITERIA');
-      addField('Go-Live Definition', sowData.goLiveDefinition);
+      // Acceptance
+      addSection(sec(), 'ACCEPTANCE & GO-LIVE CRITERIA');
+      addText('Technical Completion:', margin, { fontSize: 9, fontStyle: 'bold' });
+      for (const tc of ['Hardware online', 'Network validated', 'Data streaming confirmed']) {
+        addText(`• ${tc}`, margin + 4, { fontSize: 8 }); y += 1;
+      }
+      if (isVision) {
+        addText('Model Acceptance:', margin, { fontSize: 9, fontStyle: 'bold' });
+        addField('Detection Accuracy', sowData.detectionAccuracyTarget != null ? `≥ ${sowData.detectionAccuracyTarget}%` : 'Field incomplete');
+        addField('False Positive Rate', sowData.falsePositiveRate != null ? `≤ ${sowData.falsePositiveRate}%` : 'Field incomplete');
+      }
+      addText('Go-Live:', margin, { fontSize: 9, fontStyle: 'bold' });
+      addField('Go-Live Definition', sowData.goLiveDefinition || 'Field incomplete');
       addField('Acceptance Criteria', sowData.acceptanceCriteria);
       addField('Stability Period', sowData.stabilityPeriod);
       addField('Hypercare Window', sowData.hypercareWindow);
 
-      // 9. Assumptions
-      addSection(isVision ? '9' : '7', 'ASSUMPTIONS');
+      // Data Ownership
+      addSection(sec(), 'DATA OWNERSHIP & RETENTION');
+      for (const clause of [
+        'Customer retains ownership of all production data.',
+        'ThingTrax may retain anonymised diagnostic data for system improvement.',
+        `Image retention period: ${sowData.imageRetentionDays != null ? `${sowData.imageRetentionDays} days` : 'Field incomplete'}`,
+        'Remote access is restricted to support purposes only.',
+      ]) {
+        addText(`• ${clause}`, margin + 4, { fontSize: 8 }); y += 1;
+      }
+
+      // Assumptions
+      addSection(sec(), 'ASSUMPTIONS');
       const assumptions = [
         'Stable and consistent lighting conditions',
         'Stable camera mounting and positioning',
@@ -257,8 +318,8 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
       if (sowData.environmentalStabilityAssumptions) assumptions.push(sowData.environmentalStabilityAssumptions);
       for (const a of assumptions) { addText(`• ${a}`, margin + 4, { fontSize: 8 }); y += 1; }
 
-      // 10. Exclusions
-      addSection(isVision ? '10' : '8', 'EXCLUSIONS');
+      // Exclusions
+      addSection(sec(), 'EXCLUSIONS');
       const exclusions = [
         `New SKU onboarding beyond the defined count${sowData.skuCount ? ` (${sowData.skuCount})` : ''}`,
         'Additional inspection types not specified in this SOW',
@@ -268,20 +329,38 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
       ];
       for (const e of exclusions) { addText(`• ${e}`, margin + 4, { fontSize: 8 }); y += 1; }
 
-      // 11. Milestones
-      addSection(isVision ? '11' : '9', 'DELIVERY MILESTONES (INDICATIVE)');
+      // Milestones
+      addSection(sec(), 'DELIVERY MILESTONES (INDICATIVE)');
       for (const [i, m] of ['Portal Provision', 'Hardware Dispatch', 'Installation', 'Model Training', 'Go-Live Target'].entries()) {
         addText(`${i + 1}. ${m}`, margin + 4, { fontSize: 9 }); y += 1;
       }
 
-      // 12. Governance
-      addSection(isVision ? '12' : '10', 'GOVERNANCE & VERSION CONTROL');
+      // Governance
+      addSection(sec(), 'GOVERNANCE & VERSION CONTROL');
       addField('SOW ID', `SOW-${currentSOW.id.slice(0, 8).toUpperCase()}`);
       addField('Version', currentSOW.version);
       addField('Signed Off By', sowData.feasibilitySignedOffBy);
       addField('Generated', new Date(sowData.generatedAt).toLocaleString());
 
-      const fileName = `SOW-${sowData.customerLegalName.replace(/\s+/g, '_')}-v${currentSOW.version}.pdf`;
+      // Draft watermark on every page
+      if (isDraftExport) {
+        const totalPages = doc.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+          doc.setPage(i);
+          doc.saveGraphicsState();
+          doc.setGState(new (doc as any).GState({ opacity: 0.12 }));
+          doc.setFontSize(54);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(200, 0, 0);
+          const cx = pageWidth / 2;
+          const cy = pageHeight / 2;
+          doc.text('DRAFT — NOT VALID FOR SIGNATURE', cx, cy, { align: 'center', angle: 45 });
+          doc.restoreGraphicsState();
+        }
+      }
+
+      const prefix = isDraftExport ? 'DRAFT_' : '';
+      const fileName = `${prefix}SOW-${sowData.customerLegalName.replace(/\s+/g, '_')}-v${currentSOW.version}.pdf`;
       doc.save(fileName);
       toast({ title: 'PDF Exported', description: fileName });
     } catch (err: any) {
@@ -319,9 +398,7 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2 text-amber-600">
               <ShieldAlert className="h-4 w-4" />
-              {isDraft
-                ? 'Draft mode — the following fields are incomplete and will be highlighted in red.'
-                : 'SOW cannot be generated until all mandatory fields are complete.'}
+              Draft mode — the following fields are incomplete and will be highlighted in red.
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -340,22 +417,30 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
                 Statement of Work
+                {currentSOW && (
+                  <Badge
+                    variant={sowStatus === 'ready' ? 'default' : 'secondary'}
+                    className={`ml-2 text-xs ${sowStatus === 'draft' ? 'bg-amber-100 text-amber-800 border-amber-300' : sowStatus === 'ready' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-blue-100 text-blue-800 border-blue-300'}`}
+                  >
+                    {sowStatus === 'draft' ? '🟡 Draft' : sowStatus === 'ready' ? '🟢 Ready' : '🔵 Signed'}
+                  </Badge>
+                )}
               </CardTitle>
               <CardDescription>
                 {currentSOW ? `Version ${currentSOW.version} — Generated ${new Date(currentSOW.generated_at).toLocaleDateString()}` : 'No SOW has been generated yet'}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              {hasRole && feasibilitySignedOff && (
+              {canGenerate && (
                 <Button onClick={handleGenerate} disabled={generating}>
                   {generating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-                  {currentSOW ? (isDraft ? 'Regenerate Draft' : 'Regenerate SOW') : (isDraft ? 'Generate Draft SOW' : 'Generate SOW')}
+                  {currentSOW ? (sowStatus === 'draft' ? 'Regenerate Draft' : 'Regenerate SOW') : (sowStatus === 'draft' ? 'Generate Draft SOW' : 'Generate SOW')}
                 </Button>
               )}
-              {currentSOW && currentSOW.status === 'current' && (
+              {currentSOW && (
                 <Button variant="outline" onClick={handleExportPDF} disabled={exporting}>
                   {exporting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Download className="h-4 w-4 mr-2" />}
-                  Export PDF
+                  {sowStatus === 'draft' ? 'Export Draft PDF' : 'Export PDF'}
                 </Button>
               )}
             </div>
@@ -382,13 +467,12 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
       {currentSOW && (
         <Card>
           <CardContent className="pt-6">
-            {isDraft && (
-              <div className="bg-amber-50 border border-amber-300 rounded-lg px-4 py-2 mb-4 text-amber-800 text-sm font-medium flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4" />
-                DRAFT — Missing information is highlighted in red below
-              </div>
-            )}
-            <SOWDocument data={currentSOW.sow_data as SOWData} sowId={currentSOW.id} version={currentSOW.version} feasibilityGateId={projectId} draft={isDraft} />
+            <SOWDocument
+              data={currentSOW.sow_data as SOWData}
+              sowId={currentSOW.id}
+              version={currentSOW.version}
+              status={sowStatus}
+            />
           </CardContent>
         </Card>
       )}

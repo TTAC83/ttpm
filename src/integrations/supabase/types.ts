@@ -4702,6 +4702,56 @@ export type Database = {
           },
         ]
       }
+      sow_versions: {
+        Row: {
+          change_summary: string | null
+          created_at: string
+          generated_at: string
+          generated_by: string
+          id: string
+          is_current: boolean
+          pdf_storage_path: string | null
+          solutions_project_id: string
+          sow_data: Json
+          status: string
+          version: number
+        }
+        Insert: {
+          change_summary?: string | null
+          created_at?: string
+          generated_at?: string
+          generated_by: string
+          id?: string
+          is_current?: boolean
+          pdf_storage_path?: string | null
+          solutions_project_id: string
+          sow_data?: Json
+          status?: string
+          version?: number
+        }
+        Update: {
+          change_summary?: string | null
+          created_at?: string
+          generated_at?: string
+          generated_by?: string
+          id?: string
+          is_current?: boolean
+          pdf_storage_path?: string | null
+          solutions_project_id?: string
+          sow_data?: Json
+          status?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sow_versions_solutions_project_id_fkey"
+            columns: ["solutions_project_id"]
+            isOneToOne: false
+            referencedRelation: "solutions_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subtasks: {
         Row: {
           actual_end: string | null

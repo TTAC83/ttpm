@@ -25,6 +25,7 @@ import { SharedAuditTab } from '@/components/shared/tabs/SharedAuditTab';
 import { SharedProductGapsTab } from '@/components/shared/tabs/SharedProductGapsTab';
 import { SharedBlockersTab } from '@/components/shared/tabs/SharedBlockersTab';
 import { GanttChart } from '@/features/gantt/components/GanttChart';
+import { SolutionsSOW } from './tabs/SolutionsSOW';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTabCompleteness } from './hooks/useTabCompleteness';
 import { FeasibilityGateDialog } from '@/components/FeasibilityGateDialog';
@@ -275,6 +276,7 @@ export const SolutionsProjectDetail = () => {
             <TabsTrigger value="contract">Contract Info</TabsTrigger>
             <TabsTrigger value="account">Account Info</TabsTrigger>
             <TabsTrigger value="team">Team</TabsTrigger>
+            <TabsTrigger value="sow">Generate SOW</TabsTrigger>
             <TabsTrigger value="launch">Launch</TabsTrigger>
           </TabsList>
 
@@ -378,6 +380,10 @@ export const SolutionsProjectDetail = () => {
 
         <TabsContent value="blockers" className="space-y-4">
           <SharedBlockersTab projectId={project.id} projectType="solutions" />
+        </TabsContent>
+
+        <TabsContent value="sow" className="space-y-4">
+          <SolutionsSOW projectId={project.id} projectData={project} />
         </TabsContent>
 
         <TabsContent value="launch" className="space-y-4">

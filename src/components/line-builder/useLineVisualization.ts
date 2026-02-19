@@ -366,6 +366,10 @@ export const useLineVisualization = (lineId: string) => {
               hmi_required: cleanFormData.hmi_required,
               hmi_master_id: cleanFormData.hmi_master_id,
               hmi_notes: cleanFormData.hmi_notes || null,
+              placement_camera_can_fit: cleanFormData.placement_camera_can_fit ?? null,
+              placement_fabrication_confirmed: cleanFormData.placement_fabrication_confirmed ?? null,
+              placement_fov_suitable: cleanFormData.placement_fov_suitable ?? null,
+              placement_position_description: cleanFormData.placement_position_description || null,
             })
             .eq('id', editingCamera.id);
 

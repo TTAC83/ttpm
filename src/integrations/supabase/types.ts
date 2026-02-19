@@ -4473,6 +4473,7 @@ export type Database = {
           implementation_handover: boolean
           implementation_lead: string | null
           infra_10gb_connection: string | null
+          infra_customer_confirmed: boolean | null
           infra_load_balancer: string | null
           infra_mount_fabrication: string | null
           infra_network_ports: string | null
@@ -4570,6 +4571,7 @@ export type Database = {
           implementation_handover?: boolean
           implementation_lead?: string | null
           infra_10gb_connection?: string | null
+          infra_customer_confirmed?: boolean | null
           infra_load_balancer?: string | null
           infra_mount_fabrication?: string | null
           infra_network_ports?: string | null
@@ -4667,6 +4669,7 @@ export type Database = {
           implementation_handover?: boolean
           implementation_lead?: string | null
           infra_10gb_connection?: string | null
+          infra_customer_confirmed?: boolean | null
           infra_load_balancer?: string | null
           infra_mount_fabrication?: string | null
           infra_network_ports?: string | null

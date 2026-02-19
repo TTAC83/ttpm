@@ -61,15 +61,16 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
       project.product_description
     );
 
-    // Infrastructure: all 8 infra_* fields must be "Required" or "Not Required"
+    // Infrastructure: all 8 infra_* fields set AND customer confirmation received
     const infraFields = [
       'infra_network_ports', 'infra_vlan', 'infra_static_ip', 'infra_10gb_connection',
       'infra_mount_fabrication', 'infra_vpn', 'infra_storage', 'infra_load_balancer',
     ];
-    const infraComplete = infraFields.every(f => {
+    const allFieldsSet = infraFields.every(f => {
       const val = (project as any)[f];
       return val === 'Required' || val === 'Not Required';
     });
+    const infraComplete = allFieldsSet && !!(project as any).infra_customer_confirmed;
 
     setCompleteness(prev => ({
       ...prev,

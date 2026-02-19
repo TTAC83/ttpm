@@ -1,202 +1,171 @@
 
 
-## SOW Discipline: Draft + Risk Mode
+## SOW Professional Hardening (Scale-Up SaaS v1)
 
-This plan implements all 13 requirements from the superprompt across 3 files, adding document status modes, a risk summary panel, sanitised output, improved executive summary, responsibilities matrix, data ownership clause, draft watermarking, and validation -- all without blocking generation.
+This plan transforms the SOW from an engineering-oriented document into a professional, customer-acceptable SaaS implementation document that protects against variance and scope creep.
 
 ---
 
 ### Files to Edit
 
-| File | Changes |
+| File | Summary |
 |------|---------|
-| `src/lib/sowService.ts` | Add `imageRetentionDays` to SOWData interface; update `validateSOWReadiness` to return categorised gaps; add `computeSOWStatus` helper |
-| `src/components/sow/SOWDocument.tsx` | Major rewrite: status banner, risk summary panel, sanitised Field component, rewritten executive summary engine, hardened performance envelope, structured acceptance section, responsibilities matrix, data ownership clause, infrastructure cleanup, noise removal, non-blocking validation |
-| `src/pages/app/solutions/tabs/SolutionsSOW.tsx` | Status badge in header, draft watermark on PDF export, conditional watermark logic, pass status to SOWDocument |
+| `src/components/sow/SOWDocument.tsx` | Major restructure: remove engineering noise, add Deliverables section, add Post-Go-Live Support clause, clean presentation, update Responsibilities Matrix, improve executive summary, restructure acceptance section |
+| `src/pages/app/solutions/tabs/SolutionsSOW.tsx` | Update PDF export to match new section structure, remove engineering detail from PDF |
+| `src/lib/sowService.ts` | Minor: no structural changes needed, service already supports all required fields |
 
 ---
 
-### 1. Document Status Modes
+### Changes by Requirement
 
-Add a `computeSOWStatus` function in `sowService.ts`:
+**1. Remove Engineering Noise from Customer-Facing SOW**
 
-- **Draft -- Incomplete**: Any mandatory field missing
-- **Ready for Signature**: All mandatory fields complete AND feasibility signed off
-- **Signed**: Reserved for future digital approval (stored as `sow_status` on `sow_versions`)
+In the Inspection and Monitoring Scope section (lines 345-395 of SOWDocument.tsx), remove:
+- H-FOV field
+- Working Distance field
+- Placement position description
+- Relay outputs list
+- HMI model details
+- PLC model details
+- Light model details
+- Camera view description
+- Attributes list
 
-Display as a coloured banner at the top of the SOW document:
-- Yellow banner for Draft
-- Green banner for Ready for Signature
-- Blue banner for Signed
+Keep visible per camera:
+- Camera type (model)
+- Use cases
+- Lighting required (Yes/No)
+- PLC integration (Yes/No)
 
-### 2. Never Block Generation
+Keep visible per IoT device:
+- Device name
+- Hardware model name
 
-Generation is already unblocked (feasibility sign-off required, but validation does not block). The `Field` component will be updated so that when a mandatory field is missing it shows:
+Remove the "Speed inverted" badge from line headers -- speed is auto-corrected silently. Remove the speed validation warning banner entirely (requirement 4: do not display internal validation messages).
 
-**"MISSING -- REQUIRES COMPLETION BEFORE SIGNATURE"** in red beside the field label.
+**2. Clean Executive Summary Generation**
 
-Mandatory fields for Vision/Hybrid:
-- Throughput Range, SKU Count, Complexity Tier, Detection Accuracy Target, False Positive Rate, Go-Live Definition, Acceptance Criteria, Signed Off By
+Update `buildExecutiveSummary()` to:
+- Silently normalise min/max order (already done, just remove the external warning)
+- Improve the template to: "This Statement of Work defines the deployment of a {Type} system at {Customer}, {Site} to monitor {Process} operating within a throughput range of {Min}--{Max} ppm. The deployment encompasses {N} vision inspection point(s) covering {use cases}. The system will {transformed goals} within the defined operational performance envelope."
+- Ensure use case list uses "and" before last item instead of comma
 
-Mandatory fields for All:
-- Infrastructure cable spec + customer confirmed
+**3. Add Deliverables Section**
 
-### 3. Risk Summary Panel
+Insert new section after Deployment Overview (section 3, shifting subsequent sections). Content:
 
-A new `RiskSummaryPanel` component rendered below the SOW header showing four categories:
+"ThingTrax will deliver:"
+- Configured cloud portal instance
+- Supplied hardware as defined in this SOW
+- Initial configuration and system commissioning
+- Superuser training sessions
+- Initial model training for defined SKU count (Vision/Hybrid only)
+- Go-live support window (14 days unless otherwise specified)
 
-| Category | Green | Amber | Red |
-|----------|-------|-------|-----|
-| Performance Targets | All filled | 1-2 missing | 3+ missing |
-| Acceptance Criteria | All filled | Partial | Go-Live or Acceptance missing |
-| Infrastructure | All filled | Minor gaps | Cable spec or confirmation missing |
-| Sign-Off | Signed off | -- | Not signed off |
+**4. Strengthen Operational Performance Envelope**
 
-Each row shows a coloured dot and description.
+Update the boundary clause text to the full version:
+"Performance commitments apply only within the defined operational envelope. Operation outside the defined throughput range, SKU count, environmental stability, or product presentation conditions may require retraining or scope reassessment."
 
-### 4. Sanitise Customer-Facing Output
+Keep red highlights for missing fields. Keep the "cannot be defined" banner for draft mode. Do not show internal validation warnings.
 
-Update the `Field` component:
-- Replace "Not provided", "Not configured", "Unknown" with **"Field incomplete"** in red
-- Filter out any value matching UUID/GUID pattern (`/^[0-9a-f]{8}-/i`)
-- Filter out MAC address patterns
-- Never render raw database IDs
+**5. Tighten Acceptance and Go-Live Structure**
 
-### 5. Executive Summary Engine
+Restructure the existing section into three clearly labelled sub-blocks:
 
-Rewrite Section 1 to generate a proper paragraph:
-- Validate min <= max throughput (swap if inverted)
-- Convert `projectGoals` from bullet/numbered list into a flowing sentence
-- Strip numbered prefixes like "1.", "2." etc.
-- Auto-join goals with commas and "and" for the final item
-- Template: "This Statement of Work defines the deployment of a {Type} system at {Site} to monitor {Process} operating between {Min--Max} ppm. The system will {goals joined as sentence} within the defined operational envelope."
+- **Technical Completion**: "System considered technically complete when:" followed by bullet list (Hardware online, Network validated, Data streaming confirmed)
+- **Model Acceptance** (Vision only): Detection Accuracy >= {Target}, False Positive Rate <= {Max}, "Stable operation for {stabilityPeriod} consecutive production hours"
+- **Operational Go-Live**: "Go-Live occurs upon:" followed by bullets (Successful completion of stability window, Customer operational sign-off)
 
-### 6. Hardened Performance Envelope
+Keep red warnings for missing fields.
 
-Keep the section always visible for Vision/Hybrid. When fields are missing:
-- Each missing field shown in red with "MISSING" label
-- Banner at top of section: "Performance commitments cannot be defined until highlighted fields are completed."
-- Section is never hidden or removed
+**6. Align Responsibilities Matrix**
 
-### 7. Acceptance and Go-Live Section
+Update the matrix rows to reflect actual operating model:
+- Add "Physical Fabrication & Camera Mounting" as Customer responsibility
+- Change "Camera Installation & Alignment" to clarify ThingTrax handles configuration, Customer handles physical mounting
+- Ensure "Sample Product Provision" is present for Vision
+- Remove any inconsistencies
 
-Restructure into three sub-blocks:
-
-**Technical Completion:**
-- Hardware online
-- Network validated
-- Data streaming confirmed
-
-**Model Acceptance (Vision):**
-- Detection >= {Target} (or red "Field incomplete")
-- False Positive <= {Max} (or red "Field incomplete")
-
-**Go-Live:**
-- {Definition} (or red "Go-Live definition not defined.")
-
-Add red warning banners when criteria are incomplete.
-
-### 8. Responsibilities Matrix
-
-New section added after Infrastructure. Auto-populated based on deployment type:
+Updated matrix:
 
 | Responsibility | ThingTrax | Customer |
-|----------------|-----------|----------|
-| Hardware Procurement | X | |
-| Network Infrastructure | | X |
+|---|---|---|
+| Hardware Supply | X | |
+| Physical Fabrication and Mounting | | X |
+| Network Infrastructure (VLAN, Switching, Cabling) | | X |
 | Power Supply to Server Location | | X |
-| Camera Installation | X | |
-| Software Deployment | X | |
-| Network Configuration (VLAN/Firewall) | | X |
-| Model Training | X | |
-| Production Line Access | | X |
-| Ongoing Maintenance | X | |
+| Software Deployment and Configuration | X | |
+| Network Configuration (VLAN/Firewall Rules) | | X |
+| Production Line Access for Installation | | X |
+| Ongoing Platform Maintenance | X | |
+| Camera Configuration and Alignment (Vision) | X | |
+| Vision Model Training and Validation (Vision) | X | |
+| Sample Product Provision for Training (Vision) | | X |
+| IoT Device Installation | X | |
 
-IoT-only deployments will show a reduced matrix (no camera/model rows). Never left blank.
+**7. Add Post-Go-Live Support Boundary**
 
-### 9. Data Ownership and Retention Clause
+Add a new section after Acceptance and Go-Live:
 
-New permanent section with static contractual text:
-- "Customer retains ownership of all production data."
-- "ThingTrax may retain anonymised diagnostic data for system improvement."
-- "Image retention period: {X days}" -- if undefined, show "Field incomplete" in red
-- "Remote access is restricted to support purposes only."
+"Post Go-Live support is provided under standard SaaS support terms. Additional retraining, new SKU onboarding, environmental changes, or scope expansion are subject to formal change control."
 
-Add `imageRetentionDays` to the `SOWData` interface (sourced from `solutions_projects.sow_image_retention_days` if available, otherwise null).
+This can be appended to the existing Exclusions section or as a standalone clause after it.
 
-### 10. Infrastructure Cleanup
+**8. Clean Infrastructure Section**
 
-- Replace all "Not configured" text with "Required" / "Not Required" / "Field incomplete" (red)
-- Boolean fields rendered as "Required" or "Not Required" instead of "Yes"/"No"
-- Add static readiness statement: "Installation will not proceed until infrastructure readiness is validated." (already present, will keep)
+Already mostly done. Changes:
+- Ensure no "Not configured" text appears (already handled by sanitise function)
+- Keep port table, VLAN requirement, bandwidth fields
+- Remove the `infraDetail.notes` section from customer-facing output (internal engineering detail)
+- Keep the readiness statement
 
-### 11. Version and Export Control
+**9. Improve Professional Presentation**
 
-**PDF watermark logic:**
-- If status is "Draft": overlay diagonal "DRAFT -- NOT VALID FOR SIGNATURE" watermark on every page
-- If status is "Ready for Signature" with no red fields: clean export, no watermark
-- Button label changes: "Export Draft PDF" vs "Export PDF"
+- Remove stray numbering artifacts
+- Ensure no empty hardware blocks render
+- Clean spacing throughout
+- Ensure proper capitalisation in section titles
+- Remove the speed "inverted" badge (internal debug)
 
-Implementation: In `handleExportPDF`, after all pages are written, loop through pages and add semi-transparent rotated watermark text when draft.
+**10. Signature Readiness Logic**
 
-### 12. Non-Blocking Validation
+Already implemented. No changes needed -- status modes (Draft/Ready/Signed) and watermark logic are in place.
 
-Before rendering the SOW document:
-- Validate min <= max throughput per line (flag in red if inverted, do not block)
-- Validate numeric fields are actually numeric (flag if not)
-- All validation results passed as props; rendering continues regardless
+**11. Maintain Governance Traceability**
 
-### 13. Remove Low-Value Noise
-
-- Skip empty hardware rows (servers/gateways/receivers with no name and no model)
-- Skip lines with zero positions and zero equipment
-- Remove the "Gate ID" field from Governance (internal)
-- Remove `feasibilityGateId` prop usage
-- Clean up duplicate section numbering logic
+Keep: SOW ID, Version, Signed Off By, Signed Off Timestamp, Generation Timestamp.
+Remove: internal change logs (not currently shown in customer view, so no change needed).
 
 ---
 
 ### Technical Detail
 
-**sowService.ts changes:**
+**SOWDocument.tsx -- Section order after changes:**
 
-```typescript
-// New status computation
-export type SOWStatus = 'draft' | 'ready' | 'signed';
+1. Executive Summary (cleaned)
+2. Deployment Overview (unchanged)
+3. Deliverables (NEW)
+4. Inspection and Monitoring Scope (stripped of engineering noise)
+5. Hardware Architecture (unchanged, empty rows filtered)
+6. Operational Performance Envelope (Vision -- strengthened clause)
+7. Infrastructure Requirements (cleaned, notes removed)
+8. Responsibilities Matrix (updated rows)
+9. Model Training Scope (Vision only, unchanged)
+10. Acceptance and Go-Live Criteria (restructured into 3 sub-blocks)
+11. Data Ownership and Retention (unchanged)
+12. Post-Go-Live Support (NEW)
+13. Assumptions (unchanged)
+14. Exclusions (unchanged)
+15. Delivery Milestones (unchanged)
+16. Governance and Version Control (unchanged)
 
-export function computeSOWStatus(data: SOWData): SOWStatus {
-  // Check all mandatory fields
-  const isVision = data.deploymentType === 'Vision' || data.deploymentType === 'Hybrid';
-  const hasPerformance = !isVision || (
-    data.skuCount && data.complexityTier &&
-    data.detectionAccuracyTarget != null && data.falsePositiveRate != null
-  );
-  const hasThroughput = !isVision || data.lines.some(l => l.minSpeed > 0 && l.maxSpeed > 0);
-  const hasAcceptance = !!data.goLiveDefinition && !!data.acceptanceCriteria;
-  const hasInfra = !!data.infraDetail?.cableSpec;
-  const hasSignOff = data.feasibilitySignedOff && !!data.feasibilitySignedOffBy;
+**SolutionsSOW.tsx -- PDF export changes:**
 
-  if (hasPerformance && hasThroughput && hasAcceptance && hasInfra && hasSignOff) {
-    return 'ready';
-  }
-  return 'draft';
-}
-```
-
-**SOWDocument.tsx changes:**
-
-- New props: `status: SOWStatus`
-- Field component updated to show "Field incomplete" instead of "Not provided" and append "MISSING -- REQUIRES COMPLETION BEFORE SIGNATURE"
-- New `RiskSummaryPanel` inline component
-- New `ResponsibilitiesMatrix` inline component
-- New `DataOwnershipSection` inline component
-- Restructured Acceptance section with sub-blocks
-- Executive summary rewritten with goal sentence flattening
-
-**SolutionsSOW.tsx changes:**
-
-- Import `computeSOWStatus`
-- Compute status from SOW data and pass to SOWDocument
-- PDF watermark loop added to `handleExportPDF`
-- Button labels reflect status
+Update `handleExportPDF` to:
+- Remove H-FOV, Working Distance, Placement, Relay Outputs, HMI, Attributes from camera detail in PDF
+- Add Deliverables section to PDF
+- Add Post-Go-Live Support clause to PDF
+- Update Responsibilities Matrix rows to match new structure
+- Keep watermark logic as-is (already working)
 

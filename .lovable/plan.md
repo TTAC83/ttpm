@@ -1,61 +1,57 @@
 
 
-## Add Camera Placement Tab -- Complete the Wiring
+## Fix: Connect Line Completeness (including Camera Placement) to Feasibility Flow
 
-### Overview
+### The Problem
 
-The previous attempt added the UI components (CameraPlacementTab, types, form state) and database columns but was cancelled before the data persistence and completeness validation were connected. This plan completes the remaining work.
+The `useTabCompleteness` hook determines whether the "Lines" tab shows a green or red dot, and whether the Feasibility Gate badge turns green. Currently, the lines check on line 135 of `useTabCompleteness.ts` is:
 
-### What Already Exists
+```
+const linesComplete = (linesRes.count ?? 0) > 0;
+```
 
-- Database columns on `cameras` table: `placement_camera_can_fit`, `placement_fabrication_confirmed`, `placement_fov_suitable`, `placement_position_description`
-- UI component: `CameraPlacementTab.tsx` with 3 checkboxes and position description textarea
-- Types and empty form defaults in `types.ts`
-- CameraConfigDialog already renders the Placement tab
-- DeviceAssignment.tsx already maps placement fields in its local state
+This only checks whether at least one solutions line exists. It does not evaluate whether each line is fully configured -- meaning Camera Placement gaps (and all other per-line configuration gaps) are ignored by the feasibility flow.
 
-### What Still Needs to Be Done
+Meanwhile, the detailed `useLineCompleteness` hook correctly checks all camera fields including the new placement fields, but its results are only used to render the "Configuration Gaps" table on the Lines tab. They never flow back into the tab-level completeness indicator or the Feasibility Gate.
 
-**1. Update `get_line_full_data` RPC to return placement fields**
+### The Fix
 
-The RPC function builds camera JSON but does not include the four placement columns. The camera object construction needs to add `placement_camera_can_fit`, `placement_fabrication_confirmed`, `placement_fov_suitable`, and `placement_position_description` from the `cameras` table (which already has these columns).
+Update `useTabCompleteness.ts` so that the `lines` completeness check calls the same logic used by `useLineCompleteness` -- specifically, it must verify that **every** solutions line has 100% completeness (including Camera Placement fields).
 
-**2. Update `save_camera_full` RPC to persist placement fields**
+### Implementation
 
-The RPC's `INSERT ... ON CONFLICT` for the cameras table needs to include the four placement columns so they are saved when the camera is created or updated.
+**File: `src/pages/app/solutions/hooks/useTabCompleteness.ts`**
 
-**3. Update `useLineData.ts` -- load path (line ~39-61)**
+Replace the simple `linesComplete` check (line 135) with a call that:
 
-When mapping camera data from the RPC response, add the four placement fields so they flow through to the edit form.
+1. Fetches all solutions lines for the project (already done via `linesRes`)
+2. If lines exist, calls the `checkAllLines` logic from `useLineCompleteness` (or a shared utility) to get the percentage for each line
+3. Sets `linesComplete = true` only when **every line has percentage === 100**
 
-**4. Update `useLineData.ts` -- save path (line ~244-260)**
+Since `useLineCompleteness` is a React hook and cannot be called inside `useTabCompleteness` directly, the approach will be to:
 
-When inserting a new camera row via direct SQL, include the four placement fields in the insert statement.
+- Extract the core completeness-checking logic from `useLineCompleteness` into a standalone async function (e.g., `checkLineCompleteness(lineId, solutionsProjectId)`) that can be imported by both hooks
+- Call this function from `useTabCompleteness` for each line
+- Keep `useLineCompleteness` as a thin wrapper that calls the same extracted function
 
-**5. Update Equipment camera interface in `DeviceAssignment.tsx` (line ~29-62)**
+**Detailed steps:**
 
-Add the four optional placement properties to the camera type definition inside the Equipment interface.
-
-**6. Update `useLineCompleteness.ts` -- add placement checks**
-
-After the existing HMI check block (~line 303-308), add four new completeness checks:
-- `placement_camera_can_fit` must be `true`
-- `placement_fabrication_confirmed` must be `true`
-- `placement_fov_suitable` must be `true`
-- `placement_position_description` must be non-empty
-
-This ensures the Lines tab only goes green when all placement fields are complete, which in turn gates the Feasibility sign-off.
+1. Create a new utility function in `src/pages/app/solutions/hooks/lineCompletenessCheck.ts` that contains the core async logic currently in `useLineCompleteness.checkLine()` and `getSolutionTypeMap()`
+2. Update `useLineCompleteness.ts` to import and delegate to this shared function (no behavior change)
+3. Update `useTabCompleteness.ts` to import the shared function and use it for the `lines` completeness check instead of the simple count check
 
 ### Files to Change
 
 | File | Change |
 |------|--------|
-| Database migration | Update `save_camera_full` and `get_line_full_data` RPC functions to include placement fields |
-| `src/components/line-builder/hooks/useLineData.ts` | Map placement fields on load (~line 61) and save (~line 260) |
-| `src/components/line-builder/steps/DeviceAssignment.tsx` | Add placement fields to the Equipment camera interface (~line 29-62) |
-| `src/pages/app/solutions/hooks/useLineCompleteness.ts` | Add 4 placement completeness checks after the HMI block |
+| `src/pages/app/solutions/hooks/lineCompletenessCheck.ts` | New file -- extract core `checkLine()` and `getSolutionTypeMap()` logic |
+| `src/pages/app/solutions/hooks/useLineCompleteness.ts` | Refactor to delegate to the shared utility |
+| `src/pages/app/solutions/hooks/useTabCompleteness.ts` | Replace `linesComplete = count > 0` with actual per-line completeness evaluation |
 
-### Non-mandatory but Required for Completeness
+### Impact
 
-The placement fields remain non-mandatory when saving the camera form (users can save partial data at any time). However, the Lines tab completeness indicator will show gaps for any unfilled placement fields, and the Feasibility Gate will not allow sign-off until they are all filled.
+- The green/red dot next to "Lines" in the nav will now correctly reflect whether all lines (including all camera placement fields) are fully configured
+- The Feasibility Gate badge will only turn green when lines are truly complete
+- The Feasibility Gate sign-off button will only become available when all placement confirmations and position descriptions are filled
+- No change to the user-facing "Configuration Gaps" table -- it will continue to work as before
 

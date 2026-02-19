@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { checkAllLinesComplete } from './lineCompletenessCheck';
 
 interface TabCompleteness {
   overview: boolean;
@@ -132,7 +133,9 @@ export const useTabCompleteness = (project: ProjectData | null) => {
         }
       }
 
-      const linesComplete = (linesRes.count ?? 0) > 0;
+      const linesComplete = (linesRes.count ?? 0) > 0
+        ? await checkAllLinesComplete(project.id)
+        : false;
       const featureRequirementsComplete = (productGapsRes.count ?? 0) === 0;
 
       // Factory Hardware completeness check

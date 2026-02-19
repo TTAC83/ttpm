@@ -243,6 +243,7 @@ export const SOWDocument: React.FC<SOWDocumentProps> = ({ data, sowId, version, 
 
       {/* 6. Infrastructure Requirements */}
       <Section title="Infrastructure Requirements" number={isVision ? '6' : '5'}>
+        <h3 className="text-sm font-semibold mb-2">General Requirements</h3>
         <Field label="Network Ports" value={data.infrastructure.networkPorts} />
         <Field label="VLAN" value={data.infrastructure.vlan} />
         <Field label="Static IP" value={data.infrastructure.staticIp} />
@@ -251,9 +252,68 @@ export const SOWDocument: React.FC<SOWDocumentProps> = ({ data, sowId, version, 
         <Field label="VPN" value={data.infrastructure.vpn} />
         <Field label="Storage" value={data.infrastructure.storage} />
         <Field label="Load Balancer" value={data.infrastructure.loadBalancer} />
+
+        {/* Bandwidth & Cabling */}
+        {(data.infraDetail.internetSpeedMbps || data.infraDetail.lanSpeedGbps || data.infraDetail.switchUplinkGbps || data.infraDetail.cableSpec || data.infraDetail.maxCableDistanceM || data.infraDetail.poeRequired) && (
+          <>
+            <Separator className="my-4" />
+            <h3 className="text-sm font-semibold mb-2">Bandwidth & Cabling Specifications</h3>
+            <Field label="Internet Speed" value={data.infraDetail.internetSpeedMbps ? `${data.infraDetail.internetSpeedMbps} Mbps` : null} />
+            <Field label="Internal LAN Speed" value={data.infraDetail.lanSpeedGbps ? `${data.infraDetail.lanSpeedGbps} Gbps per camera` : null} />
+            <Field label="Switch to Server Uplink" value={data.infraDetail.switchUplinkGbps ? `${data.infraDetail.switchUplinkGbps} Gbps` : null} />
+            <Field label="Cable Specification" value={data.infraDetail.cableSpec} />
+            <Field label="Max Cable Distance" value={data.infraDetail.maxCableDistanceM ? `${data.infraDetail.maxCableDistanceM}m` : null} />
+            <BoolField label="PoE Required" value={data.infraDetail.poeRequired || null} />
+          </>
+        )}
+
+        {/* IP & Remote Access */}
+        {(data.infraDetail.dhcpReservation || data.infraDetail.remoteAccessMethod || data.infraDetail.serverMounting || data.infraDetail.serverPowerSupply) && (
+          <>
+            <Separator className="my-4" />
+            <h3 className="text-sm font-semibold mb-2">IP Management & Remote Access</h3>
+            <BoolField label="DHCP IP Reservation" value={data.infraDetail.dhcpReservation || null} />
+            <Field label="Remote Access Method" value={data.infraDetail.remoteAccessMethod} />
+            <Field label="Server Mounting" value={data.infraDetail.serverMounting} />
+            <Field label="Server Power Supply" value={data.infraDetail.serverPowerSupply} />
+          </>
+        )}
+
+        {/* Port Requirements (static reference) */}
+        <Separator className="my-4" />
+        <h3 className="text-sm font-semibold mb-2">Port Requirements (Standard)</h3>
+        <p className="text-xs text-muted-foreground mb-2">All ThingTrax deployments require the following network ports:</p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr className="border-b">
+                <th className="text-left py-1.5 pr-4 font-semibold text-muted-foreground">Direction</th>
+                <th className="text-left py-1.5 pr-4 font-semibold text-muted-foreground">Port</th>
+                <th className="text-left py-1.5 font-semibold text-muted-foreground">Destination / Purpose</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b border-dashed border-muted"><td className="py-1.5 pr-4">Inbound</td><td className="py-1.5 pr-4">22</td><td className="py-1.5">Internal VLAN only — ThingTrax device communication</td></tr>
+              <tr className="border-b border-dashed border-muted"><td className="py-1.5 pr-4">Outbound</td><td className="py-1.5 pr-4">8883</td><td className="py-1.5">*.azure-devices.net (Azure IoT Hub)</td></tr>
+              <tr className="border-b border-dashed border-muted"><td className="py-1.5 pr-4">Outbound</td><td className="py-1.5 pr-4">443</td><td className="py-1.5">Azure, Ubuntu APT, Azure DevOps, PyPI, Ngrok, AWS S3, MS Auth, VNC Services</td></tr>
+              <tr className="border-b border-dashed border-muted"><td className="py-1.5 pr-4">Outbound</td><td className="py-1.5 pr-4">123</td><td className="py-1.5">NTP (time.windows.com, ntp.timeserver.com)</td></tr>
+              <tr><td className="py-1.5 pr-4">Outbound</td><td className="py-1.5 pr-4">554</td><td className="py-1.5">Camera RTSP</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Additional Notes */}
+        {data.infraDetail.notes && (
+          <>
+            <Separator className="my-4" />
+            <h3 className="text-sm font-semibold mb-2">Additional Notes</h3>
+            <p className="text-sm whitespace-pre-wrap">{data.infraDetail.notes}</p>
+          </>
+        )}
+
         <Card className="bg-muted/50 mt-4">
           <CardContent className="pt-4 text-xs italic">
-            Installation will not proceed until infrastructure readiness is validated.
+            All cameras and servers should be on an isolated VLAN. Installation will not proceed until infrastructure readiness is validated.
           </CardContent>
         </Card>
       </Section>

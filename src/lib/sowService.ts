@@ -82,6 +82,21 @@ export interface SOWData {
     loadBalancer: string;
   };
 
+  // Detailed network specifications
+  infraDetail: {
+    internetSpeedMbps: number | null;
+    lanSpeedGbps: number | null;
+    switchUplinkGbps: number | null;
+    cableSpec: string | null;
+    maxCableDistanceM: number | null;
+    poeRequired: boolean;
+    dhcpReservation: boolean;
+    remoteAccessMethod: string | null;
+    serverMounting: string | null;
+    serverPowerSupply: string | null;
+    notes: string | null;
+  };
+
   // Performance envelope
   skuCount: number | null;
   complexityTier: string | null;
@@ -326,6 +341,19 @@ export async function aggregateSOWData(projectId: string): Promise<SOWData> {
       receivers: receivers.map(r => ({ name: r.name || '', model: r.hardware_master_id ? hwMap[r.hardware_master_id] || '' : '' })),
       totalCameras,
       totalIotDevices,
+    },
+    infraDetail: {
+      internetSpeedMbps: (project as any).infra_internet_speed_mbps ?? null,
+      lanSpeedGbps: (project as any).infra_lan_speed_gbps ?? null,
+      switchUplinkGbps: (project as any).infra_switch_uplink_gbps ?? null,
+      cableSpec: (project as any).infra_cable_spec ?? null,
+      maxCableDistanceM: (project as any).infra_max_cable_distance_m ?? null,
+      poeRequired: (project as any).infra_poe_required ?? false,
+      dhcpReservation: (project as any).infra_dhcp_reservation ?? false,
+      remoteAccessMethod: (project as any).infra_remote_access_method ?? null,
+      serverMounting: (project as any).infra_server_mounting ?? null,
+      serverPowerSupply: (project as any).infra_server_power_supply ?? null,
+      notes: (project as any).infra_notes ?? null,
     },
     infrastructure: {
       networkPorts: (project as any).infra_network_ports || '',

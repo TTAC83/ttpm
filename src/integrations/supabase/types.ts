@@ -4473,12 +4473,23 @@ export type Database = {
           implementation_handover: boolean
           implementation_lead: string | null
           infra_10gb_connection: string | null
+          infra_cable_spec: string | null
           infra_customer_confirmed: boolean | null
+          infra_dhcp_reservation: boolean | null
+          infra_internet_speed_mbps: number | null
+          infra_lan_speed_gbps: number | null
           infra_load_balancer: string | null
+          infra_max_cable_distance_m: number | null
           infra_mount_fabrication: string | null
           infra_network_ports: string | null
+          infra_notes: string | null
+          infra_poe_required: boolean | null
+          infra_remote_access_method: string | null
+          infra_server_mounting: string | null
+          infra_server_power_supply: string | null
           infra_static_ip: string | null
           infra_storage: string | null
+          infra_switch_uplink_gbps: number | null
           infra_vlan: string | null
           infra_vpn: string | null
           job_scheduling: string | null
@@ -4571,12 +4582,23 @@ export type Database = {
           implementation_handover?: boolean
           implementation_lead?: string | null
           infra_10gb_connection?: string | null
+          infra_cable_spec?: string | null
           infra_customer_confirmed?: boolean | null
+          infra_dhcp_reservation?: boolean | null
+          infra_internet_speed_mbps?: number | null
+          infra_lan_speed_gbps?: number | null
           infra_load_balancer?: string | null
+          infra_max_cable_distance_m?: number | null
           infra_mount_fabrication?: string | null
           infra_network_ports?: string | null
+          infra_notes?: string | null
+          infra_poe_required?: boolean | null
+          infra_remote_access_method?: string | null
+          infra_server_mounting?: string | null
+          infra_server_power_supply?: string | null
           infra_static_ip?: string | null
           infra_storage?: string | null
+          infra_switch_uplink_gbps?: number | null
           infra_vlan?: string | null
           infra_vpn?: string | null
           job_scheduling?: string | null
@@ -4669,12 +4691,23 @@ export type Database = {
           implementation_handover?: boolean
           implementation_lead?: string | null
           infra_10gb_connection?: string | null
+          infra_cable_spec?: string | null
           infra_customer_confirmed?: boolean | null
+          infra_dhcp_reservation?: boolean | null
+          infra_internet_speed_mbps?: number | null
+          infra_lan_speed_gbps?: number | null
           infra_load_balancer?: string | null
+          infra_max_cable_distance_m?: number | null
           infra_mount_fabrication?: string | null
           infra_network_ports?: string | null
+          infra_notes?: string | null
+          infra_poe_required?: boolean | null
+          infra_remote_access_method?: string | null
+          infra_server_mounting?: string | null
+          infra_server_power_supply?: string | null
           infra_static_ip?: string | null
           infra_storage?: string | null
+          infra_switch_uplink_gbps?: number | null
           infra_vlan?: string | null
           infra_vpn?: string | null
           job_scheduling?: string | null

@@ -9,6 +9,7 @@ interface SOWDocumentProps {
   sowId: string;
   version: number;
   feasibilityGateId?: string;
+  draft?: boolean;
 }
 
 const Section: React.FC<{ title: string; number: string; children: React.ReactNode }> = ({ title, number, children }) => (
@@ -21,12 +22,13 @@ const Section: React.FC<{ title: string; number: string; children: React.ReactNo
   </div>
 );
 
-const Field: React.FC<{ label: string; value: string | number | null | undefined }> = ({ label, value }) => {
-  if (!value && value !== 0) return null;
+const Field: React.FC<{ label: string; value: string | number | null | undefined; required?: boolean }> = ({ label, value, required }) => {
+  const missing = required && !value && value !== 0;
+  if (!value && value !== 0 && !required) return null;
   return (
-    <div className="grid grid-cols-3 gap-2 py-1.5 border-b border-dashed border-muted last:border-0">
-      <span className="text-sm font-medium text-muted-foreground">{label}</span>
-      <span className="text-sm col-span-2">{value}</span>
+    <div className={`grid grid-cols-3 gap-2 py-1.5 border-b border-dashed border-muted last:border-0 ${missing ? 'bg-red-50' : ''}`}>
+      <span className={`text-sm font-medium ${missing ? 'text-red-600' : 'text-muted-foreground'}`}>{label}</span>
+      <span className={`text-sm col-span-2 ${missing ? 'text-red-500 italic' : ''}`}>{missing ? 'Not provided' : value}</span>
     </div>
   );
 };
@@ -41,8 +43,9 @@ const BoolField: React.FC<{ label: string; value: boolean | null | undefined }> 
   );
 };
 
-export const SOWDocument: React.FC<SOWDocumentProps> = ({ data, sowId, version, feasibilityGateId }) => {
+export const SOWDocument: React.FC<SOWDocumentProps> = ({ data, sowId, version, feasibilityGateId, draft = false }) => {
   const isVision = data.deploymentType === 'Vision' || data.deploymentType === 'Hybrid';
+  const req = draft; // shorthand: mark fields as required when in draft mode
 
   // Collect all use cases across all lines
   const allUseCases = [...new Set(data.lines.flatMap(l => l.positions.flatMap(p => p.equipment.flatMap(e => e.cameras.flatMap(c => c.useCases)))))];
@@ -96,13 +99,13 @@ export const SOWDocument: React.FC<SOWDocumentProps> = ({ data, sowId, version, 
 
       {/* 2. Deployment Overview */}
       <Section title="Deployment Overview" number="2">
-        <Field label="Customer" value={data.customerLegalName} />
-        <Field label="Site Address" value={data.siteAddress} />
-        <Field label="Deployment Type" value={data.deploymentType} />
-        <Field label="Segment" value={data.segment} />
-        <Field label="Process Description" value={data.processDescription} />
-        <Field label="Product Description" value={data.productDescription} />
-        <Field label="Project Goals" value={data.projectGoals} />
+        <Field label="Customer" value={data.customerLegalName} required={req} />
+        <Field label="Site Address" value={data.siteAddress} required={req} />
+        <Field label="Deployment Type" value={data.deploymentType} required={req} />
+        <Field label="Segment" value={data.segment} required={req} />
+        <Field label="Process Description" value={data.processDescription} required={req} />
+        <Field label="Product Description" value={data.productDescription} required={req} />
+        <Field label="Project Goals" value={data.projectGoals} required={req} />
         {data.contacts.length > 0 && (
           <>
             <Separator className="my-4" />
@@ -227,10 +230,10 @@ export const SOWDocument: React.FC<SOWDocumentProps> = ({ data, sowId, version, 
       {isVision && (
         <Section title="Operational Performance Envelope" number="5">
           {overallMinSpeed > 0 && overallMaxSpeed > 0 && <Field label="Throughput Range" value={`${overallMinSpeed}–${overallMaxSpeed} ppm`} />}
-          <Field label="SKU Count Included" value={data.skuCount} />
-          <Field label="Complexity Tier" value={data.complexityTier} />
-          <Field label="Detection Accuracy Target" value={data.detectionAccuracyTarget != null ? `${data.detectionAccuracyTarget}%` : null} />
-          <Field label="False Positive Rate" value={data.falsePositiveRate != null ? `${data.falsePositiveRate}%` : null} />
+          <Field label="SKU Count Included" value={data.skuCount} required={req} />
+          <Field label="Complexity Tier" value={data.complexityTier} required={req} />
+          <Field label="Detection Accuracy Target" value={data.detectionAccuracyTarget != null ? `${data.detectionAccuracyTarget}%` : null} required={req} />
+          <Field label="False Positive Rate" value={data.falsePositiveRate != null ? `${data.falsePositiveRate}%` : null} required={req} />
           <Field label="Product Presentation Assumptions" value={data.productPresentationAssumptions} />
           <Field label="Environmental Stability Assumptions" value={data.environmentalStabilityAssumptions} />
           <Card className="bg-muted/50 mt-4">
@@ -245,20 +248,20 @@ export const SOWDocument: React.FC<SOWDocumentProps> = ({ data, sowId, version, 
       <Section title="Infrastructure Requirements" number={isVision ? '6' : '5'}>
         {/* Bandwidth & Cabling */}
         <h3 className="text-sm font-semibold mb-2">Bandwidth & Cabling Specifications</h3>
-            <Field label="Internet Speed" value={data.infraDetail?.internetSpeedMbps ? `${data.infraDetail.internetSpeedMbps} Mbps` : null} />
-            <Field label="Internal LAN Speed" value={data.infraDetail?.lanSpeedGbps ? `${data.infraDetail.lanSpeedGbps} Gbps per camera` : null} />
-            <Field label="Switch to Server Uplink" value={data.infraDetail?.switchUplinkGbps ? `${data.infraDetail.switchUplinkGbps} Gbps` : null} />
-            <Field label="Cable Specification" value={data.infraDetail?.cableSpec} />
-            <Field label="Max Cable Distance" value={data.infraDetail?.maxCableDistanceM ? `${data.infraDetail.maxCableDistanceM}m` : null} />
+            <Field label="Internet Speed" value={data.infraDetail?.internetSpeedMbps ? `${data.infraDetail.internetSpeedMbps} Mbps` : null} required={req} />
+            <Field label="Internal LAN Speed" value={data.infraDetail?.lanSpeedGbps ? `${data.infraDetail.lanSpeedGbps} Gbps per camera` : null} required={req} />
+            <Field label="Switch to Server Uplink" value={data.infraDetail?.switchUplinkGbps ? `${data.infraDetail.switchUplinkGbps} Gbps` : null} required={req} />
+            <Field label="Cable Specification" value={data.infraDetail?.cableSpec} required={req} />
+            <Field label="Max Cable Distance" value={data.infraDetail?.maxCableDistanceM ? `${data.infraDetail.maxCableDistanceM}m` : null} required={req} />
         <BoolField label="PoE Required" value={data.infraDetail?.poeRequired || null} />
 
         {/* IP & Remote Access */}
         <Separator className="my-4" />
         <h3 className="text-sm font-semibold mb-2">IP Management & Remote Access</h3>
             <BoolField label="DHCP IP Reservation" value={data.infraDetail?.dhcpReservation || null} />
-            <Field label="Remote Access Method" value={data.infraDetail?.remoteAccessMethod} />
-            <Field label="Server Mounting" value={data.infraDetail?.serverMounting} />
-        <Field label="Server Power Supply" value={data.infraDetail?.serverPowerSupply} />
+            <Field label="Remote Access Method" value={data.infraDetail?.remoteAccessMethod} required={req} />
+            <Field label="Server Mounting" value={data.infraDetail?.serverMounting} required={req} />
+        <Field label="Server Power Supply" value={data.infraDetail?.serverPowerSupply} required={req} />
 
         {/* Port Requirements (static reference) */}
         <Separator className="my-4" />
@@ -311,8 +314,8 @@ export const SOWDocument: React.FC<SOWDocumentProps> = ({ data, sowId, version, 
 
       {/* 8. Acceptance & Go-Live Criteria */}
       <Section title="Acceptance & Go-Live Criteria" number={isVision ? '8' : '6'}>
-        <Field label="Go-Live Definition" value={data.goLiveDefinition} />
-        <Field label="Acceptance Criteria" value={data.acceptanceCriteria} />
+        <Field label="Go-Live Definition" value={data.goLiveDefinition} required={req && isVision} />
+        <Field label="Acceptance Criteria" value={data.acceptanceCriteria} required={req} />
         <Field label="Stability Period" value={data.stabilityPeriod} />
         <Field label="Hypercare Window" value={data.hypercareWindow} />
       </Section>

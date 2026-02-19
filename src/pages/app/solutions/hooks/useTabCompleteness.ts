@@ -32,7 +32,7 @@ interface ProjectData {
   companies?: { name: string };
 }
 
-export const useTabCompleteness = (project: ProjectData | null) => {
+export const useTabCompleteness = (project: ProjectData | null, refreshKey?: number) => {
   const [completeness, setCompleteness] = useState<TabCompleteness>({
     overview: false,
     contacts: false,
@@ -242,7 +242,7 @@ export const useTabCompleteness = (project: ProjectData | null) => {
     };
 
     checkAsync();
-  }, [project]);
+  }, [project, refreshKey]);
 
   return completeness;
 };

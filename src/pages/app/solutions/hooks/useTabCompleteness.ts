@@ -10,6 +10,7 @@ interface TabCompleteness {
   featureRequirements: boolean;
   factoryHardware: boolean;
   infrastructure: boolean;
+  factoryConfig: boolean;
 }
 
 interface ProjectData {
@@ -42,6 +43,7 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
     featureRequirements: false,
     factoryHardware: false,
     infrastructure: false,
+    factoryConfig: false,
   });
 
   useEffect(() => {
@@ -72,10 +74,14 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
     });
     const infraComplete = allFieldsSet && !!(project as any).infra_customer_confirmed;
 
+    // Factory config: SKU count must be set and > 0
+    const factoryConfigComplete = ((project as any).sow_sku_count ?? 0) > 0;
+
     setCompleteness(prev => ({
       ...prev,
       overview: overviewComplete,
       infrastructure: infraComplete,
+      factoryConfig: factoryConfigComplete,
     }));
 
     // Async checks

@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Building, Calendar, MapPin, Check, X, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Building, Calendar, MapPin, Check, X, AlertTriangle, ShieldCheck, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { SolutionsLines } from './tabs/SolutionsLines';
@@ -16,6 +16,8 @@ import { TeamTab } from '@/components/shared/TeamTab';
 import { AccountInfoTab } from '@/components/shared/AccountInfoTab';
 import { SolutionsFactoryConfig } from '@/components/factory-config/SolutionsFactoryConfig';
 import { FactoryConfigurationTab } from '@/components/shared/FactoryConfigurationTab';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { ProjectHardware } from '../projects/tabs/ProjectHardware';
 import ProjectGantt from '../projects/tabs/ProjectGantt';
 import ProjectTasks from '../projects/tabs/ProjectTasks';
@@ -62,6 +64,73 @@ interface SolutionsProject {
     name: string;
   };
 }
+
+const SkuCountCard = ({ projectId, initialValue, onUpdate }: { projectId: string; initialValue?: number | null; onUpdate: () => void }) => {
+  const { toast } = useToast();
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState<string>(initialValue ? String(initialValue) : '');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setValue(initialValue ? String(initialValue) : '');
+  }, [initialValue]);
+
+  const handleSave = async () => {
+    const num = parseInt(value, 10);
+    if (!value || isNaN(num) || num < 1) {
+      toast({ title: 'Validation Error', description: 'SKU Count must be at least 1', variant: 'destructive' });
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase.from('solutions_projects').update({ sow_sku_count: num } as any).eq('id', projectId);
+    setSaving(false);
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to save SKU count', variant: 'destructive' });
+    } else {
+      toast({ title: 'Saved', description: 'SKU count updated' });
+      setEditing(false);
+      onUpdate();
+    }
+  };
+
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Label htmlFor="sku-count" className="text-sm font-medium">SKU Count</Label>
+            {editing ? (
+              <Input
+                id="sku-count"
+                type="number"
+                min={1}
+                className="w-32"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                autoFocus
+              />
+            ) : (
+              <span className="text-sm">{initialValue ?? <span className="text-muted-foreground italic">Not set</span>}</span>
+            )}
+          </div>
+          <div className="flex gap-2">
+            {editing ? (
+              <>
+                <Button variant="outline" size="sm" onClick={() => { setEditing(false); setValue(initialValue ? String(initialValue) : ''); }}>Cancel</Button>
+                <Button size="sm" onClick={handleSave} disabled={saving}>
+                  {saving && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+                  Save
+                </Button>
+              </>
+            ) : (
+              <Button variant="outline" size="sm" onClick={() => setEditing(true)}>Edit</Button>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 export const SolutionsProjectDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -351,7 +420,7 @@ export const SolutionsProjectDetail = () => {
 
         <TabsContent value="factory" className="space-y-4">
           <SolutionsFactoryConfig projectId={project.id} />
-          <FactoryConfigurationTab projectId={project.id} type="solutions" projectDomain={project.domain} onUpdate={() => { fetchProject(); setCompletenessRefreshKey(k => k + 1); }} />
+          <SkuCountCard projectId={project.id} initialValue={(project as any).sow_sku_count} onUpdate={() => { fetchProject(); setCompletenessRefreshKey(k => k + 1); }} />
         </TabsContent>
 
         <TabsContent value="lines" className="space-y-4">

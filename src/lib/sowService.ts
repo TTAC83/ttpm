@@ -109,6 +109,82 @@ export interface SOWData {
   feasibilitySignedOffBy: string | null;
   feasibilitySignedOffAt: string | null;
   generatedAt: string;
+
+  // Data retention
+  imageRetentionDays: number | null;
+}
+
+// ─── SOW Status ───
+
+export type SOWStatus = 'draft' | 'ready' | 'signed';
+
+export interface SOWRiskCategory {
+  label: string;
+  level: 'green' | 'amber' | 'red';
+  details: string;
+}
+
+export function computeSOWStatus(data: SOWData): SOWStatus {
+  const isVision = data.deploymentType === 'Vision' || data.deploymentType === 'Hybrid';
+  const hasPerformance = !isVision || (
+    !!data.skuCount && !!data.complexityTier &&
+    data.detectionAccuracyTarget != null && data.falsePositiveRate != null
+  );
+  const hasThroughput = !isVision || data.lines.some(l => l.minSpeed > 0 && l.maxSpeed > 0);
+  const hasAcceptance = !!data.goLiveDefinition && !!data.acceptanceCriteria;
+  const hasInfra = !!data.infraDetail?.cableSpec;
+  const hasSignOff = data.feasibilitySignedOff && !!data.feasibilitySignedOffBy;
+
+  if (hasPerformance && hasThroughput && hasAcceptance && hasInfra && hasSignOff) {
+    return 'ready';
+  }
+  return 'draft';
+}
+
+export function computeSOWRisks(data: SOWData): SOWRiskCategory[] {
+  const isVision = data.deploymentType === 'Vision' || data.deploymentType === 'Hybrid';
+  const risks: SOWRiskCategory[] = [];
+
+  if (isVision) {
+    const perfMissing: string[] = [];
+    if (!data.lines.some(l => l.minSpeed > 0 && l.maxSpeed > 0)) perfMissing.push('Throughput Range');
+    if (!data.skuCount) perfMissing.push('SKU Count');
+    if (!data.complexityTier) perfMissing.push('Complexity Tier');
+    if (data.detectionAccuracyTarget == null) perfMissing.push('Detection Accuracy Target');
+    if (data.falsePositiveRate == null) perfMissing.push('False Positive Rate');
+    risks.push({
+      label: 'Performance Targets',
+      level: perfMissing.length === 0 ? 'green' : perfMissing.length <= 2 ? 'amber' : 'red',
+      details: perfMissing.length === 0 ? 'All targets defined' : `Missing: ${perfMissing.join(', ')}`,
+    });
+  }
+
+  const accMissing: string[] = [];
+  if (!data.goLiveDefinition) accMissing.push('Go-Live Definition');
+  if (!data.acceptanceCriteria) accMissing.push('Acceptance Criteria');
+  risks.push({
+    label: 'Acceptance Criteria',
+    level: accMissing.length === 0 ? 'green' : 'red',
+    details: accMissing.length === 0 ? 'Fully defined' : `Missing: ${accMissing.join(', ')}`,
+  });
+
+  const infraMissing: string[] = [];
+  if (!data.infraDetail?.cableSpec) infraMissing.push('Cable Specification');
+  if (!data.infraDetail?.remoteAccessMethod) infraMissing.push('Remote Access Method');
+  if (!data.infraDetail?.serverMounting) infraMissing.push('Server Mounting');
+  risks.push({
+    label: 'Infrastructure',
+    level: infraMissing.length === 0 ? 'green' : infraMissing.length <= 1 ? 'amber' : 'red',
+    details: infraMissing.length === 0 ? 'All fields defined' : `Missing: ${infraMissing.join(', ')}`,
+  });
+
+  risks.push({
+    label: 'Sign-Off',
+    level: data.feasibilitySignedOff && !!data.feasibilitySignedOffBy ? 'green' : 'red',
+    details: data.feasibilitySignedOff ? `Signed off by ${data.feasibilitySignedOffBy}` : 'Not signed off',
+  });
+
+  return risks;
 }
 
 // ─── Validation ───
@@ -121,14 +197,11 @@ export interface SOWValidationResult {
 export function validateSOWReadiness(project: any, lines: any[]): SOWValidationResult {
   const missing: string[] = [];
 
-  // All deployments
   if (!project.feasibility_signed_off) missing.push('Feasibility Status must be Approved');
   if (!project.sow_acceptance_criteria) missing.push('Acceptance Criteria');
-
   if (!project.infra_cable_spec) missing.push('Infrastructure: Cable Specification');
   if (!project.infra_customer_confirmed) missing.push('Infrastructure: Customer Confirmation');
 
-  // Vision / Hybrid
   const domain = project.domain as string;
   if (domain === 'Vision' || domain === 'Hybrid') {
     if (!project.sow_sku_count) missing.push('SKU Count');
@@ -137,7 +210,6 @@ export function validateSOWReadiness(project: any, lines: any[]): SOWValidationR
     if (project.sow_false_positive_rate == null) missing.push('False Positive Rate');
     if (!project.sow_go_live_definition) missing.push('Go-Live Definition');
 
-    // Check lines have speed
     const hasLineSpeed = lines.length > 0 && lines.every(l => l.min_speed > 0 && l.max_speed > 0);
     if (!hasLineSpeed) missing.push('Throughput Range (all lines must have Min & Max speed)');
   }
@@ -179,7 +251,6 @@ export async function aggregateSOWData(projectId: string): Promise<SOWData> {
     for (const p of profiles || []) profileMap[p.user_id] = p.name || 'Unknown';
   }
 
-  // Only include assigned contacts (strip userId, skip unassigned)
   const contacts = teamFields
     .filter(t => (project as any)[t.field] && profileMap[(project as any)[t.field]])
     .map(t => ({ role: t.label, name: profileMap[(project as any)[t.field]] }));
@@ -345,6 +416,7 @@ export async function aggregateSOWData(projectId: string): Promise<SOWData> {
     feasibilitySignedOffBy: feasibilitySignedOffByName,
     feasibilitySignedOffAt: (project as any).feasibility_signed_off_at,
     generatedAt: new Date().toISOString(),
+    imageRetentionDays: (project as any).sow_image_retention_days ?? null,
   };
 }
 

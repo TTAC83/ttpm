@@ -1,57 +1,140 @@
 
 
-## Fix: Connect Line Completeness (including Camera Placement) to Feasibility Flow
+## SOW Hardening Update
 
-### The Problem
+This plan converts the current SOW from a debug-level data dump into a contractual execution document. The DB columns needed (sow_*, infra_*) already exist from a previous migration.
 
-The `useTabCompleteness` hook determines whether the "Lines" tab shows a green or red dot, and whether the Feasibility Gate badge turns green. Currently, the lines check on line 135 of `useTabCompleteness.ts` is:
+### Overview of Changes
 
-```
-const linesComplete = (linesRes.count ?? 0) > 0;
-```
+**3 files rewritten, 1 file edited:**
 
-This only checks whether at least one solutions line exists. It does not evaluate whether each line is fully configured -- meaning Camera Placement gaps (and all other per-line configuration gaps) are ignored by the feasibility flow.
-
-Meanwhile, the detailed `useLineCompleteness` hook correctly checks all camera fields including the new placement fields, but its results are only used to render the "Configuration Gaps" table on the Lines tab. They never flow back into the tab-level completeness indicator or the Feasibility Gate.
-
-### The Fix
-
-Update `useTabCompleteness.ts` so that the `lines` completeness check calls the same logic used by `useLineCompleteness` -- specifically, it must verify that **every** solutions line has 100% completeness (including Camera Placement fields).
-
-### Implementation
-
-**File: `src/pages/app/solutions/hooks/useTabCompleteness.ts`**
-
-Replace the simple `linesComplete` check (line 135) with a call that:
-
-1. Fetches all solutions lines for the project (already done via `linesRes`)
-2. If lines exist, calls the `checkAllLines` logic from `useLineCompleteness` (or a shared utility) to get the percentage for each line
-3. Sets `linesComplete = true` only when **every line has percentage === 100**
-
-Since `useLineCompleteness` is a React hook and cannot be called inside `useTabCompleteness` directly, the approach will be to:
-
-- Extract the core completeness-checking logic from `useLineCompleteness` into a standalone async function (e.g., `checkLineCompleteness(lineId, solutionsProjectId)`) that can be imported by both hooks
-- Call this function from `useTabCompleteness` for each line
-- Keep `useLineCompleteness` as a thin wrapper that calls the same extracted function
-
-**Detailed steps:**
-
-1. Create a new utility function in `src/pages/app/solutions/hooks/lineCompletenessCheck.ts` that contains the core async logic currently in `useLineCompleteness.checkLine()` and `getSolutionTypeMap()`
-2. Update `useLineCompleteness.ts` to import and delegate to this shared function (no behavior change)
-3. Update `useTabCompleteness.ts` to import the shared function and use it for the `lines` completeness check instead of the simple count check
-
-### Files to Change
-
-| File | Change |
+| File | Action |
 |------|--------|
-| `src/pages/app/solutions/hooks/lineCompletenessCheck.ts` | New file -- extract core `checkLine()` and `getSolutionTypeMap()` logic |
-| `src/pages/app/solutions/hooks/useLineCompleteness.ts` | Refactor to delegate to the shared utility |
-| `src/pages/app/solutions/hooks/useTabCompleteness.ts` | Replace `linesComplete = count > 0` with actual per-line completeness evaluation |
+| `src/lib/sowService.ts` | Major rewrite: add validation, read new DB fields, strip internal IDs, add executive summary generation |
+| `src/components/sow/SOWDocument.tsx` | Full rewrite: new section structure (12 sections), remove all internal fields, add Executive Summary, Performance Envelope, Assumptions, Exclusions, Milestones |
+| `src/pages/app/solutions/tabs/SolutionsSOW.tsx` | Major rewrite: add pre-generation validation UI, role-based access (Solutions Architect, Sr Solutions Architect, VP Customer Success), validation blocker panel |
+| `src/pages/app/solutions/SolutionsProjectDetail.tsx` | Minor edit: pass additional project fields to SolutionsSOW |
 
-### Impact
+No database migrations needed -- all required columns already exist.
 
-- The green/red dot next to "Lines" in the nav will now correctly reflect whether all lines (including all camera placement fields) are fully configured
-- The Feasibility Gate badge will only turn green when lines are truly complete
-- The Feasibility Gate sign-off button will only become available when all placement confirmations and position descriptions are filled
-- No change to the user-facing "Configuration Gaps" table -- it will continue to work as before
+---
+
+### 1. Validation Gate (sowService.ts)
+
+Add a `validateSOWReadiness()` function that checks:
+
+**Vision/Hybrid deployments:**
+- `sow_sku_count` is set
+- Lines have min_speed AND max_speed > 0
+- `sow_complexity_tier` is set (Green/Amber/Red)
+- `sow_detection_accuracy_target` is set
+- `sow_false_positive_rate` is set
+- `sow_go_live_definition` is set
+
+**All deployments:**
+- All 8 `infra_*` fields are either "Required" or "Not Required" (no nulls/blanks)
+- `sow_acceptance_criteria` is set
+- `feasibility_signed_off` = true
+
+Returns a list of missing field names. If any are missing, SOW generation is blocked.
+
+### 2. Strip Internal Fields (sowService.ts)
+
+Remove from SOWData interface and aggregation:
+- All `id` fields from hardware, cameras, IoT devices
+- `hardwareMasterId` from IoT devices
+- `receiverMacAddress` from IoT devices
+- `cameraIp` from cameras
+- Camera `name` field (which is actually the MAC address)
+- `userId` from contacts
+- Replace any empty/null string rendering with omission rather than "Not provided"/"Not configured"
+
+### 3. Read Real DB Fields (sowService.ts)
+
+Update `aggregateSOWData()` to read the actual `sow_*` and `infra_*` columns from `solutions_projects` instead of hardcoded "Not configured" stubs:
+- `sow_sku_count`, `sow_complexity_tier`, `sow_detection_accuracy_target`, `sow_false_positive_rate`
+- `sow_go_live_definition`, `sow_acceptance_criteria`
+- `sow_stability_period`, `sow_hypercare_window`
+- `sow_initial_training_cycle`, `sow_validation_period`, `sow_retraining_exclusions`
+- `sow_product_presentation_assumptions`, `sow_environmental_stability_assumptions`
+- All 8 `infra_*` fields
+
+### 4. Executive Summary (SOWDocument.tsx)
+
+New Section 1: Auto-generated narrative paragraph:
+
+> "This Statement of Work defines the scope for a {deploymentType} deployment at {customerLegalName}, {siteAddress}. The deployment covers {lineCount} production line(s) operating at {minSpeed}-{maxSpeed} ppm, with {cameraCount} vision inspection point(s) across {useCaseList}. The intended outcome is: {projectGoals}."
+
+### 5. New SOW Document Sections (SOWDocument.tsx)
+
+Restructured section numbering:
+
+1. Executive Summary (new, auto-generated)
+2. Deployment Overview (existing, cleaned)
+3. Inspection and Monitoring Scope (existing, cleaned -- no MACs, IPs, internal IDs)
+4. Hardware Architecture (existing, cleaned -- no IDs)
+5. Operational Performance Envelope (new)
+6. Infrastructure Requirements (redesigned -- Required/Not Required only)
+7. Model Training Scope (vision only, reads real DB fields)
+8. Acceptance and Go-Live Criteria (new, reads real DB fields)
+9. Assumptions (new, auto-generated)
+10. Exclusions (new, auto-generated)
+11. Delivery Milestones (new, indicative sequence)
+12. Governance and Version Control (existing)
+
+### 6. Operational Performance Envelope (Section 5)
+
+Display: throughput range, SKU count, complexity tier, product presentation assumptions, environmental stability assumptions. Add contractual clause: "Performance commitments apply only within the defined operational envelope."
+
+### 7. Infrastructure Redesign (Section 6)
+
+Each of the 8 infra fields displays as "Required" or "Not Required". Add clause: "Installation will not proceed until infrastructure readiness is validated."
+
+### 8. Model Training Scope (Section 7)
+
+Read from DB: SKU count, initial training cycle, validation period, retraining exclusions.
+
+### 9. Assumptions Section (Section 9)
+
+Auto-generated list:
+- Stable and consistent lighting conditions
+- Stable camera mounting and positioning
+- Consistent product presentation and orientation
+- Accurate ERP inputs (if ERP integration applicable)
+- Plus any custom assumptions from `sow_product_presentation_assumptions` and `sow_environmental_stability_assumptions`
+
+### 10. Exclusions Section (Section 10)
+
+Auto-generated:
+- New SKU onboarding beyond the defined count
+- Additional inspection types not specified in this SOW
+- Mechanical redesign of mounting or conveyor systems
+- Environmental changes affecting lighting or product presentation
+- ERP system expansion or reconfiguration
+
+### 11. Delivery Milestones (Section 11)
+
+Indicative sequence (no dates):
+1. Portal Provision
+2. Hardware Dispatch
+3. Installation
+4. Model Training
+5. Go-Live Target
+
+### 12. Role-Based Permissions (SolutionsSOW.tsx)
+
+Replace the current `profile?.is_internal === true` check with a role whitelist:
+- Solutions Consultant (existing `solutions_consultant` field)
+- Senior Solutions Architect (via profile role)
+- VP Customer Success (existing `vp_customer_success` field)
+
+The check will verify that the current user's profile role matches one of: `solutions_consultant`, `senior_solutions_architect`, `vp_customer_success`, OR that they are an `internal_admin`.
+
+### 13. Validation UI (SolutionsSOW.tsx)
+
+When validation fails, display a card listing all missing fields with the message: "SOW cannot be generated until all mandatory feasibility and performance fields are complete." The Generate button remains disabled.
+
+### 14. PDF Export Update (SolutionsSOW.tsx)
+
+The PDF export logic will be updated to match the new section structure, removing internal fields and including all new sections.
 

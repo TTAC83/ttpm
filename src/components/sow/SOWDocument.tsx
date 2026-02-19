@@ -243,41 +243,22 @@ export const SOWDocument: React.FC<SOWDocumentProps> = ({ data, sowId, version, 
 
       {/* 6. Infrastructure Requirements */}
       <Section title="Infrastructure Requirements" number={isVision ? '6' : '5'}>
-        <h3 className="text-sm font-semibold mb-2">General Requirements</h3>
-        <Field label="Network Ports" value={data.infrastructure.networkPorts} />
-        <Field label="VLAN" value={data.infrastructure.vlan} />
-        <Field label="Static IP" value={data.infrastructure.staticIp} />
-        <Field label="10Gb Connection" value={data.infrastructure.tenGbConnection} />
-        <Field label="Mount Fabrication" value={data.infrastructure.mountFabrication} />
-        <Field label="VPN" value={data.infrastructure.vpn} />
-        <Field label="Storage" value={data.infrastructure.storage} />
-        <Field label="Load Balancer" value={data.infrastructure.loadBalancer} />
-
         {/* Bandwidth & Cabling */}
-        {(data.infraDetail.internetSpeedMbps || data.infraDetail.lanSpeedGbps || data.infraDetail.switchUplinkGbps || data.infraDetail.cableSpec || data.infraDetail.maxCableDistanceM || data.infraDetail.poeRequired) && (
-          <>
-            <Separator className="my-4" />
-            <h3 className="text-sm font-semibold mb-2">Bandwidth & Cabling Specifications</h3>
+        <h3 className="text-sm font-semibold mb-2">Bandwidth & Cabling Specifications</h3>
             <Field label="Internet Speed" value={data.infraDetail.internetSpeedMbps ? `${data.infraDetail.internetSpeedMbps} Mbps` : null} />
             <Field label="Internal LAN Speed" value={data.infraDetail.lanSpeedGbps ? `${data.infraDetail.lanSpeedGbps} Gbps per camera` : null} />
             <Field label="Switch to Server Uplink" value={data.infraDetail.switchUplinkGbps ? `${data.infraDetail.switchUplinkGbps} Gbps` : null} />
             <Field label="Cable Specification" value={data.infraDetail.cableSpec} />
             <Field label="Max Cable Distance" value={data.infraDetail.maxCableDistanceM ? `${data.infraDetail.maxCableDistanceM}m` : null} />
-            <BoolField label="PoE Required" value={data.infraDetail.poeRequired || null} />
-          </>
-        )}
+        <BoolField label="PoE Required" value={data.infraDetail.poeRequired || null} />
 
         {/* IP & Remote Access */}
-        {(data.infraDetail.dhcpReservation || data.infraDetail.remoteAccessMethod || data.infraDetail.serverMounting || data.infraDetail.serverPowerSupply) && (
-          <>
-            <Separator className="my-4" />
-            <h3 className="text-sm font-semibold mb-2">IP Management & Remote Access</h3>
+        <Separator className="my-4" />
+        <h3 className="text-sm font-semibold mb-2">IP Management & Remote Access</h3>
             <BoolField label="DHCP IP Reservation" value={data.infraDetail.dhcpReservation || null} />
             <Field label="Remote Access Method" value={data.infraDetail.remoteAccessMethod} />
             <Field label="Server Mounting" value={data.infraDetail.serverMounting} />
-            <Field label="Server Power Supply" value={data.infraDetail.serverPowerSupply} />
-          </>
-        )}
+        <Field label="Server Power Supply" value={data.infraDetail.serverPowerSupply} />
 
         {/* Port Requirements (static reference) */}
         <Separator className="my-4" />

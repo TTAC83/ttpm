@@ -63,16 +63,10 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
       project.product_description
     );
 
-    // Infrastructure: all 8 infra_* fields set AND customer confirmation received
-    const infraFields = [
-      'infra_network_ports', 'infra_vlan', 'infra_static_ip', 'infra_10gb_connection',
-      'infra_mount_fabrication', 'infra_vpn', 'infra_storage', 'infra_load_balancer',
-    ];
-    const allFieldsSet = infraFields.every(f => {
-      const val = (project as any)[f];
-      return val === 'Required' || val === 'Not Required';
-    });
-    const infraComplete = allFieldsSet && !!(project as any).infra_customer_confirmed;
+    // Infrastructure: cable spec + at least one bandwidth field + customer confirmation
+    const infraComplete = !!(project as any).infra_cable_spec &&
+      (!!((project as any).infra_internet_speed_mbps) || !!((project as any).infra_lan_speed_gbps) || !!((project as any).infra_switch_uplink_gbps)) &&
+      !!(project as any).infra_customer_confirmed;
 
     // Factory config: SKU count must be set and > 0
     const factoryConfigComplete = ((project as any).sow_sku_count ?? 0) > 0;

@@ -70,18 +70,6 @@ export interface SOWData {
     totalIotDevices: number;
   };
 
-  // Infrastructure – "Required" | "Not Required"
-  infrastructure: {
-    networkPorts: string;
-    vlan: string;
-    staticIp: string;
-    tenGbConnection: string;
-    mountFabrication: string;
-    vpn: string;
-    storage: string;
-    loadBalancer: string;
-  };
-
   // Detailed network specifications
   infraDetail: {
     internetSpeedMbps: number | null;
@@ -130,17 +118,6 @@ export interface SOWValidationResult {
   missing: string[];
 }
 
-const INFRA_FIELDS = [
-  { key: 'infra_network_ports', label: 'Network Ports' },
-  { key: 'infra_vlan', label: 'VLAN' },
-  { key: 'infra_static_ip', label: 'Static IP' },
-  { key: 'infra_10gb_connection', label: '10Gb Connection' },
-  { key: 'infra_mount_fabrication', label: 'Mount Fabrication' },
-  { key: 'infra_vpn', label: 'VPN' },
-  { key: 'infra_storage', label: 'Storage' },
-  { key: 'infra_load_balancer', label: 'Load Balancer' },
-] as const;
-
 export function validateSOWReadiness(project: any, lines: any[]): SOWValidationResult {
   const missing: string[] = [];
 
@@ -148,12 +125,8 @@ export function validateSOWReadiness(project: any, lines: any[]): SOWValidationR
   if (!project.feasibility_signed_off) missing.push('Feasibility Status must be Approved');
   if (!project.sow_acceptance_criteria) missing.push('Acceptance Criteria');
 
-  for (const f of INFRA_FIELDS) {
-    const val = project[f.key];
-    if (val !== 'Required' && val !== 'Not Required') {
-      missing.push(`Infrastructure: ${f.label}`);
-    }
-  }
+  if (!project.infra_cable_spec) missing.push('Infrastructure: Cable Specification');
+  if (!project.infra_customer_confirmed) missing.push('Infrastructure: Customer Confirmation');
 
   // Vision / Hybrid
   const domain = project.domain as string;
@@ -354,16 +327,6 @@ export async function aggregateSOWData(projectId: string): Promise<SOWData> {
       serverMounting: (project as any).infra_server_mounting ?? null,
       serverPowerSupply: (project as any).infra_server_power_supply ?? null,
       notes: (project as any).infra_notes ?? null,
-    },
-    infrastructure: {
-      networkPorts: (project as any).infra_network_ports || '',
-      vlan: (project as any).infra_vlan || '',
-      staticIp: (project as any).infra_static_ip || '',
-      tenGbConnection: (project as any).infra_10gb_connection || '',
-      mountFabrication: (project as any).infra_mount_fabrication || '',
-      vpn: (project as any).infra_vpn || '',
-      storage: (project as any).infra_storage || '',
-      loadBalancer: (project as any).infra_load_balancer || '',
     },
     skuCount: (project as any).sow_sku_count ?? null,
     complexityTier: (project as any).sow_complexity_tier ?? null,

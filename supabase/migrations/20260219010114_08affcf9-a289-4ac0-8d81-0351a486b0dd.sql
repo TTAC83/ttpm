@@ -1,0 +1,1 @@
+ALTER TABLE public.solutions_projects ADD COLUMN IF NOT EXISTS infra_customer_confirmed boolean DEFAULT false;

@@ -76,7 +76,7 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
     }
   }, [projectId]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { loadData(); }, [loadData, projectData?.feasibility_signed_off]);
 
   const handleGenerate = async () => {
     if (!user?.id) return;

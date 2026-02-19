@@ -156,25 +156,38 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
       }
 
       const isVision = sowData.deploymentType === 'Vision' || sowData.deploymentType === 'Hybrid';
-      const allMin = Math.min(...sowData.lines.map(l => l.minSpeed).filter(s => s > 0), Infinity);
-      const allMax = Math.max(...sowData.lines.map(l => l.maxSpeed).filter(s => s > 0), 0);
+      const allMinRaw = sowData.lines.map(l => l.minSpeed).filter(s => s > 0);
+      const allMaxRaw = sowData.lines.map(l => l.maxSpeed).filter(s => s > 0);
+      const rawMin = allMinRaw.length ? Math.min(...allMinRaw) : 0;
+      const rawMax = allMaxRaw.length ? Math.max(...allMaxRaw) : 0;
+      const allMin = rawMin > 0 && rawMax > 0 ? Math.min(rawMin, rawMax) : rawMin;
+      const allMax = rawMin > 0 && rawMax > 0 ? Math.max(rawMin, rawMax) : rawMax;
       const allUC = [...new Set(sowData.lines.flatMap(l => l.positions.flatMap(p => p.equipment.flatMap(e => e.cameras.flatMap(c => c.useCases)))))];
+      const joinWithAnd = (items: string[]) => {
+        if (items.length <= 1) return items.join('');
+        return items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1];
+      };
 
       let sn = 0;
       const sec = () => String(++sn);
 
       // 1. Executive Summary
       addSection(sec(), 'EXECUTIVE SUMMARY');
-      let summary = `This Statement of Work defines the deployment of a ${sowData.deploymentType} system at ${sowData.customerLegalName}, ${sowData.siteAddress || 'TBC'}. The deployment covers ${sowData.lines.length} production line(s)`;
-      if (allMin < Infinity && allMax > 0) summary += ` operating between ${Math.min(allMin, allMax)}-${Math.max(allMin, allMax)} ppm`;
-      if (sowData.hardware.totalCameras > 0) summary += `, encompassing ${sowData.hardware.totalCameras} vision inspection point(s)`;
-      if (allUC.length > 0) summary += ` covering ${allUC.join(', ')}`;
+      const site = sowData.siteAddress || 'site to be confirmed';
+      const process = sowData.processDescription || 'production processes';
+      let summary = `This Statement of Work defines the deployment of a ${sowData.deploymentType} system at ${sowData.customerLegalName}, ${site} to monitor ${process}`;
+      if (allMin > 0 && allMax > 0) summary += ` operating within a throughput range of ${allMin}–${allMax} ppm`;
       summary += '.';
+      if (sowData.hardware.totalCameras > 0) {
+        summary += ` The deployment encompasses ${sowData.hardware.totalCameras} vision inspection point(s)`;
+        if (allUC.length > 0) summary += ` covering ${joinWithAnd(allUC)}`;
+        summary += '.';
+      }
       if (sowData.projectGoals) {
         const goals = sowData.projectGoals.split(/[\n;]/).map(g => g.replace(/^\s*[\d]+[.)]\s*/, '').replace(/^[-•]\s*/, '').trim()).filter(Boolean);
         if (goals.length > 0) {
           const joined = goals.map(g => g.charAt(0).toLowerCase() + g.slice(1).replace(/\.$/, ''));
-          summary += ` The system will ${joined.length > 1 ? joined.slice(0, -1).join(', ') + ' and ' + joined[joined.length - 1] : joined[0]} within the defined operational envelope.`;
+          summary += ` The system will ${joinWithAnd(joined)} within the defined operational performance envelope.`;
         }
       }
       addText(summary, margin, { fontSize: 9 });
@@ -193,12 +206,27 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
         for (const c of sowData.contacts) addField(c.role, c.name, margin + 4);
       }
 
-      // 3. Inspection & Monitoring Scope
+      // 3. Deliverables
+      addSection(sec(), 'DELIVERABLES');
+      addText('ThingTrax will deliver:', margin, { fontSize: 9, fontStyle: 'bold' });
+      const deliverables = [
+        'Configured cloud portal instance',
+        'Supplied hardware as defined in this SOW',
+        'Initial configuration and system commissioning',
+        'Superuser training sessions',
+        ...(isVision ? ['Initial model training for defined SKU count'] : []),
+        'Go-live support window (14 days unless otherwise specified)',
+      ];
+      for (const d of deliverables) { addText(`• ${d}`, margin + 4, { fontSize: 8 }); y += 1; }
+
+      // 4. Inspection & Monitoring Scope (cleaned — no engineering noise)
       addSection(sec(), 'INSPECTION & MONITORING SCOPE');
       for (const line of sowData.lines.filter(l => l.positions.length > 0 || l.lineName)) {
         checkPage(30);
+        const lineMin = line.minSpeed > 0 && line.maxSpeed > 0 ? Math.min(line.minSpeed, line.maxSpeed) : line.minSpeed;
+        const lineMax = line.minSpeed > 0 && line.maxSpeed > 0 ? Math.max(line.minSpeed, line.maxSpeed) : line.maxSpeed;
         addText(`Line: ${line.lineName} (${line.deploymentType})`, margin, { fontSize: 10, fontStyle: 'bold' });
-        if (line.minSpeed > 0) addText(`Speed: ${line.minSpeed}-${line.maxSpeed} ppm | Products: ${line.numberOfProducts ?? 'N/A'} | Artworks: ${line.numberOfArtworks ?? 'N/A'}`, margin + 4, { fontSize: 8 });
+        if (lineMin > 0) addText(`Speed: ${lineMin}-${lineMax} ppm | Products: ${line.numberOfProducts ?? 'N/A'} | Artworks: ${line.numberOfArtworks ?? 'N/A'}`, margin + 4, { fontSize: 8 });
         for (const pos of line.positions) {
           addText(`Position: ${pos.name}${pos.titles.length ? ` (${pos.titles.join(', ')})` : ''}`, margin + 4, { fontSize: 9, fontStyle: 'bold' });
           for (const eq of pos.equipment) {
@@ -206,7 +234,8 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
             for (const cam of eq.cameras) {
               y += 1;
               addText(`Camera: ${cam.cameraType} | Lens: ${cam.lensType}`, margin + 12, { fontSize: 8 });
-              if (cam.useCases.length) addText(`Use Cases: ${cam.useCases.join(', ')}`, margin + 12, { fontSize: 8 });
+              if (cam.useCases.length) addText(`Use Cases: ${joinWithAnd(cam.useCases)}`, margin + 12, { fontSize: 8 });
+              addText(`Lighting: ${cam.lightRequired ? 'Required' : cam.lightRequired === false ? 'Not Required' : 'Field incomplete'} | PLC: ${cam.plcAttached ? 'Required' : cam.plcAttached === false ? 'Not Required' : 'Field incomplete'}`, margin + 12, { fontSize: 8 });
               y += 1;
             }
             for (const iot of eq.iotDevices) {
@@ -218,50 +247,55 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
         y += 2;
       }
 
-      // 4. Hardware Architecture
+      // 5. Hardware Architecture
       addSection(sec(), 'HARDWARE ARCHITECTURE');
       addText(`Total Cameras: ${sowData.hardware.totalCameras} | Total IoT Devices: ${sowData.hardware.totalIotDevices}`, margin + 4, { fontSize: 9 });
       for (const s of sowData.hardware.servers.filter(s => s.name || s.model)) { addText(`Server: ${s.name} (${s.model}) - ${s.assignedCameras} cameras`, margin + 4, { fontSize: 8 }); y += 1; }
       for (const g of sowData.hardware.gateways.filter(g => g.name || g.model)) { addText(`Gateway: ${g.name} (${g.model})`, margin + 4, { fontSize: 8 }); y += 1; }
 
-      // 5. Performance Envelope (Vision)
+      // 6. Performance Envelope (Vision)
       if (isVision) {
         addSection(sec(), 'OPERATIONAL PERFORMANCE ENVELOPE');
-        if (allMin < Infinity) addField('Throughput Range', `${Math.min(allMin, allMax)}-${Math.max(allMin, allMax)} ppm`);
+        if (allMin > 0) addField('Throughput Range', `${allMin}-${allMax} ppm`);
         addField('SKU Count', sowData.skuCount);
         addField('Complexity Tier', sowData.complexityTier);
         addField('Detection Accuracy Target', sowData.detectionAccuracyTarget != null ? `${sowData.detectionAccuracyTarget}%` : null);
         addField('False Positive Rate', sowData.falsePositiveRate != null ? `${sowData.falsePositiveRate}%` : null);
-        addText('Performance commitments apply only within the defined operational envelope.', margin + 4, { fontSize: 8 });
+        addText('Performance commitments apply only within the defined operational envelope. Operation outside the defined throughput range, SKU count, environmental stability, or product presentation conditions may require retraining or scope reassessment.', margin + 4, { fontSize: 8 });
       }
 
-      // Infrastructure
+      // 7. Infrastructure
       addSection(sec(), 'INFRASTRUCTURE REQUIREMENTS');
       if (sowData.infraDetail?.internetSpeedMbps) addField('Internet Speed', `${sowData.infraDetail.internetSpeedMbps} Mbps`);
       if (sowData.infraDetail?.lanSpeedGbps) addField('Internal LAN Speed', `${sowData.infraDetail.lanSpeedGbps} Gbps per camera`);
       if (sowData.infraDetail?.switchUplinkGbps) addField('Switch to Server Uplink', `${sowData.infraDetail.switchUplinkGbps} Gbps`);
       addField('Cable Specification', sowData.infraDetail?.cableSpec);
       if (sowData.infraDetail?.maxCableDistanceM) addField('Max Cable Distance', `${sowData.infraDetail.maxCableDistanceM}m`);
-      addField('PoE', sowData.infraDetail?.poeRequired ? 'Required' : 'Not Required');
-      addField('DHCP IP Reservation', sowData.infraDetail?.dhcpReservation ? 'Required' : 'Not Required');
+      addField('PoE', sowData.infraDetail?.poeRequired ? 'Required' : sowData.infraDetail?.poeRequired === false ? 'Not Required' : 'Field incomplete');
+      addField('DHCP IP Reservation', sowData.infraDetail?.dhcpReservation ? 'Required' : sowData.infraDetail?.dhcpReservation === false ? 'Not Required' : null);
       addField('Remote Access Method', sowData.infraDetail?.remoteAccessMethod);
       addField('Server Mounting', sowData.infraDetail?.serverMounting);
       addField('Server Power Supply', sowData.infraDetail?.serverPowerSupply);
       addText('Installation will not proceed until infrastructure readiness is validated.', margin + 4, { fontSize: 8 });
 
-      // Responsibilities Matrix
+      // 8. Responsibilities Matrix
       addSection(sec(), 'RESPONSIBILITIES MATRIX');
-      const respRows = [
-        ['Hardware Procurement', 'ThingTrax'],
-        ['Network Infrastructure', 'Customer'],
+      const respRows: [string, string][] = [
+        ['Hardware Supply', 'ThingTrax'],
+        ['Physical Fabrication and Mounting', 'Customer'],
+        ['Network Infrastructure (VLAN, Switching, Cabling)', 'Customer'],
         ['Power Supply to Server Location', 'Customer'],
-        ['Software Deployment', 'ThingTrax'],
-        ['Network Configuration (VLAN/Firewall)', 'Customer'],
-        ['Production Line Access', 'Customer'],
-        ['Ongoing Maintenance', 'ThingTrax'],
+        ['Software Deployment and Configuration', 'ThingTrax'],
+        ['Network Configuration (VLAN/Firewall Rules)', 'Customer'],
+        ['Production Line Access for Installation', 'Customer'],
+        ['Ongoing Platform Maintenance', 'ThingTrax'],
       ];
       if (isVision) {
-        respRows.push(['Camera Installation & Alignment', 'ThingTrax'], ['Vision Model Training', 'ThingTrax'], ['Sample Product Provision', 'Customer']);
+        respRows.push(
+          ['Camera Configuration and Alignment', 'ThingTrax'],
+          ['Vision Model Training and Validation', 'ThingTrax'],
+          ['Sample Product Provision for Training', 'Customer'],
+        );
       }
       respRows.push(['IoT Device Installation', 'ThingTrax']);
       for (const [task, owner] of respRows) {
@@ -269,7 +303,7 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
         y += 1;
       }
 
-      // Model Training (Vision)
+      // 9. Model Training (Vision)
       if (isVision) {
         addSection(sec(), 'MODEL TRAINING SCOPE');
         addField('SKU Count', sowData.skuCount);
@@ -278,9 +312,10 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
         addField('Retraining Exclusions', sowData.retrainingExclusions);
       }
 
-      // Acceptance
+      // 10. Acceptance & Go-Live
       addSection(sec(), 'ACCEPTANCE & GO-LIVE CRITERIA');
       addText('Technical Completion:', margin, { fontSize: 9, fontStyle: 'bold' });
+      addText('System considered technically complete when:', margin + 4, { fontSize: 8 });
       for (const tc of ['Hardware online', 'Network validated', 'Data streaming confirmed']) {
         addText(`• ${tc}`, margin + 4, { fontSize: 8 }); y += 1;
       }
@@ -288,14 +323,19 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
         addText('Model Acceptance:', margin, { fontSize: 9, fontStyle: 'bold' });
         addField('Detection Accuracy', sowData.detectionAccuracyTarget != null ? `≥ ${sowData.detectionAccuracyTarget}%` : 'Field incomplete');
         addField('False Positive Rate', sowData.falsePositiveRate != null ? `≤ ${sowData.falsePositiveRate}%` : 'Field incomplete');
+        if (sowData.stabilityPeriod) addText(`Stable operation for ${sowData.stabilityPeriod} consecutive production hours.`, margin + 4, { fontSize: 8 });
       }
-      addText('Go-Live:', margin, { fontSize: 9, fontStyle: 'bold' });
+      addText('Operational Go-Live:', margin, { fontSize: 9, fontStyle: 'bold' });
+      addText('Go-Live occurs upon:', margin + 4, { fontSize: 8 });
+      for (const gl of ['Successful completion of stability window', 'Customer operational sign-off']) {
+        addText(`• ${gl}`, margin + 4, { fontSize: 8 }); y += 1;
+      }
       addField('Go-Live Definition', sowData.goLiveDefinition || 'Field incomplete');
       addField('Acceptance Criteria', sowData.acceptanceCriteria);
       addField('Stability Period', sowData.stabilityPeriod);
       addField('Hypercare Window', sowData.hypercareWindow);
 
-      // Data Ownership
+      // 11. Data Ownership
       addSection(sec(), 'DATA OWNERSHIP & RETENTION');
       for (const clause of [
         'Customer retains ownership of all production data.',
@@ -306,7 +346,11 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
         addText(`• ${clause}`, margin + 4, { fontSize: 8 }); y += 1;
       }
 
-      // Assumptions
+      // 12. Post-Go-Live Support
+      addSection(sec(), 'POST-GO-LIVE SUPPORT');
+      addText('Post Go-Live support is provided under standard SaaS support terms. Additional retraining, new SKU onboarding, environmental changes, or scope expansion are subject to formal change control.', margin + 4, { fontSize: 8 });
+
+      // 13. Assumptions
       addSection(sec(), 'ASSUMPTIONS');
       const assumptions = [
         'Stable and consistent lighting conditions',
@@ -318,7 +362,7 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
       if (sowData.environmentalStabilityAssumptions) assumptions.push(sowData.environmentalStabilityAssumptions);
       for (const a of assumptions) { addText(`• ${a}`, margin + 4, { fontSize: 8 }); y += 1; }
 
-      // Exclusions
+      // 14. Exclusions
       addSection(sec(), 'EXCLUSIONS');
       const exclusions = [
         `New SKU onboarding beyond the defined count${sowData.skuCount ? ` (${sowData.skuCount})` : ''}`,
@@ -329,13 +373,13 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
       ];
       for (const e of exclusions) { addText(`• ${e}`, margin + 4, { fontSize: 8 }); y += 1; }
 
-      // Milestones
+      // 15. Milestones
       addSection(sec(), 'DELIVERY MILESTONES (INDICATIVE)');
       for (const [i, m] of ['Portal Provision', 'Hardware Dispatch', 'Installation', 'Model Training', 'Go-Live Target'].entries()) {
         addText(`${i + 1}. ${m}`, margin + 4, { fontSize: 9 }); y += 1;
       }
 
-      // Governance
+      // 16. Governance
       addSection(sec(), 'GOVERNANCE & VERSION CONTROL');
       addField('SOW ID', `SOW-${currentSOW.id.slice(0, 8).toUpperCase()}`);
       addField('Version', currentSOW.version);

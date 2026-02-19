@@ -35,6 +35,12 @@ function formatBool(value: boolean | null | undefined): string | null {
   return null;
 }
 
+function joinWithAnd(items: string[]): string {
+  if (items.length === 0) return '';
+  if (items.length === 1) return items[0];
+  return items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1];
+}
+
 // ─── Shared Components ───
 
 const Section: React.FC<{ title: string; number: string; children: React.ReactNode }> = ({ title, number, children }) => (
@@ -111,7 +117,7 @@ function buildExecutiveSummary(data: SOWData, overallMin: number, overallMax: nu
   const site = sanitise(data.siteAddress) || 'site to be confirmed';
   const process = sanitise(data.processDescription) || 'production processes';
 
-  // Speed validation: ensure min <= max
+  // Silently normalise min/max order
   let minS = overallMin;
   let maxS = overallMax;
   if (minS > maxS && maxS > 0) [minS, maxS] = [maxS, minS];
@@ -124,19 +130,19 @@ function buildExecutiveSummary(data: SOWData, overallMin: number, overallMax: nu
       .map(g => g.replace(/^\s*[\d]+[.)]\s*/, '').replace(/^[-•]\s*/, '').trim())
       .filter(Boolean)
       .map(g => g.charAt(0).toLowerCase() + g.slice(1).replace(/\.$/, ''));
-    if (goals.length > 1) {
-      goalsSentence = `The system will ${goals.slice(0, -1).join(', ')} and ${goals[goals.length - 1]} within the defined operational envelope.`;
-    } else if (goals.length === 1) {
-      goalsSentence = `The system will ${goals[0]} within the defined operational envelope.`;
+    if (goals.length > 0) {
+      goalsSentence = `The system will ${joinWithAnd(goals)} within the defined operational performance envelope.`;
     }
   }
 
   let summary = `This Statement of Work defines the deployment of a ${data.deploymentType} system at ${data.customerLegalName}, ${site} to monitor ${process}`;
-  if (minS > 0 && maxS > 0) summary += ` operating between ${minS}–${maxS} ppm`;
+  if (minS > 0 && maxS > 0) summary += ` operating within a throughput range of ${minS}–${maxS} ppm`;
   summary += '.';
-  if (data.hardware.totalCameras > 0) summary += ` The deployment encompasses ${data.hardware.totalCameras} vision inspection point(s)`;
-  if (allUseCases.length > 0) summary += ` covering ${allUseCases.join(', ')}`;
-  if (data.hardware.totalCameras > 0 || allUseCases.length > 0) summary += '.';
+  if (data.hardware.totalCameras > 0) {
+    summary += ` The deployment encompasses ${data.hardware.totalCameras} vision inspection point(s)`;
+    if (allUseCases.length > 0) summary += ` covering ${joinWithAnd(allUseCases)}`;
+    summary += '.';
+  }
   if (goalsSentence) summary += ` ${goalsSentence}`;
 
   return summary;
@@ -147,16 +153,17 @@ function buildExecutiveSummary(data: SOWData, overallMin: number, overallMax: nu
 const ResponsibilitiesMatrix: React.FC<{ deploymentType: string }> = ({ deploymentType }) => {
   const isVision = deploymentType === 'Vision' || deploymentType === 'Hybrid';
   const rows = [
-    { task: 'Hardware Procurement', thingtrax: true, customer: false },
+    { task: 'Hardware Supply', thingtrax: true, customer: false },
+    { task: 'Physical Fabrication and Mounting', thingtrax: false, customer: true },
     { task: 'Network Infrastructure (VLAN, Switching, Cabling)', thingtrax: false, customer: true },
     { task: 'Power Supply to Server Location', thingtrax: false, customer: true },
-    { task: 'Software Deployment & Configuration', thingtrax: true, customer: false },
+    { task: 'Software Deployment and Configuration', thingtrax: true, customer: false },
     { task: 'Network Configuration (VLAN/Firewall Rules)', thingtrax: false, customer: true },
     { task: 'Production Line Access for Installation', thingtrax: false, customer: true },
     { task: 'Ongoing Platform Maintenance', thingtrax: true, customer: false },
     ...(isVision ? [
-      { task: 'Camera Installation & Alignment', thingtrax: true, customer: false },
-      { task: 'Vision Model Training & Validation', thingtrax: true, customer: false },
+      { task: 'Camera Configuration and Alignment', thingtrax: true, customer: false },
+      { task: 'Vision Model Training and Validation', thingtrax: true, customer: false },
       { task: 'Sample Product Provision for Training', thingtrax: false, customer: true },
     ] : []),
     { task: 'IoT Device Installation', thingtrax: true, customer: false },
@@ -186,6 +193,25 @@ const ResponsibilitiesMatrix: React.FC<{ deploymentType: string }> = ({ deployme
   );
 };
 
+// ─── Deliverables Section ───
+
+const DeliverablesSection: React.FC<{ deploymentType: string }> = ({ deploymentType }) => {
+  const isVision = deploymentType === 'Vision' || deploymentType === 'Hybrid';
+  return (
+    <div>
+      <p className="text-sm font-semibold mb-2">ThingTrax will deliver:</p>
+      <ul className="list-disc ml-5 text-sm space-y-1.5">
+        <li>Configured cloud portal instance</li>
+        <li>Supplied hardware as defined in this SOW</li>
+        <li>Initial configuration and system commissioning</li>
+        <li>Superuser training sessions</li>
+        {isVision && <li>Initial model training for defined SKU count</li>}
+        <li>Go-live support window (14 days unless otherwise specified)</li>
+      </ul>
+    </div>
+  );
+};
+
 // ─── Main Document ───
 
 export const SOWDocument: React.FC<SOWDocumentProps> = ({ data, sowId, version, status }) => {
@@ -194,14 +220,11 @@ export const SOWDocument: React.FC<SOWDocumentProps> = ({ data, sowId, version, 
   // Collect all use cases across all lines
   const allUseCases = [...new Set(data.lines.flatMap(l => l.positions.flatMap(p => p.equipment.flatMap(e => e.cameras.flatMap(c => c.useCases)))).filter(Boolean))];
 
-  // Compute overall speed range (validate min <= max per line)
+  // Compute overall speed range (silently normalise)
   const allMinSpeeds = data.lines.map(l => l.minSpeed).filter(s => s > 0);
   const allMaxSpeeds = data.lines.map(l => l.maxSpeed).filter(s => s > 0);
   const overallMinSpeed = allMinSpeeds.length ? Math.min(...allMinSpeeds) : 0;
   const overallMaxSpeed = allMaxSpeeds.length ? Math.max(...allMaxSpeeds) : 0;
-
-  // Detect validation issues
-  const speedInverted = data.lines.some(l => l.minSpeed > 0 && l.maxSpeed > 0 && l.minSpeed > l.maxSpeed);
 
   // Filter empty hardware rows
   const servers = data.hardware.servers.filter(s => s.name || s.model);
@@ -275,14 +298,6 @@ export const SOWDocument: React.FC<SOWDocumentProps> = ({ data, sowId, version, 
         </div>
       )}
 
-      {/* Speed Validation Warning */}
-      {speedInverted && (
-        <div className="flex items-center gap-2 rounded-lg px-4 py-2 bg-red-50 border border-red-300 text-red-700 text-xs">
-          <AlertTriangle className="h-4 w-4" />
-          Validation: One or more lines have Min Speed &gt; Max Speed. Values have been corrected for display.
-        </div>
-      )}
-
       {/* 1. Executive Summary */}
       <Section title="Executive Summary" number={sec()}>
         <p className="text-sm leading-relaxed">
@@ -309,97 +324,78 @@ export const SOWDocument: React.FC<SOWDocumentProps> = ({ data, sowId, version, 
         )}
       </Section>
 
-      {/* 3. Inspection & Monitoring Scope */}
+      {/* 3. Deliverables */}
+      <Section title="Deliverables" number={sec()}>
+        <DeliverablesSection deploymentType={data.deploymentType} />
+      </Section>
+
+      {/* 4. Inspection & Monitoring Scope (engineering noise removed) */}
       <Section title="Inspection & Monitoring Scope" number={sec()}>
         {lines.length === 0 ? (
           <p className="text-sm text-red-500 italic">No lines configured — Field incomplete</p>
-        ) : lines.map((line, li) => (
-          <Card key={li} className="mt-4">
-            <CardContent className="pt-4 space-y-4">
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold">{line.lineName}</h3>
-                <Badge variant="outline" className="text-[10px]">{line.deploymentType}</Badge>
-                {line.minSpeed > 0 && line.maxSpeed > 0 && line.minSpeed > line.maxSpeed && (
-                  <Badge variant="destructive" className="text-[10px]">Speed inverted</Badge>
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-x-8">
-                <Field label="Min Speed" value={line.minSpeed > 0 ? `${line.minSpeed} ppm` : null} required={isVision} />
-                <Field label="Max Speed" value={line.maxSpeed > 0 ? `${line.maxSpeed} ppm` : null} required={isVision} />
-                <Field label="Products" value={line.numberOfProducts} />
-                <Field label="Artworks" value={line.numberOfArtworks} />
-              </div>
-              <Field label="Line Description" value={line.lineDescription} />
-              <Field label="Product Description" value={line.productDescription} />
-
-              {line.positions.map((pos, pi) => (
-                <div key={pi} className="ml-2 border-l-2 border-muted pl-4 mt-3">
-                  <p className="text-xs font-semibold">
-                    Position: {pos.name}
-                    {pos.titles.length > 0 && <span className="ml-2 text-muted-foreground">({pos.titles.join(', ')})</span>}
-                  </p>
-                  {pos.equipment.map((eq, ei) => (
-                    <div key={ei} className="ml-2 mt-2">
-                      <p className="text-xs font-medium">Equipment: {eq.name} {eq.type && <span className="text-muted-foreground">({eq.type})</span>}</p>
-                      {eq.cameras.map((cam, ci) => (
-                        <div key={ci} className="ml-4 mt-2 bg-muted/50 rounded p-3 space-y-1">
-                          <p className="text-xs font-semibold">📷 Vision Inspection Point</p>
-                          <div className="grid grid-cols-2 gap-x-4">
-                            <Field label="Camera Model" value={cam.cameraType} />
-                            <Field label="Lens" value={cam.lensType} />
-                            <Field label="Product Flow" value={cam.productFlow} />
-                            <Field label="H-FOV" value={cam.horizontalFov} />
-                            <Field label="Working Distance" value={cam.workingDistance} />
-                          </div>
-                          {cam.useCases.length > 0 && (
-                            <div className="mt-1">
-                              <span className="text-xs font-medium text-muted-foreground">Use Cases: </span>
-                              <span className="text-xs">{cam.useCases.join(', ')}</span>
-                            </div>
-                          )}
-                          <Field label="Use Case Description" value={cam.useCaseDescription} />
-                          {cam.attributes.length > 0 && (
-                            <div className="mt-1">
-                              <span className="text-xs font-medium text-muted-foreground">Attributes: </span>
-                              {cam.attributes.map((a, ai) => (
-                                <span key={ai} className="text-xs">{a.title}{a.description ? ` (${a.description})` : ''}{ai < cam.attributes.length - 1 ? ', ' : ''}</span>
-                              ))}
-                            </div>
-                          )}
-                          <Field label="Camera View" value={cam.cameraViewDescription} />
-                          <BoolField label="Lighting" value={cam.lightRequired} />
-                          <Field label="Light Model" value={cam.lightModel} />
-                          <BoolField label="PLC Attached" value={cam.plcAttached} />
-                          <Field label="PLC Model" value={cam.plcModel} />
-                          {cam.relayOutputs.length > 0 && (
-                            <div className="mt-1">
-                              <span className="text-xs font-medium text-muted-foreground">Relay Outputs: </span>
-                              {cam.relayOutputs.map((ro, ri) => (
-                                <span key={ri} className="text-xs">#{ro.outputNumber} {ro.type}{ro.customName ? ` "${ro.customName}"` : ''}{ri < cam.relayOutputs.length - 1 ? ', ' : ''}</span>
-                              ))}
-                            </div>
-                          )}
-                          <BoolField label="HMI" value={cam.hmiRequired} />
-                          <Field label="HMI Model" value={cam.hmiModel} />
-                          <Field label="Placement" value={cam.placementPositionDescription} />
-                        </div>
-                      ))}
-                      {eq.iotDevices.map((iot, ii) => (
-                        <div key={ii} className="ml-4 mt-2 bg-muted/50 rounded p-3 space-y-1">
-                          <p className="text-xs font-semibold">📡 IoT Device: {iot.name}</p>
-                          <Field label="Hardware Model" value={iot.hardwareModelName} />
-                        </div>
-                      ))}
-                    </div>
-                  ))}
+        ) : lines.map((line, li) => {
+          // Silently correct speed for display
+          const displayMin = line.minSpeed > 0 && line.maxSpeed > 0 ? Math.min(line.minSpeed, line.maxSpeed) : line.minSpeed;
+          const displayMax = line.minSpeed > 0 && line.maxSpeed > 0 ? Math.max(line.minSpeed, line.maxSpeed) : line.maxSpeed;
+          return (
+            <Card key={li} className="mt-4">
+              <CardContent className="pt-4 space-y-4">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold">{line.lineName}</h3>
+                  <Badge variant="outline" className="text-[10px]">{line.deploymentType}</Badge>
                 </div>
-              ))}
-            </CardContent>
-          </Card>
-        ))}
+                <div className="grid grid-cols-2 gap-x-8">
+                  <Field label="Min Speed" value={displayMin > 0 ? `${displayMin} ppm` : null} required={isVision} />
+                  <Field label="Max Speed" value={displayMax > 0 ? `${displayMax} ppm` : null} required={isVision} />
+                  <Field label="Products" value={line.numberOfProducts} />
+                  <Field label="Artworks" value={line.numberOfArtworks} />
+                </div>
+                <Field label="Line Description" value={line.lineDescription} />
+                <Field label="Product Description" value={line.productDescription} />
+
+                {line.positions.map((pos, pi) => (
+                  <div key={pi} className="ml-2 border-l-2 border-muted pl-4 mt-3">
+                    <p className="text-xs font-semibold">
+                      Position: {pos.name}
+                      {pos.titles.length > 0 && <span className="ml-2 text-muted-foreground">({pos.titles.join(', ')})</span>}
+                    </p>
+                    {pos.equipment.map((eq, ei) => (
+                      <div key={ei} className="ml-2 mt-2">
+                        <p className="text-xs font-medium">Equipment: {eq.name} {eq.type && <span className="text-muted-foreground">({eq.type})</span>}</p>
+                        {eq.cameras.map((cam, ci) => (
+                          <div key={ci} className="ml-4 mt-2 bg-muted/50 rounded p-3 space-y-1">
+                            <p className="text-xs font-semibold">📷 Vision Inspection Point</p>
+                            <div className="grid grid-cols-2 gap-x-4">
+                              <Field label="Camera Model" value={cam.cameraType} />
+                              <Field label="Lens" value={cam.lensType} />
+                            </div>
+                            {cam.useCases.length > 0 && (
+                              <div className="mt-1">
+                                <span className="text-xs font-medium text-muted-foreground">Use Cases: </span>
+                                <span className="text-xs">{joinWithAnd(cam.useCases)}</span>
+                              </div>
+                            )}
+                            <BoolField label="Lighting" value={cam.lightRequired} />
+                            <BoolField label="PLC Integration" value={cam.plcAttached} />
+                          </div>
+                        ))}
+                        {eq.iotDevices.map((iot, ii) => (
+                          <div key={ii} className="ml-4 mt-2 bg-muted/50 rounded p-3 space-y-1">
+                            <p className="text-xs font-semibold">📡 IoT Device: {iot.name}</p>
+                            <Field label="Hardware Model" value={iot.hardwareModelName} />
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </Section>
 
-      {/* 4. Hardware Architecture */}
+      {/* 5. Hardware Architecture */}
       <Section title="Hardware Architecture" number={sec()}>
         <div className="grid grid-cols-2 gap-4 mb-4">
           <Card><CardContent className="pt-4"><p className="text-2xl font-bold">{data.hardware.totalCameras}</p><p className="text-xs text-muted-foreground">Total Cameras</p></CardContent></Card>
@@ -419,7 +415,7 @@ export const SOWDocument: React.FC<SOWDocumentProps> = ({ data, sowId, version, 
         )}
       </Section>
 
-      {/* 5. Operational Performance Envelope (always show for Vision) */}
+      {/* 6. Operational Performance Envelope (always show for Vision) */}
       {isVision && (() => {
         const perfSn = sec();
         const hasMissing = !data.skuCount || !data.complexityTier || data.detectionAccuracyTarget == null || data.falsePositiveRate == null || !data.lines.some(l => l.minSpeed > 0 && l.maxSpeed > 0);
@@ -435,18 +431,16 @@ export const SOWDocument: React.FC<SOWDocumentProps> = ({ data, sowId, version, 
             <Field label="Complexity Tier" value={data.complexityTier} required />
             <Field label="Detection Accuracy Target" value={data.detectionAccuracyTarget != null ? `${data.detectionAccuracyTarget}%` : null} required />
             <Field label="False Positive Rate" value={data.falsePositiveRate != null ? `${data.falsePositiveRate}%` : null} required />
-            <Field label="Product Presentation Assumptions" value={data.productPresentationAssumptions} />
-            <Field label="Environmental Stability Assumptions" value={data.environmentalStabilityAssumptions} />
             <Card className="bg-muted/50 mt-4">
               <CardContent className="pt-4 text-xs italic">
-                Performance commitments apply only within the defined operational envelope.
+                Performance commitments apply only within the defined operational envelope. Operation outside the defined throughput range, SKU count, environmental stability, or product presentation conditions may require retraining or scope reassessment.
               </CardContent>
             </Card>
           </Section>
         );
       })()}
 
-      {/* Infrastructure Requirements */}
+      {/* 7. Infrastructure Requirements */}
       <Section title="Infrastructure Requirements" number={sec()}>
         <h3 className="text-sm font-semibold mb-2">Bandwidth & Cabling Specifications</h3>
         <Field label="Internet Speed" value={data.infraDetail?.internetSpeedMbps ? `${data.infraDetail.internetSpeedMbps} Mbps` : null} required />
@@ -485,14 +479,6 @@ export const SOWDocument: React.FC<SOWDocumentProps> = ({ data, sowId, version, 
           </table>
         </div>
 
-        {data.infraDetail?.notes && (
-          <>
-            <Separator className="my-4" />
-            <h3 className="text-sm font-semibold mb-2">Additional Notes</h3>
-            <p className="text-sm whitespace-pre-wrap">{data.infraDetail.notes}</p>
-          </>
-        )}
-
         <Card className="bg-muted/50 mt-4">
           <CardContent className="pt-4 text-xs italic">
             All cameras and servers should be on an isolated VLAN. Installation will not proceed until infrastructure readiness is validated.
@@ -500,12 +486,12 @@ export const SOWDocument: React.FC<SOWDocumentProps> = ({ data, sowId, version, 
         </Card>
       </Section>
 
-      {/* Responsibilities Matrix */}
+      {/* 8. Responsibilities Matrix */}
       <Section title="Responsibilities Matrix" number={sec()}>
         <ResponsibilitiesMatrix deploymentType={data.deploymentType} />
       </Section>
 
-      {/* Model Training Scope (Vision only) */}
+      {/* 9. Model Training Scope (Vision only) */}
       {isVision && (
         <Section title="Model Training Scope" number={sec()}>
           <Field label="SKU Count Included" value={data.skuCount} />
@@ -515,10 +501,11 @@ export const SOWDocument: React.FC<SOWDocumentProps> = ({ data, sowId, version, 
         </Section>
       )}
 
-      {/* Acceptance & Go-Live Criteria */}
+      {/* 10. Acceptance & Go-Live Criteria */}
       <Section title="Acceptance & Go-Live Criteria" number={sec()}>
         {/* Technical Completion */}
         <h3 className="text-sm font-semibold mb-2">Technical Completion</h3>
+        <p className="text-xs text-muted-foreground mb-2">System considered technically complete when:</p>
         <ul className="list-disc ml-5 text-sm space-y-1 mb-4">
           <li>Hardware online</li>
           <li>Network validated</li>
@@ -536,23 +523,31 @@ export const SOWDocument: React.FC<SOWDocumentProps> = ({ data, sowId, version, 
             )}
             <Field label="Detection Accuracy" value={data.detectionAccuracyTarget != null ? `≥ ${data.detectionAccuracyTarget}%` : null} required />
             <Field label="False Positive Rate" value={data.falsePositiveRate != null ? `≤ ${data.falsePositiveRate}%` : null} required />
+            {data.stabilityPeriod && (
+              <p className="text-sm mt-2">Stable operation for {data.stabilityPeriod} consecutive production hours.</p>
+            )}
           </>
         )}
 
-        {/* Go-Live */}
-        <h3 className="text-sm font-semibold mt-4 mb-2">Go-Live</h3>
+        {/* Operational Go-Live */}
+        <h3 className="text-sm font-semibold mt-4 mb-2">Operational Go-Live</h3>
         {!data.goLiveDefinition && (
           <div className="bg-red-50 border border-red-300 rounded-lg px-4 py-2 mb-3 text-red-700 text-xs font-medium">
             Go-Live definition not defined.
           </div>
         )}
+        <p className="text-xs text-muted-foreground mb-2">Go-Live occurs upon:</p>
+        <ul className="list-disc ml-5 text-sm space-y-1 mb-3">
+          <li>Successful completion of stability window</li>
+          <li>Customer operational sign-off</li>
+        </ul>
         <Field label="Go-Live Definition" value={data.goLiveDefinition} required />
         <Field label="Acceptance Criteria" value={data.acceptanceCriteria} required />
         <Field label="Stability Period" value={data.stabilityPeriod} />
         <Field label="Hypercare Window" value={data.hypercareWindow} />
       </Section>
 
-      {/* Data Ownership & Retention */}
+      {/* 11. Data Ownership & Retention */}
       <Section title="Data Ownership & Retention" number={sec()}>
         <ul className="list-disc ml-5 text-sm space-y-2">
           <li>Customer retains ownership of all production data.</li>
@@ -569,7 +564,14 @@ export const SOWDocument: React.FC<SOWDocumentProps> = ({ data, sowId, version, 
         </ul>
       </Section>
 
-      {/* Assumptions */}
+      {/* 12. Post-Go-Live Support */}
+      <Section title="Post-Go-Live Support" number={sec()}>
+        <p className="text-sm leading-relaxed">
+          Post Go-Live support is provided under standard SaaS support terms. Additional retraining, new SKU onboarding, environmental changes, or scope expansion are subject to formal change control.
+        </p>
+      </Section>
+
+      {/* 13. Assumptions */}
       <Section title="Assumptions" number={sec()}>
         <ul className="list-disc ml-5 text-sm space-y-1.5">
           <li>Stable and consistent lighting conditions</li>
@@ -581,7 +583,7 @@ export const SOWDocument: React.FC<SOWDocumentProps> = ({ data, sowId, version, 
         </ul>
       </Section>
 
-      {/* Exclusions */}
+      {/* 14. Exclusions */}
       <Section title="Exclusions" number={sec()}>
         <ul className="list-disc ml-5 text-sm space-y-1.5">
           <li>New SKU onboarding beyond the defined count{data.skuCount ? ` (${data.skuCount})` : ''}</li>
@@ -592,7 +594,7 @@ export const SOWDocument: React.FC<SOWDocumentProps> = ({ data, sowId, version, 
         </ul>
       </Section>
 
-      {/* Delivery Milestones */}
+      {/* 15. Delivery Milestones */}
       <Section title="Delivery Milestones (Indicative)" number={sec()}>
         <div className="space-y-2">
           {['Portal Provision', 'Hardware Dispatch', 'Installation', 'Model Training', 'Go-Live Target'].map((milestone, i) => (
@@ -605,7 +607,7 @@ export const SOWDocument: React.FC<SOWDocumentProps> = ({ data, sowId, version, 
         <p className="text-xs text-muted-foreground mt-3 italic">Exact dates to be confirmed during project kick-off.</p>
       </Section>
 
-      {/* Governance & Version Control */}
+      {/* 16. Governance & Version Control */}
       <Section title="Governance & Version Control" number={sec()}>
         <Field label="SOW ID" value={`SOW-${sowId?.slice(0, 8).toUpperCase()}`} />
         <Field label="Version" value={version} />

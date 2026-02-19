@@ -214,14 +214,16 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
 
       // 6. Infrastructure
       addSection(isVision ? '6' : '5', 'INFRASTRUCTURE REQUIREMENTS');
-      addField('Network Ports', sowData.infrastructure.networkPorts);
-      addField('VLAN', sowData.infrastructure.vlan);
-      addField('Static IP', sowData.infrastructure.staticIp);
-      addField('10Gb Connection', sowData.infrastructure.tenGbConnection);
-      addField('Mount Fabrication', sowData.infrastructure.mountFabrication);
-      addField('VPN', sowData.infrastructure.vpn);
-      addField('Storage', sowData.infrastructure.storage);
-      addField('Load Balancer', sowData.infrastructure.loadBalancer);
+      if (sowData.infraDetail.internetSpeedMbps) addField('Internet Speed', `${sowData.infraDetail.internetSpeedMbps} Mbps`);
+      if (sowData.infraDetail.lanSpeedGbps) addField('Internal LAN Speed', `${sowData.infraDetail.lanSpeedGbps} Gbps per camera`);
+      if (sowData.infraDetail.switchUplinkGbps) addField('Switch to Server Uplink', `${sowData.infraDetail.switchUplinkGbps} Gbps`);
+      addField('Cable Specification', sowData.infraDetail.cableSpec);
+      if (sowData.infraDetail.maxCableDistanceM) addField('Max Cable Distance', `${sowData.infraDetail.maxCableDistanceM}m`);
+      if (sowData.infraDetail.poeRequired) addField('PoE Required', 'Yes');
+      if (sowData.infraDetail.dhcpReservation) addField('DHCP IP Reservation', 'Yes');
+      addField('Remote Access Method', sowData.infraDetail.remoteAccessMethod);
+      addField('Server Mounting', sowData.infraDetail.serverMounting);
+      addField('Server Power Supply', sowData.infraDetail.serverPowerSupply);
       addText('Installation will not proceed until infrastructure readiness is validated.', margin + 4, { fontSize: 8 });
 
       // 7. Model Training (Vision)

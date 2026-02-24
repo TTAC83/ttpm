@@ -22,6 +22,7 @@ export interface HardwareItem {
   supplier_email?: string;
   supplier_phone?: string;
   order_hyperlink?: string;
+  customer_price?: number;
 }
  
 export const useHardwareSummary = (solutionsProjectId: string) => {
@@ -353,6 +354,25 @@ export const useHardwareSummary = (solutionsProjectId: string) => {
             });
           }
         });
+      }
+
+      // Fetch customer prices and merge
+      const masterIds = [...new Set(allHardware.filter(h => h.hardware_master_id).map(h => h.hardware_master_id!))];
+      if (masterIds.length > 0) {
+        const { data: customerPrices } = await supabase
+          .from('solutions_hardware_customer_prices' as any)
+          .select('hardware_master_id, customer_price_gbp')
+          .eq('solutions_project_id', solutionsProjectId)
+          .in('hardware_master_id', masterIds);
+
+        if (customerPrices) {
+          const priceMap = new Map((customerPrices as any[]).map((cp: any) => [cp.hardware_master_id, cp.customer_price_gbp]));
+          allHardware.forEach(item => {
+            if (item.hardware_master_id && priceMap.has(item.hardware_master_id)) {
+              item.customer_price = priceMap.get(item.hardware_master_id);
+            }
+          });
+        }
       }
 
       setHardware(allHardware);

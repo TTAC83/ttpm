@@ -5,6 +5,7 @@ import { FactoryConfigBreadcrumb } from './FactoryConfigBreadcrumb';
 import { PortalLevel } from './PortalLevel';
 import { FactoryLevel } from './FactoryLevel';
 import { GroupLevel } from './GroupLevel';
+import { FactoryConfigGaps } from './FactoryConfigGaps';
 
 interface Props {
   projectId: string;
@@ -31,6 +32,8 @@ export const SolutionsFactoryConfig: React.FC<Props> = ({ projectId }) => {
 
   return (
     <div>
+      <FactoryConfigGaps portal={portal} factories={factories} shifts={shifts} groups={groups} lines={lines} />
+
       {currentLevel !== 'portal' && (
         <FactoryConfigBreadcrumb
           breadcrumbs={breadcrumbs}

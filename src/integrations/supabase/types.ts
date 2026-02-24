@@ -4180,6 +4180,51 @@ export type Database = {
           },
         ]
       }
+      solutions_hardware_customer_prices: {
+        Row: {
+          created_at: string
+          customer_price_gbp: number
+          hardware_master_id: string
+          id: string
+          solutions_project_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_price_gbp: number
+          hardware_master_id: string
+          id?: string
+          solutions_project_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_price_gbp?: number
+          hardware_master_id?: string
+          id?: string
+          solutions_project_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solutions_hardware_customer_prices_hardware_master_id_fkey"
+            columns: ["hardware_master_id"]
+            isOneToOne: false
+            referencedRelation: "hardware_master"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solutions_hardware_customer_prices_solutions_project_id_fkey"
+            columns: ["solutions_project_id"]
+            isOneToOne: false
+            referencedRelation: "solutions_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       solutions_lines: {
         Row: {
           camera_count: number

@@ -436,7 +436,7 @@ export const SolutionsProjectDetail = () => {
         </TabsContent>
 
         <TabsContent value="hardware-summary" className="space-y-4">
-          <SolutionsHardwareSummary solutionsProjectId={project.id} />
+          <SolutionsHardwareSummary solutionsProjectId={project.id} salespersonId={project.salesperson ?? null} />
         </TabsContent>
 
         <TabsContent value="actions" className="space-y-4">

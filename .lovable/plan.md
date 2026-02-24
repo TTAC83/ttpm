@@ -1,58 +1,29 @@
 
 
-## Add Customer Price Column to Solutions Hardware Summary
+## Create Grupo Bimbo Solutions Consulting Project
 
-### Overview
+### What We'll Do
 
-Add an editable "Customer Price" column to the Solutions Hardware Summary table. This field represents the price the customer pays and can only be edited by the salesperson assigned to the project.
+Insert a new Solutions project pre-filled with data from the existing Grupo Bimbo implementation project, so you have a realistic test project in the Solutions pipeline.
 
-### Database Changes
+### Data Mapping
 
-Create a new table `solutions_hardware_customer_prices` to store per-item customer-facing prices, following the same pattern as `project_hardware_prices` used in implementation projects.
+The following fields from the implementation project will be carried over:
 
-```text
-solutions_hardware_customer_prices
---------------------------------------
-id                  UUID (PK, default gen_random_uuid())
-solutions_project_id UUID (FK -> solutions_projects.id, NOT NULL)
-hardware_master_id   UUID (FK -> hardware_master.id, NOT NULL)
-customer_price_gbp   NUMERIC (NOT NULL)
-updated_by           UUID (FK -> auth.users.id)
-created_at           TIMESTAMPTZ (default now())
-updated_at           TIMESTAMPTZ (default now())
-UNIQUE (solutions_project_id, hardware_master_id)
-```
+| Field | Value |
+|-------|-------|
+| Company | Grupo Bimbo (existing company record `e3f3c364-e305-468f-be84-f416d26855e2`) |
+| Domain | Vision |
+| Site Name | Grupo Bimbo |
+| Site Address | Twenty Business Estate, Units 1-7 Saint Laurence Ave Twenty, Maidstone, ME16 0LL |
+| Salesperson | Same user (`68034b82-463b-46f2-befb-df6824737e17`) |
+| Solutions Consultant | Same user (`e526fa27-96f2-4e2b-a538-b234eced2056`) |
+| Customer Lead | (from project_goals context) |
+| Potential Contract Start Date | 2026-03-01 (set to a near-future date for testing) |
 
-RLS policies:
-- SELECT: internal users can read all rows
-- INSERT/UPDATE: only if the current user is the salesperson on the solutions project
+### Technical Steps
 
-### Code Changes
+1. **Database Migration** -- Insert a single row into `solutions_projects` using the Grupo Bimbo company ID and mapped fields from the implementation project. No new tables or schema changes needed.
 
-**1. `src/hooks/useHardwareSummary.tsx`**
-- Add `customer_price` field to the `HardwareItem` interface
-- After building the hardware list, fetch customer prices from `solutions_hardware_customer_prices` for all hardware_master_ids in this project
-- Merge customer prices into each hardware item
-
-**2. `src/pages/app/solutions/tabs/SolutionsHardwareSummary.tsx`**
-- Accept a new prop `salespersonId` (the project's salesperson UUID)
-- Use `useAuth()` to check if the current user is the salesperson
-- Add a "Customer Price (GBP)" column header and a "Total Customer Price" in the header summary
-- For each row:
-  - If the user IS the salesperson: show an inline-editable price field (click to edit, same pattern as `ProjectHardwareSummary`)
-  - If the user is NOT the salesperson: show the customer price as read-only text
-- Upsert changes to `solutions_hardware_customer_prices` on save
-
-**3. `src/pages/app/solutions/SolutionsProjectDetail.tsx`**
-- Pass `salespersonId={project.salesperson}` to the `SolutionsHardwareSummary` component
-
-### Section Order in Table
-
-| Type | Source | Line/Equipment | SKU/Model | Manufacturer | Description | Price (GBP) | RRP (GBP) | **Customer Price (GBP)** |
-
-### Access Control
-
-- Only the salesperson assigned to the solutions project can edit customer prices
-- All other internal users see customer prices as read-only
-- The salesperson check uses `useAuth().user.id === salespersonId` on the client, enforced by RLS on the server
+2. **No code changes required** -- The existing Solutions UI will pick up the new project automatically.
 

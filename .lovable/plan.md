@@ -1,29 +1,44 @@
 
 
-## Create Grupo Bimbo Solutions Consulting Project
+## Add Configuration Gap Table to Solutions Factory Page
 
-### What We'll Do
+### What It Does
 
-Insert a new Solutions project pre-filled with data from the existing Grupo Bimbo implementation project, so you have a realistic test project in the Solutions pipeline.
+A new "Configuration Gaps" card will appear at the top of the Factory tab on Solutions projects. It auto-scans the factory hierarchy data and displays a table of missing items -- guiding users to complete the configuration. When everything is complete, it shows a green "all clear" message.
 
-### Data Mapping
+### Gap Detection Rules
 
-The following fields from the implementation project will be carried over:
+The table will detect these gaps from the existing factory data:
 
-| Field | Value |
-|-------|-------|
-| Company | Grupo Bimbo (existing company record `e3f3c364-e305-468f-be84-f416d26855e2`) |
-| Domain | Vision |
-| Site Name | Grupo Bimbo |
-| Site Address | Twenty Business Estate, Units 1-7 Saint Laurence Ave Twenty, Maidstone, ME16 0LL |
-| Salesperson | Same user (`68034b82-463b-46f2-befb-df6824737e17`) |
-| Solutions Consultant | Same user (`e526fa27-96f2-4e2b-a538-b234eced2056`) |
-| Customer Lead | (from project_goals context) |
-| Potential Contract Start Date | 2026-03-01 (set to a near-future date for testing) |
+| Category | Gap Condition |
+|----------|--------------|
+| Portal | No portal URL set |
+| Factories | No factories added |
+| Shifts | A factory has no shift patterns |
+| Groups | A factory has no groups |
+| Lines | A group has no lines defined |
 
-### Technical Steps
+Each row in the table shows: the gap category, what's missing, and where (e.g. which factory or group name).
 
-1. **Database Migration** -- Insert a single row into `solutions_projects` using the Grupo Bimbo company ID and mapped fields from the implementation project. No new tables or schema changes needed.
+### UI Design
 
-2. **No code changes required** -- The existing Solutions UI will pick up the new project automatically.
+- A `Card` with title "Configuration Gaps" placed above the existing Portal/Factory drill-down content
+- Inside: a simple table with columns: **Area**, **Issue**, **Location**
+- When all checks pass: a green success banner instead of the table ("Factory configuration is complete")
+- Uses existing Badge component (destructive variant for gaps, green for complete)
+
+### Technical Changes
+
+**1. New component: `src/components/factory-config/FactoryConfigGaps.tsx`**
+- Accepts the same data the `SolutionsFactoryConfig` already has: `portal`, `factories`, `shifts`, `groups`, `lines`
+- Pure computation -- no database calls needed (data is already loaded by `useFactoryConfig`)
+- Renders a `Card` with a `Table` listing detected gaps
+
+**2. Update `src/components/factory-config/SolutionsFactoryConfig.tsx`**
+- Import and render `FactoryConfigGaps` at the top of the page, passing all the factory hierarchy state
+- No changes to the hook or any other files
+
+### No Database Changes Required
+
+All data needed is already fetched by `useFactoryConfig`. This is a purely frontend feature.
 

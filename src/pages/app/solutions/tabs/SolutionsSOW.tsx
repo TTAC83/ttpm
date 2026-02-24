@@ -55,7 +55,7 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
   // Role-based access check
   const userRole = profile?.role as string | undefined;
   const hasRole = SOW_ALLOWED_ROLES.includes(userRole || '');
-  const canGenerate = hasRole && feasibilitySignedOff;
+  const canGenerate = hasRole;
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -418,21 +418,6 @@ export const SolutionsSOW: React.FC<SolutionsSOWProps> = ({ projectId, projectDa
     return <div className="flex items-center justify-center min-h-96"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
-  if (!feasibilitySignedOff) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
-            <Lock className="h-12 w-12 text-muted-foreground" />
-            <div>
-              <h3 className="text-lg font-semibold">Feasibility Gate Required</h3>
-              <p className="text-sm text-muted-foreground mt-1">The Feasibility Gate must be signed off before a Statement of Work can be generated.</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <div className="space-y-6">

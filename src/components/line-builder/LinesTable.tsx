@@ -2,14 +2,16 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Plus, Trash2, Eye, Edit, Download } from "lucide-react";
+import { Loader2, Plus, Trash2, Eye, Edit, Download, List, Layers } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { LineVisualization } from "./LineVisualization";
 import { exportLine, downloadLineExport } from "@/lib/lineExportService";
 import { useQueryClient } from "@tanstack/react-query";
-
+import { MultiLineEditor } from "./MultiLineEditor";
+import { lineWizardConfig, solutionsLineWizardConfig } from "./config/wizardConfig";
 interface Line {
   id: string;
   line_name: string;
@@ -52,8 +54,20 @@ export const LinesTable: React.FC<LinesTableProps> = ({
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const [editLineId, setEditLineId] = useState<string | undefined>(undefined);
   const [exportingLineId, setExportingLineId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"wizard" | "multi">(() => {
+    return (localStorage.getItem("lines-view-mode") as "wizard" | "multi") || "wizard";
+  });
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const handleViewModeChange = (value: string) => {
+    if (value === "wizard" || value === "multi") {
+      setViewMode(value);
+      localStorage.setItem("lines-view-mode", value);
+    }
+  };
+
+  const wizardConfig = projectType === "implementation" ? lineWizardConfig : solutionsLineWizardConfig;
 
   useEffect(() => {
     fetchLines();
@@ -174,6 +188,33 @@ export const LinesTable: React.FC<LinesTableProps> = ({
     ? { projectId, editLineId }
     : { solutionsProjectId: projectId, editLineId };
 
+  if (viewMode === "multi") {
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-end">
+          <ToggleGroup type="single" value={viewMode} onValueChange={handleViewModeChange} size="sm">
+            <ToggleGroupItem value="wizard" aria-label="Table View">
+              <List className="h-4 w-4 mr-1" />
+              Table
+            </ToggleGroupItem>
+            <ToggleGroupItem value="multi" aria-label="Multi-Line View">
+              <Layers className="h-4 w-4 mr-1" />
+              Multi-Line
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+        <MultiLineEditor
+          projectId={projectId}
+          projectType={projectType}
+          tableName={tableName}
+          projectIdField={projectIdField}
+          config={wizardConfig}
+          description={description}
+        />
+      </div>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -182,10 +223,22 @@ export const LinesTable: React.FC<LinesTableProps> = ({
             <CardTitle>Production Lines</CardTitle>
             <CardDescription>{description}</CardDescription>
           </div>
-          <Button onClick={handleCreateLine}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Line
-          </Button>
+          <div className="flex items-center gap-3">
+            <ToggleGroup type="single" value={viewMode} onValueChange={handleViewModeChange} size="sm">
+              <ToggleGroupItem value="wizard" aria-label="Table View">
+                <List className="h-4 w-4 mr-1" />
+                Table
+              </ToggleGroupItem>
+              <ToggleGroupItem value="multi" aria-label="Multi-Line View">
+                <Layers className="h-4 w-4 mr-1" />
+                Multi-Line
+              </ToggleGroupItem>
+            </ToggleGroup>
+            <Button onClick={handleCreateLine}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Line
+            </Button>
+          </div>
         </div>
       </CardHeader>
 

@@ -3,13 +3,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Loader2, Eye, Edit, Download, Info, CheckCircle2, AlertCircle, ChevronDown, ChevronRight, ListChecks } from "lucide-react";
+import { Loader2, Eye, Edit, Download, Info, CheckCircle2, AlertCircle, ChevronDown, ChevronRight, ListChecks, List, Layers } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { SolutionsLineWizard } from "@/components/solutions-line-builder/SolutionsLineWizard";
 import { LineVisualization } from "@/components/line-builder/LineVisualization";
+import { MultiLineEditor } from "@/components/line-builder/MultiLineEditor";
+import { solutionsLineWizardConfig } from "@/components/line-builder/config/wizardConfig";
 import { exportLine, downloadLineExport } from "@/lib/lineExportService";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLineCompleteness } from "@/pages/app/solutions/hooks/useLineCompleteness";
@@ -43,9 +46,19 @@ export const SolutionsLines: React.FC<SolutionsLinesProps> = ({ solutionsProject
   const [exportingLineId, setExportingLineId] = useState<string | null>(null);
   const [expandedLineId, setExpandedLineId] = useState<string | null>(null);
   const [showGaps, setShowGaps] = useState(true);
+  const [viewMode, setViewMode] = useState<"wizard" | "multi">(() => {
+    return (localStorage.getItem("lines-view-mode") as "wizard" | "multi") || "wizard";
+  });
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { results: completenessResults, loading: completenessLoading, refresh: refreshCompleteness } = useLineCompleteness(lines, solutionsProjectId);
+
+  const handleViewModeChange = (value: string) => {
+    if (value === "wizard" || value === "multi") {
+      setViewMode(value);
+      localStorage.setItem("lines-view-mode", value);
+    }
+  };
 
   const fetchLines = async () => {
     try {
@@ -218,6 +231,33 @@ export const SolutionsLines: React.FC<SolutionsLinesProps> = ({ solutionsProject
     return <LineVisualization lineId={selectedLineId} onBack={() => { setSelectedLineId(null); setTimeout(() => refreshCompleteness(), 500); }} />;
   }
 
+  if (viewMode === "multi") {
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-end">
+          <ToggleGroup type="single" value={viewMode} onValueChange={handleViewModeChange} size="sm">
+            <ToggleGroupItem value="wizard" aria-label="Table View">
+              <List className="h-4 w-4 mr-1" />
+              Table
+            </ToggleGroupItem>
+            <ToggleGroupItem value="multi" aria-label="Multi-Line View">
+              <Layers className="h-4 w-4 mr-1" />
+              Multi-Line
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+        <MultiLineEditor
+          projectId={solutionsProjectId}
+          projectType="solutions"
+          tableName="solutions_lines"
+          projectIdField="solutions_project_id"
+          config={solutionsLineWizardConfig}
+          description="Lines are managed in the Factory tab. Use Multi-Line view to configure all lines inline."
+        />
+      </div>
+    );
+  }
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between space-y-0">
@@ -227,15 +267,27 @@ export const SolutionsLines: React.FC<SolutionsLinesProps> = ({ solutionsProject
             Lines are managed in the Factory tab. Click edit to configure each line. Indicators show configuration completeness.
           </CardDescription>
         </div>
-        <Button
-          variant={showGaps ? "default" : "outline"}
-          size="sm"
-          onClick={() => setShowGaps(!showGaps)}
-          className="shrink-0"
-        >
-          <ListChecks className="h-4 w-4 mr-2" />
-          {showGaps ? "Hide Gaps" : "Show Gaps"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <ToggleGroup type="single" value={viewMode} onValueChange={handleViewModeChange} size="sm">
+            <ToggleGroupItem value="wizard" aria-label="Table View">
+              <List className="h-4 w-4 mr-1" />
+              Table
+            </ToggleGroupItem>
+            <ToggleGroupItem value="multi" aria-label="Multi-Line View">
+              <Layers className="h-4 w-4 mr-1" />
+              Multi-Line
+            </ToggleGroupItem>
+          </ToggleGroup>
+          <Button
+            variant={showGaps ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowGaps(!showGaps)}
+            className="shrink-0"
+          >
+            <ListChecks className="h-4 w-4 mr-2" />
+            {showGaps ? "Hide Gaps" : "Show Gaps"}
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {lines.length === 0 ? (

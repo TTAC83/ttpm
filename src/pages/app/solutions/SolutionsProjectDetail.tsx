@@ -30,6 +30,7 @@ import { SharedBlockersTab } from '@/components/shared/tabs/SharedBlockersTab';
 import { GanttChart } from '@/features/gantt/components/GanttChart';
 import { SolutionsSOW } from './tabs/SolutionsSOW';
 import { SolutionsInfrastructure } from './tabs/SolutionsInfrastructure';
+import { ProjectHardwareStatus } from '../projects/tabs/ProjectHardwareStatus';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTabCompleteness } from './hooks/useTabCompleteness';
 import { FeasibilityGateDialog } from '@/components/FeasibilityGateDialog';
@@ -184,7 +185,7 @@ export const SolutionsProjectDetail = () => {
 
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['overview', 'contract', 'team', 'account', 'hardware', 'factory', 'lines', 'wbs', 'hardware-summary'].includes(tab)) {
+    if (tab && ['overview', 'contract', 'team', 'account', 'hardware', 'factory', 'lines', 'wbs', 'hardware-summary', 'hardware-status'].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -361,6 +362,7 @@ export const SolutionsProjectDetail = () => {
             <span className="inline-flex items-center px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted-foreground/10 select-none">
               Readiness Gate
             </span>
+            <TabsTrigger value="hardware-status">Hardware Status</TabsTrigger>
           </TabsList>
 
           {/* Row 4 - Go Live Gate */}
@@ -473,6 +475,10 @@ export const SolutionsProjectDetail = () => {
               <p className="text-muted-foreground text-center py-8">Launch tab — coming soon</p>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="hardware-status" className="space-y-4">
+          <ProjectHardwareStatus />
         </TabsContent>
       </Tabs>
       <FeasibilityGateDialog

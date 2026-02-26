@@ -362,7 +362,12 @@ export const SolutionsProjectDetail = () => {
             <span className="inline-flex items-center px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted-foreground/10 select-none">
               Readiness Gate
             </span>
+            <TabsTrigger value="project-setup">Project Set-up</TabsTrigger>
+            <TabsTrigger value="portal-config">Portal Config</TabsTrigger>
             <TabsTrigger value="hardware-status">Hardware Config</TabsTrigger>
+            <TabsTrigger value="network-config">Network Config</TabsTrigger>
+            <TabsTrigger value="camera-validation">Camera Validation</TabsTrigger>
+            <TabsTrigger value="iot-validation">IoT Device Validation</TabsTrigger>
           </TabsList>
 
           {/* Row 4 - Go Live Gate */}
@@ -477,8 +482,48 @@ export const SolutionsProjectDetail = () => {
           </Card>
         </TabsContent>
 
+        <TabsContent value="project-setup" className="space-y-4">
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-muted-foreground text-center py-8">Project Set-up — coming soon</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="portal-config" className="space-y-4">
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-muted-foreground text-center py-8">Portal Config — coming soon</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="hardware-status" className="space-y-4">
           <ProjectHardwareStatus projectType="solutions" />
+        </TabsContent>
+
+        <TabsContent value="network-config" className="space-y-4">
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-muted-foreground text-center py-8">Network Config — coming soon</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="camera-validation" className="space-y-4">
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-muted-foreground text-center py-8">Camera Validation — coming soon</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="iot-validation" className="space-y-4">
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-muted-foreground text-center py-8">IoT Device Validation — coming soon</p>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
       <FeasibilityGateDialog

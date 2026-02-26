@@ -11,6 +11,7 @@ interface TabCompleteness {
   factoryHardware: boolean;
   infrastructure: boolean;
   factoryConfig: boolean;
+  team: boolean;
 }
 
 interface ProjectData {
@@ -44,6 +45,7 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
     factoryHardware: false,
     infrastructure: false,
     factoryConfig: false,
+    team: false,
   });
 
   useEffect(() => {
@@ -82,11 +84,20 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
     // Factory config: SKU count must be set and > 0
     const factoryConfigComplete = ((project as any).sow_sku_count ?? 0) > 0;
 
+    // Team: all 12 role fields must be assigned
+    const teamRoleFields = [
+      'salesperson', 'solutions_consultant', 'customer_lead', 'implementation_lead',
+      'account_manager', 'sales_lead', 'ai_iot_engineer', 'technical_project_lead',
+      'project_coordinator', 'tech_lead', 'tech_sponsor', 'vp_customer_success',
+    ];
+    const teamComplete = teamRoleFields.every(field => !!(project as any)[field]);
+
     setCompleteness(prev => ({
       ...prev,
       overview: overviewComplete,
       infrastructure: infraComplete,
       factoryConfig: factoryConfigComplete,
+      team: teamComplete,
     }));
 
     // Async checks

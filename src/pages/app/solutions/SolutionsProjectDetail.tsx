@@ -352,7 +352,7 @@ export const SolutionsProjectDetail = () => {
             <TabsTrigger value="hardware-summary">Hardware Summary</TabsTrigger>
             <TabsTrigger value="contract">Contract Info</TabsTrigger>
             <TabsTrigger value="account">Account Info</TabsTrigger>
-            <TabsTrigger value="team">Team</TabsTrigger>
+            <TabsTrigger value="team">Team <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.team ? 'bg-green-500' : 'bg-red-500'}`} /></TabsTrigger>
             <TabsTrigger value="sow">Generate SOW</TabsTrigger>
             <TabsTrigger value="launch">Launch</TabsTrigger>
           </TabsList>

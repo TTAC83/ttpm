@@ -15,7 +15,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { HardwareStatusDialog } from '@/components/HardwareStatusDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const stages: HardwareStage[] = ['ordered', 'configured', 'bench_tested', 'shipped', 'installed', 'validated'];
+const allStages: HardwareStage[] = ['ordered', 'configured', 'bench_tested', 'shipped', 'installed', 'validated'];
+const solutionsStages: HardwareStage[] = ['ordered', 'configured', 'bench_tested', 'shipped'];
 
 const stageLabels: Record<HardwareStage, string> = {
   ordered: 'Ordered',
@@ -165,12 +166,16 @@ export const ProjectHardwareStatus = ({ projectType = 'implementation' }: Projec
     );
   }
 
+  const stages = projectType === 'solutions' ? solutionsStages : allStages;
+
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Hardware Status Tracking</h2>
+        <h2 className="text-2xl font-bold tracking-tight">
+          {projectType === 'solutions' ? 'Hardware Config' : 'Hardware Status Tracking'}
+        </h2>
         <p className="text-muted-foreground">
-          Track the lifecycle status of all hardware components from ordering to validation
+          Track the lifecycle status of all hardware components from ordering to {projectType === 'solutions' ? 'shipping' : 'validation'}
         </p>
       </div>
 

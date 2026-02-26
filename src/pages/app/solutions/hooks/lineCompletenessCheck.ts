@@ -82,7 +82,7 @@ export async function checkLineCompleteness(
   ];
   for (const [label, value] of lineFields) {
     totalChecks++;
-    if (value && value !== 0) {
+    if (value !== null && value !== undefined && value !== "") {
       passedChecks++;
     } else {
       lineInfoGaps.push(label);

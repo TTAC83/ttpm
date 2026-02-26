@@ -1,31 +1,86 @@
 
 
-## Add Hardware Summary Completeness Indicator
+## Portal Config Checklist — Plan
 
-### What changes
+### Overview
 
-Add a red/green dot to the "Hardware Summary" tab trigger under the Sale & Launch Gate. The dot turns green when every hardware row has a customer price set, red otherwise.
+Add a checklist-based "Portal Config" tab with 15 predefined steps. Each step can be toggled complete/incomplete, is auto-assigned to the project's Implementation Lead (but changeable), and records who completed it and when. A green indicator appears on the tab when all 15 steps are done.
 
-### Technical details
+### Database Changes
 
-**File 1: `src/pages/app/solutions/hooks/useTabCompleteness.ts`**
+**New table: `portal_config_tasks`**
 
-- Add `hardwareSummary: boolean` to the `TabCompleteness` interface and initialize as `false`
-- In the `checkAsync` function, after the existing hardware queries, add a check: fetch all hardware items for the project (reusing the same data the `useHardwareSummary` hook would produce) and check that every item with a `hardware_master_id` has a corresponding entry in `solutions_hardware_customer_prices`. A simpler approach: query `solutions_hardware_customer_prices` for this project, count the entries, and compare against the count of distinct `hardware_master_id` values across line hardware (cameras, IoT devices, accessories) and direct hardware (`project_iot_requirements`). If all master IDs have a customer price row, mark complete.
-- Specifically:
-  1. Collect all `hardware_master_id` values from cameras (via `hardware_master` lookup), camera accessories (light, PLC, HMI), IoT devices, and direct requirements — the same sources `useHardwareSummary` uses
-  2. Query `solutions_hardware_customer_prices` for this project to get the set of master IDs that have prices
-  3. Set `hardwareSummary = true` only if every collected master ID has a matching customer price entry, and there is at least one hardware item
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid PK | default gen_random_uuid() |
+| solutions_project_id | uuid FK → solutions_projects.id | NOT NULL, ON DELETE CASCADE |
+| task_key | text NOT NULL | e.g. `portal_creation`, `initial_user_access`, etc. |
+| is_complete | boolean | default false |
+| assigned_to | uuid FK → profiles.user_id | nullable, auto-filled with implementation_lead |
+| completed_by | uuid | nullable, set when marked complete |
+| completed_at | timestamptz | nullable, set when marked complete |
+| created_at | timestamptz | default now() |
+| updated_at | timestamptz | default now() |
+| UNIQUE(solutions_project_id, task_key) | | prevents duplicates |
 
-**File 2: `src/pages/app/solutions/SolutionsProjectDetail.tsx`**
+RLS: internal users full access (matching existing patterns).
 
-- On the Hardware Summary `TabsTrigger` (line 352), append the dot indicator:
+A trigger or the application will seed all 15 rows when the tab is first accessed (if none exist yet), assigning them to the project's `implementation_lead`.
+
+The 15 task keys:
+1. `portal_creation`
+2. `initial_user_access`
+3. `factory`
+4. `shifts`
+5. `groups`
+6. `lines`
+7. `positions`
+8. `equipments`
+9. `downtime_categories`
+10. `downtime_reasons`
+11. `rejection_reasons`
+12. `crews`
+13. `crew_rota`
+14. `vision_projects`
+15. `initial_daily_report`
+
+### Frontend Changes
+
+**New component: `src/pages/app/solutions/tabs/SolutionsPortalConfig.tsx`**
+
+- Accepts `projectId` and `implementationLeadId` props
+- On mount, queries `portal_config_tasks` for this project
+- If no rows exist, seeds all 15 with `assigned_to = implementationLeadId`
+- Renders a card with a table/list of all 15 tasks showing:
+  - Checkbox (toggle complete/incomplete)
+  - Task name (human-readable label)
+  - Assigned to (dropdown of internal users, changeable)
+  - Completed by (name) and completed at (date) — shown when complete
+- On checkbox toggle:
+  - If checking: sets `is_complete = true`, `completed_by = current user`, `completed_at = now()`
+  - If unchecking: sets `is_complete = false`, `completed_by = null`, `completed_at = null`
+- On assignee change: updates `assigned_to`
+
+**`src/pages/app/solutions/SolutionsProjectDetail.tsx`**
+
+- Import and render `SolutionsPortalConfig` inside the `portal-config` TabsContent (replacing placeholder)
+- Add completeness dot to the Portal Config TabsTrigger:
   ```tsx
-  <TabsTrigger value="hardware-summary">
-    Hardware Summary
-    <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.hardwareSummary ? 'bg-green-500' : 'bg-red-500'}`} />
+  <TabsTrigger value="portal-config">
+    Portal Config
+    <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.portalConfig ? 'bg-green-500' : 'bg-red-500'}`} />
   </TabsTrigger>
   ```
 
-No new files. No database changes. No new dependencies.
+**`src/pages/app/solutions/hooks/useTabCompleteness.ts`**
+
+- Add `portalConfig: boolean` to the interface and initial state
+- In `checkAsync`, query `portal_config_tasks` for this project, check that rows exist and all have `is_complete = true`
+- Include `portalConfig` in the final `setCompleteness` call
+
+### Technical Notes
+
+- The seed-on-first-access pattern avoids needing a migration to backfill existing projects
+- The `updated_at` trigger (`set_timestamp_updated_at`) will be attached to the new table
+- Task keys are fixed strings — the display labels are mapped in the frontend component
 

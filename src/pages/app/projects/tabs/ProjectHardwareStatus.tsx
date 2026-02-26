@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useProjectHardwareSummary } from '@/hooks/useProjectHardwareSummary';
+import { useHardwareSummary } from '@/hooks/useHardwareSummary';
 import {
   fetchHardwareStatuses,
   upsertHardwareStatus,
@@ -36,10 +37,17 @@ interface StatusDialogState {
   currentStatus?: HardwareStatusRecord;
 }
 
-export const ProjectHardwareStatus = () => {
+interface ProjectHardwareStatusProps {
+  projectType?: 'implementation' | 'solutions';
+}
+
+export const ProjectHardwareStatus = ({ projectType = 'implementation' }: ProjectHardwareStatusProps) => {
   const { id: projectId } = useParams();
   const { toast } = useToast();
-  const { hardware, loading: hardwareLoading } = useProjectHardwareSummary(projectId!);
+  const implHw = useProjectHardwareSummary(projectType === 'implementation' ? projectId! : '__skip__');
+  const solHw = useHardwareSummary(projectType === 'solutions' ? projectId! : '__skip__');
+  const hardware = projectType === 'solutions' ? solHw.hardware : implHw.hardware;
+  const hardwareLoading = projectType === 'solutions' ? solHw.loading : implHw.loading;
   const [statuses, setStatuses] = useState<HardwareStatusRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogState, setDialogState] = useState<StatusDialogState>({

@@ -478,7 +478,7 @@ export const SolutionsProjectDetail = () => {
         </TabsContent>
 
         <TabsContent value="hardware-status" className="space-y-4">
-          <ProjectHardwareStatus />
+          <ProjectHardwareStatus projectType="solutions" />
         </TabsContent>
       </Tabs>
       <FeasibilityGateDialog

@@ -2995,6 +2995,57 @@ export type Database = {
         }
         Relationships: []
       }
+      portal_config_tasks: {
+        Row: {
+          assigned_to: string | null
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          id: string
+          is_complete: boolean
+          solutions_project_id: string
+          task_key: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          is_complete?: boolean
+          solutions_project_id: string
+          task_key: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          is_complete?: boolean
+          solutions_project_id?: string
+          task_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_config_tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "portal_config_tasks_solutions_project_id_fkey"
+            columns: ["solutions_project_id"]
+            isOneToOne: false
+            referencedRelation: "solutions_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       position_titles: {
         Row: {
           created_at: string

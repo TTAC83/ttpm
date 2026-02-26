@@ -30,6 +30,7 @@ import { SharedBlockersTab } from '@/components/shared/tabs/SharedBlockersTab';
 import { GanttChart } from '@/features/gantt/components/GanttChart';
 import { SolutionsSOW } from './tabs/SolutionsSOW';
 import { SolutionsInfrastructure } from './tabs/SolutionsInfrastructure';
+import { SolutionsPortalConfig } from './tabs/SolutionsPortalConfig';
 import { ProjectHardwareStatus } from '../projects/tabs/ProjectHardwareStatus';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTabCompleteness } from './hooks/useTabCompleteness';
@@ -363,7 +364,7 @@ export const SolutionsProjectDetail = () => {
               Readiness Gate
             </span>
             <TabsTrigger value="project-setup">Project Set-up</TabsTrigger>
-            <TabsTrigger value="portal-config">Portal Config</TabsTrigger>
+            <TabsTrigger value="portal-config">Portal Config <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.portalConfig ? 'bg-green-500' : 'bg-red-500'}`} /></TabsTrigger>
             <TabsTrigger value="hardware-status">Hardware Config</TabsTrigger>
             <TabsTrigger value="network-config">Network Config</TabsTrigger>
             <TabsTrigger value="camera-validation">Camera Validation</TabsTrigger>
@@ -491,11 +492,11 @@ export const SolutionsProjectDetail = () => {
         </TabsContent>
 
         <TabsContent value="portal-config" className="space-y-4">
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-muted-foreground text-center py-8">Portal Config — coming soon</p>
-            </CardContent>
-          </Card>
+          <SolutionsPortalConfig
+            projectId={project.id}
+            implementationLeadId={(project as any).implementation_lead || null}
+            onCompletenessChange={() => setCompletenessRefreshKey(k => k + 1)}
+          />
         </TabsContent>
 
         <TabsContent value="hardware-status" className="space-y-4">

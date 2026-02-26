@@ -362,7 +362,7 @@ export const SolutionsProjectDetail = () => {
             <span className="inline-flex items-center px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted-foreground/10 select-none">
               Readiness Gate
             </span>
-            <TabsTrigger value="hardware-status">Hardware Status</TabsTrigger>
+            <TabsTrigger value="hardware-status">Hardware Config</TabsTrigger>
           </TabsList>
 
           {/* Row 4 - Go Live Gate */}

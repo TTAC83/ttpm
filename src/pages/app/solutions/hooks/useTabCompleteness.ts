@@ -14,6 +14,7 @@ interface TabCompleteness {
   team: boolean;
   hardwareSummary: boolean;
   contract: boolean;
+  portalConfig: boolean;
 }
 
 interface ProjectData {
@@ -50,6 +51,7 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
     team: false,
     hardwareSummary: false,
     contract: false,
+    portalConfig: false,
   });
 
   useEffect(() => {
@@ -126,7 +128,7 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
 
     // Async checks
     const checkAsync = async () => {
-      const [contactsRes, portalRes, linesRes, productGapsRes] = await Promise.all([
+      const [contactsRes, portalRes, linesRes, productGapsRes, portalConfigRes] = await Promise.all([
         supabase
           .from('contact_solutions_projects')
           .select('id', { count: 'exact', head: true })
@@ -145,6 +147,10 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
           .select('id', { count: 'exact', head: true })
           .eq('solutions_project_id', project.id)
           .is('resolved_at', null),
+        supabase
+          .from('portal_config_tasks')
+          .select('is_complete')
+          .eq('solutions_project_id', project.id),
       ]);
 
       const contactsComplete = (contactsRes.count ?? 0) > 0;
@@ -335,6 +341,10 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
         hardwareSummaryComplete = [...allMasterIds].every(id => pricedIds.has(id));
       }
 
+      // Portal config completeness
+      const portalConfigRows = portalConfigRes.data || [];
+      const portalConfigComplete = portalConfigRows.length > 0 && portalConfigRows.every((r: any) => r.is_complete);
+
       setCompleteness(prev => ({
         ...prev,
         overview: overviewComplete,
@@ -344,6 +354,7 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
         featureRequirements: featureRequirementsComplete,
         factoryHardware: factoryHardwareComplete,
         hardwareSummary: hardwareSummaryComplete,
+        portalConfig: portalConfigComplete,
       }));
     };
 

@@ -13,6 +13,7 @@ interface TabCompleteness {
   factoryConfig: boolean;
   team: boolean;
   hardwareSummary: boolean;
+  contract: boolean;
 }
 
 interface ProjectData {
@@ -48,6 +49,7 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
     factoryConfig: false,
     team: false,
     hardwareSummary: false,
+    contract: false,
   });
 
   useEffect(() => {
@@ -94,12 +96,32 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
     ];
     const teamComplete = teamRoleFields.every(field => !!(project as any)[field]);
 
+    // Contract: all contract fields must be filled
+    const contractFields = [
+      'contract_signed_date', 'contract_start_date', 'contract_end_date',
+      'billing_terms', 'contracted_lines', 'hardware_fee', 'services_fee',
+      'arr', 'mrr', 'payment_terms_days', 'contracted_days',
+    ];
+    let contractComplete = contractFields.every(field => {
+      const val = (project as any)[field];
+      return val !== null && val !== undefined && val !== '';
+    });
+    // If break clause enabled, require its sub-fields
+    if (contractComplete && p.break_clause_enabled) {
+      contractComplete = !!(p.break_clause_project_date && p.break_clause_key_points_md?.trim());
+    }
+    // If standard_terms is false, require deviation_of_terms
+    if (contractComplete && p.standard_terms === false) {
+      contractComplete = !!(p.deviation_of_terms?.trim());
+    }
+
     setCompleteness(prev => ({
       ...prev,
       overview: overviewComplete,
       infrastructure: infraComplete,
       factoryConfig: factoryConfigComplete,
       team: teamComplete,
+      contract: contractComplete,
     }));
 
     // Async checks

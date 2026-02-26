@@ -12,6 +12,7 @@ interface TabCompleteness {
   infrastructure: boolean;
   factoryConfig: boolean;
   team: boolean;
+  hardwareSummary: boolean;
 }
 
 interface ProjectData {
@@ -46,6 +47,7 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
     infrastructure: false,
     factoryConfig: false,
     team: false,
+    hardwareSummary: false,
   });
 
   useEffect(() => {
@@ -266,6 +268,51 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
         }
       }
 
+      // Hardware Summary completeness: every hardware item must have a customer price
+      let hardwareSummaryComplete = false;
+      const allMasterIds = new Set<string>();
+
+      // Collect hardware_master_ids from cameras
+      if (solLineIds.length > 0) {
+        const { data: camData } = await supabase
+          .from('cameras')
+          .select('camera_type, light_id, plc_master_id, hmi_master_id, equipment!inner(solutions_line_id)')
+          .in('equipment.solutions_line_id', solLineIds);
+        (camData as any[] || []).forEach((c: any) => {
+          if (c.camera_type) allMasterIds.add(c.camera_type);
+          if (c.light_id) allMasterIds.add(c.light_id);
+          if (c.plc_master_id) allMasterIds.add(c.plc_master_id);
+          if (c.hmi_master_id) allMasterIds.add(c.hmi_master_id);
+        });
+
+        const { data: iotDevData } = await supabase
+          .from('iot_devices')
+          .select('hardware_master_id, equipment!inner(solutions_line_id)')
+          .in('equipment.solutions_line_id', solLineIds);
+        (iotDevData as any[] || []).forEach((d: any) => {
+          if (d.hardware_master_id) allMasterIds.add(d.hardware_master_id);
+        });
+      }
+
+      // Collect from direct requirements
+      const { data: directReqs } = await supabase
+        .from('project_iot_requirements')
+        .select('hardware_master_id')
+        .eq('solutions_project_id', project.id);
+      (directReqs || []).forEach(r => {
+        if (r.hardware_master_id) allMasterIds.add(r.hardware_master_id);
+      });
+
+      if (allMasterIds.size > 0) {
+        const { data: pricedRows } = await (supabase as any)
+          .from('solutions_hardware_customer_prices')
+          .select('hardware_master_id')
+          .eq('solutions_project_id', project.id)
+          .in('hardware_master_id', [...allMasterIds]);
+        const pricedIds = new Set((pricedRows || []).map((r: any) => r.hardware_master_id));
+        hardwareSummaryComplete = [...allMasterIds].every(id => pricedIds.has(id));
+      }
+
       setCompleteness(prev => ({
         ...prev,
         overview: overviewComplete,
@@ -274,6 +321,7 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
         lines: linesComplete,
         featureRequirements: featureRequirementsComplete,
         factoryHardware: factoryHardwareComplete,
+        hardwareSummary: hardwareSummaryComplete,
       }));
     };
 

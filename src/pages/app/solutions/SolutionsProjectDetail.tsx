@@ -349,7 +349,7 @@ export const SolutionsProjectDetail = () => {
             <span className="inline-flex items-center px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted-foreground/10 select-none">
               Sale &amp; Launch Gate
             </span>
-            <TabsTrigger value="hardware-summary">Hardware Summary</TabsTrigger>
+            <TabsTrigger value="hardware-summary">Hardware Summary <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.hardwareSummary ? 'bg-green-500' : 'bg-red-500'}`} /></TabsTrigger>
             <TabsTrigger value="contract">Contract Info</TabsTrigger>
             <TabsTrigger value="account">Account Info</TabsTrigger>
             <TabsTrigger value="team">Team <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.team ? 'bg-green-500' : 'bg-red-500'}`} /></TabsTrigger>

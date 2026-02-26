@@ -173,7 +173,7 @@ export const SolutionsLines: React.FC<SolutionsLinesProps> = ({ solutionsProject
     }
   };
 
-  useEffect(() => { fetchLines(); }, [solutionsProjectId]);
+  useEffect(() => { fetchLines(); }, [solutionsProjectId, viewMode]);
 
   const handleEditLine = (lineId: string) => {
     setEditLineId(lineId);

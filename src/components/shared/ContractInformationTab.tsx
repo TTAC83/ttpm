@@ -40,6 +40,8 @@ export const ContractInformationTab = ({ data, onUpdate, type }: ContractInforma
     auto_renewal: data.auto_renewal ?? true,
     standard_terms: data.standard_terms ?? true,
     deviation_of_terms: data.deviation_of_terms || '',
+    capex: data.capex || false,
+    capex_fee: data.capex_fee?.toString() || '',
   });
 
   const [contractedLinesError, setContractedLinesError] = useState<string>('');
@@ -51,6 +53,7 @@ export const ContractInformationTab = ({ data, onUpdate, type }: ContractInforma
   const [paymentTermsDaysError, setPaymentTermsDaysError] = useState<string>('');
   const [contractedDaysError, setContractedDaysError] = useState<string>('');
   const [deviationOfTermsError, setDeviationOfTermsError] = useState<string>('');
+  const [capexFeeError, setCapexFeeError] = useState<string>('');
 
   const handleSave = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -65,6 +68,7 @@ export const ContractInformationTab = ({ data, onUpdate, type }: ContractInforma
     setPaymentTermsDaysError("");
     setContractedDaysError("");
     setDeviationOfTermsError("");
+    setCapexFeeError("");
     
     let hasErrors = false;
     
@@ -80,10 +84,18 @@ export const ContractInformationTab = ({ data, onUpdate, type }: ContractInforma
       hasErrors = true;
     }
     
-    if (formData.hardware_fee) {
+    if (!formData.capex && formData.hardware_fee) {
       const fee = parseFloat(formData.hardware_fee);
       if (isNaN(fee) || fee < 0) {
         setHardwareFeeError("Hardware Fee must be a number ≥ 0");
+        hasErrors = true;
+      }
+    }
+    
+    if (formData.capex && formData.capex_fee) {
+      const fee = parseFloat(formData.capex_fee);
+      if (isNaN(fee) || fee < 0) {
+        setCapexFeeError("Capex Fee must be a number ≥ 0");
         hasErrors = true;
       }
     }
@@ -168,7 +180,9 @@ export const ContractInformationTab = ({ data, onUpdate, type }: ContractInforma
         break_clause_project_date: formData.break_clause_enabled ? formData.break_clause_project_date || null : null,
         break_clause_key_points_md: formData.break_clause_enabled ? formData.break_clause_key_points_md || null : null,
         contracted_lines: formData.contracted_lines ? parseInt(formData.contracted_lines) : null,
-        hardware_fee: formData.hardware_fee ? parseFloat(formData.hardware_fee) : null,
+        hardware_fee: formData.capex ? null : (formData.hardware_fee ? parseFloat(formData.hardware_fee) : null),
+        capex: formData.capex,
+        capex_fee: formData.capex ? (formData.capex_fee ? parseFloat(formData.capex_fee) : null) : null,
         services_fee: formData.services_fee ? parseFloat(formData.services_fee) : null,
         arr: formData.arr ? parseFloat(formData.arr) : null,
         mrr: formData.mrr ? parseFloat(formData.mrr) : null,
@@ -234,6 +248,8 @@ export const ContractInformationTab = ({ data, onUpdate, type }: ContractInforma
       auto_renewal: data.auto_renewal ?? true,
       standard_terms: data.standard_terms ?? true,
       deviation_of_terms: data.deviation_of_terms || '',
+      capex: data.capex || false,
+      capex_fee: data.capex_fee?.toString() || '',
     });
     setContractedLinesError('');
     setBillingTermsError('');
@@ -244,6 +260,7 @@ export const ContractInformationTab = ({ data, onUpdate, type }: ContractInforma
     setPaymentTermsDaysError('');
     setContractedDaysError('');
     setDeviationOfTermsError('');
+    setCapexFeeError('');
     setEditing(false);
   };
 
@@ -402,12 +419,14 @@ export const ContractInformationTab = ({ data, onUpdate, type }: ContractInforma
                     type="number"
                     step="0.01"
                     min="0"
-                    value={formData.hardware_fee}
+                    value={formData.capex ? '' : formData.hardware_fee}
                     onChange={(e) => {
                       setFormData(prev => ({ ...prev, hardware_fee: e.target.value }));
                       if (hardwareFeeError) setHardwareFeeError("");
                     }}
                     className={hardwareFeeError ? "border-destructive" : ""}
+                    disabled={formData.capex}
+                    placeholder={formData.capex ? 'N/A (Capex)' : ''}
                   />
                   {hardwareFeeError && (
                     <p className="text-sm text-destructive">{hardwareFeeError}</p>
@@ -470,6 +489,38 @@ export const ContractInformationTab = ({ data, onUpdate, type }: ContractInforma
                     <p className="text-sm text-destructive">{mrrError}</p>
                   )}
                 </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="capex"
+                    checked={formData.capex}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, capex: checked }))}
+                  />
+                  <Label htmlFor="capex" className="cursor-pointer">Capex</Label>
+                </div>
+                
+                {formData.capex && (
+                  <div className="space-y-2">
+                    <Label htmlFor="capex_fee">Capex Fee (£)</Label>
+                    <Input
+                      id="capex_fee"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.capex_fee}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, capex_fee: e.target.value }));
+                        if (capexFeeError) setCapexFeeError("");
+                      }}
+                      className={capexFeeError ? "border-destructive" : ""}
+                    />
+                    {capexFeeError && (
+                      <p className="text-sm text-destructive">{capexFeeError}</p>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-4">
@@ -603,7 +654,7 @@ export const ContractInformationTab = ({ data, onUpdate, type }: ContractInforma
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Hardware Fee</p>
-                  <p className="text-sm">{formData.hardware_fee ? `£${formData.hardware_fee}` : 'Not set'}</p>
+                  <p className="text-sm">{formData.capex ? 'N/A (Capex)' : (formData.hardware_fee ? `£${formData.hardware_fee}` : 'Not set')}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Services Fee</p>
@@ -617,6 +668,17 @@ export const ContractInformationTab = ({ data, onUpdate, type }: ContractInforma
                   <p className="text-sm font-medium text-muted-foreground">MRR</p>
                   <p className="text-sm">{formData.mrr ? `£${formData.mrr}` : 'Not set'}</p>
                 </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Capex</p>
+                <p className="text-sm">{formData.capex ? 'Yes' : 'No'}</p>
+                {formData.capex && formData.capex_fee && (
+                  <div className="mt-2">
+                    <p className="text-sm font-medium text-muted-foreground">Capex Fee</p>
+                    <p className="text-sm">£{formData.capex_fee}</p>
+                  </div>
+                )}
               </div>
 
               <div>

@@ -4541,6 +4541,8 @@ export type Database = {
           break_clause_enabled: boolean | null
           break_clause_key_points_md: string | null
           break_clause_project_date: string | null
+          capex: boolean | null
+          capex_fee: number | null
           case_study: boolean | null
           company_id: string
           contract_end_date: string | null
@@ -4650,6 +4652,8 @@ export type Database = {
           break_clause_enabled?: boolean | null
           break_clause_key_points_md?: string | null
           break_clause_project_date?: string | null
+          capex?: boolean | null
+          capex_fee?: number | null
           case_study?: boolean | null
           company_id: string
           contract_end_date?: string | null
@@ -4759,6 +4763,8 @@ export type Database = {
           break_clause_enabled?: boolean | null
           break_clause_key_points_md?: string | null
           break_clause_project_date?: string | null
+          capex?: boolean | null
+          capex_fee?: number | null
           case_study?: boolean | null
           company_id?: string
           contract_end_date?: string | null

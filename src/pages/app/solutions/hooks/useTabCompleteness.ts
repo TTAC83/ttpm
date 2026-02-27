@@ -104,7 +104,12 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
       'billing_terms', 'contracted_lines', 'hardware_fee', 'services_fee',
       'arr', 'mrr', 'payment_terms_days', 'contracted_days',
     ];
-    let contractComplete = contractFields.every(field => {
+    // When capex is enabled, require capex_fee instead of hardware_fee
+    const isCapex = !!(project as any).capex;
+    const effectiveContractFields = isCapex
+      ? contractFields.map(f => f === 'hardware_fee' ? 'capex_fee' : f)
+      : contractFields;
+    let contractComplete = effectiveContractFields.every(field => {
       const val = (project as any)[field];
       return val !== null && val !== undefined && val !== '';
     });

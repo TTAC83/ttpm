@@ -105,7 +105,7 @@ serve(async (req) => {
     if (rpcError) {
       console.error('Error updating user:', rpcError);
       return new Response(
-        JSON.stringify({ error: rpcError.message }),
+        JSON.stringify({ error: 'Failed to update user. Please try again or contact support.' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

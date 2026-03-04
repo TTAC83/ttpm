@@ -77,7 +77,7 @@ serve(async (req) => {
     if (profileError) {
       console.error('Profile error:', profileError);
       return new Response(
-        JSON.stringify({ error: 'Failed to check user permissions: ' + profileError.message }),
+        JSON.stringify({ error: 'Failed to check user permissions' }),
         { 
           status: 403, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

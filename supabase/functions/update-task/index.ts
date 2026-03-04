@@ -55,9 +55,18 @@ serve(async (req) => {
       );
     }
 
-    const body: UpdateTaskRequest = await req.json();
-    
-    if (!body.id) {
+    let body: UpdateTaskRequest;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate required fields and types
+    if (!body.id || typeof body.id !== 'string') {
       return new Response(
         JSON.stringify({ error: 'Task ID is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -74,9 +83,9 @@ serve(async (req) => {
       .single();
 
     if (fetchError) {
-      console.log('Fetch error:', fetchError);
+      console.error('Fetch error:', fetchError);
       return new Response(
-        JSON.stringify({ error: 'Task not found', details: fetchError.message }),
+        JSON.stringify({ error: 'Task not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -145,7 +154,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Function error:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error', details: error.message }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

@@ -93,13 +93,15 @@ export const Profile = () => {
 
       if (uploadError) throw uploadError;
 
-      // Get the public URL
-      const { data: { publicUrl } } = supabase.storage
+      // Create a signed URL for the avatar (bucket is private)
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from('avatars')
-        .getPublicUrl(fileName);
+        .createSignedUrl(fileName, 60 * 60 * 24 * 365); // 1 year
 
-      // Update the profile with the new avatar URL
-      await updateProfile({ avatar_url: publicUrl });
+      if (signedUrlError) throw signedUrlError;
+
+      // Update the profile with the signed URL
+      await updateProfile({ avatar_url: signedUrlData.signedUrl });
 
       toast({
         title: "Avatar Updated",

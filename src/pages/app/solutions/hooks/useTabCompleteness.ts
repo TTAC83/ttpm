@@ -151,7 +151,7 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
           .from('product_gaps')
           .select('id', { count: 'exact', head: true })
           .eq('solutions_project_id', project.id)
-          .is('resolved_at', null),
+          .is('closed_at', null),
         supabase
           .from('portal_config_tasks')
           .select('is_complete')
@@ -363,7 +363,9 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
       }));
     };
 
-    checkAsync();
+    checkAsync().catch(err => {
+      console.error('useTabCompleteness async check failed:', err);
+    });
   }, [project, refreshKey]);
 
   return completeness;

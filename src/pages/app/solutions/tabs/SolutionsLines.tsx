@@ -290,6 +290,57 @@ export const SolutionsLines: React.FC<SolutionsLinesProps> = ({ solutionsProject
         </div>
       </CardHeader>
       <CardContent>
+        {/* Consolidated Configuration Gaps Summary */}
+        {showGaps && !completenessLoading && (() => {
+          const allGaps: { lineName: string; category: string; issue: string }[] = [];
+          lines.forEach((line) => {
+            const result = completenessResults[line.id];
+            if (result && result.gaps.length > 0) {
+              result.gaps.forEach((gap) => {
+                gap.items.forEach((item) => {
+                  allGaps.push({ lineName: line.line_name, category: gap.category, issue: item });
+                });
+              });
+            }
+          });
+          if (allGaps.length === 0) return null;
+
+          // Group by line for summary counts
+          const lineGapCounts: Record<string, number> = {};
+          allGaps.forEach(g => {
+            lineGapCounts[g.lineName] = (lineGapCounts[g.lineName] || 0) + 1;
+          });
+
+          return (
+            <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/5 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <AlertCircle className="h-4 w-4 text-destructive" />
+                <h4 className="text-sm font-semibold">Configuration Gaps</h4>
+                <Badge variant="destructive" className="ml-1">{allGaps.length}</Badge>
+              </div>
+              <div className="max-h-[300px] overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs">Line</TableHead>
+                      <TableHead className="text-xs">Category</TableHead>
+                      <TableHead className="text-xs">Issue</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {allGaps.map((gap, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="text-xs font-medium">{gap.lineName}</TableCell>
+                        <TableCell className="text-xs">{gap.category}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{gap.issue}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          );
+        })()}
         {lines.length === 0 ? (
           <div className="text-center py-8">
             <Info className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />

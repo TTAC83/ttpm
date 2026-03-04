@@ -66,8 +66,31 @@ serve(async (req) => {
 
     console.log('User verified:', user.id);
 
-    const body: CreateActionRequest = await req.json();
-    console.log('Request body:', body);
+    let body: CreateActionRequest;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate field types and lengths
+    if (body.title && (typeof body.title !== 'string' || body.title.length > 500)) {
+      return new Response(
+        JSON.stringify({ error: 'Title must be a string of 500 characters or less' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    if (body.details && (typeof body.details !== 'string' || body.details.length > 10000)) {
+      return new Response(
+        JSON.stringify({ error: 'Details must be 10000 characters or less' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Request body for action:', body.isUpdate ? 'update' : 'create', body.id || 'new');
     
     if (body.isUpdate && !body.id) {
       console.error('Missing action ID for update');
@@ -291,7 +314,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Function error:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error: ' + error.message }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

@@ -32,6 +32,7 @@ export const AccountInfoTab = ({ data, onUpdate, type }: AccountInfoTabProps) =>
     reference_call: data.reference_call || false,
     site_visit: data.site_visit || false,
     case_study: data.case_study || false,
+    logo_use: data.logo_use || false,
     reference_status: data.reference_status || '',
     expansion_opportunity: data.expansion_opportunity || '',
     total_sites: data.total_sites?.toString() || '',
@@ -60,6 +61,7 @@ export const AccountInfoTab = ({ data, onUpdate, type }: AccountInfoTabProps) =>
         reference_call: formData.reference_call,
         site_visit: formData.site_visit,
         case_study: formData.case_study,
+        logo_use: formData.logo_use,
         reference_status: formData.reference_status || null,
         expansion_opportunity: formData.expansion_opportunity || null,
         total_sites: formData.total_sites ? parseInt(formData.total_sites) : null,
@@ -109,6 +111,7 @@ export const AccountInfoTab = ({ data, onUpdate, type }: AccountInfoTabProps) =>
       reference_call: data.reference_call || false,
       site_visit: data.site_visit || false,
       case_study: data.case_study || false,
+      logo_use: data.logo_use || false,
       reference_status: data.reference_status || '',
       expansion_opportunity: data.expansion_opportunity || '',
       total_sites: data.total_sites?.toString() || '',
@@ -183,6 +186,15 @@ export const AccountInfoTab = ({ data, onUpdate, type }: AccountInfoTabProps) =>
                   />
                 </div>
 
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="logo_use">Logo Use</Label>
+                  <Switch
+                    id="logo_use"
+                    checked={formData.logo_use}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, logo_use: checked }))}
+                  />
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="reference_status">Reference Status</Label>
                   <Textarea
@@ -238,6 +250,14 @@ export const AccountInfoTab = ({ data, onUpdate, type }: AccountInfoTabProps) =>
                   <p className="font-medium">
                     <Badge variant={data.case_study ? "default" : "outline"}>
                       {data.case_study ? 'Yes' : 'No'}
+                    </Badge>
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Logo Use</p>
+                  <p className="font-medium">
+                    <Badge variant={data.logo_use ? "default" : "outline"}>
+                      {data.logo_use ? 'Yes' : 'No'}
                     </Badge>
                   </p>
                 </div>

@@ -47,8 +47,8 @@ export interface LineExportData {
         description?: string | null;
       } | null;
       measurements?: {
-        horizontal_fov?: number | null;
-        working_distance?: number | null;
+        horizontal_fov?: string | null;
+        working_distance?: string | null;
         smallest_text?: string | null;
       } | null;
       plc_outputs: Array<{

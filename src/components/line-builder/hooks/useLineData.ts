@@ -275,8 +275,8 @@ export function useLineData(config: WizardConfig) {
           if (camera.horizontal_fov || camera.working_distance || camera.smallest_text) {
             await supabase.from('camera_measurements').insert({
               camera_id: cameraData.id,
-              horizontal_fov: camera.horizontal_fov ? parseFloat(camera.horizontal_fov) : null,
-              working_distance: camera.working_distance ? parseFloat(camera.working_distance) : null,
+              horizontal_fov: camera.horizontal_fov || null,
+              working_distance: camera.working_distance || null,
               smallest_text: camera.smallest_text || null,
             });
           }

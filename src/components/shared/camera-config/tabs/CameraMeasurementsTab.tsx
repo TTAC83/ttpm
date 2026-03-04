@@ -15,20 +15,30 @@ export function CameraMeasurementsTab({ formData, updateField }: CameraMeasureme
         <Label htmlFor="horizontal-fov">Horizontal FOV (mm)</Label>
         <Input
           id="horizontal-fov"
-          type="number"
+          type="text"
           value={formData.horizontal_fov}
-          onChange={(e) => updateField("horizontal_fov", e.target.value)}
-          placeholder="Enter FOV in mm"
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val.toUpperCase() === 'TBC' || val === '' || /^\d*\.?\d*$/.test(val)) {
+              updateField("horizontal_fov", val.toUpperCase() === 'TBC' ? 'TBC' : val);
+            }
+          }}
+          placeholder="Enter FOV in mm or TBC"
         />
       </div>
       <div>
         <Label htmlFor="working-distance">Working Distance (mm)</Label>
         <Input
           id="working-distance"
-          type="number"
+          type="text"
           value={formData.working_distance}
-          onChange={(e) => updateField("working_distance", e.target.value)}
-          placeholder="Enter distance in mm"
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val.toUpperCase() === 'TBC' || val === '' || /^\d*\.?\d*$/.test(val)) {
+              updateField("working_distance", val.toUpperCase() === 'TBC' ? 'TBC' : val);
+            }
+          }}
+          placeholder="Enter distance in mm or TBC"
         />
       </div>
       <div>

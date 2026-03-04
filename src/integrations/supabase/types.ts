@@ -1028,29 +1028,29 @@ export type Database = {
         Row: {
           camera_id: string
           created_at: string
-          horizontal_fov: number | null
+          horizontal_fov: string | null
           id: string
           smallest_text: string | null
           updated_at: string
-          working_distance: number | null
+          working_distance: string | null
         }
         Insert: {
           camera_id: string
           created_at?: string
-          horizontal_fov?: number | null
+          horizontal_fov?: string | null
           id?: string
           smallest_text?: string | null
           updated_at?: string
-          working_distance?: number | null
+          working_distance?: string | null
         }
         Update: {
           camera_id?: string
           created_at?: string
-          horizontal_fov?: number | null
+          horizontal_fov?: string | null
           id?: string
           smallest_text?: string | null
           updated_at?: string
-          working_distance?: number | null
+          working_distance?: string | null
         }
         Relationships: [
           {

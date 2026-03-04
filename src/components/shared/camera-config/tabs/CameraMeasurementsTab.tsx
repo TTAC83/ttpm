@@ -19,8 +19,8 @@ export function CameraMeasurementsTab({ formData, updateField }: CameraMeasureme
           value={formData.horizontal_fov}
           onChange={(e) => {
             const val = e.target.value;
-            if (val.toUpperCase() === 'TBC' || val === '' || /^\d*\.?\d*$/.test(val)) {
-              updateField("horizontal_fov", val.toUpperCase() === 'TBC' ? 'TBC' : val);
+            if (val === '' || /^\d*\.?\d*$/.test(val) || /^t(b(c)?)?$/i.test(val)) {
+              updateField("horizontal_fov", /^tbc$/i.test(val) ? 'TBC' : val);
             }
           }}
           placeholder="Enter FOV in mm or TBC"
@@ -34,8 +34,8 @@ export function CameraMeasurementsTab({ formData, updateField }: CameraMeasureme
           value={formData.working_distance}
           onChange={(e) => {
             const val = e.target.value;
-            if (val.toUpperCase() === 'TBC' || val === '' || /^\d*\.?\d*$/.test(val)) {
-              updateField("working_distance", val.toUpperCase() === 'TBC' ? 'TBC' : val);
+            if (val === '' || /^\d*\.?\d*$/.test(val) || /^t(b(c)?)?$/i.test(val)) {
+              updateField("working_distance", /^tbc$/i.test(val) ? 'TBC' : val);
             }
           }}
           placeholder="Enter distance in mm or TBC"

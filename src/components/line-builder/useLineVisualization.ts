@@ -392,8 +392,8 @@ export const useLineVisualization = (lineId: string) => {
             .from('camera_measurements')
             .upsert({
               camera_id: editingCamera.id,
-              horizontal_fov: parseFloat(cleanFormData.horizontal_fov) || null,
-              working_distance: parseFloat(cleanFormData.working_distance) || null,
+              horizontal_fov: cleanFormData.horizontal_fov || null,
+              working_distance: cleanFormData.working_distance || null,
               smallest_text: cleanFormData.smallest_text || null,
             }, { onConflict: 'camera_id' });
 

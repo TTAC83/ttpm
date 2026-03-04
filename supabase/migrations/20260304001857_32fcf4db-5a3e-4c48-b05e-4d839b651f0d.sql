@@ -1,0 +1,2 @@
+ALTER TABLE public.camera_measurements ALTER COLUMN horizontal_fov TYPE text USING horizontal_fov::text;
+ALTER TABLE public.camera_measurements ALTER COLUMN working_distance TYPE text USING working_distance::text;

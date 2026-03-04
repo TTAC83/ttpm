@@ -1,34 +1,38 @@
 
 
-## Add Capex Field to Contract Information Tab
+## Plan: Restore Line Completion Percentages & Add Configuration Gaps Table
 
-### Database Migration
-Add two columns to `solutions_projects` table:
-- `capex` boolean DEFAULT false
-- `capex_fee` numeric DEFAULT null
+### Root Cause
 
-### Frontend Changes — `src/components/shared/ContractInformationTab.tsx`
+The `useTabCompleteness` hook (used on the Solutions project detail page) queries `product_gaps` with `.is('resolved_at', null)` on line 154 — but that column does not exist. The column is actually called `closed_at`. This causes the entire `Promise.all` in the async check to fail silently, which means:
+- The `lines` tab completeness dot never updates
+- Other tab dots (contacts, factory, feature requirements, etc.) also never update
+- The unhandled rejection may cause rendering issues that affect the inline percentage badges in the Lines tab
 
-**Form state** — add `capex` (boolean) and `capex_fee` (string) to `formData`, initialized from `data`.
+### Changes
 
-**Edit mode:**
-1. Add a Capex switch (similar to Break Clause pattern) between the fees grid and the Standard Terms section
-2. When Capex is ON:
-   - Grey out / disable the Hardware Fee input
-   - Show a new "Capex Fee (£)" number input
-3. When Capex is OFF:
-   - Hardware Fee behaves normally
-   - Capex Fee is hidden
+**1. Fix `useTabCompleteness.ts` — replace `resolved_at` with correct column**
 
-**Save handler:**
-- Include `capex` and `capex_fee` in the update payload
-- When `capex` is true, set `hardware_fee` to null (or keep existing — user preference, but greyed out means not editable)
-- Validate `capex_fee` ≥ 0 when capex is enabled
+Change line 154 from `.is('resolved_at', null)` to `.is('closed_at', null)` so the product gaps query succeeds and the entire async completeness check completes normally.
 
-**Read-only mode:**
-- Show "Capex: Yes/No"
-- When Yes, show Capex Fee value and show Hardware Fee as "N/A (Capex)"
+**2. Add error handling to `useTabCompleteness.ts`**
 
-### Completeness Hook — `useTabCompleteness.ts`
-- Update contract completeness: when `capex` is true, require `capex_fee` instead of `hardware_fee`
+Wrap the `checkAsync` call in a try-catch so that if any individual check fails, it doesn't silently break all other checks.
+
+**3. Add a consolidated Configuration Gaps summary table to the Lines tab**
+
+Add a summary card at the top of the `SolutionsLines.tsx` table view that aggregates all line gaps into a single table (similar to `FactoryConfigGaps`). This table will show:
+- Line name
+- Category (e.g., "Line Information", "Positions & Equipment", "Camera config")
+- Issue description
+- Total items remaining per line
+
+The table will appear when `showGaps` is toggled on and any line has gaps. It provides a single-glance view of all configuration gaps across all lines, complementing the existing per-line expandable gaps.
+
+### Technical Details
+
+| File | Change |
+|------|--------|
+| `src/pages/app/solutions/hooks/useTabCompleteness.ts` | Fix `resolved_at` → `closed_at`; add try-catch |
+| `src/pages/app/solutions/tabs/SolutionsLines.tsx` | Add consolidated gaps summary table above the lines table |
 

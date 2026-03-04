@@ -378,6 +378,7 @@ export type Database = {
           job_scheduling: string | null
           job_scheduling_notes: string | null
           lines_required: number | null
+          logo_use: boolean | null
           modules_and_features: string | null
           name: string
           notes: string | null
@@ -428,6 +429,7 @@ export type Database = {
           job_scheduling?: string | null
           job_scheduling_notes?: string | null
           lines_required?: number | null
+          logo_use?: boolean | null
           modules_and_features?: string | null
           name: string
           notes?: string | null
@@ -478,6 +480,7 @@ export type Database = {
           job_scheduling?: string | null
           job_scheduling_notes?: string | null
           lines_required?: number | null
+          logo_use?: boolean | null
           modules_and_features?: string | null
           name?: string
           notes?: string | null
@@ -3738,6 +3741,7 @@ export type Database = {
           job_scheduling_notes: string | null
           line_description: string | null
           lines_required: number | null
+          logo_use: boolean | null
           modules_and_features: string | null
           mrr: number | null
           name: string
@@ -3816,6 +3820,7 @@ export type Database = {
           job_scheduling_notes?: string | null
           line_description?: string | null
           lines_required?: number | null
+          logo_use?: boolean | null
           modules_and_features?: string | null
           mrr?: number | null
           name: string
@@ -3894,6 +3899,7 @@ export type Database = {
           job_scheduling_notes?: string | null
           line_description?: string | null
           lines_required?: number | null
+          logo_use?: boolean | null
           modules_and_features?: string | null
           mrr?: number | null
           name?: string
@@ -4594,6 +4600,7 @@ export type Database = {
           job_scheduling_notes: string | null
           line_description: string | null
           lines_required: number | null
+          logo_use: boolean | null
           modules_and_features: string | null
           mrr: number | null
           name: string
@@ -4705,6 +4712,7 @@ export type Database = {
           job_scheduling_notes?: string | null
           line_description?: string | null
           lines_required?: number | null
+          logo_use?: boolean | null
           modules_and_features?: string | null
           mrr?: number | null
           name?: string
@@ -4816,6 +4824,7 @@ export type Database = {
           job_scheduling_notes?: string | null
           line_description?: string | null
           lines_required?: number | null
+          logo_use?: boolean | null
           modules_and_features?: string | null
           mrr?: number | null
           name?: string

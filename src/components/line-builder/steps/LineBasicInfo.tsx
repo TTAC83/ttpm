@@ -27,6 +27,8 @@ interface LineBasicInfoProps {
 export const LineBasicInfo: React.FC<LineBasicInfoProps> = ({
   lineData,
   setLineData,
+  lineId,
+  tableName = "lines",
 }) => {
   const handleChange = (field: string, value: string | number) => {
     setLineData({ ...lineData, [field]: value });

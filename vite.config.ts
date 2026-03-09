@@ -28,7 +28,7 @@ export default defineConfig(({ mode }) => ({
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
         runtimeCaching: [
           {
-            urlPattern: ({ request, sameOrigin }) =>
+            urlPattern: ({ request, sameOrigin }: { request: Request; sameOrigin: boolean }) =>
               sameOrigin && ["style","script","image","font"].includes(request.destination),
             handler: "CacheFirst",
             options: {

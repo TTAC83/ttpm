@@ -28,7 +28,7 @@ export default defineConfig(({ mode }) => ({
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
         runtimeCaching: [
           {
-            urlPattern: ({ request, sameOrigin }) =>
+            urlPattern: ({ request, sameOrigin }: { request: Request; sameOrigin: boolean }) =>
               sameOrigin && ["style","script","image","font"].includes(request.destination),
             handler: "CacheFirst",
             options: {
@@ -37,7 +37,7 @@ export default defineConfig(({ mode }) => ({
             }
           },
           {
-            urlPattern: ({ url }) => url.pathname.startsWith("/rest/v1/"),
+            urlPattern: ({ url }: { url: URL }) => url.pathname.startsWith("/rest/v1/"),
             handler: "StaleWhileRevalidate",
             method: "GET",
             options: {
@@ -46,7 +46,7 @@ export default defineConfig(({ mode }) => ({
             }
           },
           {
-            urlPattern: ({ url }) => url.pathname.startsWith("/storage/v1/object/"),
+            urlPattern: ({ url }: { url: URL }) => url.pathname.startsWith("/storage/v1/object/"),
             handler: "StaleWhileRevalidate",
             method: "GET",
             options: {

@@ -46,7 +46,7 @@ export default defineConfig(({ mode }) => ({
             }
           },
           {
-            urlPattern: ({ url }) => url.pathname.startsWith("/storage/v1/object/"),
+            urlPattern: ({ url }: { url: URL }) => url.pathname.startsWith("/storage/v1/object/"),
             handler: "StaleWhileRevalidate",
             method: "GET",
             options: {

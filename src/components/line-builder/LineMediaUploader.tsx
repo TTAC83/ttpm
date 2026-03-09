@@ -143,7 +143,8 @@ export const LineMediaUploader: React.FC<LineMediaUploaderProps> = ({ lineId, ta
 
     const replay = async () => {
       setUploading(true);
-      for (const item of pending) {
+      const stored = await getPendingUploads(lineId);
+      for (const item of stored) {
         try {
           const sanitized = item.fileName.replace(/[^a-zA-Z0-9._-]/g, "_").substring(0, 100);
           const storagePath = `${lineId}/${item.id}-${sanitized}`;

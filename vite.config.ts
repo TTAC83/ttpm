@@ -56,7 +56,21 @@ export default defineConfig(({ mode }) => ({
           },
           {
             urlPattern: ({ url }: { url: URL }) =>
-              url.pathname.startsWith("/storage/v1/object/") && !url.pathname.includes("line-media"),
+              url.pathname.startsWith("/auth/v1/"),
+            handler: "NetworkOnly" as const,
+            method: "GET" as const,
+            options: { cacheName: "supabase-auth-v1" }
+          },
+          {
+            urlPattern: ({ url }: { url: URL }) =>
+              url.pathname.startsWith("/auth/v1/"),
+            handler: "NetworkOnly" as const,
+            method: "POST" as const,
+            options: { cacheName: "supabase-auth-post-v1" }
+          },
+          {
+            urlPattern: ({ url }: { url: URL }) =>
+              url.pathname.startsWith("/storage/v1/object/") && url.pathname.includes("line-media"),
             handler: "NetworkOnly" as const,
             method: "POST" as const,
             options: {

@@ -2770,6 +2770,63 @@ export type Database = {
         }
         Relationships: []
       }
+      line_media: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          file_type: string
+          id: string
+          line_id: string | null
+          solutions_line_id: string | null
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          file_type: string
+          id?: string
+          line_id?: string | null
+          solutions_line_id?: string | null
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          file_type?: string
+          id?: string
+          line_id?: string | null
+          solutions_line_id?: string | null
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "line_media_line_id_fkey"
+            columns: ["line_id"]
+            isOneToOne: false
+            referencedRelation: "lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "line_media_solutions_line_id_fkey"
+            columns: ["solutions_line_id"]
+            isOneToOne: false
+            referencedRelation: "solutions_lines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lines: {
         Row: {
           camera_count: number

@@ -16,6 +16,8 @@ interface LineBasicInfoProps {
     number_of_artworks?: number;
   };
   setLineData: (data: any) => void;
+  lineId?: string;
+  tableName?: "lines" | "solutions_lines";
 }
 
 export const LineBasicInfo: React.FC<LineBasicInfoProps> = ({

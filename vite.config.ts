@@ -22,8 +22,8 @@ export default defineConfig(({ mode }) => ({
         enabled: false
       },
       workbox: {
-        navigateFallback: "/",
-        navigateFallbackDenylist: [/^\/api\//, /^\/rest\//, /^\/storage\//],
+      navigateFallback: "/",
+        navigateFallbackDenylist: [/^\/api\//, /^\/rest\//, /^\/storage\//, /^\/~oauth/],
         globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
         runtimeCaching: [

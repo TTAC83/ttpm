@@ -37,7 +37,7 @@ export default defineConfig(({ mode }) => ({
             }
           },
           {
-            urlPattern: ({ url }) => url.pathname.startsWith("/rest/v1/"),
+            urlPattern: ({ url }: { url: URL }) => url.pathname.startsWith("/rest/v1/"),
             handler: "StaleWhileRevalidate",
             method: "GET",
             options: {

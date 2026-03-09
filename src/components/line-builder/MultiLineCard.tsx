@@ -179,7 +179,7 @@ export const MultiLineCard: React.FC<MultiLineCardProps> = ({
                     </CollapsibleTrigger>
                     <CollapsibleContent className="px-1 pb-2">
                       {key === "basic" && (
-                        <LineBasicInfo lineData={lineData} setLineData={wrappedSetLineData} />
+                        <LineBasicInfo lineData={lineData} setLineData={wrappedSetLineData} lineId={lineId} tableName="lines" />
                       )}
                       {key === "flow" && (
                         <ProcessFlowBuilder positions={positions} setPositions={wrappedSetPositions} />

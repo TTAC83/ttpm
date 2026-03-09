@@ -1,77 +1,38 @@
 
 
-## Plan: Add Media Uploads to Line Information
+## Plan: Restore Line Completion Percentages & Add Configuration Gaps Table
 
-### Summary
+### Root Cause
 
-Add image/video upload capability to the Line Information section. Users can capture media directly from the tablet camera or select from device storage. Each media item has an editable description. Media is stored in Supabase Storage with metadata in a new `line_media` table. Offline-first via existing PWA caching, with Workbox Background Sync for queued uploads.
-
-**Recommended browser**: Google Chrome on the Lenovo tablet (best PWA, camera capture, and service worker support).
+The `useTabCompleteness` hook (used on the Solutions project detail page) queries `product_gaps` with `.is('resolved_at', null)` on line 154 — but that column does not exist. The column is actually called `closed_at`. This causes the entire `Promise.all` in the async check to fail silently, which means:
+- The `lines` tab completeness dot never updates
+- Other tab dots (contacts, factory, feature requirements, etc.) also never update
+- The unhandled rejection may cause rendering issues that affect the inline percentage badges in the Lines tab
 
 ### Changes
 
-#### 1. Database Migration
+**1. Fix `useTabCompleteness.ts` — replace `resolved_at` with correct column**
 
-Create `line_media` table:
+Change line 154 from `.is('resolved_at', null)` to `.is('closed_at', null)` so the product gaps query succeeds and the entire async completeness check completes normally.
 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid PK | default gen_random_uuid() |
-| line_id | uuid FK → lines(id) ON DELETE CASCADE | nullable |
-| solutions_line_id | uuid FK → solutions_lines(id) ON DELETE CASCADE | nullable |
-| file_path | text NOT NULL | Storage bucket path |
-| file_name | text NOT NULL | Original filename |
-| file_type | text NOT NULL | MIME type |
-| file_size | bigint | Bytes |
-| description | text | User-entered |
-| sort_order | integer DEFAULT 0 | Display ordering |
-| created_at | timestamptz DEFAULT now() | |
-| created_by | uuid DEFAULT auth.uid() | |
+**2. Add error handling to `useTabCompleteness.ts`**
 
-CHECK constraint: exactly one of `line_id` or `solutions_line_id` must be non-null.
+Wrap the `checkAsync` call in a try-catch so that if any individual check fails, it doesn't silently break all other checks.
 
-RLS policies: authenticated SELECT, INSERT, DELETE (using `is_internal()` or company membership via joins to projects/solutions_projects).
+**3. Add a consolidated Configuration Gaps summary table to the Lines tab**
 
-Create private `line-media` storage bucket with authenticated upload/download/delete policies.
+Add a summary card at the top of the `SolutionsLines.tsx` table view that aggregates all line gaps into a single table (similar to `FactoryConfigGaps`). This table will show:
+- Line name
+- Category (e.g., "Line Information", "Positions & Equipment", "Camera config")
+- Issue description
+- Total items remaining per line
 
-#### 2. New Component: `src/components/line-builder/LineMediaUploader.tsx`
+The table will appear when `showGaps` is toggled on and any line has gaps. It provides a single-glance view of all configuration gaps across all lines, complementing the existing per-line expandable gaps.
 
-- Props: `lineId: string`, `tableName: 'lines' | 'solutions_lines'`
-- Fetches existing media from `line_media` on mount
-- Two upload buttons:
-  - "Choose File" — `<input type="file" accept="image/*,video/*" multiple>`
-  - "Take Photo/Video" — `<input type="file" accept="image/*,video/*" capture="environment">`
-- Validates: max 20MB per file, image/* or video/* MIME only
-- Uploads to `line-media/{lineId}/{uuid}-{filename}` in Supabase Storage
-- Inserts row into `line_media` table
-- Displays grid of thumbnails (signed URLs for images, video icon for videos)
-- Inline editable description per item
-- Delete button per item
-- Shows upload progress indicator
+### Technical Details
 
-#### 3. Update `src/components/line-builder/steps/LineBasicInfo.tsx`
-
-- Import and render `LineMediaUploader` below the existing form fields
-- Pass `lineId` prop (available when editing; hidden when creating — media upload only available after initial line save)
-- Show a note during creation: "Save the line first to enable media uploads"
-
-#### 4. Update Completeness Check: `lineCompletenessCheck.ts`
-
-- Add a check for whether the line has at least one media item uploaded (query `line_media` count)
-- Add "Line Media" to the gaps list if no media exists
-
-#### 5. PWA Offline Support: `vite.config.ts`
-
-- Add a Workbox `backgroundSync` plugin for POST/PUT requests to the Supabase storage endpoint, so uploads queued offline are retried when connectivity returns
-- Existing `StaleWhileRevalidate` rule for `/storage/v1/object/` already caches viewed media for offline access
-
-### Files Modified
-
-| File | Action |
+| File | Change |
 |------|--------|
-| `supabase/migrations/...` | New migration: `line_media` table + storage bucket + RLS |
-| `src/components/line-builder/LineMediaUploader.tsx` | New component |
-| `src/components/line-builder/steps/LineBasicInfo.tsx` | Add media uploader section |
-| `src/pages/app/solutions/hooks/lineCompletenessCheck.ts` | Add media completeness check |
-| `vite.config.ts` | Add background sync for storage uploads |
+| `src/pages/app/solutions/hooks/useTabCompleteness.ts` | Fix `resolved_at` → `closed_at`; add try-catch |
+| `src/pages/app/solutions/tabs/SolutionsLines.tsx` | Add consolidated gaps summary table above the lines table |
 

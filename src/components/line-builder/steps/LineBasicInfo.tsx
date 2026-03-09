@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { LineMediaUploader } from "@/components/line-builder/LineMediaUploader";
 
 interface LineBasicInfoProps {
   lineData: {
@@ -16,11 +17,15 @@ interface LineBasicInfoProps {
     number_of_artworks?: number;
   };
   setLineData: (data: any) => void;
+  lineId?: string;
+  tableName?: "lines" | "solutions_lines";
 }
 
 export const LineBasicInfo: React.FC<LineBasicInfoProps> = ({
   lineData,
   setLineData,
+  lineId,
+  tableName = "lines",
 }) => {
   const handleChange = (field: string, value: string | number) => {
     setLineData({ ...lineData, [field]: value });
@@ -131,6 +136,17 @@ export const LineBasicInfo: React.FC<LineBasicInfoProps> = ({
           </div>
         </CardContent>
       </Card>
+
+      {/* Media Uploads */}
+      {lineId ? (
+        <LineMediaUploader lineId={lineId} tableName={tableName} />
+      ) : (
+        <Card>
+          <CardContent className="py-4">
+            <p className="text-sm text-muted-foreground">Save the line first to enable photo and video uploads.</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

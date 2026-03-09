@@ -85,6 +85,8 @@ export const SolutionsLineWizard: React.FC<SolutionsLineWizardProps> = ({
             setLineData={setLineData}
             positions={positions}
             setPositions={setPositions}
+            lineId={editLineId}
+            tableName="solutions_lines"
           />
         </div>
 

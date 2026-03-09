@@ -93,6 +93,8 @@ export const LineWizard: React.FC<LineWizardProps> = ({
               setLineData={setLineData}
               positions={positions}
               setPositions={setPositions}
+              lineId={editLineId}
+              tableName="lines"
             />
           )}
         </div>

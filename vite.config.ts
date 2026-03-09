@@ -53,6 +53,20 @@ export default defineConfig(({ mode }) => ({
               cacheName: "supabase-storage-v1",
               expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 7 }
             }
+          },
+          {
+            urlPattern: ({ url }: { url: URL }) =>
+              url.pathname.startsWith("/storage/v1/object/") && !url.pathname.includes("line-media"),
+            handler: "NetworkOnly" as const,
+            method: "POST" as const,
+            options: {
+              backgroundSync: {
+                name: "line-media-upload-queue",
+                options: {
+                  maxRetentionTime: 24 * 60 // Retry for up to 24 hours
+                }
+              }
+            }
           }
         ]
       }

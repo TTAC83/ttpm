@@ -1,40 +1,38 @@
 
 
-## Plan: Fix PWA Offline Capability
+## Plan: Restore Line Completion Percentages & Add Configuration Gaps Table
 
-### Issues Found
+### Root Cause
 
-1. **Conflicting service workers**: `public/sw.js` is a manual service worker that conflicts with VitePWA's auto-generated Workbox service worker. Both try to handle fetch events, cache management, and push notifications. The VitePWA-generated SW is the one actually registered by the app (via `virtual:pwa-register`), so `public/sw.js` is either dead code or, worse, gets served as a static asset and interferes.
-
-2. **Background sync URL pattern is inverted**: The rule at line 58 matches storage paths that do NOT contain `line-media` — the exact opposite of the intent. It should match paths that DO contain `line-media`.
-
-3. **Missing `/~oauth` in denylist**: Per platform requirements, `/~oauth` must never be cached by the service worker.
-
-4. **No offline fallback for API failures**: When Supabase REST calls fail offline (beyond the 10-min cache), the app gets silent errors. The `LineMediaUploader` and other components don't handle offline gracefully.
+The `useTabCompleteness` hook (used on the Solutions project detail page) queries `product_gaps` with `.is('resolved_at', null)` on line 154 — but that column does not exist. The column is actually called `closed_at`. This causes the entire `Promise.all` in the async check to fail silently, which means:
+- The `lines` tab completeness dot never updates
+- Other tab dots (contacts, factory, feature requirements, etc.) also never update
+- The unhandled rejection may cause rendering issues that affect the inline percentage badges in the Lines tab
 
 ### Changes
 
+**1. Fix `useTabCompleteness.ts` — replace `resolved_at` with correct column**
+
+Change line 154 from `.is('resolved_at', null)` to `.is('closed_at', null)` so the product gaps query succeeds and the entire async completeness check completes normally.
+
+**2. Add error handling to `useTabCompleteness.ts`**
+
+Wrap the `checkAsync` call in a try-catch so that if any individual check fails, it doesn't silently break all other checks.
+
+**3. Add a consolidated Configuration Gaps summary table to the Lines tab**
+
+Add a summary card at the top of the `SolutionsLines.tsx` table view that aggregates all line gaps into a single table (similar to `FactoryConfigGaps`). This table will show:
+- Line name
+- Category (e.g., "Line Information", "Positions & Equipment", "Camera config")
+- Issue description
+- Total items remaining per line
+
+The table will appear when `showGaps` is toggled on and any line has gaps. It provides a single-glance view of all configuration gaps across all lines, complementing the existing per-line expandable gaps.
+
+### Technical Details
+
 | File | Change |
 |------|--------|
-| `public/sw.js` | **Delete** — conflicts with VitePWA's Workbox SW |
-| `vite.config.ts` | Fix background sync URL pattern; add `/~oauth` to denylist; add Supabase auth token endpoint to NetworkOnly |
-| `src/components/line-builder/LineMediaUploader.tsx` | Add offline detection — queue uploads locally when offline, show pending indicator |
-| `src/components/pwa/OfflineIndicator.tsx` | Improve to show sync status (pending uploads count) |
-
-### Detail
-
-**vite.config.ts** — three fixes:
-- `navigateFallbackDenylist`: add `/^\/~oauth/`
-- Background sync rule: change `!url.pathname.includes("line-media")` → `url.pathname.includes("line-media")` so it actually queues line-media uploads
-- Add `NetworkOnly` for `/auth/v1/` paths (auth must never be cached)
-
-**LineMediaUploader** — offline-aware uploads:
-- Check `navigator.onLine` before upload
-- If offline, save file to IndexedDB with metadata, show "Pending sync" badge
-- When back online, replay queued uploads automatically
-- Show count of pending items in the UI
-
-**OfflineIndicator** — enhanced:
-- Show pending upload count when offline items exist
-- Animate sync icon when reconnecting and syncing
+| `src/pages/app/solutions/hooks/useTabCompleteness.ts` | Fix `resolved_at` → `closed_at`; add try-catch |
+| `src/pages/app/solutions/tabs/SolutionsLines.tsx` | Add consolidated gaps summary table above the lines table |
 

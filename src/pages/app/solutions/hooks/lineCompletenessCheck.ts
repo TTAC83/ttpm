@@ -92,7 +92,27 @@ export async function checkLineCompleteness(
     gaps.push({ category: "Line Information", items: lineInfoGaps });
   }
 
-  // 2. Load full line data via RPC
+  // 2. Check for at least one media item
+  try {
+    const mediaFkColumn = "solutions_line_id";
+    const { count, error: mediaError } = await supabase
+      .from("line_media" as any)
+      .select("id", { count: "exact", head: true })
+      .eq(mediaFkColumn, line.id);
+
+    totalChecks++;
+    if (!mediaError && count && count > 0) {
+      passedChecks++;
+    } else {
+      gaps.push({ category: "Line Media", items: ["At least 1 photo or video required"] });
+    }
+  } catch (e) {
+    console.error("Error checking line media:", e);
+    totalChecks++;
+    gaps.push({ category: "Line Media", items: ["Unable to check media"] });
+  }
+
+  // 3. Load full line data via RPC
   try {
     const { data, error } = await supabase.rpc("get_line_full_data", {
       p_input_line_id: line.id,

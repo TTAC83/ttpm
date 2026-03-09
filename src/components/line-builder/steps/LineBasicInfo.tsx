@@ -139,6 +139,17 @@ export const LineBasicInfo: React.FC<LineBasicInfoProps> = ({
           </div>
         </CardContent>
       </Card>
+
+      {/* Media Uploads */}
+      {lineId ? (
+        <LineMediaUploader lineId={lineId} tableName={tableName} />
+      ) : (
+        <Card>
+          <CardContent className="py-4">
+            <p className="text-sm text-muted-foreground">Save the line first to enable photo and video uploads.</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

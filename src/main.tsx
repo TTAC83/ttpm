@@ -23,6 +23,9 @@ if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
 // Set dark mode by default to match Thingtrax interface
 document.documentElement.classList.add('dark');
 
+// Initialize offline sync — auto-replay queued mutations when back online
+initOfflineSync();
+
 function Root() {
   return (
     <>

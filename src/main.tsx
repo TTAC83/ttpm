@@ -5,6 +5,7 @@ import "./index.css";
 import PWAUpdateNotification from "@/components/pwa/PWAUpdateNotification";
 import OfflineIndicator from "@/components/pwa/OfflineIndicator";
 import MobileInstall from "@/components/pwa/MobileInstall";
+import { initOfflineSync } from "@/lib/offlineQueue";
 
 // Check for service worker updates on page visibility change (when user returns to tab)
 if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {

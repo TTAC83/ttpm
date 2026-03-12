@@ -167,6 +167,7 @@ const ResponsibilitiesMatrix: React.FC<{ deploymentType: string }> = ({ deployme
       { task: 'Sample Product Provision for Training', thingtrax: false, customer: true },
     ] : []),
     { task: 'IoT Device Installation', thingtrax: true, customer: false },
+    { task: 'IoT Validation', thingtrax: true, customer: false },
   ];
 
   return (

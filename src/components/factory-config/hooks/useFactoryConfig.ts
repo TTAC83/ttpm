@@ -211,52 +211,76 @@ export function useFactoryConfig(projectId: string) {
   // Group CRUD
   const addGroup = async (factoryId: string, name: string) => {
     try {
-      const { data } = await supabase.from('factory_groups').insert({ factory_id: factoryId, name }).select().single();
+      const { data, error } = await supabase.from('factory_groups').insert({ factory_id: factoryId, name }).select().single();
+      if (error) throw error;
       if (data) setGroups(prev => [...prev, data]);
       toast({ title: 'Added', description: `Group "${name}" created` });
-    } catch { toast({ title: 'Error', description: 'Failed to add group', variant: 'destructive' }); }
+    } catch (error: any) {
+      console.error('[FactoryConfig] addGroup error:', error);
+      toast({ title: 'Error', description: error?.message || 'Failed to add group', variant: 'destructive' });
+    }
   };
 
   const updateGroup = async (id: string, name: string) => {
     try {
-      await supabase.from('factory_groups').update({ name }).eq('id', id);
+      const { error } = await supabase.from('factory_groups').update({ name }).eq('id', id);
+      if (error) throw error;
       setGroups(prev => prev.map(g => g.id === id ? { ...g, name } : g));
       if (selectedGroup?.id === id) setSelectedGroup(prev => prev ? { ...prev, name } : prev);
-    } catch { toast({ title: 'Error', description: 'Failed to update group', variant: 'destructive' }); }
+    } catch (error: any) {
+      console.error('[FactoryConfig] updateGroup error:', error);
+      toast({ title: 'Error', description: error?.message || 'Failed to update group', variant: 'destructive' });
+    }
   };
 
   const deleteGroup = async (id: string) => {
     try {
-      await supabase.from('factory_groups').delete().eq('id', id);
+      const { error } = await supabase.from('factory_groups').delete().eq('id', id);
+      if (error) throw error;
       setGroups(prev => prev.filter(g => g.id !== id));
       setLines(prev => prev.filter(l => l.group_id !== id));
       if (selectedGroup?.id === id) { setSelectedGroup(null); setCurrentLevel('factory'); }
       toast({ title: 'Deleted', description: 'Group removed' });
-    } catch { toast({ title: 'Error', description: 'Failed to delete group', variant: 'destructive' }); }
+    } catch (error: any) {
+      console.error('[FactoryConfig] deleteGroup error:', error);
+      toast({ title: 'Error', description: error?.message || 'Failed to delete group', variant: 'destructive' });
+    }
   };
 
   // Line CRUD
   const addLine = async (groupId: string, name: string, solutionType: 'vision' | 'iot' | 'both') => {
     try {
-      const { data } = await supabase.from('factory_group_lines').insert({ group_id: groupId, name, solution_type: solutionType }).select().single();
+      const { data, error } = await supabase.from('factory_group_lines').insert({ group_id: groupId, name, solution_type: solutionType }).select().single();
+      if (error) throw error;
       if (data) setLines(prev => [...prev, data as GroupLine]);
       toast({ title: 'Added', description: `Line "${name}" created` });
-    } catch { toast({ title: 'Error', description: 'Failed to add line', variant: 'destructive' }); }
+    } catch (error: any) {
+      console.error('[FactoryConfig] addLine error:', error);
+      toast({ title: 'Error', description: error?.message || 'Failed to add line', variant: 'destructive' });
+    }
   };
 
   const updateLine = async (id: string, updates: Partial<Pick<GroupLine, 'name' | 'solution_type'>>) => {
     try {
-      await supabase.from('factory_group_lines').update(updates).eq('id', id);
+      const { error } = await supabase.from('factory_group_lines').update(updates).eq('id', id);
+      if (error) throw error;
       setLines(prev => prev.map(l => l.id === id ? { ...l, ...updates } as GroupLine : l));
-    } catch { toast({ title: 'Error', description: 'Failed to update line', variant: 'destructive' }); }
+    } catch (error: any) {
+      console.error('[FactoryConfig] updateLine error:', error);
+      toast({ title: 'Error', description: error?.message || 'Failed to update line', variant: 'destructive' });
+    }
   };
 
   const deleteLine = async (id: string) => {
     try {
-      await supabase.from('factory_group_lines').delete().eq('id', id);
+      const { error } = await supabase.from('factory_group_lines').delete().eq('id', id);
+      if (error) throw error;
       setLines(prev => prev.filter(l => l.id !== id));
       toast({ title: 'Deleted', description: 'Line removed' });
-    } catch { toast({ title: 'Error', description: 'Failed to delete line', variant: 'destructive' }); }
+    } catch (error: any) {
+      console.error('[FactoryConfig] deleteLine error:', error);
+      toast({ title: 'Error', description: error?.message || 'Failed to delete line', variant: 'destructive' });
+    }
   };
 
   // Navigation

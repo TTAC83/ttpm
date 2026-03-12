@@ -140,12 +140,20 @@ export function useFactoryConfig(projectId: string) {
 
   // Factory CRUD
   const addFactory = async (name: string) => {
-    if (!portal) return;
+    if (!portal) {
+      console.warn('[FactoryConfig] Cannot add factory: no portal exists');
+      toast({ title: 'Error', description: 'Please save a portal URL first', variant: 'destructive' });
+      return;
+    }
     try {
-      const { data } = await supabase.from('solution_factories').insert({ portal_id: portal.id, name }).select().single();
+      const { data, error } = await supabase.from('solution_factories').insert({ portal_id: portal.id, name }).select().single();
+      if (error) throw error;
       if (data) setFactories(prev => [...prev, data]);
       toast({ title: 'Added', description: `Factory "${name}" created` });
-    } catch { toast({ title: 'Error', description: 'Failed to add factory', variant: 'destructive' }); }
+    } catch (error: any) {
+      console.error('[FactoryConfig] addFactory error:', error);
+      toast({ title: 'Error', description: error?.message || 'Failed to add factory', variant: 'destructive' });
+    }
   };
 
   const updateFactory = async (id: string, name: string) => {

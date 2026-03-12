@@ -123,14 +123,19 @@ export function useFactoryConfig(projectId: string) {
   const savePortalUrl = async (url: string) => {
     try {
       if (portal) {
-        await supabase.from('solution_portals').update({ url }).eq('id', portal.id);
+        const { error } = await supabase.from('solution_portals').update({ url }).eq('id', portal.id);
+        if (error) throw error;
         setPortal({ ...portal, url });
       } else {
-        const { data } = await supabase.from('solution_portals').insert({ solutions_project_id: projectId, url }).select().single();
+        const { data, error } = await supabase.from('solution_portals').insert({ solutions_project_id: projectId, url }).select().single();
+        if (error) throw error;
         if (data) setPortal(data);
       }
       toast({ title: 'Saved', description: 'Portal URL saved' });
-    } catch { toast({ title: 'Error', description: 'Failed to save portal URL', variant: 'destructive' }); }
+    } catch (error: any) {
+      console.error('[FactoryConfig] savePortalUrl error:', error);
+      toast({ title: 'Error', description: error?.message || 'Failed to save portal URL', variant: 'destructive' });
+    }
   };
 
   // Factory CRUD

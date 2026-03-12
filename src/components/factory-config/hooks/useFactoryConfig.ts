@@ -158,10 +158,14 @@ export function useFactoryConfig(projectId: string) {
 
   const updateFactory = async (id: string, name: string) => {
     try {
-      await supabase.from('solution_factories').update({ name }).eq('id', id);
+      const { error } = await supabase.from('solution_factories').update({ name }).eq('id', id);
+      if (error) throw error;
       setFactories(prev => prev.map(f => f.id === id ? { ...f, name } : f));
       if (selectedFactory?.id === id) setSelectedFactory(prev => prev ? { ...prev, name } : prev);
-    } catch { toast({ title: 'Error', description: 'Failed to update factory', variant: 'destructive' }); }
+    } catch (error: any) {
+      console.error('[FactoryConfig] updateFactory error:', error);
+      toast({ title: 'Error', description: error?.message || 'Failed to update factory', variant: 'destructive' });
+    }
   };
 
   const deleteFactory = async (id: string) => {

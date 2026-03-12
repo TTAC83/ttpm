@@ -188,16 +188,24 @@ export function useFactoryConfig(projectId: string) {
   // Shift CRUD
   const addShift = async (factoryId: string, shift: Omit<Shift, 'id' | 'factory_id'>) => {
     try {
-      const { data } = await supabase.from('factory_shifts').insert({ factory_id: factoryId, ...shift }).select().single();
+      const { data, error } = await supabase.from('factory_shifts').insert({ factory_id: factoryId, ...shift }).select().single();
+      if (error) throw error;
       if (data) setShifts(prev => [...prev, data]);
-    } catch { toast({ title: 'Error', description: 'Failed to add shift', variant: 'destructive' }); }
+    } catch (error: any) {
+      console.error('[FactoryConfig] addShift error:', error);
+      toast({ title: 'Error', description: error?.message || 'Failed to add shift', variant: 'destructive' });
+    }
   };
 
   const deleteShift = async (id: string) => {
     try {
-      await supabase.from('factory_shifts').delete().eq('id', id);
+      const { error } = await supabase.from('factory_shifts').delete().eq('id', id);
+      if (error) throw error;
       setShifts(prev => prev.filter(s => s.id !== id));
-    } catch { toast({ title: 'Error', description: 'Failed to delete shift', variant: 'destructive' }); }
+    } catch (error: any) {
+      console.error('[FactoryConfig] deleteShift error:', error);
+      toast({ title: 'Error', description: error?.message || 'Failed to delete shift', variant: 'destructive' });
+    }
   };
 
   // Group CRUD

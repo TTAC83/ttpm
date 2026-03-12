@@ -170,7 +170,8 @@ export function useFactoryConfig(projectId: string) {
 
   const deleteFactory = async (id: string) => {
     try {
-      await supabase.from('solution_factories').delete().eq('id', id);
+      const { error } = await supabase.from('solution_factories').delete().eq('id', id);
+      if (error) throw error;
       setFactories(prev => prev.filter(f => f.id !== id));
       setShifts(prev => prev.filter(s => s.factory_id !== id));
       const groupIds = groups.filter(g => g.factory_id === id).map(g => g.id);
@@ -178,7 +179,10 @@ export function useFactoryConfig(projectId: string) {
       setLines(prev => prev.filter(l => !groupIds.includes(l.group_id)));
       if (selectedFactory?.id === id) { setSelectedFactory(null); setCurrentLevel('portal'); }
       toast({ title: 'Deleted', description: 'Factory removed' });
-    } catch { toast({ title: 'Error', description: 'Failed to delete factory', variant: 'destructive' }); }
+    } catch (error: any) {
+      console.error('[FactoryConfig] deleteFactory error:', error);
+      toast({ title: 'Error', description: error?.message || 'Failed to delete factory', variant: 'destructive' });
+    }
   };
 
   // Shift CRUD

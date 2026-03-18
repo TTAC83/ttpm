@@ -208,7 +208,6 @@ export default function AttributesManagement() {
                     {getUnitLabel(attr.data_type, attr.unit_of_measure)}
                   </TableCell>
                   <TableCell>{getValidationLabel(attr.validation_type)}</TableCell>
-                  <TableCell>{attr.default_value || "-"}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
                       <Button

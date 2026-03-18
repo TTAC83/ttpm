@@ -2,23 +2,15 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Popover, PopoverContent, PopoverTrigger,
+} from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -39,6 +31,12 @@ interface MasterAttribute {
   updated_at: string;
 }
 
+interface ProjectUsage {
+  master_attribute_id: string;
+  solutions_project_id: string;
+  project_name: string;
+}
+
 export default function AttributesManagement() {
   const { toast } = useToast();
   const [attributes, setAttributes] = useState<MasterAttribute[]>([]);
@@ -47,6 +45,7 @@ export default function AttributesManagement() {
   const [editingAttribute, setEditingAttribute] = useState<MasterAttribute | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [usageMap, setUsageMap] = useState<Record<string, { id: string; name: string }[]>>({});
 
   useEffect(() => {
     fetchAttributes();
@@ -55,33 +54,49 @@ export default function AttributesManagement() {
   const fetchAttributes = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("master_attributes")
-        .select("*")
-        .order("name");
+      const [attrRes, usageRes] = await Promise.all([
+        supabase.from("master_attributes").select("*").order("name"),
+        supabase.from("project_attributes").select("master_attribute_id, solutions_project_id") as any,
+      ]);
 
-      if (error) throw error;
-      setAttributes(data || []);
+      if (attrRes.error) throw attrRes.error;
+      setAttributes(attrRes.data || []);
+
+      // Build usage map with project names
+      const usageRows = (usageRes.data || []) as { master_attribute_id: string; solutions_project_id: string }[];
+      if (usageRows.length > 0) {
+        const projectIds = [...new Set(usageRows.map(r => r.solutions_project_id))];
+        const { data: projects } = await supabase
+          .from("solutions_projects")
+          .select("id, companies(name)")
+          .in("id", projectIds);
+
+        const projectNameMap: Record<string, string> = {};
+        (projects || []).forEach((p: any) => {
+          projectNameMap[p.id] = p.companies?.name || "Unknown";
+        });
+
+        const map: Record<string, { id: string; name: string }[]> = {};
+        usageRows.forEach(r => {
+          if (!map[r.master_attribute_id]) map[r.master_attribute_id] = [];
+          map[r.master_attribute_id].push({
+            id: r.solutions_project_id,
+            name: projectNameMap[r.solutions_project_id] || "Unknown",
+          });
+        });
+        setUsageMap(map);
+      } else {
+        setUsageMap({});
+      }
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message || "Failed to fetch attributes",
-      });
+      toast({ variant: "destructive", title: "Error", description: error.message || "Failed to fetch attributes" });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOpenAdd = () => {
-    setEditingAttribute(null);
-    setDialogOpen(true);
-  };
-
-  const handleOpenEdit = (attr: MasterAttribute) => {
-    setEditingAttribute(attr);
-    setDialogOpen(true);
-  };
+  const handleOpenAdd = () => { setEditingAttribute(null); setDialogOpen(true); };
+  const handleOpenEdit = (attr: MasterAttribute) => { setEditingAttribute(attr); setDialogOpen(true); };
 
   const handleSubmit = async (data: AttributeFormData) => {
     const payload = {
@@ -97,10 +112,7 @@ export default function AttributesManagement() {
 
     try {
       if (editingAttribute) {
-        const { error } = await supabase
-          .from("master_attributes")
-          .update(payload)
-          .eq("id", editingAttribute.id);
+        const { error } = await supabase.from("master_attributes").update(payload).eq("id", editingAttribute.id);
         if (error) throw error;
         toast({ title: "Success", description: "Attribute updated" });
       } else {
@@ -110,51 +122,32 @@ export default function AttributesManagement() {
       }
       fetchAttributes();
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message || "Failed to save attribute",
-      });
-      throw error; // keep dialog open on error
+      toast({ variant: "destructive", title: "Error", description: error.message || "Failed to save attribute" });
+      throw error;
     }
   };
 
   const handleDelete = async () => {
     if (!deletingId) return;
     try {
-      const { error } = await supabase
-        .from("master_attributes")
-        .delete()
-        .eq("id", deletingId);
+      const { error } = await supabase.from("master_attributes").delete().eq("id", deletingId);
       if (error) throw error;
       toast({ title: "Success", description: "Attribute deleted" });
       setDeleteDialogOpen(false);
       setDeletingId(null);
       fetchAttributes();
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message || "Failed to delete attribute",
-      });
+      toast({ variant: "destructive", title: "Error", description: error.message || "Failed to delete attribute" });
     }
   };
 
-  const getDataTypeLabel = (value: string) =>
-    DATA_TYPES.find((dt) => dt.value === value)?.label || value;
-
+  const getDataTypeLabel = (value: string) => DATA_TYPES.find((dt) => dt.value === value)?.label || value;
   const getUnitLabel = (dataType: string, unitValue: string | null) => {
     if (!unitValue) return "-";
-    const options = getUnitOptions(dataType);
-    return options.find((o) => o.value === unitValue)?.label || unitValue;
+    return getUnitOptions(dataType).find((o) => o.value === unitValue)?.label || unitValue;
   };
-
   const getValidationLabel = (value: string) => {
-    const map: Record<string, string> = {
-      single_value: "Single Value",
-      multiple_values: "Multiple Values",
-      range: "Range",
-    };
+    const map: Record<string, string> = { single_value: "Single Value", multiple_values: "Multiple Values", range: "Range" };
     return map[value] || value;
   };
 
@@ -163,9 +156,7 @@ export default function AttributesManagement() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Attributes</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage master attributes used across projects and products
-          </p>
+          <p className="text-muted-foreground mt-1">Manage master attributes used across projects and products</p>
         </div>
         <Button onClick={handleOpenAdd}>
           <Plus className="mr-2 h-4 w-4" />
@@ -192,45 +183,55 @@ export default function AttributesManagement() {
                 <TableHead>Data Type</TableHead>
                 <TableHead>Unit of Measure</TableHead>
                 <TableHead>Validation</TableHead>
+                <TableHead>Projects Using</TableHead>
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {attributes.map((attr) => (
-                <TableRow key={attr.id}>
-                  <TableCell className="font-medium">{attr.name}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">
-                      {getDataTypeLabel(attr.data_type)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {getUnitLabel(attr.data_type, attr.unit_of_measure)}
-                  </TableCell>
-                  <TableCell>{getValidationLabel(attr.validation_type)}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleOpenEdit(attr)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setDeletingId(attr.id);
-                          setDeleteDialogOpen(true);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {attributes.map((attr) => {
+                const projects = usageMap[attr.id] || [];
+                return (
+                  <TableRow key={attr.id}>
+                    <TableCell className="font-medium">{attr.name}</TableCell>
+                    <TableCell><Badge variant="secondary">{getDataTypeLabel(attr.data_type)}</Badge></TableCell>
+                    <TableCell>{getUnitLabel(attr.data_type, attr.unit_of_measure)}</TableCell>
+                    <TableCell>{getValidationLabel(attr.validation_type)}</TableCell>
+                    <TableCell>
+                      {projects.length === 0 ? (
+                        <span className="text-muted-foreground text-sm">—</span>
+                      ) : (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline cursor-pointer">
+                              {projects.length} project{projects.length !== 1 ? 's' : ''}
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-64 p-3" align="start">
+                            <p className="text-sm font-medium mb-2">Projects using this attribute</p>
+                            <ul className="space-y-1">
+                              {projects.map(p => (
+                                <li key={p.id} className="text-sm text-muted-foreground">
+                                  {p.name}
+                                </li>
+                              ))}
+                            </ul>
+                          </PopoverContent>
+                        </Popover>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(attr)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => { setDeletingId(attr.id); setDeleteDialogOpen(true); }}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
@@ -258,15 +259,10 @@ export default function AttributesManagement() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete this attribute. This action cannot be
-              undone.
-            </AlertDialogDescription>
+            <AlertDialogDescription>This will permanently delete this attribute. This action cannot be undone.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeletingId(null)}>
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setDeletingId(null)}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -29,6 +29,7 @@ interface FeasibilityGateDialogProps {
     lines: boolean;
     infrastructure: boolean;
     factoryConfig?: boolean;
+    attributes?: boolean;
   };
   projectData?: {
     site_address?: string;
@@ -499,6 +500,11 @@ export const FeasibilityGateDialog = ({
               // Infrastructure gaps
               if (completeness && !completeness.infrastructure) {
                 gaps.push('Infrastructure: Requirements incomplete — all fields must be set to Required or Not Required');
+              }
+
+              // Attributes gaps (only present for Vision/Hybrid)
+              if (completeness && completeness.attributes === false) {
+                gaps.push('Attributes: At least one attribute must be linked to the project');
               }
 
               if (gaps.length === 0 && allTabsGreen) {

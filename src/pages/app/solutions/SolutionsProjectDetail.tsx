@@ -35,6 +35,7 @@ import { ProjectHardwareStatus } from '../projects/tabs/ProjectHardwareStatus';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTabCompleteness } from './hooks/useTabCompleteness';
 import { FeasibilityGateDialog } from '@/components/FeasibilityGateDialog';
+import { ProjectAttributesTab } from '@/components/attributes/ProjectAttributesTab';
 
 interface SolutionsProject {
   id: string;
@@ -147,7 +148,8 @@ export const SolutionsProjectDetail = () => {
   const [completenessRefreshKey, setCompletenessRefreshKey] = useState(0);
   const completeness = useTabCompleteness(project, completenessRefreshKey);
 
-  const allTabsGreen = completeness.overview && completeness.contacts && completeness.factory && completeness.factoryConfig && completeness.lines && completeness.infrastructure;
+  const isVisionOrHybrid = project?.domain === 'Vision' || project?.domain === 'Hybrid';
+  const allTabsGreen = completeness.overview && completeness.contacts && completeness.factory && completeness.factoryConfig && completeness.lines && completeness.infrastructure && (!isVisionOrHybrid || completeness.attributes);
   const feasibilitySignedOff = (project as any)?.feasibility_signed_off ?? false;
   const feasibilitySignedOffBy = (project as any)?.feasibility_signed_off_by ?? null;
   const feasibilitySignedOffAt = (project as any)?.feasibility_signed_off_at ?? null;
@@ -343,6 +345,12 @@ export const SolutionsProjectDetail = () => {
                 <AlertTriangle className="h-3.5 w-3.5 ml-1.5 text-amber-500" />
               )}
             </TabsTrigger>
+            {isVisionOrHybrid && (
+              <TabsTrigger value="attributes">
+                Attributes
+                <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.attributes ? 'bg-green-500' : 'bg-red-500'}`} />
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Row 2 - Sale & Launch Gate */}
@@ -467,6 +475,12 @@ export const SolutionsProjectDetail = () => {
           <SharedProductGapsTab projectId={project.id} projectType="solutions" />
         </TabsContent>
 
+        {isVisionOrHybrid && (
+          <TabsContent value="attributes" className="space-y-4">
+            <ProjectAttributesTab projectId={project.id} onCompletenessChange={() => setCompletenessRefreshKey(k => k + 1)} />
+          </TabsContent>
+        )}
+
         <TabsContent value="blockers" className="space-y-4">
           <SharedBlockersTab projectId={project.id} projectType="solutions" />
         </TabsContent>
@@ -544,6 +558,7 @@ export const SolutionsProjectDetail = () => {
           lines: completeness.lines,
           infrastructure: completeness.infrastructure,
           factoryConfig: completeness.factoryConfig,
+          ...(isVisionOrHybrid ? { attributes: completeness.attributes } : {}),
         }}
         projectData={project}
       />

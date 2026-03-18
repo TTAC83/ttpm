@@ -1,33 +1,38 @@
 
 
-## Revised Plan: Attributes Tab — Vision/Hybrid Only
+## Plan: Restore Line Completion Percentages & Add Configuration Gaps Table
 
-### Change Summary
-The Attributes tab should only appear and be required for Feasibility Gate completeness when the project domain is **Vision** or **Hybrid**. For **IoT**-only projects, the tab is hidden and does not block sign-off.
+### Root Cause
 
-### Files to Change
+The `useTabCompleteness` hook (used on the Solutions project detail page) queries `product_gaps` with `.is('resolved_at', null)` on line 154 — but that column does not exist. The column is actually called `closed_at`. This causes the entire `Promise.all` in the async check to fail silently, which means:
+- The `lines` tab completeness dot never updates
+- Other tab dots (contacts, factory, feature requirements, etc.) also never update
+- The unhandled rejection may cause rendering issues that affect the inline percentage badges in the Lines tab
 
-**1. `src/pages/app/solutions/SolutionsProjectDetail.tsx`**
-- Conditionally render the Attributes `TabsTrigger` and `TabsContent` only when `project.domain === 'Vision' || project.domain === 'Hybrid'`.
-- Update `allTabsGreen` to only require `completeness.attributes` when domain is Vision/Hybrid.
-- Update the `completeness` prop passed to `FeasibilityGateDialog` similarly.
+### Changes
 
-**2. `src/pages/app/solutions/hooks/useTabCompleteness.ts`**
-- Add `attributes: boolean` to the `TabCompleteness` interface.
-- Add `domain` awareness: for Vision/Hybrid, query `project_attributes` count > 0. For IoT, default `attributes` to `true`.
+**1. Fix `useTabCompleteness.ts` — replace `resolved_at` with correct column**
 
-**3. `src/components/attributes/ProjectAttributesTab.tsx`** (new file, as per approved plan)
-- No change from the approved plan — the conditional visibility is handled at the parent level.
+Change line 154 from `.is('resolved_at', null)` to `.is('closed_at', null)` so the product gaps query succeeds and the entire async completeness check completes normally.
 
-**4. `src/pages/app/admin/AttributesManagement.tsx`**
-- Add "Projects Using" count column — no change from approved plan.
+**2. Add error handling to `useTabCompleteness.ts`**
 
-**5. `src/components/FeasibilityGateDialog.tsx`**
-- Add optional `attributes` key to the completeness prop; only show it in the checklist when present (i.e., Vision/Hybrid projects pass it, IoT projects omit it).
+Wrap the `checkAsync` call in a try-catch so that if any individual check fails, it doesn't silently break all other checks.
 
-### Logic
-- `project.domain` is already available on the project object
-- Domain values are: `'Vision'`, `'IoT'`, `'Hybrid'`
-- `const isVisionOrHybrid = project.domain === 'Vision' || project.domain === 'Hybrid'`
-- In `allTabsGreen`: `(!isVisionOrHybrid || completeness.attributes)`
+**3. Add a consolidated Configuration Gaps summary table to the Lines tab**
+
+Add a summary card at the top of the `SolutionsLines.tsx` table view that aggregates all line gaps into a single table (similar to `FactoryConfigGaps`). This table will show:
+- Line name
+- Category (e.g., "Line Information", "Positions & Equipment", "Camera config")
+- Issue description
+- Total items remaining per line
+
+The table will appear when `showGaps` is toggled on and any line has gaps. It provides a single-glance view of all configuration gaps across all lines, complementing the existing per-line expandable gaps.
+
+### Technical Details
+
+| File | Change |
+|------|--------|
+| `src/pages/app/solutions/hooks/useTabCompleteness.ts` | Fix `resolved_at` → `closed_at`; add try-catch |
+| `src/pages/app/solutions/tabs/SolutionsLines.tsx` | Add consolidated gaps summary table above the lines table |
 

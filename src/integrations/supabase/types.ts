@@ -3385,6 +3385,48 @@ export type Database = {
           },
         ]
       }
+      project_attributes: {
+        Row: {
+          created_at: string
+          id: string
+          master_attribute_id: string
+          notes: string | null
+          solutions_project_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          master_attribute_id: string
+          notes?: string | null
+          solutions_project_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          master_attribute_id?: string
+          notes?: string | null
+          solutions_project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_attributes_master_attribute_id_fkey"
+            columns: ["master_attribute_id"]
+            isOneToOne: false
+            referencedRelation: "master_attributes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_attributes_solutions_project_id_fkey"
+            columns: ["solutions_project_id"]
+            isOneToOne: false
+            referencedRelation: "solutions_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_events: {
         Row: {
           created_at: string

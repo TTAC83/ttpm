@@ -15,6 +15,7 @@ interface TabCompleteness {
   hardwareSummary: boolean;
   contract: boolean;
   portalConfig: boolean;
+  attributes: boolean;
 }
 
 interface ProjectData {
@@ -52,6 +53,7 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
     hardwareSummary: false,
     contract: false,
     portalConfig: false,
+    attributes: false,
   });
 
   useEffect(() => {
@@ -133,7 +135,9 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
 
     // Async checks
     const checkAsync = async () => {
-      const [contactsRes, portalRes, linesRes, productGapsRes, portalConfigRes] = await Promise.all([
+      const isVisionOrHybrid = project.domain === 'Vision' || project.domain === 'Hybrid';
+
+      const baseQueries = [
         supabase
           .from('contact_solutions_projects')
           .select('id', { count: 'exact', head: true })
@@ -156,7 +160,18 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
           .from('portal_config_tasks')
           .select('is_complete')
           .eq('solutions_project_id', project.id),
-      ]);
+      ] as const;
+
+      // Only query project_attributes for Vision/Hybrid
+      const attributesQuery = isVisionOrHybrid
+        ? supabase
+            .from('project_attributes')
+            .select('id', { count: 'exact', head: true })
+            .eq('solutions_project_id', project.id)
+        : null;
+
+      const [contactsRes, portalRes, linesRes, productGapsRes, portalConfigRes] = await Promise.all(baseQueries);
+      const attributesRes = attributesQuery ? await attributesQuery : null;
 
       const contactsComplete = (contactsRes.count ?? 0) > 0;
 
@@ -350,6 +365,11 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
       const portalConfigRows = portalConfigRes.data || [];
       const portalConfigComplete = portalConfigRows.length > 0 && portalConfigRows.every((r: any) => r.is_complete);
 
+      // Attributes completeness: Vision/Hybrid require >= 1, IoT defaults to true
+      const attributesComplete = isVisionOrHybrid
+        ? (attributesRes?.count ?? 0) > 0
+        : true;
+
       setCompleteness(prev => ({
         ...prev,
         overview: overviewComplete,
@@ -360,6 +380,7 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
         factoryHardware: factoryHardwareComplete,
         hardwareSummary: hardwareSummaryComplete,
         portalConfig: portalConfigComplete,
+        attributes: attributesComplete,
       }));
     };
 

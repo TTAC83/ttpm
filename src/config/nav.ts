@@ -282,6 +282,12 @@ export const NAV: NavItem[] = [
         iconName: "Users",
         matchPaths: ["/app/admin/contact-roles"]
       },
+      { 
+        label: "Attributes", 
+        to: "/app/admin/attributes",
+        iconName: "Settings",
+        matchPaths: ["/app/admin/attributes"]
+      },
     ]
   },
 

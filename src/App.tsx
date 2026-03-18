@@ -259,6 +259,14 @@ const App = () => (
                   </AuthGuard>
                 } 
               />
+              <Route 
+                path="admin/attributes" 
+                element={
+                  <AuthGuard requiredRole="internal_admin">
+                    <AttributesManagement />
+                  </AuthGuard>
+                } 
+              />
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

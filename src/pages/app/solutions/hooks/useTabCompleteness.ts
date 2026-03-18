@@ -368,6 +368,11 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
       const portalConfigRows = portalConfigRes.data || [];
       const portalConfigComplete = portalConfigRows.length > 0 && portalConfigRows.every((r: any) => r.is_complete);
 
+      // Attributes completeness: Vision/Hybrid require >= 1, IoT defaults to true
+      const attributesComplete = isVisionOrHybrid
+        ? (attributesRes?.count ?? 0) > 0
+        : true;
+
       setCompleteness(prev => ({
         ...prev,
         overview: overviewComplete,
@@ -378,6 +383,7 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
         factoryHardware: factoryHardwareComplete,
         hardwareSummary: hardwareSummaryComplete,
         portalConfig: portalConfigComplete,
+        attributes: attributesComplete,
       }));
     };
 

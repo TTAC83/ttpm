@@ -56,7 +56,7 @@ export function SolutionsProducts({ projectId }: Props) {
       .order('name');
     const { data: factoryData } = await factoryQuery;
 
-    const factList = (factoryData || []) as FactoryItem[];
+    const factList = ((factoryData as any) || []) as FactoryItem[];
     setFactories(factList);
 
     if (factList.length > 0) {

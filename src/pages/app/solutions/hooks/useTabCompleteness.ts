@@ -137,7 +137,7 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
     const checkAsync = async () => {
       const isVisionOrHybrid = project.domain === 'Vision' || project.domain === 'Hybrid';
 
-      const asyncQueries: Promise<any>[] = [
+      const baseQueries = [
         supabase
           .from('contact_solutions_projects')
           .select('id', { count: 'exact', head: true })
@@ -160,21 +160,18 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
           .from('portal_config_tasks')
           .select('is_complete')
           .eq('solutions_project_id', project.id),
-      ];
+      ] as const;
 
       // Only query project_attributes for Vision/Hybrid
-      if (isVisionOrHybrid) {
-        asyncQueries.push(
-          supabase
+      const attributesQuery = isVisionOrHybrid
+        ? supabase
             .from('project_attributes')
             .select('id', { count: 'exact', head: true })
             .eq('solutions_project_id', project.id)
-        );
-      }
+        : null;
 
-      const results = await Promise.all(asyncQueries);
-      const [contactsRes, portalRes, linesRes, productGapsRes, portalConfigRes] = results;
-      const attributesRes = isVisionOrHybrid ? results[5] : null;
+      const [contactsRes, portalRes, linesRes, productGapsRes, portalConfigRes] = await Promise.all(baseQueries);
+      const attributesRes = attributesQuery ? await attributesQuery : null;
 
       const contactsComplete = (contactsRes.count ?? 0) > 0;
 

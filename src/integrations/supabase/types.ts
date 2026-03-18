@@ -2877,6 +2877,48 @@ export type Database = {
           },
         ]
       }
+      master_attributes: {
+        Row: {
+          apply_min_max_date: boolean
+          created_at: string
+          data_type: string
+          default_value: string | null
+          id: string
+          max_value: string | null
+          min_value: string | null
+          name: string
+          unit_of_measure: string | null
+          updated_at: string
+          validation_type: string
+        }
+        Insert: {
+          apply_min_max_date?: boolean
+          created_at?: string
+          data_type: string
+          default_value?: string | null
+          id?: string
+          max_value?: string | null
+          min_value?: string | null
+          name: string
+          unit_of_measure?: string | null
+          updated_at?: string
+          validation_type?: string
+        }
+        Update: {
+          apply_min_max_date?: boolean
+          created_at?: string
+          data_type?: string
+          default_value?: string | null
+          id?: string
+          max_value?: string | null
+          min_value?: string | null
+          name?: string
+          unit_of_measure?: string | null
+          updated_at?: string
+          validation_type?: string
+        }
+        Relationships: []
+      }
       master_steps: {
         Row: {
           id: number

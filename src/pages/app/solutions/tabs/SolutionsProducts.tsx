@@ -49,11 +49,11 @@ export function SolutionsProducts({ projectId }: Props) {
   const [lines, setLines] = useState<LineItem[]>([]);
 
   const fetchHierarchy = useCallback(async () => {
-    const { data: factoryData } = await supabase
+    const { data: factoryData } = await (supabase
       .from('solution_factories')
       .select('id, name')
       .eq('solutions_project_id', projectId)
-      .order('name');
+      .order('name') as any);
 
     const factList = (factoryData || []) as FactoryItem[];
     setFactories(factList);

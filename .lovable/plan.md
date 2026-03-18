@@ -1,38 +1,82 @@
 
 
-## Plan: Restore Line Completion Percentages & Add Configuration Gaps Table
+## Products & Vision Projects System — Updated Plan
 
-### Root Cause
+### Key Update from Previous Plan
+Vision Projects now have a selectable list of attributes drawn from the project's linked attributes (from `project_attributes`). When a product view selects a vision project, it inherits that vision project's attributes for value entry.
 
-The `useTabCompleteness` hook (used on the Solutions project detail page) queries `product_gaps` with `.is('resolved_at', null)` on line 154 — but that column does not exist. The column is actually called `closed_at`. This causes the entire `Promise.all` in the async check to fail silently, which means:
-- The `lines` tab completeness dot never updates
-- Other tab dots (contacts, factory, feature requirements, etc.) also never update
-- The unhandled rejection may cause rendering issues that affect the inline percentage badges in the Lines tab
+### Database Schema
 
-### Changes
+**`vision_projects`** — vision project groupings
+- `id` (uuid PK), `solutions_project_id` (FK), `name`, `description`, `created_at`, `updated_at`
 
-**1. Fix `useTabCompleteness.ts` — replace `resolved_at` with correct column**
+**`vision_project_attributes`** (NEW) — attributes assigned to a vision project, selected from project_attributes
+- `id` (uuid PK)
+- `vision_project_id` (FK → vision_projects)
+- `project_attribute_id` (FK → project_attributes)
+- unique(vision_project_id, project_attribute_id)
 
-Change line 154 from `.is('resolved_at', null)` to `.is('closed_at', null)` so the product gaps query succeeds and the entire async completeness check completes normally.
+**`products`** — product catalog
+- `id` (uuid PK), `solutions_project_id` (FK), `product_code`, `product_name`, `master_artwork_url`, `comments`, `created_at`, `updated_at`
 
-**2. Add error handling to `useTabCompleteness.ts`**
+**`product_factory_links`**, **`product_group_links`**, **`product_line_links`** — multi-select junction tables
 
-Wrap the `checkAsync` call in a try-catch so that if any individual check fails, it doesn't silently break all other checks.
+**`product_views`** — views per product
+- `id` (uuid PK), `product_id` (FK), `view_name`, `view_image_url`, `vision_project_id` (FK, nullable), `created_at`, `updated_at`
 
-**3. Add a consolidated Configuration Gaps summary table to the Lines tab**
+**`product_view_attributes`** — attribute values per view (attributes come from the selected vision project's attribute list)
+- `id` (uuid PK), `product_view_id` (FK), `master_attribute_id` (FK), `value` (text)
 
-Add a summary card at the top of the `SolutionsLines.tsx` table view that aggregates all line gaps into a single table (similar to `FactoryConfigGaps`). This table will show:
-- Line name
-- Category (e.g., "Line Information", "Positions & Equipment", "Camera config")
-- Issue description
-- Total items remaining per line
+**`product_view_positions`**, **`product_view_equipment`** — position/equipment links per view
 
-The table will appear when `showGaps` is toggled on and any line has gaps. It provides a single-glance view of all configuration gaps across all lines, complementing the existing per-line expandable gaps.
+RLS: `is_internal()` for full CRUD; company members get SELECT via join to `solutions_projects`.
 
-### Technical Details
+### UI Components
 
+**1. Vision Projects Tab** (`SolutionsVisionProjects.tsx`)
+- CRUD table: Name, Description, Attributes count, Product Views count
+- Add/Edit dialog with name + description
+- **Attributes section**: Multi-select combobox to pick from project-level attributes (from `project_attributes` joined with `master_attributes`). Stored in `vision_project_attributes`.
+- Delete with confirmation
+
+**2. Products Tab** (`SolutionsProducts.tsx`)
+- Table: Product Code, Product Name, Factory/Group/Lines badges, Artwork thumbnail, Views count, Comments
+- Add/Edit product dialog with multi-select factory→group→lines cascade, artwork URL, comments
+
+**3. Product Views Panel** (`ProductViewsPanel.tsx`)
+- Per-product sub-panel for managing views
+- Each view: View Name, Image, Vision Project dropdown
+- When a vision project is selected, the view's attribute list auto-populates from `vision_project_attributes` — user enters values per attribute
+- Position + Equipment multi-selects filtered by product's lines
+
+### Flow
+```text
+Project Attributes (Feasibility Gate)
+  ↓ select from
+Vision Project Attributes (vision_project_attributes)
+  ↓ inherited by
+Product View Attributes (product_view_attributes) ← user enters values
+```
+
+### Files to Create
+| File | Purpose |
+|------|---------|
+| `src/pages/app/solutions/tabs/SolutionsVisionProjects.tsx` | Vision Projects CRUD + attribute selection |
+| `src/pages/app/solutions/tabs/SolutionsProducts.tsx` | Products management tab |
+| `src/components/products/ProductDialog.tsx` | Add/Edit product |
+| `src/components/products/ProductViewDialog.tsx` | Add/Edit product view |
+| `src/components/products/ProductViewsPanel.tsx` | Views sub-panel |
+| Migration SQL | All new tables + RLS |
+
+### Files to Modify
 | File | Change |
-|------|--------|
-| `src/pages/app/solutions/hooks/useTabCompleteness.ts` | Fix `resolved_at` → `closed_at`; add try-catch |
-| `src/pages/app/solutions/tabs/SolutionsLines.tsx` | Add consolidated gaps summary table above the lines table |
+|------|---------|
+| `SolutionsProjectDetail.tsx` | Add Products + Vision Projects tabs in Readiness Gate row (Vision/Hybrid only) |
+
+### Implementation Order
+1. Database migration (all tables + RLS)
+2. Vision Projects tab with attribute selection from project_attributes
+3. Products tab with factory/group/line multi-selects
+4. Product Views sub-panel with vision project linking + attribute value entry
+5. Wire tabs into SolutionsProjectDetail
 

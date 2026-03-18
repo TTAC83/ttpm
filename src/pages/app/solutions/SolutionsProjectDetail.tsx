@@ -36,6 +36,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useTabCompleteness } from './hooks/useTabCompleteness';
 import { FeasibilityGateDialog } from '@/components/FeasibilityGateDialog';
 import { ProjectAttributesTab } from '@/components/attributes/ProjectAttributesTab';
+import { SolutionsVisionProjects } from './tabs/SolutionsVisionProjects';
+import { SolutionsProducts } from './tabs/SolutionsProducts';
 
 interface SolutionsProject {
   id: string;

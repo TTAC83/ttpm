@@ -89,9 +89,9 @@ export default function AttributesManagement() {
       data_type: data.data_type,
       unit_of_measure: data.unit_of_measure || null,
       validation_type: data.validation_type,
-      default_value: data.default_value.trim() || null,
-      min_value: data.min_value.trim() || null,
-      max_value: data.max_value.trim() || null,
+      default_value: null,
+      min_value: null,
+      max_value: null,
       apply_min_max_date: data.apply_min_max_date,
     };
 
@@ -192,7 +192,6 @@ export default function AttributesManagement() {
                 <TableHead>Data Type</TableHead>
                 <TableHead>Unit of Measure</TableHead>
                 <TableHead>Validation</TableHead>
-                <TableHead>Default</TableHead>
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -209,7 +208,6 @@ export default function AttributesManagement() {
                     {getUnitLabel(attr.data_type, attr.unit_of_measure)}
                   </TableCell>
                   <TableCell>{getValidationLabel(attr.validation_type)}</TableCell>
-                  <TableCell>{attr.default_value || "-"}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
                       <Button
@@ -250,9 +248,6 @@ export default function AttributesManagement() {
                 data_type: editingAttribute.data_type,
                 unit_of_measure: editingAttribute.unit_of_measure || "",
                 validation_type: editingAttribute.validation_type,
-                default_value: editingAttribute.default_value || "",
-                min_value: editingAttribute.min_value || "",
-                max_value: editingAttribute.max_value || "",
                 apply_min_max_date: editingAttribute.apply_min_max_date,
               }
             : undefined

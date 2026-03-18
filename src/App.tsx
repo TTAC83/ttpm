@@ -28,6 +28,7 @@ import MasterDataManagement from "./pages/app/admin/MasterDataManagement";
 import HardwareManagement from "./pages/app/admin/HardwareManagement";
 import VisionUseCases from "./pages/app/admin/VisionUseCases";
 import ContactRolesManagement from "./pages/app/admin/ContactRolesManagement";
+import AttributesManagement from "./pages/app/admin/AttributesManagement";
 import FeatureRequests from "./pages/app/FeatureRequests";
 import FeatureRequestDetail from "./pages/app/FeatureRequestDetail";
 import FeatureDashboard from "./pages/app/FeatureDashboard";
@@ -255,6 +256,14 @@ const App = () => (
                 element={
                   <AuthGuard requiredRole="internal_admin">
                     <ContactRolesManagement />
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="admin/attributes" 
+                element={
+                  <AuthGuard requiredRole="internal_admin">
+                    <AttributesManagement />
                   </AuthGuard>
                 } 
               />

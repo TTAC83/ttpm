@@ -89,9 +89,9 @@ export default function AttributesManagement() {
       data_type: data.data_type,
       unit_of_measure: data.unit_of_measure || null,
       validation_type: data.validation_type,
-      default_value: data.default_value.trim() || null,
-      min_value: data.min_value.trim() || null,
-      max_value: data.max_value.trim() || null,
+      default_value: null,
+      min_value: null,
+      max_value: null,
       apply_min_max_date: data.apply_min_max_date,
     };
 

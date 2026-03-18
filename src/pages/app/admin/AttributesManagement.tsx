@@ -248,9 +248,6 @@ export default function AttributesManagement() {
                 data_type: editingAttribute.data_type,
                 unit_of_measure: editingAttribute.unit_of_measure || "",
                 validation_type: editingAttribute.validation_type,
-                default_value: editingAttribute.default_value || "",
-                min_value: editingAttribute.min_value || "",
-                max_value: editingAttribute.max_value || "",
                 apply_min_max_date: editingAttribute.apply_min_max_date,
               }
             : undefined

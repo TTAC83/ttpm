@@ -35,6 +35,7 @@ import { ProjectHardwareStatus } from '../projects/tabs/ProjectHardwareStatus';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTabCompleteness } from './hooks/useTabCompleteness';
 import { FeasibilityGateDialog } from '@/components/FeasibilityGateDialog';
+import { ProjectAttributesTab } from '@/components/attributes/ProjectAttributesTab';
 
 interface SolutionsProject {
   id: string;

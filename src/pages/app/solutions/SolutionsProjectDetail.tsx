@@ -548,6 +548,19 @@ export const SolutionsProjectDetail = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {isVisionOrHybrid && (
+          <TabsContent value="vision-projects" className="space-y-4">
+            <SolutionsVisionProjects projectId={project.id} />
+          </TabsContent>
+        )}
+
+        {isVisionOrHybrid && (
+          <TabsContent value="products" className="space-y-4">
+            <SolutionsProducts projectId={project.id} />
+          </TabsContent>
+        )}
+
       </Tabs>
       <FeasibilityGateDialog
         open={gateDialogOpen}

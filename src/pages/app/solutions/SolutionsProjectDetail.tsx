@@ -148,7 +148,8 @@ export const SolutionsProjectDetail = () => {
   const [completenessRefreshKey, setCompletenessRefreshKey] = useState(0);
   const completeness = useTabCompleteness(project, completenessRefreshKey);
 
-  const allTabsGreen = completeness.overview && completeness.contacts && completeness.factory && completeness.factoryConfig && completeness.lines && completeness.infrastructure;
+  const isVisionOrHybrid = project?.domain === 'Vision' || project?.domain === 'Hybrid';
+  const allTabsGreen = completeness.overview && completeness.contacts && completeness.factory && completeness.factoryConfig && completeness.lines && completeness.infrastructure && (!isVisionOrHybrid || completeness.attributes);
   const feasibilitySignedOff = (project as any)?.feasibility_signed_off ?? false;
   const feasibilitySignedOffBy = (project as any)?.feasibility_signed_off_by ?? null;
   const feasibilitySignedOffAt = (project as any)?.feasibility_signed_off_at ?? null;

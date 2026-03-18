@@ -192,7 +192,6 @@ export default function AttributesManagement() {
                 <TableHead>Data Type</TableHead>
                 <TableHead>Unit of Measure</TableHead>
                 <TableHead>Validation</TableHead>
-                <TableHead>Default</TableHead>
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>

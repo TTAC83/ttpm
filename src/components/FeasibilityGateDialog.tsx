@@ -29,6 +29,7 @@ interface FeasibilityGateDialogProps {
     lines: boolean;
     infrastructure: boolean;
     factoryConfig?: boolean;
+    attributes?: boolean;
   };
   projectData?: {
     site_address?: string;

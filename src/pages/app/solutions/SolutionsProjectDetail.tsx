@@ -552,6 +552,7 @@ export const SolutionsProjectDetail = () => {
           lines: completeness.lines,
           infrastructure: completeness.infrastructure,
           factoryConfig: completeness.factoryConfig,
+          ...(isVisionOrHybrid ? { attributes: completeness.attributes } : {}),
         }}
         projectData={project}
       />

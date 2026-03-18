@@ -53,6 +53,7 @@ export const useTabCompleteness = (project: ProjectData | null, refreshKey?: num
     hardwareSummary: false,
     contract: false,
     portalConfig: false,
+    attributes: false,
   });
 
   useEffect(() => {

@@ -345,6 +345,12 @@ export const SolutionsProjectDetail = () => {
                 <AlertTriangle className="h-3.5 w-3.5 ml-1.5 text-amber-500" />
               )}
             </TabsTrigger>
+            {isVisionOrHybrid && (
+              <TabsTrigger value="attributes">
+                Attributes
+                <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.attributes ? 'bg-green-500' : 'bg-red-500'}`} />
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Row 2 - Sale & Launch Gate */}

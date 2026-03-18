@@ -15,6 +15,7 @@ interface TabCompleteness {
   hardwareSummary: boolean;
   contract: boolean;
   portalConfig: boolean;
+  attributes: boolean;
 }
 
 interface ProjectData {

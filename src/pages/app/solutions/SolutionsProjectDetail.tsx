@@ -36,6 +36,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useTabCompleteness } from './hooks/useTabCompleteness';
 import { FeasibilityGateDialog } from '@/components/FeasibilityGateDialog';
 import { ProjectAttributesTab } from '@/components/attributes/ProjectAttributesTab';
+import { SolutionsVisionProjects } from './tabs/SolutionsVisionProjects';
+import { SolutionsProducts } from './tabs/SolutionsProducts';
 
 interface SolutionsProject {
   id: string;
@@ -377,6 +379,12 @@ export const SolutionsProjectDetail = () => {
             <TabsTrigger value="network-config">Network Config</TabsTrigger>
             <TabsTrigger value="camera-validation">Camera Validation</TabsTrigger>
             <TabsTrigger value="iot-validation">IoT Device Validation</TabsTrigger>
+            {isVisionOrHybrid && (
+              <>
+                <TabsTrigger value="vision-projects">Vision Projects</TabsTrigger>
+                <TabsTrigger value="products">Products</TabsTrigger>
+              </>
+            )}
           </TabsList>
 
           {/* Row 4 - Go Live Gate */}
@@ -540,6 +548,19 @@ export const SolutionsProjectDetail = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {isVisionOrHybrid && (
+          <TabsContent value="vision-projects" className="space-y-4">
+            <SolutionsVisionProjects projectId={project.id} />
+          </TabsContent>
+        )}
+
+        {isVisionOrHybrid && (
+          <TabsContent value="products" className="space-y-4">
+            <SolutionsProducts projectId={project.id} />
+          </TabsContent>
+        )}
+
       </Tabs>
       <FeasibilityGateDialog
         open={gateDialogOpen}

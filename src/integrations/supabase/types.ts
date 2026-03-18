@@ -3221,6 +3221,39 @@ export type Database = {
           },
         ]
       }
+      product_factory_links: {
+        Row: {
+          factory_id: string
+          id: string
+          product_id: string
+        }
+        Insert: {
+          factory_id: string
+          id?: string
+          product_id: string
+        }
+        Update: {
+          factory_id?: string
+          id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_factory_links_factory_id_fkey"
+            columns: ["factory_id"]
+            isOneToOne: false
+            referencedRelation: "solution_factories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_factory_links_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_gaps: {
         Row: {
           assigned_to: string | null
@@ -3317,6 +3350,260 @@ export type Database = {
           },
           {
             foreignKeyName: "product_gaps_solutions_project_id_fkey"
+            columns: ["solutions_project_id"]
+            isOneToOne: false
+            referencedRelation: "solutions_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_group_links: {
+        Row: {
+          group_id: string
+          id: string
+          product_id: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          product_id: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_group_links_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "factory_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_group_links_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_line_links: {
+        Row: {
+          id: string
+          line_id: string
+          product_id: string
+        }
+        Insert: {
+          id?: string
+          line_id: string
+          product_id: string
+        }
+        Update: {
+          id?: string
+          line_id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_line_links_line_id_fkey"
+            columns: ["line_id"]
+            isOneToOne: false
+            referencedRelation: "factory_group_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_line_links_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_view_attributes: {
+        Row: {
+          id: string
+          product_view_id: string
+          project_attribute_id: string
+          value: string
+        }
+        Insert: {
+          id?: string
+          product_view_id: string
+          project_attribute_id: string
+          value?: string
+        }
+        Update: {
+          id?: string
+          product_view_id?: string
+          project_attribute_id?: string
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_view_attributes_product_view_id_fkey"
+            columns: ["product_view_id"]
+            isOneToOne: false
+            referencedRelation: "product_views"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_view_attributes_project_attribute_id_fkey"
+            columns: ["project_attribute_id"]
+            isOneToOne: false
+            referencedRelation: "project_attributes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_view_equipment: {
+        Row: {
+          equipment_id: string
+          id: string
+          product_view_id: string
+        }
+        Insert: {
+          equipment_id: string
+          id?: string
+          product_view_id: string
+        }
+        Update: {
+          equipment_id?: string
+          id?: string
+          product_view_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_view_equipment_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_view_equipment_product_view_id_fkey"
+            columns: ["product_view_id"]
+            isOneToOne: false
+            referencedRelation: "product_views"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_view_positions: {
+        Row: {
+          id: string
+          position_id: string
+          product_view_id: string
+        }
+        Insert: {
+          id?: string
+          position_id: string
+          product_view_id: string
+        }
+        Update: {
+          id?: string
+          position_id?: string
+          product_view_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_view_positions_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "positions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_view_positions_product_view_id_fkey"
+            columns: ["product_view_id"]
+            isOneToOne: false
+            referencedRelation: "product_views"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_views: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          updated_at: string
+          view_image_url: string | null
+          view_name: string
+          vision_project_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          updated_at?: string
+          view_image_url?: string | null
+          view_name: string
+          vision_project_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          updated_at?: string
+          view_image_url?: string | null
+          view_name?: string
+          vision_project_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_views_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_views_vision_project_id_fkey"
+            columns: ["vision_project_id"]
+            isOneToOne: false
+            referencedRelation: "vision_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          comments: string | null
+          created_at: string
+          id: string
+          master_artwork_url: string | null
+          product_code: string
+          product_name: string
+          solutions_project_id: string
+          updated_at: string
+        }
+        Insert: {
+          comments?: string | null
+          created_at?: string
+          id?: string
+          master_artwork_url?: string | null
+          product_code: string
+          product_name: string
+          solutions_project_id: string
+          updated_at?: string
+        }
+        Update: {
+          comments?: string | null
+          created_at?: string
+          id?: string
+          master_artwork_url?: string | null
+          product_code?: string
+          product_name?: string
+          solutions_project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_solutions_project_id_fkey"
             columns: ["solutions_project_id"]
             isOneToOne: false
             referencedRelation: "solutions_projects"
@@ -5416,6 +5703,74 @@ export type Database = {
           },
           {
             foreignKeyName: "vision_models_solutions_project_id_fkey"
+            columns: ["solutions_project_id"]
+            isOneToOne: false
+            referencedRelation: "solutions_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vision_project_attributes: {
+        Row: {
+          id: string
+          project_attribute_id: string
+          vision_project_id: string
+        }
+        Insert: {
+          id?: string
+          project_attribute_id: string
+          vision_project_id: string
+        }
+        Update: {
+          id?: string
+          project_attribute_id?: string
+          vision_project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vision_project_attributes_project_attribute_id_fkey"
+            columns: ["project_attribute_id"]
+            isOneToOne: false
+            referencedRelation: "project_attributes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vision_project_attributes_vision_project_id_fkey"
+            columns: ["vision_project_id"]
+            isOneToOne: false
+            referencedRelation: "vision_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vision_projects: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          solutions_project_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          solutions_project_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          solutions_project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vision_projects_solutions_project_id_fkey"
             columns: ["solutions_project_id"]
             isOneToOne: false
             referencedRelation: "solutions_projects"

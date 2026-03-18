@@ -502,6 +502,11 @@ export const FeasibilityGateDialog = ({
                 gaps.push('Infrastructure: Requirements incomplete — all fields must be set to Required or Not Required');
               }
 
+              // Attributes gaps (only present for Vision/Hybrid)
+              if (completeness && completeness.attributes === false) {
+                gaps.push('Attributes: At least one attribute must be linked to the project');
+              }
+
               if (gaps.length === 0 && allTabsGreen) {
                 return (
                   <div className="rounded-lg border border-green-500/50 bg-green-500/10 p-3 mb-3 flex items-start gap-2">

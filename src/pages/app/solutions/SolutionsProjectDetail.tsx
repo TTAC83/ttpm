@@ -475,6 +475,12 @@ export const SolutionsProjectDetail = () => {
           <SharedProductGapsTab projectId={project.id} projectType="solutions" />
         </TabsContent>
 
+        {isVisionOrHybrid && (
+          <TabsContent value="attributes" className="space-y-4">
+            <ProjectAttributesTab projectId={project.id} onCompletenessChange={() => setCompletenessRefreshKey(k => k + 1)} />
+          </TabsContent>
+        )}
+
         <TabsContent value="blockers" className="space-y-4">
           <SharedBlockersTab projectId={project.id} projectType="solutions" />
         </TabsContent>

@@ -379,6 +379,12 @@ export const SolutionsProjectDetail = () => {
             <TabsTrigger value="network-config">Network Config</TabsTrigger>
             <TabsTrigger value="camera-validation">Camera Validation</TabsTrigger>
             <TabsTrigger value="iot-validation">IoT Device Validation</TabsTrigger>
+            {isVisionOrHybrid && (
+              <>
+                <TabsTrigger value="vision-projects">Vision Projects</TabsTrigger>
+                <TabsTrigger value="products">Products</TabsTrigger>
+              </>
+            )}
           </TabsList>
 
           {/* Row 4 - Go Live Gate */}

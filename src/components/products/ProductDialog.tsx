@@ -107,20 +107,7 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
     setSelectedLines(prev => prev.filter(lId => filteredLines.some(l => l.id === lId)));
   }, [selectedGroups.join(',')]);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > MAX_FILE_SIZE) {
-      toast({ title: 'File too large', description: 'Maximum file size is 2MB', variant: 'destructive' });
-      return;
-    }
-
-    if (!file.type.startsWith('image/')) {
-      toast({ title: 'Invalid file type', description: 'Please select an image file', variant: 'destructive' });
-      return;
-    }
-
+  const handleFileSelect = (file: File) => {
     setUploadFile(file);
     setUploadPreview(URL.createObjectURL(file));
     setExistingUploadUrl(null);
@@ -130,7 +117,6 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
     setUploadFile(null);
     setUploadPreview(null);
     setExistingUploadUrl(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const uploadToStorage = async (productId: string): Promise<string> => {

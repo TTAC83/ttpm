@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { ImageIcon, X } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { ImageLightbox } from './ImageLightbox';
 
 interface ImageDropZoneProps {
   preview?: string | null;

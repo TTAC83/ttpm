@@ -400,6 +400,50 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
               </div>
             </div>
           )}
+
+          {/* Product Attributes */}
+          {availableAttrs.length > 0 && (
+            <div className="space-y-2">
+              <Label>Attributes</Label>
+              <p className="text-xs text-muted-foreground">Select which attributes apply to this product. Set = fixed value, Variable = entered per view.</p>
+              <div className="border rounded-lg p-3 space-y-3">
+                {availableAttrs.map(attr => {
+                  const state = productAttrs[attr.project_attribute_id] || { selected: false, is_variable: false, fixed_value: '' };
+                  const updateAttr = (patch: Partial<ProductAttributeState>) =>
+                    setProductAttrs(prev => ({ ...prev, [attr.project_attribute_id]: { ...state, ...patch } }));
+
+                  return (
+                    <div key={attr.project_attribute_id} className="space-y-2">
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          checked={state.selected}
+                          onCheckedChange={(checked) => updateAttr({ selected: !!checked })}
+                        />
+                        <span className="text-sm font-medium flex-1">{attr.master_name}</span>
+                        {state.selected && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">{state.is_variable ? 'Variable' : 'Set'}</span>
+                            <Switch
+                              checked={state.is_variable}
+                              onCheckedChange={(checked) => updateAttr({ is_variable: checked })}
+                            />
+                          </div>
+                        )}
+                      </div>
+                      {state.selected && !state.is_variable && (
+                        <Input
+                          className="ml-7"
+                          placeholder="Fixed value"
+                          value={state.fixed_value}
+                          onChange={e => updateAttr({ fixed_value: e.target.value })}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         <DialogFooter>

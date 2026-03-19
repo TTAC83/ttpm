@@ -289,7 +289,12 @@ export function SolutionsProducts({ projectId }: Props) {
                 <TableRow key={prod.id}>
                   <TableCell>
                     {prod.master_artwork_url ? (
-                      <img src={prod.master_artwork_url} alt={prod.product_name} className="h-10 w-10 rounded object-cover" />
+                      <img
+                        src={prod.master_artwork_url}
+                        alt={prod.product_name}
+                        className="h-10 w-10 rounded object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => setLightboxSrc(prod.master_artwork_url)}
+                      />
                     ) : (
                       <div className="h-10 w-10 rounded bg-muted flex items-center justify-center">
                         <Image className="h-4 w-4 text-muted-foreground" />

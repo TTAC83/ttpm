@@ -66,7 +66,7 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
   const [existingUploadUrl, setExistingUploadUrl] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  
 
   useEffect(() => {
     if (open) {

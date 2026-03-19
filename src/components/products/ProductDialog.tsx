@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,9 +8,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog';
-import { Loader2, Upload, Link, X, ImageIcon } from 'lucide-react';
+import { Loader2, Upload, Link } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { ImageDropZone } from '@/components/shared/ImageDropZone';
 
 const SUPABASE_URL = "https://tjbiyyejofdpwybppxhv.supabase.co";
 const BUCKET = 'product-artwork';
@@ -65,7 +66,7 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
   const [existingUploadUrl, setExistingUploadUrl] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  
 
   useEffect(() => {
     if (open) {
@@ -106,20 +107,7 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
     setSelectedLines(prev => prev.filter(lId => filteredLines.some(l => l.id === lId)));
   }, [selectedGroups.join(',')]);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > MAX_FILE_SIZE) {
-      toast({ title: 'File too large', description: 'Maximum file size is 2MB', variant: 'destructive' });
-      return;
-    }
-
-    if (!file.type.startsWith('image/')) {
-      toast({ title: 'Invalid file type', description: 'Please select an image file', variant: 'destructive' });
-      return;
-    }
-
+  const handleFileSelect = (file: File) => {
     setUploadFile(file);
     setUploadPreview(URL.createObjectURL(file));
     setExistingUploadUrl(null);
@@ -129,7 +117,6 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
     setUploadFile(null);
     setUploadPreview(null);
     setExistingUploadUrl(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const uploadToStorage = async (productId: string): Promise<string> => {
@@ -243,31 +230,12 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
               </TabsList>
 
               <TabsContent value="upload" className="mt-3">
-                {uploadPreview ? (
-                  <div className="relative inline-block border rounded-lg p-2 bg-muted/30">
-                    <img src={uploadPreview} alt="Artwork preview" className="max-h-32 rounded object-contain" />
-                    <button
-                      type="button"
-                      onClick={clearUpload}
-                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-0.5 hover:opacity-80"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                ) : (
-                  <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-lg p-6 cursor-pointer hover:bg-muted/50 transition-colors">
-                    <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Click to upload an image</span>
-                    <span className="text-xs text-muted-foreground">Max 2MB · JPG, PNG, WebP</span>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleFileSelect}
-                    />
-                  </label>
-                )}
+                <ImageDropZone
+                  preview={uploadPreview}
+                  onFileSelect={handleFileSelect}
+                  onClear={clearUpload}
+                  maxSizeMB={2}
+                />
               </TabsContent>
 
               <TabsContent value="url" className="mt-3 space-y-2">

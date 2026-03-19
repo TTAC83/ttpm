@@ -1,28 +1,31 @@
 
 
-## Add Drag-and-Drop to Image Upload
+## Lightbox for Product Artwork
 
-### Current State
-The upload zone in `ProductDialog.tsx` (lines ~237-248) is a `<label>` with a hidden file input. It handles click-to-upload only. No reusable upload component exists in the project.
+### Overview
+Add a click-to-enlarge lightbox when users click on product artwork thumbnails. Clicking the small image opens it full-size in a centered overlay dialog.
 
 ### Approach
-Create a small reusable `ImageDropZone` component that handles both click and drag-and-drop, then use it in `ProductDialog` (and anywhere else later).
+Create a small reusable `ImageLightbox` component (a simple Dialog wrapping a large image), then wire it up in two places where thumbnails appear:
+
+1. **Product table** in `SolutionsProducts.tsx` — the 40x40 thumbnail in each row
+2. **ImageDropZone preview** in `ImageDropZone.tsx` — the upload preview thumbnail
+3. **ProductDialog URL preview** — the inline URL preview image
 
 ### Files
 
-**Create: `src/components/shared/ImageDropZone.tsx`**
-- Accepts `onFileSelect(file: File)`, `maxSizeMB`, `preview` (existing image URL), `onClear`
-- Renders a drop zone with `onDragOver`, `onDragEnter`, `onDragLeave`, `onDrop` handlers
-- Visual feedback: border highlight on drag-over
-- Click delegates to hidden file input
-- Shows preview with remove button when an image is set
-- Validates file type and size, shows toast on error
+**Create: `src/components/shared/ImageLightbox.tsx`**
+- A Dialog that shows the image at full size (max-w/max-h constrained to viewport)
+- Props: `src`, `alt`, `open`, `onOpenChange`
+- Minimal chrome — just the image with a close button
+
+**Modify: `src/pages/app/solutions/tabs/SolutionsProducts.tsx`**
+- Wrap the table thumbnail `<img>` with a clickable handler that opens the lightbox
+- Add lightbox state (`lightboxSrc`) and render `<ImageLightbox>`
+
+**Modify: `src/components/shared/ImageDropZone.tsx`**
+- Make the preview image clickable to open the lightbox
 
 **Modify: `src/components/products/ProductDialog.tsx`**
-- Replace the inline `<label>` upload zone and preview block (~lines 233-255) with `<ImageDropZone>`
-- Remove the local `fileInputRef` and `handleFileSelect` — delegated to the component
-- Keep the upload-to-storage and URL tab logic unchanged
-
-### Scope
-~80 lines for the new component, ~20 lines net reduction in ProductDialog. The component is immediately reusable for `ProductViewDialog` or any future upload need.
+- Make the URL-mode preview image clickable to open the lightbox
 

@@ -3,16 +3,32 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload, Link } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { ImageDropZone } from '@/components/shared/ImageDropZone';
+import { ImageLightbox } from '@/components/shared/ImageLightbox';
+
+const SUPABASE_URL = "https://tjbiyyejofdpwybppxhv.supabase.co";
+const BUCKET = 'product-artwork';
+
+function isSupabaseStorageUrl(url: string): boolean {
+  return url.includes(SUPABASE_URL) && url.includes(`/storage/v1/object/public/${BUCKET}/`);
+}
+
+function extractStoragePath(url: string): string | null {
+  const marker = `/storage/v1/object/public/${BUCKET}/`;
+  const idx = url.indexOf(marker);
+  if (idx === -1) return null;
+  return url.substring(idx + marker.length);
+}
 
 interface VisionProject {
   id: string;
@@ -48,12 +64,31 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
   const [vpAttrs, setVpAttrs] = useState<VPAttribute[]>([]);
   const [attrValues, setAttrValues] = useState<Record<string, string>>({});
 
+  const [artworkMode, setArtworkMode] = useState<'upload' | 'url'>('upload');
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+  const [existingUploadUrl, setExistingUploadUrl] = useState<string | null>(null);
+  const [urlLightboxOpen, setUrlLightboxOpen] = useState(false);
+
   useEffect(() => {
     if (open) {
       setViewName(editingView?.view_name || '');
-      setImageUrl(editingView?.view_image_url || '');
       setVpId(editingView?.vision_project_id || '');
       setAttrValues({});
+      setUploadFile(null);
+      setUploadPreview(null);
+
+      const url = editingView?.view_image_url || '';
+      if (url && isSupabaseStorageUrl(url)) {
+        setArtworkMode('upload');
+        setExistingUploadUrl(url);
+        setUploadPreview(url);
+        setImageUrl('');
+      } else {
+        setArtworkMode(url ? 'url' : 'upload');
+        setExistingUploadUrl(null);
+        setImageUrl(url);
+      }
     }
   }, [open, editingView]);
 
@@ -111,6 +146,38 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
     load();
   }, [editingView?.id, vpAttrs.length, open]);
 
+  const handleFileSelect = (file: File) => {
+    setUploadFile(file);
+    setUploadPreview(URL.createObjectURL(file));
+    setExistingUploadUrl(null);
+  };
+
+  const clearUpload = () => {
+    setUploadFile(null);
+    setUploadPreview(null);
+    setExistingUploadUrl(null);
+  };
+
+  const uploadToStorage = async (viewId: string): Promise<string> => {
+    if (!uploadFile) throw new Error('No file selected');
+    const ext = uploadFile.name.split('.').pop() || 'jpg';
+    const filePath = `views/${viewId}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from(BUCKET).upload(filePath, uploadFile, {
+      cacheControl: '3600',
+      upsert: false,
+    });
+    if (error) throw error;
+    const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
+    return publicUrl;
+  };
+
+  const deleteOldUpload = async (url: string) => {
+    const path = extractStoragePath(url);
+    if (path) {
+      await supabase.storage.from(BUCKET).remove([path]);
+    }
+  };
+
   const handleSave = async () => {
     if (!viewName.trim()) {
       toast({ title: 'Validation', description: 'View name is required', variant: 'destructive' });
@@ -121,9 +188,21 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
     try {
       let viewId: string;
 
+      // Determine final image URL
+      let finalImageUrl = '';
+      if (artworkMode === 'upload') {
+        if (uploadFile) {
+          // Will upload after we have viewId
+        } else if (existingUploadUrl) {
+          finalImageUrl = existingUploadUrl;
+        }
+      } else {
+        finalImageUrl = imageUrl.trim();
+      }
+
       const viewPayload: any = {
         view_name: viewName.trim(),
-        view_image_url: imageUrl.trim() || null,
+        view_image_url: finalImageUrl || null,
         vision_project_id: vpId || null,
       };
 
@@ -139,6 +218,23 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
           .single();
         if (error) throw error;
         viewId = data.id;
+      }
+
+      // Handle file upload now that we have viewId
+      if (artworkMode === 'upload' && uploadFile) {
+        const uploadedUrl = await uploadToStorage(viewId);
+        await supabase.from('product_views').update({ view_image_url: uploadedUrl } as any).eq('id', viewId);
+
+        // Delete old uploaded file if replacing
+        if (existingUploadUrl) {
+          await deleteOldUpload(existingUploadUrl);
+        }
+      } else if (artworkMode === 'url') {
+        // If switching from upload to URL, delete old upload
+        const oldUrl = editingView?.view_image_url;
+        if (oldUrl && isSupabaseStorageUrl(oldUrl)) {
+          await deleteOldUpload(oldUrl);
+        }
       }
 
       // Sync attribute values
@@ -179,14 +275,44 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
             <Input value={viewName} onChange={e => setViewName(e.target.value)} placeholder="e.g. Front Label" />
           </div>
 
+          {/* View Image: Upload or URL */}
           <div className="space-y-2">
-            <Label>View Image URL</Label>
-            <Input value={imageUrl} onChange={e => setImageUrl(e.target.value)} placeholder="https://..." />
-            {imageUrl && (
-              <div className="mt-2 border rounded-lg p-2 inline-block">
-                <img src={imageUrl} alt="View" className="max-h-24 rounded" onError={e => (e.currentTarget.style.display = 'none')} />
-              </div>
-            )}
+            <Label>View Image</Label>
+            <Tabs value={artworkMode} onValueChange={v => setArtworkMode(v as 'upload' | 'url')}>
+              <TabsList className="w-full">
+                <TabsTrigger value="upload" className="flex-1 gap-1.5">
+                  <Upload className="h-3.5 w-3.5" /> Upload
+                </TabsTrigger>
+                <TabsTrigger value="url" className="flex-1 gap-1.5">
+                  <Link className="h-3.5 w-3.5" /> URL
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="upload" className="mt-3">
+                <ImageDropZone
+                  preview={uploadPreview}
+                  onFileSelect={handleFileSelect}
+                  onClear={clearUpload}
+                  maxSizeMB={2}
+                />
+              </TabsContent>
+
+              <TabsContent value="url" className="mt-3 space-y-2">
+                <Input value={imageUrl} onChange={e => setImageUrl(e.target.value)} placeholder="https://..." />
+                {imageUrl && (
+                  <div className="border rounded-lg p-2 inline-block">
+                    <img
+                      src={imageUrl}
+                      alt="View preview"
+                      className="max-h-24 rounded cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => setUrlLightboxOpen(true)}
+                      onError={e => (e.currentTarget.style.display = 'none')}
+                    />
+                  </div>
+                )}
+                <ImageLightbox src={imageUrl} open={urlLightboxOpen} onOpenChange={setUrlLightboxOpen} />
+              </TabsContent>
+            </Tabs>
           </div>
 
           <div className="space-y-2">

@@ -381,6 +381,8 @@ export function SolutionsProducts({ projectId }: Props) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ImageLightbox src={lightboxSrc} open={!!lightboxSrc} onOpenChange={(open) => !open && setLightboxSrc(null)} />
     </div>
   );
 }

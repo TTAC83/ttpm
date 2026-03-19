@@ -245,11 +245,13 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
                     <img
                       src={artworkUrl}
                       alt="Artwork preview"
-                      className="max-h-24 rounded"
+                      className="max-h-24 rounded cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => setUrlLightboxOpen(true)}
                       onError={e => (e.currentTarget.style.display = 'none')}
                     />
                   </div>
                 )}
+                <ImageLightbox src={artworkUrl} open={urlLightboxOpen} onOpenChange={setUrlLightboxOpen} />
               </TabsContent>
             </Tabs>
           </div>

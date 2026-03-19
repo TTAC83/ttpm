@@ -3221,6 +3221,51 @@ export type Database = {
           },
         ]
       }
+      product_attributes: {
+        Row: {
+          created_at: string
+          fixed_value: string | null
+          id: string
+          is_variable: boolean
+          product_id: string
+          project_attribute_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          fixed_value?: string | null
+          id?: string
+          is_variable?: boolean
+          product_id: string
+          project_attribute_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          fixed_value?: string | null
+          id?: string
+          is_variable?: boolean
+          product_id?: string
+          project_attribute_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_attributes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_attributes_project_attribute_id_fkey"
+            columns: ["project_attribute_id"]
+            isOneToOne: false
+            referencedRelation: "project_attributes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_factory_links: {
         Row: {
           factory_id: string

@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
@@ -18,6 +19,12 @@ const SUPABASE_URL = "https://tjbiyyejofdpwybppxhv.supabase.co";
 const BUCKET = 'product-artwork';
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
+export interface ProductAttributeData {
+  project_attribute_id: string;
+  is_variable: boolean;
+  fixed_value: string;
+}
+
 export interface ProductFormData {
   product_code: string;
   product_name: string;
@@ -26,11 +33,23 @@ export interface ProductFormData {
   factory_ids: string[];
   group_ids: string[];
   line_ids: string[];
+  product_attributes: ProductAttributeData[];
 }
 
 interface FactoryItem { id: string; name: string; }
 interface GroupItem { id: string; name: string; factory_id: string; }
 interface LineItem { id: string; name: string; group_id: string; }
+
+interface AvailableAttribute {
+  project_attribute_id: string;
+  master_name: string;
+}
+
+interface ProductAttributeState {
+  selected: boolean;
+  is_variable: boolean;
+  fixed_value: string;
+}
 
 interface Props {
   open: boolean;
@@ -40,6 +59,8 @@ interface Props {
   factories: FactoryItem[];
   groups: GroupItem[];
   lines: LineItem[];
+  projectId: string;
+  productId?: string | null;
 }
 
 function isSupabaseStorageUrl(url: string): boolean {
@@ -53,7 +74,7 @@ function extractStoragePath(url: string): string | null {
   return url.substring(idx + marker.length);
 }
 
-export function ProductDialog({ open, onOpenChange, onSubmit, initialData, factories, groups, lines }: Props) {
+export function ProductDialog({ open, onOpenChange, onSubmit, initialData, factories, groups, lines, projectId, productId }: Props) {
   const [saving, setSaving] = useState(false);
   const [productCode, setProductCode] = useState('');
   const [productName, setProductName] = useState('');
@@ -68,6 +89,10 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
   const [existingUploadUrl, setExistingUploadUrl] = useState<string | null>(null);
   const [urlLightboxOpen, setUrlLightboxOpen] = useState(false);
+
+  // Attributes state
+  const [availableAttrs, setAvailableAttrs] = useState<AvailableAttribute[]>([]);
+  const [productAttrs, setProductAttrs] = useState<Record<string, ProductAttributeState>>({});
 
   useEffect(() => {
     if (open) {
@@ -94,7 +119,64 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
     }
   }, [open, initialData]);
 
-  // Filter groups by selected factories
+  // Fetch available attributes from project's vision project attributes
+  useEffect(() => {
+    if (!open || !projectId) { setAvailableAttrs([]); return; }
+    const fetchAttrs = async () => {
+      // Get all vision_project_attributes for this solutions project
+      const { data: vpas } = await supabase
+        .from('vision_project_attributes')
+        .select('project_attribute_id, vision_projects!inner(solutions_project_id)')
+        .eq('vision_projects.solutions_project_id', projectId);
+
+      const paIds = [...new Set((vpas || []).map((v: any) => v.project_attribute_id))];
+      if (paIds.length === 0) { setAvailableAttrs([]); return; }
+
+      const { data: paData } = await supabase
+        .from('project_attributes')
+        .select('id, master_attribute_id')
+        .in('id', paIds);
+
+      const masterIds = (paData || []).map((pa: any) => pa.master_attribute_id);
+      const { data: masters } = await supabase
+        .from('master_attributes')
+        .select('id, name')
+        .in('id', masterIds);
+
+      const masterMap = Object.fromEntries((masters || []).map((m: any) => [m.id, m.name]));
+      setAvailableAttrs((paData || []).map((pa: any) => ({
+        project_attribute_id: pa.id,
+        master_name: masterMap[pa.master_attribute_id] || 'Unknown',
+      })));
+    };
+    fetchAttrs();
+  }, [open, projectId]);
+
+  // Load existing product_attributes when editing
+  useEffect(() => {
+    if (!open || !productId || availableAttrs.length === 0) {
+      if (!productId) setProductAttrs({});
+      return;
+    }
+    const load = async () => {
+      const { data } = await supabase
+        .from('product_attributes')
+        .select('project_attribute_id, is_variable, fixed_value')
+        .eq('product_id', productId);
+
+      const state: Record<string, ProductAttributeState> = {};
+      for (const d of (data || []) as any[]) {
+        state[d.project_attribute_id] = {
+          selected: true,
+          is_variable: d.is_variable,
+          fixed_value: d.fixed_value || '',
+        };
+      }
+      setProductAttrs(state);
+    };
+    load();
+  }, [open, productId, availableAttrs.length]);
+
   const filteredGroups = groups.filter(g => selectedFactories.includes(g.factory_id));
   // Filter lines by selected groups
   const filteredLines = lines.filter(l => selectedGroups.includes(l.group_id));
@@ -172,6 +254,15 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
         }
       }
 
+      // Build product_attributes from state
+      const selectedAttrs: ProductFormData['product_attributes'] = availableAttrs
+        .filter(a => productAttrs[a.project_attribute_id]?.selected)
+        .map(a => ({
+          project_attribute_id: a.project_attribute_id,
+          is_variable: productAttrs[a.project_attribute_id]?.is_variable ?? false,
+          fixed_value: productAttrs[a.project_attribute_id]?.fixed_value ?? '',
+        }));
+
       await onSubmit({
         product_code: productCode.trim(),
         product_name: productName.trim(),
@@ -180,6 +271,7 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
         factory_ids: selectedFactories,
         group_ids: selectedGroups,
         line_ids: selectedLines,
+        product_attributes: selectedAttrs,
       });
       onOpenChange(false);
     } catch (err: any) {
@@ -305,6 +397,50 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
                     <span className="text-sm">{l.name}</span>
                   </label>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Product Attributes */}
+          {availableAttrs.length > 0 && (
+            <div className="space-y-2">
+              <Label>Attributes</Label>
+              <p className="text-xs text-muted-foreground">Select which attributes apply to this product. Set = fixed value, Variable = entered per view.</p>
+              <div className="border rounded-lg p-3 space-y-3">
+                {availableAttrs.map(attr => {
+                  const state = productAttrs[attr.project_attribute_id] || { selected: false, is_variable: false, fixed_value: '' };
+                  const updateAttr = (patch: Partial<ProductAttributeState>) =>
+                    setProductAttrs(prev => ({ ...prev, [attr.project_attribute_id]: { ...state, ...patch } }));
+
+                  return (
+                    <div key={attr.project_attribute_id} className="space-y-2">
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          checked={state.selected}
+                          onCheckedChange={(checked) => updateAttr({ selected: !!checked })}
+                        />
+                        <span className="text-sm font-medium flex-1">{attr.master_name}</span>
+                        {state.selected && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">{state.is_variable ? 'Variable' : 'Set'}</span>
+                            <Switch
+                              checked={state.is_variable}
+                              onCheckedChange={(checked) => updateAttr({ is_variable: checked })}
+                            />
+                          </div>
+                        )}
+                      </div>
+                      {state.selected && !state.is_variable && (
+                        <Input
+                          className="ml-7"
+                          placeholder="Fixed value"
+                          value={state.fixed_value}
+                          onChange={e => updateAttr({ fixed_value: e.target.value })}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

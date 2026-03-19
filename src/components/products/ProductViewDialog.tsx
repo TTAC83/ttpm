@@ -92,10 +92,13 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
     }
   }, [open, editingView]);
 
-  // Fetch VP attributes when VP changes
+  // Fetch VP attributes when VP changes, filtered by product_attributes
+  const [productAttrConfig, setProductAttrConfig] = useState<Record<string, { is_variable: boolean; fixed_value: string | null }>>({});
+
   useEffect(() => {
     if (!vpId) {
       setVpAttrs([]);
+      setProductAttrConfig({});
       return;
     }
     const fetchVpAttrs = async () => {
@@ -107,10 +110,26 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
       const paIds = (data || []).map((d: any) => d.project_attribute_id);
       if (paIds.length === 0) { setVpAttrs([]); return; }
 
+      // Fetch product_attributes to know which are selected and their config
+      const { data: prodAttrs } = await supabase
+        .from('product_attributes')
+        .select('project_attribute_id, is_variable, fixed_value')
+        .eq('product_id', productId);
+
+      const prodAttrMap: Record<string, { is_variable: boolean; fixed_value: string | null }> = {};
+      for (const pa of (prodAttrs || []) as any[]) {
+        prodAttrMap[pa.project_attribute_id] = { is_variable: pa.is_variable, fixed_value: pa.fixed_value };
+      }
+      setProductAttrConfig(prodAttrMap);
+
+      // Only show attributes that are configured on this product
+      const configuredPaIds = paIds.filter((id: string) => prodAttrMap[id]);
+      if (configuredPaIds.length === 0) { setVpAttrs([]); return; }
+
       const { data: paData } = await supabase
         .from('project_attributes')
         .select('id, master_attribute_id')
-        .in('id', paIds);
+        .in('id', configuredPaIds);
 
       const masterIds = (paData || []).map((pa: any) => pa.master_attribute_id);
       const { data: masters } = await supabase
@@ -127,7 +146,7 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
       setVpAttrs(attrs);
     };
     fetchVpAttrs();
-  }, [vpId]);
+  }, [vpId, productId]);
 
   // Load existing attribute values for edit mode
   useEffect(() => {
@@ -237,10 +256,14 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
         }
       }
 
-      // Sync attribute values
+      // Sync attribute values (only variable attributes)
       await supabase.from('product_view_attributes').delete().eq('product_view_id', viewId);
       const attrInserts = vpAttrs
-        .filter(a => attrValues[a.project_attribute_id]?.trim())
+        .filter(a => {
+          const config = productAttrConfig[a.project_attribute_id];
+          const isVariable = config?.is_variable ?? true;
+          return isVariable && attrValues[a.project_attribute_id]?.trim();
+        })
         .map(a => ({
           product_view_id: viewId,
           project_attribute_id: a.project_attribute_id,
@@ -334,19 +357,34 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
           {vpAttrs.length > 0 && (
             <div className="space-y-2">
               <Label>Attribute Values</Label>
-              <p className="text-xs text-muted-foreground">Set values for attributes from the selected vision project</p>
+              <p className="text-xs text-muted-foreground">
+                Set values are fixed at the product level. Variable values can be set per view.
+              </p>
               <div className="border rounded-lg p-3 space-y-3">
-                {vpAttrs.map(attr => (
-                  <div key={attr.project_attribute_id} className="flex items-center gap-3">
-                    <span className="text-sm min-w-[120px]">{attr.master_name}</span>
-                    <Input
-                      className="flex-1"
-                      placeholder="Value"
-                      value={attrValues[attr.project_attribute_id] || ''}
-                      onChange={e => setAttrValues(prev => ({ ...prev, [attr.project_attribute_id]: e.target.value }))}
-                    />
-                  </div>
-                ))}
+                {vpAttrs.map(attr => {
+                  const config = productAttrConfig[attr.project_attribute_id];
+                  const isVariable = config?.is_variable ?? true;
+                  const fixedValue = config?.fixed_value;
+
+                  return (
+                    <div key={attr.project_attribute_id} className="flex items-center gap-3">
+                      <span className="text-sm min-w-[120px]">{attr.master_name}</span>
+                      {isVariable ? (
+                        <Input
+                          className="flex-1"
+                          placeholder="Value"
+                          value={attrValues[attr.project_attribute_id] || ''}
+                          onChange={e => setAttrValues(prev => ({ ...prev, [attr.project_attribute_id]: e.target.value }))}
+                        />
+                      ) : (
+                        <span className="flex-1 text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md">
+                          {fixedValue || '—'}
+                          <span className="ml-2 text-xs opacity-60">(Set)</span>
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

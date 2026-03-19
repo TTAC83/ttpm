@@ -230,31 +230,12 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
               </TabsList>
 
               <TabsContent value="upload" className="mt-3">
-                {uploadPreview ? (
-                  <div className="relative inline-block border rounded-lg p-2 bg-muted/30">
-                    <img src={uploadPreview} alt="Artwork preview" className="max-h-32 rounded object-contain" />
-                    <button
-                      type="button"
-                      onClick={clearUpload}
-                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-0.5 hover:opacity-80"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                ) : (
-                  <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-lg p-6 cursor-pointer hover:bg-muted/50 transition-colors">
-                    <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Click to upload an image</span>
-                    <span className="text-xs text-muted-foreground">Max 2MB · JPG, PNG, WebP</span>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleFileSelect}
-                    />
-                  </label>
-                )}
+                <ImageDropZone
+                  preview={uploadPreview}
+                  onFileSelect={handleFileSelect}
+                  onClear={clearUpload}
+                  maxSizeMB={2}
+                />
               </TabsContent>
 
               <TabsContent value="url" className="mt-3 space-y-2">

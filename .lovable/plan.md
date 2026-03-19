@@ -1,38 +1,19 @@
 
 
-## Plan: Restore Line Completion Percentages & Add Configuration Gaps Table
+## Bug Fix: Products Tab — "Factories not configured"
 
 ### Root Cause
+`SolutionsProducts.tsx` line 55 queries `solution_factories` with `.eq('solutions_project_id', projectId)`, but `solution_factories` has no `solutions_project_id` column. Factories are linked through the portal: `solutions_projects` -> `solution_portals` -> `solution_factories` (via `portal_id`).
 
-The `useTabCompleteness` hook (used on the Solutions project detail page) queries `product_gaps` with `.is('resolved_at', null)` on line 154 — but that column does not exist. The column is actually called `closed_at`. This causes the entire `Promise.all` in the async check to fail silently, which means:
-- The `lines` tab completeness dot never updates
-- Other tab dots (contacts, factory, feature requirements, etc.) also never update
-- The unhandled rejection may cause rendering issues that affect the inline percentage badges in the Lines tab
+The network logs confirm a 400 error: `column solution_factories.solutions_project_id does not exist`.
 
-### Changes
+### Fix
+In `src/pages/app/solutions/tabs/SolutionsProducts.tsx`, update `fetchHierarchy` to:
+1. First query `solution_portals` for the project's portal ID
+2. Then query `solution_factories` using `.eq('portal_id', portalId)` instead of the non-existent `solutions_project_id`
 
-**1. Fix `useTabCompleteness.ts` — replace `resolved_at` with correct column**
+This matches the pattern already used in `useFactoryConfig.ts`.
 
-Change line 154 from `.is('resolved_at', null)` to `.is('closed_at', null)` so the product gaps query succeeds and the entire async completeness check completes normally.
-
-**2. Add error handling to `useTabCompleteness.ts`**
-
-Wrap the `checkAsync` call in a try-catch so that if any individual check fails, it doesn't silently break all other checks.
-
-**3. Add a consolidated Configuration Gaps summary table to the Lines tab**
-
-Add a summary card at the top of the `SolutionsLines.tsx` table view that aggregates all line gaps into a single table (similar to `FactoryConfigGaps`). This table will show:
-- Line name
-- Category (e.g., "Line Information", "Positions & Equipment", "Camera config")
-- Issue description
-- Total items remaining per line
-
-The table will appear when `showGaps` is toggled on and any line has gaps. It provides a single-glance view of all configuration gaps across all lines, complementing the existing per-line expandable gaps.
-
-### Technical Details
-
-| File | Change |
-|------|--------|
-| `src/pages/app/solutions/hooks/useTabCompleteness.ts` | Fix `resolved_at` → `closed_at`; add try-catch |
-| `src/pages/app/solutions/tabs/SolutionsLines.tsx` | Add consolidated gaps summary table above the lines table |
+### File Changed
+- `src/pages/app/solutions/tabs/SolutionsProducts.tsx` — fix `fetchHierarchy` function (lines 51-80)
 

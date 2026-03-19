@@ -1,13 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload, Link, X, ImageIcon } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+
+const SUPABASE_URL = "https://tjbiyyejofdpwybppxhv.supabase.co";
+const BUCKET = 'product-artwork';
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
 export interface ProductFormData {
   product_code: string;
@@ -33,6 +40,17 @@ interface Props {
   lines: LineItem[];
 }
 
+function isSupabaseStorageUrl(url: string): boolean {
+  return url.includes(SUPABASE_URL) && url.includes(`/storage/v1/object/public/${BUCKET}/`);
+}
+
+function extractStoragePath(url: string): string | null {
+  const marker = `/storage/v1/object/public/${BUCKET}/`;
+  const idx = url.indexOf(marker);
+  if (idx === -1) return null;
+  return url.substring(idx + marker.length);
+}
+
 export function ProductDialog({ open, onOpenChange, onSubmit, initialData, factories, groups, lines }: Props) {
   const [saving, setSaving] = useState(false);
   const [productCode, setProductCode] = useState('');
@@ -43,15 +61,34 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const [selectedLines, setSelectedLines] = useState<string[]>([]);
 
+  const [artworkMode, setArtworkMode] = useState<'upload' | 'url'>('upload');
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+  const [existingUploadUrl, setExistingUploadUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     if (open) {
       setProductCode(initialData?.product_code || '');
       setProductName(initialData?.product_name || '');
-      setArtworkUrl(initialData?.master_artwork_url || '');
       setComments(initialData?.comments || '');
       setSelectedFactories(initialData?.factory_ids || []);
       setSelectedGroups(initialData?.group_ids || []);
       setSelectedLines(initialData?.line_ids || []);
+      setUploadFile(null);
+      setUploadPreview(null);
+
+      const url = initialData?.master_artwork_url || '';
+      if (url && isSupabaseStorageUrl(url)) {
+        setArtworkMode('upload');
+        setExistingUploadUrl(url);
+        setUploadPreview(url);
+        setArtworkUrl('');
+      } else {
+        setArtworkMode(url ? 'url' : 'upload');
+        setExistingUploadUrl(null);
+        setArtworkUrl(url);
+      }
     }
   }, [open, initialData]);
 
@@ -69,19 +106,96 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
     setSelectedLines(prev => prev.filter(lId => filteredLines.some(l => l.id === lId)));
   }, [selectedGroups.join(',')]);
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > MAX_FILE_SIZE) {
+      toast({ title: 'File too large', description: 'Maximum file size is 2MB', variant: 'destructive' });
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Invalid file type', description: 'Please select an image file', variant: 'destructive' });
+      return;
+    }
+
+    setUploadFile(file);
+    setUploadPreview(URL.createObjectURL(file));
+    setExistingUploadUrl(null);
+  };
+
+  const clearUpload = () => {
+    setUploadFile(null);
+    setUploadPreview(null);
+    setExistingUploadUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const uploadToStorage = async (productId: string): Promise<string> => {
+    if (!uploadFile) throw new Error('No file selected');
+
+    const ext = uploadFile.name.split('.').pop() || 'jpg';
+    const filePath = `${productId}/${Date.now()}.${ext}`;
+
+    const { error } = await supabase.storage.from(BUCKET).upload(filePath, uploadFile, {
+      cacheControl: '3600',
+      upsert: false,
+    });
+
+    if (error) throw error;
+
+    const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
+    return publicUrl;
+  };
+
+  const deleteOldUpload = async (url: string) => {
+    const path = extractStoragePath(url);
+    if (path) {
+      await supabase.storage.from(BUCKET).remove([path]);
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
+      let finalUrl = '';
+
+      if (artworkMode === 'upload') {
+        if (uploadFile) {
+          // New file to upload — use a temp ID, the parent will handle the actual product ID
+          const tempId = initialData?.product_code || crypto.randomUUID();
+          finalUrl = await uploadToStorage(tempId);
+
+          // Delete old uploaded file if replacing
+          if (existingUploadUrl) {
+            await deleteOldUpload(existingUploadUrl);
+          }
+        } else if (existingUploadUrl) {
+          // Keep existing upload
+          finalUrl = existingUploadUrl;
+        }
+      } else {
+        finalUrl = artworkUrl.trim();
+
+        // If switching from upload to URL, delete the old uploaded file
+        if (initialData?.master_artwork_url && isSupabaseStorageUrl(initialData.master_artwork_url)) {
+          await deleteOldUpload(initialData.master_artwork_url);
+        }
+      }
+
       await onSubmit({
         product_code: productCode.trim(),
         product_name: productName.trim(),
-        master_artwork_url: artworkUrl.trim(),
+        master_artwork_url: finalUrl,
         comments: comments.trim(),
         factory_ids: selectedFactories,
         group_ids: selectedGroups,
         line_ids: selectedLines,
       });
       onOpenChange(false);
+    } catch (err: any) {
+      toast({ title: 'Error saving product', description: err.message, variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -90,6 +204,8 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
   const toggle = (list: string[], id: string, setter: (v: string[]) => void) => {
     setter(list.includes(id) ? list.filter(x => x !== id) : [...list, id]);
   };
+
+  const hasArtwork = artworkMode === 'upload' ? !!(uploadPreview || existingUploadUrl) : !!artworkUrl.trim();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -113,14 +229,61 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
             </div>
           </div>
 
+          {/* Artwork: Upload or URL */}
           <div className="space-y-2">
-            <Label>Master Artwork URL</Label>
-            <Input value={artworkUrl} onChange={e => setArtworkUrl(e.target.value)} placeholder="https://..." />
-            {artworkUrl && (
-              <div className="mt-2 border rounded-lg p-2 inline-block">
-                <img src={artworkUrl} alt="Artwork preview" className="max-h-24 rounded" onError={e => (e.currentTarget.style.display = 'none')} />
-              </div>
-            )}
+            <Label>Master Artwork</Label>
+            <Tabs value={artworkMode} onValueChange={v => setArtworkMode(v as 'upload' | 'url')}>
+              <TabsList className="w-full">
+                <TabsTrigger value="upload" className="flex-1 gap-1.5">
+                  <Upload className="h-3.5 w-3.5" /> Upload
+                </TabsTrigger>
+                <TabsTrigger value="url" className="flex-1 gap-1.5">
+                  <Link className="h-3.5 w-3.5" /> URL
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="upload" className="mt-3">
+                {uploadPreview ? (
+                  <div className="relative inline-block border rounded-lg p-2 bg-muted/30">
+                    <img src={uploadPreview} alt="Artwork preview" className="max-h-32 rounded object-contain" />
+                    <button
+                      type="button"
+                      onClick={clearUpload}
+                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-0.5 hover:opacity-80"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-lg p-6 cursor-pointer hover:bg-muted/50 transition-colors">
+                    <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Click to upload an image</span>
+                    <span className="text-xs text-muted-foreground">Max 2MB · JPG, PNG, WebP</span>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFileSelect}
+                    />
+                  </label>
+                )}
+              </TabsContent>
+
+              <TabsContent value="url" className="mt-3 space-y-2">
+                <Input value={artworkUrl} onChange={e => setArtworkUrl(e.target.value)} placeholder="https://..." />
+                {artworkUrl && (
+                  <div className="border rounded-lg p-2 inline-block">
+                    <img
+                      src={artworkUrl}
+                      alt="Artwork preview"
+                      className="max-h-24 rounded"
+                      onError={e => (e.currentTarget.style.display = 'none')}
+                    />
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
 
           <div className="space-y-2">

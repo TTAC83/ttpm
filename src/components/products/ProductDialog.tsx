@@ -19,6 +19,12 @@ const SUPABASE_URL = "https://tjbiyyejofdpwybppxhv.supabase.co";
 const BUCKET = 'product-artwork';
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
+export interface ProductAttributeData {
+  project_attribute_id: string;
+  is_variable: boolean;
+  fixed_value: string;
+}
+
 export interface ProductFormData {
   product_code: string;
   product_name: string;
@@ -27,6 +33,7 @@ export interface ProductFormData {
   factory_ids: string[];
   group_ids: string[];
   line_ids: string[];
+  product_attributes: ProductAttributeData[];
 }
 
 interface FactoryItem { id: string; name: string; }

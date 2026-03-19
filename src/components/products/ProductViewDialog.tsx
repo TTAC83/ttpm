@@ -353,19 +353,34 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
           {vpAttrs.length > 0 && (
             <div className="space-y-2">
               <Label>Attribute Values</Label>
-              <p className="text-xs text-muted-foreground">Set values for attributes from the selected vision project</p>
+              <p className="text-xs text-muted-foreground">
+                Set values are fixed at the product level. Variable values can be set per view.
+              </p>
               <div className="border rounded-lg p-3 space-y-3">
-                {vpAttrs.map(attr => (
-                  <div key={attr.project_attribute_id} className="flex items-center gap-3">
-                    <span className="text-sm min-w-[120px]">{attr.master_name}</span>
-                    <Input
-                      className="flex-1"
-                      placeholder="Value"
-                      value={attrValues[attr.project_attribute_id] || ''}
-                      onChange={e => setAttrValues(prev => ({ ...prev, [attr.project_attribute_id]: e.target.value }))}
-                    />
-                  </div>
-                ))}
+                {vpAttrs.map(attr => {
+                  const config = productAttrConfig[attr.project_attribute_id];
+                  const isVariable = config?.is_variable ?? true;
+                  const fixedValue = config?.fixed_value;
+
+                  return (
+                    <div key={attr.project_attribute_id} className="flex items-center gap-3">
+                      <span className="text-sm min-w-[120px]">{attr.master_name}</span>
+                      {isVariable ? (
+                        <Input
+                          className="flex-1"
+                          placeholder="Value"
+                          value={attrValues[attr.project_attribute_id] || ''}
+                          onChange={e => setAttrValues(prev => ({ ...prev, [attr.project_attribute_id]: e.target.value }))}
+                        />
+                      ) : (
+                        <span className="flex-1 text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md">
+                          {fixedValue || '—'}
+                          <span className="ml-2 text-xs opacity-60">(Set)</span>
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

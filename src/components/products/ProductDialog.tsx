@@ -254,6 +254,15 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
         }
       }
 
+      // Build product_attributes from state
+      const selectedAttrs: ProductFormData['product_attributes'] = availableAttrs
+        .filter(a => productAttrs[a.project_attribute_id]?.selected)
+        .map(a => ({
+          project_attribute_id: a.project_attribute_id,
+          is_variable: productAttrs[a.project_attribute_id]?.is_variable ?? false,
+          fixed_value: productAttrs[a.project_attribute_id]?.fixed_value ?? '',
+        }));
+
       await onSubmit({
         product_code: productCode.trim(),
         product_name: productName.trim(),
@@ -262,6 +271,7 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
         factory_ids: selectedFactories,
         group_ids: selectedGroups,
         line_ids: selectedLines,
+        product_attributes: selectedAttrs,
       });
       onOpenChange(false);
     } catch (err: any) {

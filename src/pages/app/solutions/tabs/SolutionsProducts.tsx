@@ -363,6 +363,7 @@ export function SolutionsProducts({ projectId }: Props) {
           factory_ids: editingProduct.factory_ids,
           group_ids: editingProduct.group_ids,
           line_ids: editingProduct.line_ids,
+          product_attributes: [],
         } : null}
         factories={factories}
         groups={groups}

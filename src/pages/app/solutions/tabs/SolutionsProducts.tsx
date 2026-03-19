@@ -196,6 +196,7 @@ export function SolutionsProducts({ projectId }: Props) {
         supabase.from('product_factory_links').delete().eq('product_id', prodId),
         supabase.from('product_group_links').delete().eq('product_id', prodId),
         supabase.from('product_line_links').delete().eq('product_id', prodId),
+        supabase.from('product_attributes').delete().eq('product_id', prodId),
       ]);
 
       const inserts = [];
@@ -207,6 +208,16 @@ export function SolutionsProducts({ projectId }: Props) {
       }
       if (data.line_ids.length > 0) {
         inserts.push(supabase.from('product_line_links').insert(data.line_ids.map(lId => ({ product_id: prodId, line_id: lId })) as any));
+      }
+      if (data.product_attributes.length > 0) {
+        inserts.push(supabase.from('product_attributes').insert(
+          data.product_attributes.map(a => ({
+            product_id: prodId,
+            project_attribute_id: a.project_attribute_id,
+            is_variable: a.is_variable,
+            fixed_value: a.is_variable ? null : (a.fixed_value || null),
+          })) as any
+        ));
       }
       await Promise.all(inserts);
 

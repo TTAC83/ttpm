@@ -13,6 +13,7 @@ import { Plus, Pencil, Trash2, Loader2, Eye, Image } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ProductDialog, type ProductFormData } from '@/components/products/ProductDialog';
 import { ProductViewsPanel } from '@/components/products/ProductViewsPanel';
+import { ImageLightbox } from '@/components/shared/ImageLightbox';
 
 interface Product {
   id: string;

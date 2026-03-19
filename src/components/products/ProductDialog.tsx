@@ -12,6 +12,7 @@ import { Loader2, Upload, Link } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { ImageDropZone } from '@/components/shared/ImageDropZone';
+import { ImageLightbox } from '@/components/shared/ImageLightbox';
 
 const SUPABASE_URL = "https://tjbiyyejofdpwybppxhv.supabase.co";
 const BUCKET = 'product-artwork';

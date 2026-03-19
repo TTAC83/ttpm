@@ -43,6 +43,7 @@ export function SolutionsProducts({ projectId }: Props) {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   // Factory hierarchy
   const [factories, setFactories] = useState<FactoryItem[]>([]);

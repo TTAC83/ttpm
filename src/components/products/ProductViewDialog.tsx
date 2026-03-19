@@ -256,10 +256,14 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
         }
       }
 
-      // Sync attribute values
+      // Sync attribute values (only variable attributes)
       await supabase.from('product_view_attributes').delete().eq('product_view_id', viewId);
       const attrInserts = vpAttrs
-        .filter(a => attrValues[a.project_attribute_id]?.trim())
+        .filter(a => {
+          const config = productAttrConfig[a.project_attribute_id];
+          const isVariable = config?.is_variable ?? true;
+          return isVariable && attrValues[a.project_attribute_id]?.trim();
+        })
         .map(a => ({
           product_view_id: viewId,
           project_attribute_id: a.project_attribute_id,

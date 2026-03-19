@@ -67,7 +67,7 @@ function extractStoragePath(url: string): string | null {
   return url.substring(idx + marker.length);
 }
 
-export function ProductDialog({ open, onOpenChange, onSubmit, initialData, factories, groups, lines }: Props) {
+export function ProductDialog({ open, onOpenChange, onSubmit, initialData, factories, groups, lines, projectId, productId }: Props) {
   const [saving, setSaving] = useState(false);
   const [productCode, setProductCode] = useState('');
   const [productName, setProductName] = useState('');
@@ -82,6 +82,10 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
   const [existingUploadUrl, setExistingUploadUrl] = useState<string | null>(null);
   const [urlLightboxOpen, setUrlLightboxOpen] = useState(false);
+
+  // Attributes state
+  const [availableAttrs, setAvailableAttrs] = useState<AvailableAttribute[]>([]);
+  const [productAttrs, setProductAttrs] = useState<Record<string, ProductAttributeState>>({});
 
   useEffect(() => {
     if (open) {

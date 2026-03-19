@@ -12,6 +12,7 @@ import { Loader2, Upload, Link } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { ImageDropZone } from '@/components/shared/ImageDropZone';
+import { ImageLightbox } from '@/components/shared/ImageLightbox';
 
 const SUPABASE_URL = "https://tjbiyyejofdpwybppxhv.supabase.co";
 const BUCKET = 'product-artwork';
@@ -66,7 +67,7 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
   const [existingUploadUrl, setExistingUploadUrl] = useState<string | null>(null);
-  
+  const [urlLightboxOpen, setUrlLightboxOpen] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -245,11 +246,13 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
                     <img
                       src={artworkUrl}
                       alt="Artwork preview"
-                      className="max-h-24 rounded"
+                      className="max-h-24 rounded cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => setUrlLightboxOpen(true)}
                       onError={e => (e.currentTarget.style.display = 'none')}
                     />
                   </div>
                 )}
+                <ImageLightbox src={artworkUrl} open={urlLightboxOpen} onOpenChange={setUrlLightboxOpen} />
               </TabsContent>
             </Tabs>
           </div>

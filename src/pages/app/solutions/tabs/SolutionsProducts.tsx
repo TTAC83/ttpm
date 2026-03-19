@@ -13,6 +13,7 @@ import { Plus, Pencil, Trash2, Loader2, Eye, Image } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ProductDialog, type ProductFormData } from '@/components/products/ProductDialog';
 import { ProductViewsPanel } from '@/components/products/ProductViewsPanel';
+import { ImageLightbox } from '@/components/shared/ImageLightbox';
 
 interface Product {
   id: string;
@@ -42,6 +43,7 @@ export function SolutionsProducts({ projectId }: Props) {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   // Factory hierarchy
   const [factories, setFactories] = useState<FactoryItem[]>([]);
@@ -287,7 +289,12 @@ export function SolutionsProducts({ projectId }: Props) {
                 <TableRow key={prod.id}>
                   <TableCell>
                     {prod.master_artwork_url ? (
-                      <img src={prod.master_artwork_url} alt={prod.product_name} className="h-10 w-10 rounded object-cover" />
+                      <img
+                        src={prod.master_artwork_url}
+                        alt={prod.product_name}
+                        className="h-10 w-10 rounded object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => setLightboxSrc(prod.master_artwork_url)}
+                      />
                     ) : (
                       <div className="h-10 w-10 rounded bg-muted flex items-center justify-center">
                         <Image className="h-4 w-4 text-muted-foreground" />
@@ -374,6 +381,8 @@ export function SolutionsProducts({ projectId }: Props) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ImageLightbox src={lightboxSrc} open={!!lightboxSrc} onOpenChange={(open) => !open && setLightboxSrc(null)} />
     </div>
   );
 }

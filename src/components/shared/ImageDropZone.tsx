@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { ImageIcon, X } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { ImageLightbox } from './ImageLightbox';
 
 interface ImageDropZoneProps {
   preview?: string | null;
@@ -50,18 +51,28 @@ export function ImageDropZone({
     if (file) handleFile(file);
   };
 
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
   if (preview) {
     return (
-      <div className={`relative inline-block border rounded-lg p-2 bg-muted/30 ${className || ''}`}>
-        <img src={preview} alt="Preview" className="max-h-32 rounded object-contain" />
-        <button
-          type="button"
-          onClick={onClear}
-          className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-0.5 hover:opacity-80"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
-      </div>
+      <>
+        <div className={`relative inline-block border rounded-lg p-2 bg-muted/30 ${className || ''}`}>
+          <img
+            src={preview}
+            alt="Preview"
+            className="max-h-32 rounded object-contain cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => setLightboxOpen(true)}
+          />
+          <button
+            type="button"
+            onClick={onClear}
+            className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-0.5 hover:opacity-80"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+        <ImageLightbox src={preview} open={lightboxOpen} onOpenChange={setLightboxOpen} />
+      </>
     );
   }
 

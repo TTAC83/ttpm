@@ -112,7 +112,64 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
     }
   }, [open, initialData]);
 
-  // Filter groups by selected factories
+  // Fetch available attributes from project's vision project attributes
+  useEffect(() => {
+    if (!open || !projectId) { setAvailableAttrs([]); return; }
+    const fetchAttrs = async () => {
+      // Get all vision_project_attributes for this solutions project
+      const { data: vpas } = await supabase
+        .from('vision_project_attributes')
+        .select('project_attribute_id, vision_projects!inner(solutions_project_id)')
+        .eq('vision_projects.solutions_project_id', projectId);
+
+      const paIds = [...new Set((vpas || []).map((v: any) => v.project_attribute_id))];
+      if (paIds.length === 0) { setAvailableAttrs([]); return; }
+
+      const { data: paData } = await supabase
+        .from('project_attributes')
+        .select('id, master_attribute_id')
+        .in('id', paIds);
+
+      const masterIds = (paData || []).map((pa: any) => pa.master_attribute_id);
+      const { data: masters } = await supabase
+        .from('master_attributes')
+        .select('id, name')
+        .in('id', masterIds);
+
+      const masterMap = Object.fromEntries((masters || []).map((m: any) => [m.id, m.name]));
+      setAvailableAttrs((paData || []).map((pa: any) => ({
+        project_attribute_id: pa.id,
+        master_name: masterMap[pa.master_attribute_id] || 'Unknown',
+      })));
+    };
+    fetchAttrs();
+  }, [open, projectId]);
+
+  // Load existing product_attributes when editing
+  useEffect(() => {
+    if (!open || !productId || availableAttrs.length === 0) {
+      if (!productId) setProductAttrs({});
+      return;
+    }
+    const load = async () => {
+      const { data } = await supabase
+        .from('product_attributes')
+        .select('project_attribute_id, is_variable, fixed_value')
+        .eq('product_id', productId);
+
+      const state: Record<string, ProductAttributeState> = {};
+      for (const d of (data || []) as any[]) {
+        state[d.project_attribute_id] = {
+          selected: true,
+          is_variable: d.is_variable,
+          fixed_value: d.fixed_value || '',
+        };
+      }
+      setProductAttrs(state);
+    };
+    load();
+  }, [open, productId, availableAttrs.length]);
+
   const filteredGroups = groups.filter(g => selectedFactories.includes(g.factory_id));
   // Filter lines by selected groups
   const filteredLines = lines.filter(l => selectedGroups.includes(l.group_id));

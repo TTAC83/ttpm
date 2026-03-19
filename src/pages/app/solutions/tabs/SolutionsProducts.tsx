@@ -49,12 +49,25 @@ export function SolutionsProducts({ projectId }: Props) {
   const [lines, setLines] = useState<LineItem[]>([]);
 
   const fetchHierarchy = useCallback(async () => {
-    const factoryQuery = supabase
+    // First get the portal for this project
+    const { data: portalData } = await supabase
+      .from('solution_portals')
+      .select('id')
+      .eq('solutions_project_id', projectId)
+      .single();
+
+    if (!portalData?.id) {
+      setFactories([]);
+      setGroups([]);
+      setLines([]);
+      return;
+    }
+
+    const { data: factoryData } = await supabase
       .from('solution_factories' as any)
       .select('id, name')
-      .eq('solutions_project_id', projectId)
+      .eq('portal_id', portalData.id)
       .order('name');
-    const { data: factoryData } = await factoryQuery;
 
     const factList = ((factoryData as any) || []) as FactoryItem[];
     setFactories(factList);

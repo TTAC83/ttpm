@@ -367,6 +367,8 @@ export function SolutionsProducts({ projectId }: Props) {
         factories={factories}
         groups={groups}
         lines={lines}
+        projectId={projectId}
+        productId={editingProduct?.id || null}
       />
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>

@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
@@ -32,6 +33,17 @@ interface FactoryItem { id: string; name: string; }
 interface GroupItem { id: string; name: string; factory_id: string; }
 interface LineItem { id: string; name: string; group_id: string; }
 
+interface AvailableAttribute {
+  project_attribute_id: string;
+  master_name: string;
+}
+
+interface ProductAttributeState {
+  selected: boolean;
+  is_variable: boolean;
+  fixed_value: string;
+}
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -40,6 +52,8 @@ interface Props {
   factories: FactoryItem[];
   groups: GroupItem[];
   lines: LineItem[];
+  projectId: string;
+  productId?: string | null;
 }
 
 function isSupabaseStorageUrl(url: string): boolean {

@@ -113,7 +113,71 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
     }
   }, [open, editingView]);
 
-  // Fetch VP attributes when VP changes, filtered by product_attributes
+  // Fetch available equipment from product's linked lines
+  useEffect(() => {
+    if (!open || !productId) { setAvailableEquipment([]); return; }
+    const fetchEquipment = async () => {
+      // Get product's linked line IDs
+      const { data: links } = await supabase
+        .from('product_line_links')
+        .select('line_id')
+        .eq('product_id', productId);
+      const lineIds = (links || []).map((l: any) => l.line_id).filter(Boolean);
+      if (lineIds.length === 0) { setAvailableEquipment([]); return; }
+
+      // Get line names
+      const { data: lines } = await supabase
+        .from('solutions_lines')
+        .select('id, line_name')
+        .in('id', lineIds);
+      const lineMap = Object.fromEntries((lines || []).map((l: any) => [l.id, l.line_name]));
+
+      // Get positions for these lines (solutions context)
+      const { data: positions } = await supabase
+        .from('positions')
+        .select('id, name, solutions_line_id')
+        .in('solutions_line_id', lineIds);
+      if (!positions || positions.length === 0) { setAvailableEquipment([]); return; }
+
+      const posMap = Object.fromEntries(positions.map((p: any) => [p.id, p]));
+      const posIds = positions.map((p: any) => p.id);
+
+      // Get equipment for these positions
+      const { data: equip } = await supabase
+        .from('equipment')
+        .select('id, name, equipment_type, position_id')
+        .in('position_id', posIds);
+
+      const items: EquipmentItem[] = (equip || []).map((e: any) => {
+        const pos = posMap[e.position_id];
+        return {
+          id: e.id,
+          name: e.name || 'Unnamed',
+          equipment_type: e.equipment_type,
+          position_name: pos?.name || 'Unknown',
+          line_name: lineMap[pos?.solutions_line_id] || 'Unknown',
+          line_id: pos?.solutions_line_id || '',
+        };
+      });
+      setAvailableEquipment(items);
+    };
+    fetchEquipment();
+  }, [open, productId]);
+
+  // Load existing equipment selections for edit mode
+  useEffect(() => {
+    if (!open || !editingView?.id) return;
+    const loadEquip = async () => {
+      const { data } = await supabase
+        .from('product_view_equipment')
+        .select('equipment_id')
+        .eq('product_view_id', editingView.id);
+      setSelectedEquipmentIds(new Set((data || []).map((d: any) => d.equipment_id)));
+    };
+    loadEquip();
+  }, [open, editingView?.id]);
+
+
   useEffect(() => {
     if (!vpId) {
       setVpAttrs([]);

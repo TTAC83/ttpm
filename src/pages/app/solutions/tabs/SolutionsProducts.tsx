@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,11 +9,13 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, Trash2, Loader2, Eye, Image } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, Eye, Image, Download, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ProductDialog, type ProductFormData } from '@/components/products/ProductDialog';
 import { ProductViewsPanel } from '@/components/products/ProductViewsPanel';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
+import { ProductImportReviewDialog } from '@/components/products/ProductImportReviewDialog';
+import { exportProductsToExcel, parseImportFile, applyImport, type ImportParseResult } from '@/lib/productBulkService';
 
 interface Product {
   id: string;
@@ -44,6 +46,13 @@ export function SolutionsProducts({ projectId }: Props) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+
+  // Import/Export state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [exporting, setExporting] = useState(false);
+  const [importParsing, setImportParsing] = useState(false);
+  const [importResult, setImportResult] = useState<ImportParseResult | null>(null);
+  const [importReviewOpen, setImportReviewOpen] = useState(false);
 
   // Factory hierarchy
   const [factories, setFactories] = useState<FactoryItem[]>([]);
@@ -239,6 +248,52 @@ export function SolutionsProducts({ projectId }: Props) {
     setDeleteId(null);
   };
 
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const blob = await exportProductsToExcel(projectId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `products-export-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: 'Exported', description: 'Excel file downloaded' });
+    } catch (err: any) {
+      toast({ title: 'Export Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setImportParsing(true);
+    try {
+      const result = await parseImportFile(file, projectId);
+      setImportResult(result);
+      setImportReviewOpen(true);
+    } catch (err: any) {
+      toast({ title: 'Import Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setImportParsing(false);
+    }
+  };
+
+  const handleApplyImport = async (result: ImportParseResult) => {
+    try {
+      await applyImport(result, projectId);
+      toast({ title: 'Import Complete', description: 'Products and views have been updated' });
+      fetchHierarchy();
+      fetchProducts();
+    } catch (err: any) {
+      toast({ title: 'Import Error', description: err.message, variant: 'destructive' });
+      throw err;
+    }
+  };
+
   // If viewing product views
   if (viewingProduct) {
     return (
@@ -266,10 +321,27 @@ export function SolutionsProducts({ projectId }: Props) {
           <h3 className="text-lg font-semibold">Products</h3>
           <p className="text-sm text-muted-foreground">Manage products, artwork, and configure views</p>
         </div>
-        <Button size="sm" onClick={() => { setEditingProduct(null); setDialogOpen(true); }}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Product
-        </Button>
+        <div className="flex items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            className="hidden"
+            onChange={handleImportFile}
+          />
+          <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
+            {exporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+            Export
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={importParsing}>
+            {importParsing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+            Import
+          </Button>
+          <Button size="sm" onClick={() => { setEditingProduct(null); setDialogOpen(true); }}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Product
+          </Button>
+        </div>
       </div>
 
       {products.length === 0 ? (
@@ -395,6 +467,13 @@ export function SolutionsProducts({ projectId }: Props) {
       </AlertDialog>
 
       <ImageLightbox src={lightboxSrc} open={!!lightboxSrc} onOpenChange={(open) => !open && setLightboxSrc(null)} />
+
+      <ProductImportReviewDialog
+        open={importReviewOpen}
+        onOpenChange={setImportReviewOpen}
+        result={importResult}
+        onApply={handleApplyImport}
+      />
     </div>
   );
 }

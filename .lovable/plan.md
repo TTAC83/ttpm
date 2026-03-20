@@ -1,45 +1,40 @@
 
 
-## Fix Attribute Logic: Product → View Flow
+## Add Equipment Selection to Product Views
 
-### Current (Wrong) Flow
-- **Product level**: Select attributes, mark Set/Variable, enter fixed values for Set
-- **View level**: Show variable attrs for value entry, display set values read-only
+### Context
+- Products are linked to lines via `product_line_links` (product_id → line_id)
+- Lines have positions, which have equipment
+- A `product_view_equipment` join table already exists in the database (columns: `id`, `product_view_id`, `equipment_id`) — it just needs UI wiring
+- The user wants views to select equipment from only the lines the parent product is attached to
 
-### Desired Flow
-- **Product level**: Just select which attributes apply to this product (checkboxes only, no values)
-- **View level**: Select a subset of the product's attributes, mark each as **Set** or **Variable**. If Set → enter value. If Variable → no value needed.
+### No Database Changes Needed
+The `product_view_equipment` table is already in place with the correct FKs.
 
-### Database Changes
+### Changes
 
-**Modify `product_attributes` table:**
-- Remove `is_variable` and `fixed_value` columns (no longer needed at product level — it's just a selection)
+**Modify: `src/components/products/ProductViewDialog.tsx`**
+1. Add state for available equipment and selected equipment IDs
+2. On dialog open, fetch the parent product's linked line IDs from `product_line_links`
+3. Query `positions` → `equipment` for those lines (using `solutions_line_id` since these are solutions projects) to build a grouped equipment list
+4. Display a multi-select checkbox list grouped by line → position → equipment name
+5. On save, sync `product_view_equipment` (delete existing + insert selected)
+6. On edit, load existing `product_view_equipment` records to pre-check selections
 
-**Modify `product_view_attributes` table:**
-- Add `is_variable` boolean column (default true)
-- Make `value` nullable (variable attributes won't have a value)
+### UI Layout
+Below the Vision Project selector and above the Attributes section:
+- **Equipment** label with helper text
+- Grouped checklist: Line Name → Position Name → Equipment Name (checkbox)
+- Only shows equipment from lines the product is linked to
 
-### UI Changes
+### Data Flow
+```text
+product_line_links (product → lines)
+  → positions (where solutions_line_id = line.id)
+    → equipment (where position_id = position.id)
+      → product_view_equipment (selected equipment for this view)
+```
 
-**`ProductDialog.tsx`** — Simplify attributes section:
-- Remove Set/Variable toggle and fixed value input
-- Keep only checkboxes to select which attributes apply to this product
-- Remove `ProductAttributeData.is_variable` and `fixed_value` from the interface
-- Remove `ProductAttributeState.is_variable` and `fixed_value`
-
-**`ProductViewDialog.tsx`** — Move Set/Variable logic here:
-- Show only attributes that are selected on the parent product (from `product_attributes`)
-- For each, allow user to pick a subset (checkbox) and mark as Set or Variable
-- If Set: show value input. If Variable: no input needed.
-- Save `is_variable` and `value` (only for Set) to `product_view_attributes`
-
-**`SolutionsProducts.tsx`** — Update `handleSubmit` to stop syncing `is_variable`/`fixed_value`
-
-### Files Modified
-| File | Change |
-|------|--------|
-| Migration SQL | Drop `is_variable`/`fixed_value` from `product_attributes`, add `is_variable` to `product_view_attributes`, make `value` nullable |
-| `src/components/products/ProductDialog.tsx` | Simplify to checkbox-only attribute selection |
-| `src/components/products/ProductViewDialog.tsx` | Add attribute subset selection with Set/Variable toggle and value input for Set |
-| `src/pages/app/solutions/tabs/SolutionsProducts.tsx` | Simplify attribute sync in handleSubmit |
+### Fix Build Error
+Will also add a trivial edit to `src/main.tsx` to force a clean rebuild and clear the duplicate `data-lov-id` tagger issue.
 

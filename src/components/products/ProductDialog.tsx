@@ -251,8 +251,6 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
         .filter(a => productAttrs[a.project_attribute_id]?.selected)
         .map(a => ({
           project_attribute_id: a.project_attribute_id,
-          is_variable: productAttrs[a.project_attribute_id]?.is_variable ?? false,
-          fixed_value: productAttrs[a.project_attribute_id]?.fixed_value ?? '',
         }));
 
       await onSubmit({

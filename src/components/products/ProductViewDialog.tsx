@@ -80,7 +80,7 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
     if (open) {
       setViewName(editingView?.view_name || '');
       setVpId(editingView?.vision_project_id || '');
-      setAttrValues({});
+      setViewAttrState({});
       setUploadFile(null);
       setUploadPreview(null);
 

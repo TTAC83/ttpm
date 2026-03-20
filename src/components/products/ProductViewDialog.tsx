@@ -259,19 +259,19 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
         }
       }
 
-      // Sync attribute values (only variable attributes)
+      // Sync attribute values
       await supabase.from('product_view_attributes').delete().eq('product_view_id', viewId);
       const attrInserts = vpAttrs
-        .filter(a => {
-          const config = productAttrConfig[a.project_attribute_id];
-          const isVariable = config?.is_variable ?? true;
-          return isVariable && attrValues[a.project_attribute_id]?.trim();
-        })
-        .map(a => ({
-          product_view_id: viewId,
-          project_attribute_id: a.project_attribute_id,
-          value: attrValues[a.project_attribute_id].trim(),
-        }));
+        .filter(a => viewAttrState[a.project_attribute_id]?.selected)
+        .map(a => {
+          const s = viewAttrState[a.project_attribute_id];
+          return {
+            product_view_id: viewId,
+            project_attribute_id: a.project_attribute_id,
+            is_variable: s.is_variable,
+            value: s.is_variable ? null : (s.value?.trim() || null),
+          };
+        });
       if (attrInserts.length > 0) {
         const { error } = await supabase.from('product_view_attributes').insert(attrInserts as any);
         if (error) throw error;

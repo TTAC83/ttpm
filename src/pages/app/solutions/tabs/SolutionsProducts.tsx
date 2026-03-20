@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,11 +9,13 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, Trash2, Loader2, Eye, Image } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, Eye, Image, Download, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ProductDialog, type ProductFormData } from '@/components/products/ProductDialog';
 import { ProductViewsPanel } from '@/components/products/ProductViewsPanel';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
+import { ProductImportReviewDialog } from '@/components/products/ProductImportReviewDialog';
+import { exportProductsToExcel, parseImportFile, applyImport, type ImportParseResult } from '@/lib/productBulkService';
 
 interface Product {
   id: string;

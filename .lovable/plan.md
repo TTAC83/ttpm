@@ -1,115 +1,55 @@
 
-## Fix Product View Linking for Positions and Equipment
 
-### Root cause
-The current Product View equipment loading logic is using the wrong line IDs.
+## Updated Multi-Sheet Excel Import/Export — Including Vision Projects
 
-```text
-product_line_links.line_id -> references factory_group_lines.id
-NOT solutions_lines.id
-```
+### What was missing
+The previous plan exported Vision Project **name** on Sheet 2 as a reference column, but did not export or import the Vision Projects themselves. If a user imports on a fresh project (or adds new vision projects via Excel), those references would fail to resolve.
 
-But `ProductViewDialog` currently does this:
+### Updated Sheet Structure (4 Sheets)
 
-```text
-product_line_links.line_id
--> query solutions_lines where id in (lineIds)
--> query positions where solutions_line_id in (lineIds)
-```
+**Sheet 1: Products** — one row per product
+| Product Code* | Product Name* | Factory | Group | Line | Attributes | Comments |
 
-That fails because the linked IDs are factory line IDs, not solutions line IDs. The network logs confirm this:
-- `product_line_links.line_id = 7e086bd3...`
-- matching `solutions_lines.id` is actually `1a2d7338...`
-- current `solutions_lines?id=in.(7e086bd3...)` returns empty
-- therefore positions/equipment are empty
+**Sheet 2: Vision Projects** — one row per vision project (NEW)
+| Vision Project Name* | Description | Attributes |
 
-### What to change
+- Attributes = comma-separated master attribute names linked via `vision_project_attributes`
+- On import: upsert by name within the solutions project; sync `vision_project_attributes`
 
-#### 1) Fix line resolution in `src/components/products/ProductViewDialog.tsx`
-Update the fetch flow to:
+**Sheet 3: Views** — one row per view
+| Product Code* | View Name* | Vision Project | Positions | Equipment |
 
-```text
-product_line_links
--> factory_group_lines (get linked line names)
--> solutions_lines for this solutions project, matched by line_name
--> positions where solutions_line_id in matched solutions line ids
--> equipment where position_id in matched position ids
-```
+- Vision Project = name from Sheet 2 (resolved to ID on import)
+- Positions/Equipment = comma-separated names
 
-This aligns with how products are currently linked at product level and with the project’s solutions-line architecture.
+**Sheet 4: View Attributes** — one row per attribute per view
+| Product Code* | View Name* | Attribute Name* | Set/Variable | Value |
 
-### 2) Add position linking as well, not just equipment
-There is already a `product_view_positions` table in the schema, but the dialog is not using it.
+### Import behaviour for Vision Projects
+- Match by name (case-insensitive) within the solutions project
+- If exists: offer update (description, attributes) via the conflict review dialog
+- If new: create the vision project and link its attributes
+- If a View references a Vision Project name not on Sheet 2 AND not in the DB: flag as validation error
 
-Update the dialog to:
-- fetch available positions from the resolved solutions lines
-- allow selecting positions for the view
-- keep equipment filtered under those resolved positions
-- load existing `product_view_positions` on edit
-- save `product_view_positions` together with `product_view_equipment`
+### Export behaviour
+- Sheet 2 populated from `vision_projects` + `vision_project_attributes` → `project_attributes` → `master_attributes` for attribute names
 
-### 3) Recommended UI structure
-In `ProductViewDialog`:
-- show a **Positions** section first
-- show an **Equipment** section second
-- group both by line
-- optionally nest equipment under position labels for clarity
+### Conflict review
+Vision projects follow the same accept/reject pattern as products and views — the review dialog gains a "Vision Projects" section.
 
-Example:
+### Files
 
-```text
-Line T1
-  [ ] Position A
-      [ ] Camera 1
-      [ ] Camera 2
-  [ ] Position B
-      [ ] Sensor 1
-```
+| File | Change |
+|------|--------|
+| `src/lib/productBulkService.ts` | New — export/import logic for all 4 sheets |
+| `src/components/products/ProductImportReviewDialog.tsx` | New — conflict review dialog with sections for Products, Vision Projects, Views, View Attributes |
+| `src/pages/app/solutions/tabs/SolutionsProducts.tsx` | Add Export/Import buttons, file input, wire dialogs |
 
-### 4) Save behavior
-On save:
-- sync `product_view_positions` with delete + insert
-- sync `product_view_equipment` with delete + insert
+### Mitigations (carried forward + new)
+- Orphan detection across all sheets (Sheet 3 refs Sheet 1 & 2; Sheet 4 refs Sheet 3)
+- Data validation dropdowns in exported Excel (Product Code, Vision Project Name)
+- Case-insensitive name matching for all resolutions
+- Duplicate name detection per sheet
+- Dry-run summary before applying
+- Vision Project attribute names validated against project's `project_attributes`
 
-Optional safeguard:
-- if equipment is selected, auto-insert its parent position into `product_view_positions`
-- or validate that selected equipment must belong to a selected position
-
-### 5) Editing behavior
-When opening an existing view:
-- load current `product_view_positions`
-- load current `product_view_equipment`
-- pre-check both in the UI
-
-### 6) Why this is the right fix
-This follows the existing data model:
-- product-level line links are to `factory_group_lines`
-- solutions build data lives under `solutions_lines`
-- positions in solutions context must be queried via `positions.solutions_line_id`
-- equipment is linked from positions
-
-So the missing link is the name-based bridge:
-```text
-factory_group_lines.name <-> solutions_lines.line_name
-```
-
-### Files to modify
-- `src/components/products/ProductViewDialog.tsx`
-
-### Implementation summary
-1. Replace the broken direct `product_line_links -> solutions_lines by id` query
-2. Resolve linked factory lines to solutions lines by name within the current project
-3. Fetch positions from those resolved solutions lines
-4. Fetch equipment from those positions
-5. Add UI + state for selected positions
-6. Persist `product_view_positions` and `product_view_equipment`
-
-### Technical note
-This is consistent with the project’s gradual migration pattern: product links remain tied to factory hierarchy, while downstream operational data uses `solutions_lines` and `positions.solutions_line_id`. No database change is needed for this fix.
-
-### Expected result
-After this change, views will be able to:
-- see positions from the product’s linked lines
-- see equipment under those positions
-- save linked positions and equipment correctly
-- reopen with those selections preserved

@@ -153,13 +153,17 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
     const load = async () => {
       const { data } = await supabase
         .from('product_view_attributes')
-        .select('project_attribute_id, value')
+        .select('project_attribute_id, value, is_variable')
         .eq('product_view_id', editingView.id);
-      const vals: Record<string, string> = {};
+      const state: Record<string, ViewAttrState> = {};
       for (const d of (data || []) as any[]) {
-        vals[d.project_attribute_id] = d.value;
+        state[d.project_attribute_id] = {
+          selected: true,
+          is_variable: d.is_variable ?? true,
+          value: d.value || '',
+        };
       }
-      setAttrValues(vals);
+      setViewAttrState(state);
     };
     load();
   }, [editingView?.id, vpAttrs.length, open]);

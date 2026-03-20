@@ -99,12 +99,9 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
   }, [open, editingView]);
 
   // Fetch VP attributes when VP changes, filtered by product_attributes
-  const [productAttrConfig, setProductAttrConfig] = useState<Record<string, { is_variable: boolean; fixed_value: string | null }>>({});
-
   useEffect(() => {
     if (!vpId) {
       setVpAttrs([]);
-      setProductAttrConfig({});
       return;
     }
     const fetchVpAttrs = async () => {
@@ -116,20 +113,16 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
       const paIds = (data || []).map((d: any) => d.project_attribute_id);
       if (paIds.length === 0) { setVpAttrs([]); return; }
 
-      // Fetch product_attributes to know which are selected and their config
+      // Fetch product_attributes to know which are selected on this product
       const { data: prodAttrs } = await supabase
         .from('product_attributes')
-        .select('project_attribute_id, is_variable, fixed_value')
+        .select('project_attribute_id')
         .eq('product_id', productId);
 
-      const prodAttrMap: Record<string, { is_variable: boolean; fixed_value: string | null }> = {};
-      for (const pa of (prodAttrs || []) as any[]) {
-        prodAttrMap[pa.project_attribute_id] = { is_variable: pa.is_variable, fixed_value: pa.fixed_value };
-      }
-      setProductAttrConfig(prodAttrMap);
+      const prodAttrSet = new Set((prodAttrs || []).map((pa: any) => pa.project_attribute_id));
 
       // Only show attributes that are configured on this product
-      const configuredPaIds = paIds.filter((id: string) => prodAttrMap[id]);
+      const configuredPaIds = paIds.filter((id: string) => prodAttrSet.has(id));
       if (configuredPaIds.length === 0) { setVpAttrs([]); return; }
 
       const { data: paData } = await supabase

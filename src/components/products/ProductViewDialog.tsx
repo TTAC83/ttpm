@@ -446,6 +446,49 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
             </Select>
           </div>
 
+          {/* Equipment selection from product's linked lines */}
+          {availableEquipment.length > 0 && (
+            <div className="space-y-2">
+              <Label>Equipment</Label>
+              <p className="text-xs text-muted-foreground">
+                Select equipment from the product's linked lines for this view.
+              </p>
+              <div className="border rounded-lg p-3 space-y-3 max-h-48 overflow-y-auto">
+                {Object.entries(
+                  availableEquipment.reduce<Record<string, EquipmentItem[]>>((acc, eq) => {
+                    const key = eq.line_name;
+                    if (!acc[key]) acc[key] = [];
+                    acc[key].push(eq);
+                    return acc;
+                  }, {})
+                ).map(([lineName, items]) => (
+                  <div key={lineName} className="space-y-1.5">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{lineName}</span>
+                    {items.map(eq => (
+                      <div key={eq.id} className="flex items-center gap-2 ml-2">
+                        <Checkbox
+                          checked={selectedEquipmentIds.has(eq.id)}
+                          onCheckedChange={(checked) => {
+                            setSelectedEquipmentIds(prev => {
+                              const next = new Set(prev);
+                              if (checked) next.add(eq.id);
+                              else next.delete(eq.id);
+                              return next;
+                            });
+                          }}
+                        />
+                        <span className="text-sm">{eq.name}</span>
+                        {eq.position_name && (
+                          <span className="text-xs text-muted-foreground">({eq.position_name})</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Attributes from selected VP (filtered by product-level selection) */}
           {vpAttrs.length > 0 && (
             <div className="space-y-2">

@@ -42,6 +42,15 @@ interface VPAttribute {
   master_name: string;
 }
 
+interface EquipmentItem {
+  id: string;
+  name: string;
+  equipment_type: string | null;
+  position_name: string;
+  line_name: string;
+  line_id: string;
+}
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;

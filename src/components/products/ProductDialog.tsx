@@ -21,8 +21,6 @@ const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
 export interface ProductAttributeData {
   project_attribute_id: string;
-  is_variable: boolean;
-  fixed_value: string;
 }
 
 export interface ProductFormData {

@@ -214,8 +214,6 @@ export function SolutionsProducts({ projectId }: Props) {
           data.product_attributes.map(a => ({
             product_id: prodId,
             project_attribute_id: a.project_attribute_id,
-            is_variable: a.is_variable,
-            fixed_value: a.is_variable ? null : (a.fixed_value || null),
           })) as any
         ));
       }

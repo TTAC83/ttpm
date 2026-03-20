@@ -356,34 +356,44 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
             </Select>
           </div>
 
-          {/* Attributes from selected VP */}
+          {/* Attributes from selected VP (filtered by product-level selection) */}
           {vpAttrs.length > 0 && (
             <div className="space-y-2">
-              <Label>Attribute Values</Label>
+              <Label>Attributes</Label>
               <p className="text-xs text-muted-foreground">
-                Set values are fixed at the product level. Variable values can be set per view.
+                Select attributes for this view. Set = enter a fixed value here. Variable = value varies (no input needed).
               </p>
               <div className="border rounded-lg p-3 space-y-3">
                 {vpAttrs.map(attr => {
-                  const config = productAttrConfig[attr.project_attribute_id];
-                  const isVariable = config?.is_variable ?? true;
-                  const fixedValue = config?.fixed_value;
+                  const state = viewAttrState[attr.project_attribute_id] || { selected: false, is_variable: true, value: '' };
+                  const updateAttr = (patch: Partial<ViewAttrState>) =>
+                    setViewAttrState(prev => ({ ...prev, [attr.project_attribute_id]: { ...state, ...patch } }));
 
                   return (
-                    <div key={attr.project_attribute_id} className="flex items-center gap-3">
-                      <span className="text-sm min-w-[120px]">{attr.master_name}</span>
-                      {isVariable ? (
-                        <Input
-                          className="flex-1"
-                          placeholder="Value"
-                          value={attrValues[attr.project_attribute_id] || ''}
-                          onChange={e => setAttrValues(prev => ({ ...prev, [attr.project_attribute_id]: e.target.value }))}
+                    <div key={attr.project_attribute_id} className="space-y-2">
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          checked={state.selected}
+                          onCheckedChange={(checked) => updateAttr({ selected: !!checked })}
                         />
-                      ) : (
-                        <span className="flex-1 text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md">
-                          {fixedValue || '—'}
-                          <span className="ml-2 text-xs opacity-60">(Set)</span>
-                        </span>
+                        <span className="text-sm font-medium flex-1">{attr.master_name}</span>
+                        {state.selected && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">{state.is_variable ? 'Variable' : 'Set'}</span>
+                            <Switch
+                              checked={state.is_variable}
+                              onCheckedChange={(checked) => updateAttr({ is_variable: checked })}
+                            />
+                          </div>
+                        )}
+                      </div>
+                      {state.selected && !state.is_variable && (
+                        <Input
+                          className="ml-7"
+                          placeholder="Enter fixed value"
+                          value={state.value}
+                          onChange={e => updateAttr({ value: e.target.value })}
+                        />
                       )}
                     </div>
                   );

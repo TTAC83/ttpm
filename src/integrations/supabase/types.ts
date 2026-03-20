@@ -3224,27 +3224,21 @@ export type Database = {
       product_attributes: {
         Row: {
           created_at: string
-          fixed_value: string | null
           id: string
-          is_variable: boolean
           product_id: string
           project_attribute_id: string
           updated_at: string
         }
         Insert: {
           created_at?: string
-          fixed_value?: string | null
           id?: string
-          is_variable?: boolean
           product_id: string
           project_attribute_id: string
           updated_at?: string
         }
         Update: {
           created_at?: string
-          fixed_value?: string | null
           id?: string
-          is_variable?: boolean
           product_id?: string
           project_attribute_id?: string
           updated_at?: string
@@ -3471,21 +3465,24 @@ export type Database = {
       product_view_attributes: {
         Row: {
           id: string
+          is_variable: boolean
           product_view_id: string
           project_attribute_id: string
-          value: string
+          value: string | null
         }
         Insert: {
           id?: string
+          is_variable?: boolean
           product_view_id: string
           project_attribute_id: string
-          value?: string
+          value?: string | null
         }
         Update: {
           id?: string
+          is_variable?: boolean
           product_view_id?: string
           project_attribute_id?: string
-          value?: string
+          value?: string | null
         }
         Relationships: [
           {

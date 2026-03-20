@@ -356,6 +356,17 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
         if (error) throw error;
       }
 
+      // Sync equipment selections
+      await supabase.from('product_view_equipment').delete().eq('product_view_id', viewId);
+      if (selectedEquipmentIds.size > 0) {
+        const equipInserts = Array.from(selectedEquipmentIds).map(eqId => ({
+          product_view_id: viewId,
+          equipment_id: eqId,
+        }));
+        const { error: eqErr } = await supabase.from('product_view_equipment').insert(equipInserts as any);
+        if (eqErr) throw eqErr;
+      }
+
       toast({ title: 'Saved', description: `View "${viewName.trim()}" saved` });
       onOpenChange(false);
       onSaved();

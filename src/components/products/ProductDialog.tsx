@@ -4,7 +4,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
@@ -21,8 +20,6 @@ const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
 export interface ProductAttributeData {
   project_attribute_id: string;
-  is_variable: boolean;
-  fixed_value: string;
 }
 
 export interface ProductFormData {
@@ -47,8 +44,6 @@ interface AvailableAttribute {
 
 interface ProductAttributeState {
   selected: boolean;
-  is_variable: boolean;
-  fixed_value: string;
 }
 
 interface Props {
@@ -161,16 +156,12 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
     const load = async () => {
       const { data } = await supabase
         .from('product_attributes')
-        .select('project_attribute_id, is_variable, fixed_value')
+        .select('project_attribute_id')
         .eq('product_id', productId);
 
       const state: Record<string, ProductAttributeState> = {};
       for (const d of (data || []) as any[]) {
-        state[d.project_attribute_id] = {
-          selected: true,
-          is_variable: d.is_variable,
-          fixed_value: d.fixed_value || '',
-        };
+        state[d.project_attribute_id] = { selected: true };
       }
       setProductAttrs(state);
     };
@@ -259,8 +250,6 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
         .filter(a => productAttrs[a.project_attribute_id]?.selected)
         .map(a => ({
           project_attribute_id: a.project_attribute_id,
-          is_variable: productAttrs[a.project_attribute_id]?.is_variable ?? false,
-          fixed_value: productAttrs[a.project_attribute_id]?.fixed_value ?? '',
         }));
 
       await onSubmit({
@@ -405,40 +394,20 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
           {availableAttrs.length > 0 && (
             <div className="space-y-2">
               <Label>Attributes</Label>
-              <p className="text-xs text-muted-foreground">Select which attributes apply to this product. Set = fixed value, Variable = entered per view.</p>
-              <div className="border rounded-lg p-3 space-y-3">
+              <p className="text-xs text-muted-foreground">Select which attributes apply to this product. Values are configured per view.</p>
+              <div className="border rounded-lg p-3 space-y-2">
                 {availableAttrs.map(attr => {
-                  const state = productAttrs[attr.project_attribute_id] || { selected: false, is_variable: false, fixed_value: '' };
-                  const updateAttr = (patch: Partial<ProductAttributeState>) =>
-                    setProductAttrs(prev => ({ ...prev, [attr.project_attribute_id]: { ...state, ...patch } }));
-
+                  const state = productAttrs[attr.project_attribute_id] || { selected: false };
                   return (
-                    <div key={attr.project_attribute_id} className="space-y-2">
-                      <div className="flex items-center gap-3">
-                        <Checkbox
-                          checked={state.selected}
-                          onCheckedChange={(checked) => updateAttr({ selected: !!checked })}
-                        />
-                        <span className="text-sm font-medium flex-1">{attr.master_name}</span>
-                        {state.selected && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground">{state.is_variable ? 'Variable' : 'Set'}</span>
-                            <Switch
-                              checked={state.is_variable}
-                              onCheckedChange={(checked) => updateAttr({ is_variable: checked })}
-                            />
-                          </div>
-                        )}
-                      </div>
-                      {state.selected && !state.is_variable && (
-                        <Input
-                          className="ml-7"
-                          placeholder="Fixed value"
-                          value={state.fixed_value}
-                          onChange={e => updateAttr({ fixed_value: e.target.value })}
-                        />
-                      )}
-                    </div>
+                    <label key={attr.project_attribute_id} className="flex items-center gap-3 py-1 px-2 rounded hover:bg-muted/50 cursor-pointer">
+                      <Checkbox
+                        checked={state.selected}
+                        onCheckedChange={(checked) =>
+                          setProductAttrs(prev => ({ ...prev, [attr.project_attribute_id]: { selected: !!checked } }))
+                        }
+                      />
+                      <span className="text-sm">{attr.master_name}</span>
+                    </label>
                   );
                 })}
               </div>

@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,6 +57,12 @@ interface Props {
   onSaved: () => void;
 }
 
+interface ViewAttrState {
+  selected: boolean;
+  is_variable: boolean;
+  value: string;
+}
+
 export function ProductViewDialog({ open, onOpenChange, productId, projectId, visionProjects, editingView, onSaved }: Props) {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
@@ -62,7 +70,7 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
   const [imageUrl, setImageUrl] = useState('');
   const [vpId, setVpId] = useState<string>('');
   const [vpAttrs, setVpAttrs] = useState<VPAttribute[]>([]);
-  const [attrValues, setAttrValues] = useState<Record<string, string>>({});
+  const [viewAttrState, setViewAttrState] = useState<Record<string, ViewAttrState>>({});
 
   const [artworkMode, setArtworkMode] = useState<'upload' | 'url'>('upload');
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -74,7 +82,7 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
     if (open) {
       setViewName(editingView?.view_name || '');
       setVpId(editingView?.vision_project_id || '');
-      setAttrValues({});
+      setViewAttrState({});
       setUploadFile(null);
       setUploadPreview(null);
 
@@ -93,12 +101,9 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
   }, [open, editingView]);
 
   // Fetch VP attributes when VP changes, filtered by product_attributes
-  const [productAttrConfig, setProductAttrConfig] = useState<Record<string, { is_variable: boolean; fixed_value: string | null }>>({});
-
   useEffect(() => {
     if (!vpId) {
       setVpAttrs([]);
-      setProductAttrConfig({});
       return;
     }
     const fetchVpAttrs = async () => {
@@ -110,20 +115,16 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
       const paIds = (data || []).map((d: any) => d.project_attribute_id);
       if (paIds.length === 0) { setVpAttrs([]); return; }
 
-      // Fetch product_attributes to know which are selected and their config
+      // Fetch product_attributes to know which are selected on this product
       const { data: prodAttrs } = await supabase
         .from('product_attributes')
-        .select('project_attribute_id, is_variable, fixed_value')
+        .select('project_attribute_id')
         .eq('product_id', productId);
 
-      const prodAttrMap: Record<string, { is_variable: boolean; fixed_value: string | null }> = {};
-      for (const pa of (prodAttrs || []) as any[]) {
-        prodAttrMap[pa.project_attribute_id] = { is_variable: pa.is_variable, fixed_value: pa.fixed_value };
-      }
-      setProductAttrConfig(prodAttrMap);
+      const prodAttrSet = new Set((prodAttrs || []).map((pa: any) => pa.project_attribute_id));
 
       // Only show attributes that are configured on this product
-      const configuredPaIds = paIds.filter((id: string) => prodAttrMap[id]);
+      const configuredPaIds = paIds.filter((id: string) => prodAttrSet.has(id));
       if (configuredPaIds.length === 0) { setVpAttrs([]); return; }
 
       const { data: paData } = await supabase
@@ -154,13 +155,17 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
     const load = async () => {
       const { data } = await supabase
         .from('product_view_attributes')
-        .select('project_attribute_id, value')
+        .select('project_attribute_id, value, is_variable')
         .eq('product_view_id', editingView.id);
-      const vals: Record<string, string> = {};
+      const state: Record<string, ViewAttrState> = {};
       for (const d of (data || []) as any[]) {
-        vals[d.project_attribute_id] = d.value;
+        state[d.project_attribute_id] = {
+          selected: true,
+          is_variable: d.is_variable ?? true,
+          value: d.value || '',
+        };
       }
-      setAttrValues(vals);
+      setViewAttrState(state);
     };
     load();
   }, [editingView?.id, vpAttrs.length, open]);
@@ -256,19 +261,19 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
         }
       }
 
-      // Sync attribute values (only variable attributes)
+      // Sync attribute values
       await supabase.from('product_view_attributes').delete().eq('product_view_id', viewId);
       const attrInserts = vpAttrs
-        .filter(a => {
-          const config = productAttrConfig[a.project_attribute_id];
-          const isVariable = config?.is_variable ?? true;
-          return isVariable && attrValues[a.project_attribute_id]?.trim();
-        })
-        .map(a => ({
-          product_view_id: viewId,
-          project_attribute_id: a.project_attribute_id,
-          value: attrValues[a.project_attribute_id].trim(),
-        }));
+        .filter(a => viewAttrState[a.project_attribute_id]?.selected)
+        .map(a => {
+          const s = viewAttrState[a.project_attribute_id];
+          return {
+            product_view_id: viewId,
+            project_attribute_id: a.project_attribute_id,
+            is_variable: s.is_variable,
+            value: s.is_variable ? null : (s.value?.trim() || null),
+          };
+        });
       if (attrInserts.length > 0) {
         const { error } = await supabase.from('product_view_attributes').insert(attrInserts as any);
         if (error) throw error;
@@ -353,34 +358,44 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
             </Select>
           </div>
 
-          {/* Attributes from selected VP */}
+          {/* Attributes from selected VP (filtered by product-level selection) */}
           {vpAttrs.length > 0 && (
             <div className="space-y-2">
-              <Label>Attribute Values</Label>
+              <Label>Attributes</Label>
               <p className="text-xs text-muted-foreground">
-                Set values are fixed at the product level. Variable values can be set per view.
+                Select attributes for this view. Set = enter a fixed value here. Variable = value varies (no input needed).
               </p>
               <div className="border rounded-lg p-3 space-y-3">
                 {vpAttrs.map(attr => {
-                  const config = productAttrConfig[attr.project_attribute_id];
-                  const isVariable = config?.is_variable ?? true;
-                  const fixedValue = config?.fixed_value;
+                  const state = viewAttrState[attr.project_attribute_id] || { selected: false, is_variable: true, value: '' };
+                  const updateAttr = (patch: Partial<ViewAttrState>) =>
+                    setViewAttrState(prev => ({ ...prev, [attr.project_attribute_id]: { ...state, ...patch } }));
 
                   return (
-                    <div key={attr.project_attribute_id} className="flex items-center gap-3">
-                      <span className="text-sm min-w-[120px]">{attr.master_name}</span>
-                      {isVariable ? (
-                        <Input
-                          className="flex-1"
-                          placeholder="Value"
-                          value={attrValues[attr.project_attribute_id] || ''}
-                          onChange={e => setAttrValues(prev => ({ ...prev, [attr.project_attribute_id]: e.target.value }))}
+                    <div key={attr.project_attribute_id} className="space-y-2">
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          checked={state.selected}
+                          onCheckedChange={(checked) => updateAttr({ selected: !!checked })}
                         />
-                      ) : (
-                        <span className="flex-1 text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md">
-                          {fixedValue || '—'}
-                          <span className="ml-2 text-xs opacity-60">(Set)</span>
-                        </span>
+                        <span className="text-sm font-medium flex-1">{attr.master_name}</span>
+                        {state.selected && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">{state.is_variable ? 'Variable' : 'Set'}</span>
+                            <Switch
+                              checked={state.is_variable}
+                              onCheckedChange={(checked) => updateAttr({ is_variable: checked })}
+                            />
+                          </div>
+                        )}
+                      </div>
+                      {state.selected && !state.is_variable && (
+                        <Input
+                          className="ml-7"
+                          placeholder="Enter fixed value"
+                          value={state.value}
+                          onChange={e => updateAttr({ value: e.target.value })}
+                        />
                       )}
                     </div>
                   );

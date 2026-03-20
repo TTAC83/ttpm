@@ -42,6 +42,15 @@ interface VPAttribute {
   master_name: string;
 }
 
+interface EquipmentItem {
+  id: string;
+  name: string;
+  equipment_type: string | null;
+  position_name: string;
+  line_name: string;
+  line_id: string;
+}
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -72,6 +81,9 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
   const [vpAttrs, setVpAttrs] = useState<VPAttribute[]>([]);
   const [viewAttrState, setViewAttrState] = useState<Record<string, ViewAttrState>>({});
 
+  const [availableEquipment, setAvailableEquipment] = useState<EquipmentItem[]>([]);
+  const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<Set<string>>(new Set());
+
   const [artworkMode, setArtworkMode] = useState<'upload' | 'url'>('upload');
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
@@ -83,6 +95,7 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
       setViewName(editingView?.view_name || '');
       setVpId(editingView?.vision_project_id || '');
       setViewAttrState({});
+      setSelectedEquipmentIds(new Set());
       setUploadFile(null);
       setUploadPreview(null);
 
@@ -100,7 +113,71 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
     }
   }, [open, editingView]);
 
-  // Fetch VP attributes when VP changes, filtered by product_attributes
+  // Fetch available equipment from product's linked lines
+  useEffect(() => {
+    if (!open || !productId) { setAvailableEquipment([]); return; }
+    const fetchEquipment = async () => {
+      // Get product's linked line IDs
+      const { data: links } = await supabase
+        .from('product_line_links')
+        .select('line_id')
+        .eq('product_id', productId);
+      const lineIds = (links || []).map((l: any) => l.line_id).filter(Boolean);
+      if (lineIds.length === 0) { setAvailableEquipment([]); return; }
+
+      // Get line names
+      const { data: lines } = await supabase
+        .from('solutions_lines')
+        .select('id, line_name')
+        .in('id', lineIds);
+      const lineMap = Object.fromEntries((lines || []).map((l: any) => [l.id, l.line_name]));
+
+      // Get positions for these lines (solutions context)
+      const { data: positions } = await supabase
+        .from('positions')
+        .select('id, name, solutions_line_id')
+        .in('solutions_line_id', lineIds);
+      if (!positions || positions.length === 0) { setAvailableEquipment([]); return; }
+
+      const posMap = Object.fromEntries(positions.map((p: any) => [p.id, p]));
+      const posIds = positions.map((p: any) => p.id);
+
+      // Get equipment for these positions
+      const { data: equip } = await supabase
+        .from('equipment')
+        .select('id, name, equipment_type, position_id')
+        .in('position_id', posIds);
+
+      const items: EquipmentItem[] = (equip || []).map((e: any) => {
+        const pos = posMap[e.position_id];
+        return {
+          id: e.id,
+          name: e.name || 'Unnamed',
+          equipment_type: e.equipment_type,
+          position_name: pos?.name || 'Unknown',
+          line_name: lineMap[pos?.solutions_line_id] || 'Unknown',
+          line_id: pos?.solutions_line_id || '',
+        };
+      });
+      setAvailableEquipment(items);
+    };
+    fetchEquipment();
+  }, [open, productId]);
+
+  // Load existing equipment selections for edit mode
+  useEffect(() => {
+    if (!open || !editingView?.id) return;
+    const loadEquip = async () => {
+      const { data } = await supabase
+        .from('product_view_equipment')
+        .select('equipment_id')
+        .eq('product_view_id', editingView.id);
+      setSelectedEquipmentIds(new Set((data || []).map((d: any) => d.equipment_id)));
+    };
+    loadEquip();
+  }, [open, editingView?.id]);
+
+
   useEffect(() => {
     if (!vpId) {
       setVpAttrs([]);
@@ -279,6 +356,17 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
         if (error) throw error;
       }
 
+      // Sync equipment selections
+      await supabase.from('product_view_equipment').delete().eq('product_view_id', viewId);
+      if (selectedEquipmentIds.size > 0) {
+        const equipInserts = Array.from(selectedEquipmentIds).map(eqId => ({
+          product_view_id: viewId,
+          equipment_id: eqId,
+        }));
+        const { error: eqErr } = await supabase.from('product_view_equipment').insert(equipInserts as any);
+        if (eqErr) throw eqErr;
+      }
+
       toast({ title: 'Saved', description: `View "${viewName.trim()}" saved` });
       onOpenChange(false);
       onSaved();
@@ -357,6 +445,49 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
               </SelectContent>
             </Select>
           </div>
+
+          {/* Equipment selection from product's linked lines */}
+          {availableEquipment.length > 0 && (
+            <div className="space-y-2">
+              <Label>Equipment</Label>
+              <p className="text-xs text-muted-foreground">
+                Select equipment from the product's linked lines for this view.
+              </p>
+              <div className="border rounded-lg p-3 space-y-3 max-h-48 overflow-y-auto">
+                {Object.entries(
+                  availableEquipment.reduce<Record<string, EquipmentItem[]>>((acc, eq) => {
+                    const key = eq.line_name;
+                    if (!acc[key]) acc[key] = [];
+                    acc[key].push(eq);
+                    return acc;
+                  }, {})
+                ).map(([lineName, items]) => (
+                  <div key={lineName} className="space-y-1.5">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{lineName}</span>
+                    {items.map(eq => (
+                      <div key={eq.id} className="flex items-center gap-2 ml-2">
+                        <Checkbox
+                          checked={selectedEquipmentIds.has(eq.id)}
+                          onCheckedChange={(checked) => {
+                            setSelectedEquipmentIds(prev => {
+                              const next = new Set(prev);
+                              if (checked) next.add(eq.id);
+                              else next.delete(eq.id);
+                              return next;
+                            });
+                          }}
+                        />
+                        <span className="text-sm">{eq.name}</span>
+                        {eq.position_name && (
+                          <span className="text-xs text-muted-foreground">({eq.position_name})</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Attributes from selected VP (filtered by product-level selection) */}
           {vpAttrs.length > 0 && (

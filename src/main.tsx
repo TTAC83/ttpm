@@ -26,16 +26,13 @@ document.documentElement.classList.add('dark');
 // Initialize offline sync — auto-replay queued mutations when back online
 initOfflineSync();
 
-function Root() {
-  return (
-    <>
-      <App />
-      <PWAUpdateNotification />
-      <OfflineIndicator />
-      <MobileInstall />
-    </>
-  );
-}
+const rootEl = document.getElementById("root")!;
 
-
-createRoot(document.getElementById("root")!).render(<Root />);
+createRoot(rootEl).render(
+  <>
+    <App />
+    <PWAUpdateNotification />
+    <OfflineIndicator />
+    <MobileInstall />
+  </>
+);

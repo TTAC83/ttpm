@@ -55,6 +55,12 @@ interface Props {
   onSaved: () => void;
 }
 
+interface ViewAttrState {
+  selected: boolean;
+  is_variable: boolean;
+  value: string;
+}
+
 export function ProductViewDialog({ open, onOpenChange, productId, projectId, visionProjects, editingView, onSaved }: Props) {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
@@ -62,7 +68,7 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
   const [imageUrl, setImageUrl] = useState('');
   const [vpId, setVpId] = useState<string>('');
   const [vpAttrs, setVpAttrs] = useState<VPAttribute[]>([]);
-  const [attrValues, setAttrValues] = useState<Record<string, string>>({});
+  const [viewAttrState, setViewAttrState] = useState<Record<string, ViewAttrState>>({});
 
   const [artworkMode, setArtworkMode] = useState<'upload' | 'url'>('upload');
   const [uploadFile, setUploadFile] = useState<File | null>(null);

@@ -467,6 +467,13 @@ export function SolutionsProducts({ projectId }: Props) {
       </AlertDialog>
 
       <ImageLightbox src={lightboxSrc} open={!!lightboxSrc} onOpenChange={(open) => !open && setLightboxSrc(null)} />
+
+      <ProductImportReviewDialog
+        open={importReviewOpen}
+        onOpenChange={setImportReviewOpen}
+        result={importResult}
+        onApply={handleApplyImport}
+      />
     </div>
   );
 }

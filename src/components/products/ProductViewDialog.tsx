@@ -553,7 +553,7 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
                             />
                             <span className="text-sm font-medium">{pos.name}</span>
                           </div>
-                          {posEquip.length > 0 && (
+                          {posEquip.length > 0 && selectedPositionIds.has(pos.id) && (
                             <div className="ml-6 space-y-1">
                               {posEquip.map(eq => (
                                 <div key={eq.id} className="flex items-center gap-2">
@@ -562,17 +562,8 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
                                     onCheckedChange={(checked) => {
                                       setSelectedEquipmentIds(prev => {
                                         const next = new Set(prev);
-                                        if (checked) {
-                                          next.add(eq.id);
-                                          // Auto-select parent position
-                                          setSelectedPositionIds(prevPos => {
-                                            const nextPos = new Set(prevPos);
-                                            nextPos.add(eq.position_id);
-                                            return nextPos;
-                                          });
-                                        } else {
-                                          next.delete(eq.id);
-                                        }
+                                        if (checked) next.add(eq.id);
+                                        else next.delete(eq.id);
                                         return next;
                                       });
                                     }}

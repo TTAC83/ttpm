@@ -95,6 +95,7 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
       setViewName(editingView?.view_name || '');
       setVpId(editingView?.vision_project_id || '');
       setViewAttrState({});
+      setSelectedEquipmentIds(new Set());
       setUploadFile(null);
       setUploadPreview(null);
 

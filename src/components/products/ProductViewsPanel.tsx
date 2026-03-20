@@ -9,6 +9,9 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Popover, PopoverContent, PopoverTrigger,
+} from '@/components/ui/popover';
 import { Plus, Pencil, Trash2, Loader2, ArrowLeft, Image } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ProductViewDialog } from './ProductViewDialog';
@@ -20,6 +23,11 @@ interface ProductView {
   vision_project_id: string | null;
   vision_project_name: string | null;
   attributes_count: number;
+  positions_count: number;
+  equipment_count: number;
+  attribute_names: string[];
+  position_names: string[];
+  equipment_names: string[];
 }
 
 interface VisionProject {
@@ -59,13 +67,73 @@ export function ProductViewsPanel({ productId, productName, projectId, onBack }:
     const viewIds = viewsList.map(v => v.id);
 
     let attrCountMap: Record<string, number> = {};
+    let attrNamesMap: Record<string, string[]> = {};
+    let posCountMap: Record<string, number> = {};
+    let posNamesMap: Record<string, string[]> = {};
+    let eqCountMap: Record<string, number> = {};
+    let eqNamesMap: Record<string, string[]> = {};
+
     if (viewIds.length > 0) {
+      // Fetch attribute details
       const { data: attrs } = await supabase
         .from('product_view_attributes')
-        .select('product_view_id')
+        .select('product_view_id, project_attribute_id')
         .in('product_view_id', viewIds);
+
+      const paIds = [...new Set((attrs || []).map((a: any) => a.project_attribute_id))];
+      let masterNameMap: Record<string, string> = {};
+      if (paIds.length > 0) {
+        const { data: paData } = await supabase.from('project_attributes').select('id, master_attribute_id').in('id', paIds);
+        const masterIds = [...new Set((paData || []).map((pa: any) => pa.master_attribute_id))];
+        if (masterIds.length > 0) {
+          const { data: masters } = await supabase.from('master_attributes').select('id, name').in('id', masterIds);
+          const mMap = Object.fromEntries((masters || []).map((m: any) => [m.id, m.name]));
+          masterNameMap = Object.fromEntries((paData || []).map((pa: any) => [pa.id, mMap[pa.master_attribute_id] || 'Unknown']));
+        }
+      }
+
       for (const a of (attrs || []) as any[]) {
         attrCountMap[a.product_view_id] = (attrCountMap[a.product_view_id] || 0) + 1;
+        if (!attrNamesMap[a.product_view_id]) attrNamesMap[a.product_view_id] = [];
+        attrNamesMap[a.product_view_id].push(masterNameMap[a.project_attribute_id] || 'Unknown');
+      }
+
+      // Fetch position details
+      const { data: posLinks } = await supabase
+        .from('product_view_positions')
+        .select('product_view_id, position_id')
+        .in('product_view_id', viewIds);
+
+      const posIds = [...new Set((posLinks || []).map((p: any) => p.position_id))];
+      let posNameLookup: Record<string, string> = {};
+      if (posIds.length > 0) {
+        const { data: positions } = await supabase.from('positions').select('id, name').in('id', posIds);
+        posNameLookup = Object.fromEntries((positions || []).map((p: any) => [p.id, p.name || 'Unnamed']));
+      }
+
+      for (const p of (posLinks || []) as any[]) {
+        posCountMap[p.product_view_id] = (posCountMap[p.product_view_id] || 0) + 1;
+        if (!posNamesMap[p.product_view_id]) posNamesMap[p.product_view_id] = [];
+        posNamesMap[p.product_view_id].push(posNameLookup[p.position_id] || 'Unknown');
+      }
+
+      // Fetch equipment details
+      const { data: eqLinks } = await supabase
+        .from('product_view_equipment')
+        .select('product_view_id, equipment_id')
+        .in('product_view_id', viewIds);
+
+      const eqIds = [...new Set((eqLinks || []).map((e: any) => e.equipment_id))];
+      let eqNameLookup: Record<string, string> = {};
+      if (eqIds.length > 0) {
+        const { data: equipment } = await supabase.from('equipment').select('id, name').in('id', eqIds);
+        eqNameLookup = Object.fromEntries((equipment || []).map((e: any) => [e.id, e.name || 'Unnamed']));
+      }
+
+      for (const e of (eqLinks || []) as any[]) {
+        eqCountMap[e.product_view_id] = (eqCountMap[e.product_view_id] || 0) + 1;
+        if (!eqNamesMap[e.product_view_id]) eqNamesMap[e.product_view_id] = [];
+        eqNamesMap[e.product_view_id].push(eqNameLookup[e.equipment_id] || 'Unknown');
       }
     }
 
@@ -76,6 +144,11 @@ export function ProductViewsPanel({ productId, productName, projectId, onBack }:
       vision_project_id: v.vision_project_id,
       vision_project_name: v.vision_project_id ? vpMap[v.vision_project_id] || null : null,
       attributes_count: attrCountMap[v.id] || 0,
+      positions_count: posCountMap[v.id] || 0,
+      equipment_count: eqCountMap[v.id] || 0,
+      attribute_names: attrNamesMap[v.id] || [],
+      position_names: posNamesMap[v.id] || [],
+      equipment_names: eqNamesMap[v.id] || [],
     }));
 
     setViews(enriched);
@@ -130,6 +203,8 @@ export function ProductViewsPanel({ productId, productName, projectId, onBack }:
                 <TableHead>Image</TableHead>
                 <TableHead>View Name</TableHead>
                 <TableHead>Vision Project</TableHead>
+                <TableHead>Positions</TableHead>
+                <TableHead>Equipment</TableHead>
                 <TableHead>Attributes</TableHead>
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
@@ -155,7 +230,13 @@ export function ProductViewsPanel({ productId, productName, projectId, onBack }:
                     )}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">{view.attributes_count}</Badge>
+                    <CountBadge count={view.positions_count} names={view.position_names} label="Positions" />
+                  </TableCell>
+                  <TableCell>
+                    <CountBadge count={view.equipment_count} names={view.equipment_names} label="Equipment" />
+                  </TableCell>
+                  <TableCell>
+                    <CountBadge count={view.attributes_count} names={view.attribute_names} label="Attributes" />
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
@@ -197,5 +278,29 @@ export function ProductViewsPanel({ productId, productName, projectId, onBack }:
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+function CountBadge({ count, names, label }: { count: number; names: string[]; label: string }) {
+  if (count === 0) {
+    return <span className="text-muted-foreground text-sm">—</span>;
+  }
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Badge variant="outline" className="cursor-pointer hover:bg-accent transition-colors">
+          {count}
+        </Badge>
+      </PopoverTrigger>
+      <PopoverContent className="w-56 p-3" align="start">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{label}</p>
+        <ul className="space-y-1">
+          {names.map((name, i) => (
+            <li key={i} className="text-sm">• {name}</li>
+          ))}
+        </ul>
+      </PopoverContent>
+    </Popover>
   );
 }

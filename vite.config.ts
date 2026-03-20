@@ -4,6 +4,9 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
+// Note: componentTagger() is intentionally NOT added to plugins here.
+// The .lovable/vite.config.ts wrapper adds it for the tagged build to avoid duplicates.
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {

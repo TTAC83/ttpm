@@ -81,6 +81,9 @@ export function ProductViewDialog({ open, onOpenChange, productId, projectId, vi
   const [vpAttrs, setVpAttrs] = useState<VPAttribute[]>([]);
   const [viewAttrState, setViewAttrState] = useState<Record<string, ViewAttrState>>({});
 
+  const [availableEquipment, setAvailableEquipment] = useState<EquipmentItem[]>([]);
+  const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<Set<string>>(new Set());
+
   const [artworkMode, setArtworkMode] = useState<'upload' | 'url'>('upload');
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);

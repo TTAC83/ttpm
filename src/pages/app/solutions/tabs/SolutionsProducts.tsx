@@ -340,7 +340,8 @@ export function SolutionsProducts({ projectId }: Props) {
           <Button size="sm" onClick={() => { setEditingProduct(null); setDialogOpen(true); }}>
             <Plus className="mr-2 h-4 w-4" />
             Add Product
-        </Button>
+          </Button>
+        </div>
       </div>
 
       {products.length === 0 ? (

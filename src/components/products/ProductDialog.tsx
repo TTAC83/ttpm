@@ -157,16 +157,12 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData, facto
     const load = async () => {
       const { data } = await supabase
         .from('product_attributes')
-        .select('project_attribute_id, is_variable, fixed_value')
+        .select('project_attribute_id')
         .eq('product_id', productId);
 
       const state: Record<string, ProductAttributeState> = {};
       for (const d of (data || []) as any[]) {
-        state[d.project_attribute_id] = {
-          selected: true,
-          is_variable: d.is_variable,
-          fixed_value: d.fixed_value || '',
-        };
+        state[d.project_attribute_id] = { selected: true };
       }
       setProductAttrs(state);
     };

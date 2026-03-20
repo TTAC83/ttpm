@@ -45,8 +45,6 @@ interface AvailableAttribute {
 
 interface ProductAttributeState {
   selected: boolean;
-  is_variable: boolean;
-  fixed_value: string;
 }
 
 interface Props {

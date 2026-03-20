@@ -47,6 +47,13 @@ export function SolutionsProducts({ projectId }: Props) {
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
+  // Import/Export state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [exporting, setExporting] = useState(false);
+  const [importParsing, setImportParsing] = useState(false);
+  const [importResult, setImportResult] = useState<ImportParseResult | null>(null);
+  const [importReviewOpen, setImportReviewOpen] = useState(false);
+
   // Factory hierarchy
   const [factories, setFactories] = useState<FactoryItem[]>([]);
   const [groups, setGroups] = useState<GroupItem[]>([]);

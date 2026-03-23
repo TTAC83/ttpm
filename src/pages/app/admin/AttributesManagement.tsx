@@ -147,7 +147,8 @@ export default function AttributesManagement() {
   const getDataTypeLabel = (value: string) => DATA_TYPES.find((dt) => dt.value === value)?.label || value;
   const getUnitLabel = (dataType: string, unitValue: string | null) => {
     if (!unitValue) return "-";
-    return getUnitOptions(dataType).find((o) => o.value === unitValue)?.label || unitValue;
+    const found = getUnitOptions(dataType).find((o) => o.value === unitValue);
+    return found ? found.label : unitValue;
   };
   const getValidationLabel = (value: string) => {
     const map: Record<string, string> = { single_value: "Single Value", multiple_values: "Multiple Values", range: "Range" };

@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,6 +50,7 @@ export default function AttributesManagement() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [usageMap, setUsageMap] = useState<Record<string, { id: string; name: string }[]>>({});
+  const [showCustomOnly, setShowCustomOnly] = useState(false);
 
   useEffect(() => {
     fetchAttributes();
@@ -155,6 +158,9 @@ export default function AttributesManagement() {
     return map[value] || value;
   };
 
+  const customCount = attributes.filter(a => a.is_custom).length;
+  const filtered = useMemo(() => showCustomOnly ? attributes.filter(a => a.is_custom) : attributes, [attributes, showCustomOnly]);
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -162,15 +168,28 @@ export default function AttributesManagement() {
           <h1 className="text-3xl font-bold">Attributes</h1>
           <p className="text-muted-foreground mt-1">Manage master attributes used across projects and products</p>
         </div>
-        <Button onClick={handleOpenAdd}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Attribute
-        </Button>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Switch id="custom-filter" checked={showCustomOnly} onCheckedChange={setShowCustomOnly} />
+            <Label htmlFor="custom-filter" className="text-sm cursor-pointer">
+              Show Custom Only
+            </Label>
+            {showCustomOnly && (
+              <span className="text-xs text-muted-foreground">
+                {customCount} custom / {attributes.length} total
+              </span>
+            )}
+          </div>
+          <Button onClick={handleOpenAdd}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Attribute
+          </Button>
+        </div>
       </div>
 
       {loading ? (
         <div className="text-center py-8">Loading...</div>
-      ) : attributes.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="text-center py-12 border rounded-lg bg-muted/10">
           <p className="text-muted-foreground">No attributes found</p>
           <Button onClick={handleOpenAdd} className="mt-4">
@@ -192,10 +211,10 @@ export default function AttributesManagement() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {attributes.map((attr) => {
+              {filtered.map((attr) => {
                 const projects = usageMap[attr.id] || [];
                 return (
-                  <TableRow key={attr.id}>
+                  <TableRow key={attr.id} className={attr.is_custom ? "bg-amber-50 dark:bg-amber-950/20" : ""}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
                         {attr.name}

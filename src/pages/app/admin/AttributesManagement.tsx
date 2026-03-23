@@ -195,7 +195,25 @@ export default function AttributesManagement() {
                 const projects = usageMap[attr.id] || [];
                 return (
                   <TableRow key={attr.id}>
-                    <TableCell className="font-medium">{attr.name}</TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        {attr.name}
+                        {attr.is_custom && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Badge className="bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700">
+                                  Custom
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Custom attribute — pending official addition to the system</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell><Badge variant="secondary">{getDataTypeLabel(attr.data_type)}</Badge></TableCell>
                     <TableCell>{getUnitLabel(attr.data_type, attr.unit_of_measure)}</TableCell>
                     <TableCell>{getValidationLabel(attr.validation_type)}</TableCell>

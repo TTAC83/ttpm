@@ -211,10 +211,10 @@ export default function AttributesManagement() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {attributes.map((attr) => {
+              {filtered.map((attr) => {
                 const projects = usageMap[attr.id] || [];
                 return (
-                  <TableRow key={attr.id}>
+                  <TableRow key={attr.id} className={attr.is_custom ? "bg-amber-50 dark:bg-amber-950/20" : ""}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
                         {attr.name}

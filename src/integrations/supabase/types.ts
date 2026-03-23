@@ -2884,6 +2884,7 @@ export type Database = {
           data_type: string
           default_value: string | null
           id: string
+          is_custom: boolean
           max_value: string | null
           min_value: string | null
           name: string
@@ -2897,6 +2898,7 @@ export type Database = {
           data_type: string
           default_value?: string | null
           id?: string
+          is_custom?: boolean
           max_value?: string | null
           min_value?: string | null
           name: string
@@ -2910,6 +2912,7 @@ export type Database = {
           data_type?: string
           default_value?: string | null
           id?: string
+          is_custom?: boolean
           max_value?: string | null
           min_value?: string | null
           name?: string

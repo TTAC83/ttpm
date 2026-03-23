@@ -28,6 +28,7 @@ interface MasterAttribute {
   min_value: string | null;
   max_value: string | null;
   apply_min_max_date: boolean;
+  is_custom: boolean;
   created_at: string;
   updated_at: string;
 }

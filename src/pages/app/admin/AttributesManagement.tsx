@@ -16,6 +16,7 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AttributeDialog, type AttributeFormData } from "@/components/attributes/AttributeDialog";
 import { DATA_TYPES, getUnitOptions } from "@/components/attributes/attributeConfig";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface MasterAttribute {
   id: string;

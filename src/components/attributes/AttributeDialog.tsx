@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { Info } from "lucide-react";
 import { DATA_TYPES, getDataTypeConfig, getUnitOptions } from "./attributeConfig";
 
@@ -27,6 +28,7 @@ export interface AttributeFormData {
   unit_of_measure: string;
   validation_type: string;
   apply_min_max_date: boolean;
+  is_custom: boolean;
 }
 
 const EMPTY_FORM: AttributeFormData = {
@@ -35,6 +37,7 @@ const EMPTY_FORM: AttributeFormData = {
   unit_of_measure: "",
   validation_type: "single_value",
   apply_min_max_date: false,
+  is_custom: false,
 };
 
 interface AttributeDialogProps {
@@ -54,27 +57,90 @@ export function AttributeDialog({
 }: AttributeDialogProps) {
   const [formData, setFormData] = useState<AttributeFormData>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  // Track whether user selected "Other" for data type / unit
+  const [customDataType, setCustomDataType] = useState(false);
+  const [customUnit, setCustomUnit] = useState(false);
 
   useEffect(() => {
     if (open) {
-      setFormData(initialData ? { ...EMPTY_FORM, ...initialData } : EMPTY_FORM);
+      const merged = initialData ? { ...EMPTY_FORM, ...initialData } : EMPTY_FORM;
+      setFormData(merged);
+
+      // Determine if data type / unit are custom (not in standard list)
+      if (merged.is_custom) {
+        const isStandardType = DATA_TYPES.some((dt) => dt.value === merged.data_type);
+        setCustomDataType(!isStandardType);
+        if (isStandardType) {
+          const units = getUnitOptions(merged.data_type);
+          const isStandardUnit = !merged.unit_of_measure || units.some((u) => u.value === merged.unit_of_measure);
+          setCustomUnit(!isStandardUnit);
+        } else {
+          setCustomUnit(!!merged.unit_of_measure);
+        }
+      } else {
+        setCustomDataType(false);
+        setCustomUnit(false);
+      }
     }
   }, [open, initialData]);
 
+  const isCustom = formData.is_custom;
   const config = getDataTypeConfig(formData.data_type);
   const unitOptions = getUnitOptions(formData.data_type);
   const hasUnits = unitOptions.length > 0;
 
   const handleDataTypeChange = (value: string) => {
-    const newConfig = getDataTypeConfig(value);
-    const defaultValidation = newConfig?.validationTypes[0]?.value || "single_value";
-    setFormData({
-      ...formData,
-      data_type: value,
-      unit_of_measure: "",
-      validation_type: defaultValidation,
-      apply_min_max_date: false,
-    });
+    if (value === "__other__") {
+      setCustomDataType(true);
+      setCustomUnit(false);
+      setFormData({
+        ...formData,
+        data_type: "",
+        unit_of_measure: "",
+        validation_type: "single_value",
+        apply_min_max_date: false,
+      });
+    } else {
+      setCustomDataType(false);
+      setCustomUnit(false);
+      const newConfig = getDataTypeConfig(value);
+      const defaultValidation = newConfig?.validationTypes[0]?.value || "single_value";
+      setFormData({
+        ...formData,
+        data_type: value,
+        unit_of_measure: "",
+        validation_type: defaultValidation,
+        apply_min_max_date: false,
+      });
+    }
+  };
+
+  const handleUnitChange = (value: string) => {
+    if (value === "__other__") {
+      setCustomUnit(true);
+      setFormData({ ...formData, unit_of_measure: "" });
+    } else {
+      setCustomUnit(false);
+      setFormData({ ...formData, unit_of_measure: value });
+    }
+  };
+
+  const handleCustomToggle = (checked: boolean) => {
+    if (!checked) {
+      // Turning off custom — reset to defaults
+      setCustomDataType(false);
+      setCustomUnit(false);
+      setFormData({
+        ...formData,
+        is_custom: false,
+        data_type: "decimal",
+        unit_of_measure: "",
+        validation_type: "single_value",
+        apply_min_max_date: false,
+      });
+    } else {
+      setFormData({ ...formData, is_custom: true });
+    }
   };
 
   const handleSubmit = async () => {
@@ -87,20 +153,37 @@ export function AttributeDialog({
     }
   };
 
-  const isValid = formData.name.trim() && formData.data_type && formData.validation_type;
+  const isValid =
+    formData.name.trim() &&
+    formData.data_type &&
+    formData.validation_type;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>
-            {editMode ? "Edit Attribute" : "Add New Attribute"}
-          </DialogTitle>
-          <DialogDescription>
-            {editMode
-              ? "Update the attribute definition"
-              : "Create a new master attribute"}
-          </DialogDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle>
+                {editMode ? "Edit Attribute" : "Add New Attribute"}
+              </DialogTitle>
+              <DialogDescription>
+                {editMode
+                  ? "Update the attribute definition"
+                  : "Create a new master attribute"}
+              </DialogDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="custom-switch" className="text-sm font-medium">
+                Custom
+              </Label>
+              <Switch
+                id="custom-switch"
+                checked={formData.is_custom}
+                onCheckedChange={handleCustomToggle}
+              />
+            </div>
+          </div>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -124,21 +207,54 @@ export function AttributeDialog({
                 <Label htmlFor="attr-data-type">
                   <span className="text-destructive">*</span> Data Type
                 </Label>
-                <Select
-                  value={formData.data_type}
-                  onValueChange={handleDataTypeChange}
-                >
-                  <SelectTrigger id="attr-data-type">
-                    <SelectValue placeholder="Select data type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DATA_TYPES.map((dt) => (
-                      <SelectItem key={dt.value} value={dt.value}>
-                        {dt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {isCustom && customDataType ? (
+                  <div className="space-y-2">
+                    <Input
+                      value={formData.data_type}
+                      onChange={(e) =>
+                        setFormData({ ...formData, data_type: e.target.value })
+                      }
+                      placeholder="Enter custom data type"
+                    />
+                    <button
+                      type="button"
+                      className="text-xs text-muted-foreground hover:underline"
+                      onClick={() => {
+                        setCustomDataType(false);
+                        setFormData({ ...formData, data_type: "decimal", unit_of_measure: "", validation_type: "single_value" });
+                      }}
+                    >
+                      ← Back to standard types
+                    </button>
+                  </div>
+                ) : (
+                  <Select
+                    value={
+                      isCustom && customDataType
+                        ? "__other__"
+                        : DATA_TYPES.some((dt) => dt.value === formData.data_type)
+                        ? formData.data_type
+                        : "__other__"
+                    }
+                    onValueChange={handleDataTypeChange}
+                  >
+                    <SelectTrigger id="attr-data-type">
+                      <SelectValue placeholder="Select data type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DATA_TYPES.map((dt) => (
+                        <SelectItem key={dt.value} value={dt.value}>
+                          {dt.label}
+                        </SelectItem>
+                      ))}
+                      {isCustom && (
+                        <SelectItem value="__other__" className="text-amber-600 font-medium">
+                          Other (Custom)
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             </div>
           </div>
@@ -149,32 +265,61 @@ export function AttributeDialog({
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Format</h3>
             <div className="grid grid-cols-2 gap-4">
-              {hasUnits && (
+              {/* Unit of Measure */}
+              {(hasUnits || (isCustom && customDataType)) && (
                 <div>
                   <Label htmlFor="attr-unit">
-                    <span className="text-destructive">*</span> Unit of Measure
+                    {!customDataType && <span className="text-destructive">*</span>} Unit of Measure
                   </Label>
-                  <Select
-                    value={formData.unit_of_measure}
-                    onValueChange={(v) =>
-                      setFormData({ ...formData, unit_of_measure: v })
-                    }
-                  >
-                    <SelectTrigger id="attr-unit">
-                      <SelectValue placeholder="Select Unit of Measurement" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {unitOptions.map((u) => (
-                        <SelectItem key={u.value} value={u.value}>
-                          {u.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {customUnit || (isCustom && customDataType) ? (
+                    <div className="space-y-2">
+                      <Input
+                        value={formData.unit_of_measure}
+                        onChange={(e) =>
+                          setFormData({ ...formData, unit_of_measure: e.target.value })
+                        }
+                        placeholder="Enter custom unit"
+                      />
+                      {hasUnits && !customDataType && (
+                        <button
+                          type="button"
+                          className="text-xs text-muted-foreground hover:underline"
+                          onClick={() => {
+                            setCustomUnit(false);
+                            setFormData({ ...formData, unit_of_measure: "" });
+                          }}
+                        >
+                          ← Back to standard units
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <Select
+                      value={formData.unit_of_measure}
+                      onValueChange={handleUnitChange}
+                    >
+                      <SelectTrigger id="attr-unit">
+                        <SelectValue placeholder="Select Unit of Measurement" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {unitOptions.map((u) => (
+                          <SelectItem key={u.value} value={u.value}>
+                            {u.label}
+                          </SelectItem>
+                        ))}
+                        {isCustom && (
+                          <SelectItem value="__other__" className="text-amber-600 font-medium">
+                            Other (Custom)
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
               )}
 
-              {config && config.validationTypes.length > 0 && (
+              {/* Validation Type */}
+              {config && config.validationTypes.length > 0 && !customDataType && (
                 <div>
                   <Label>
                     <span className="text-destructive">*</span> Validation Type
@@ -203,10 +348,24 @@ export function AttributeDialog({
                   </div>
                 </div>
               )}
+
+              {/* Custom data type — simple validation type input */}
+              {customDataType && (
+                <div>
+                  <Label>Validation Type</Label>
+                  <Input
+                    value={formData.validation_type}
+                    onChange={(e) =>
+                      setFormData({ ...formData, validation_type: e.target.value })
+                    }
+                    placeholder="e.g., single_value"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Min/max date toggle for date type */}
-            {config?.showMinMaxDate && (
+            {config?.showMinMaxDate && !customDataType && (
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -226,7 +385,7 @@ export function AttributeDialog({
               </div>
             )}
 
-            {config?.showMinMaxDate && formData.apply_min_max_date && (
+            {config?.showMinMaxDate && formData.apply_min_max_date && !customDataType && (
               <div className="rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30 p-4 space-y-2">
                 <div className="flex items-center gap-2 text-blue-700 dark:text-blue-400 font-medium text-sm">
                   <Info className="h-4 w-4" />
@@ -238,6 +397,19 @@ export function AttributeDialog({
                 </ul>
                 <p className="text-xs text-muted-foreground ml-6">
                   These rules are system-defined and non-configurable. They will be enforced automatically when attribute values are entered.
+                </p>
+              </div>
+            )}
+
+            {/* Custom warning banner */}
+            {isCustom && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 p-4">
+                <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-medium text-sm">
+                  <Info className="h-4 w-4" />
+                  Custom Attribute
+                </div>
+                <p className="text-sm text-amber-600 dark:text-amber-300 mt-1">
+                  This attribute will be flagged as custom and highlighted in yellow. It will need to be officially added to the system when built.
                 </p>
               </div>
             )}

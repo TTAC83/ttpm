@@ -16,6 +16,7 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AttributeDialog, type AttributeFormData } from "@/components/attributes/AttributeDialog";
 import { DATA_TYPES, getUnitOptions } from "@/components/attributes/attributeConfig";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface MasterAttribute {
   id: string;
@@ -27,6 +28,7 @@ interface MasterAttribute {
   min_value: string | null;
   max_value: string | null;
   apply_min_max_date: boolean;
+  is_custom: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -108,6 +110,7 @@ export default function AttributesManagement() {
       min_value: null,
       max_value: null,
       apply_min_max_date: data.apply_min_max_date,
+      is_custom: data.is_custom,
     };
 
     try {
@@ -144,7 +147,8 @@ export default function AttributesManagement() {
   const getDataTypeLabel = (value: string) => DATA_TYPES.find((dt) => dt.value === value)?.label || value;
   const getUnitLabel = (dataType: string, unitValue: string | null) => {
     if (!unitValue) return "-";
-    return getUnitOptions(dataType).find((o) => o.value === unitValue)?.label || unitValue;
+    const found = getUnitOptions(dataType).find((o) => o.value === unitValue);
+    return found ? found.label : unitValue;
   };
   const getValidationLabel = (value: string) => {
     const map: Record<string, string> = { single_value: "Single Value", multiple_values: "Multiple Values", range: "Range" };
@@ -192,7 +196,25 @@ export default function AttributesManagement() {
                 const projects = usageMap[attr.id] || [];
                 return (
                   <TableRow key={attr.id}>
-                    <TableCell className="font-medium">{attr.name}</TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        {attr.name}
+                        {attr.is_custom && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Badge className="bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700">
+                                  Custom
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Custom attribute — pending official addition to the system</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell><Badge variant="secondary">{getDataTypeLabel(attr.data_type)}</Badge></TableCell>
                     <TableCell>{getUnitLabel(attr.data_type, attr.unit_of_measure)}</TableCell>
                     <TableCell>{getValidationLabel(attr.validation_type)}</TableCell>
@@ -250,6 +272,7 @@ export default function AttributesManagement() {
                 unit_of_measure: editingAttribute.unit_of_measure || "",
                 validation_type: editingAttribute.validation_type,
                 apply_min_max_date: editingAttribute.apply_min_max_date,
+                is_custom: editingAttribute.is_custom,
               }
             : undefined
         }

@@ -271,6 +271,7 @@ export default function AttributesManagement() {
                 unit_of_measure: editingAttribute.unit_of_measure || "",
                 validation_type: editingAttribute.validation_type,
                 apply_min_max_date: editingAttribute.apply_min_max_date,
+                is_custom: editingAttribute.is_custom,
               }
             : undefined
         }

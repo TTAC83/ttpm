@@ -189,7 +189,7 @@ export default function AttributesManagement() {
 
       {loading ? (
         <div className="text-center py-8">Loading...</div>
-      ) : attributes.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="text-center py-12 border rounded-lg bg-muted/10">
           <p className="text-muted-foreground">No attributes found</p>
           <Button onClick={handleOpenAdd} className="mt-4">

@@ -1,55 +1,62 @@
 
 
-## Updated Multi-Sheet Excel Import/Export — Including Vision Projects
+## Add Custom Attribute Support
 
-### What was missing
-The previous plan exported Vision Project **name** on Sheet 2 as a reference column, but did not export or import the Vision Projects themselves. If a user imports on a fresh project (or adds new vision projects via Excel), those references would fail to resolve.
+### Overview
+Add a "Custom" toggle to the Attribute Dialog that unlocks free-text entry for data type and unit of measure. Custom attributes are stored in the same `master_attributes` table with an `is_custom` boolean flag and displayed with a yellow badge in the table.
 
-### Updated Sheet Structure (4 Sheets)
+### Database Change
+Add `is_custom` column to `master_attributes` and relax the `data_type` CHECK constraint:
 
-**Sheet 1: Products** — one row per product
-| Product Code* | Product Name* | Factory | Group | Line | Attributes | Comments |
+```sql
+ALTER TABLE public.master_attributes ADD COLUMN is_custom BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE public.master_attributes DROP CONSTRAINT master_attributes_data_type_check;
+-- No new constraint — custom types are free-text, standard ones validated in the UI
+```
 
-**Sheet 2: Vision Projects** — one row per vision project (NEW)
-| Vision Project Name* | Description | Attributes |
+### Dialog Changes (`AttributeDialog.tsx`)
 
-- Attributes = comma-separated master attribute names linked via `vision_project_attributes`
-- On import: upsert by name within the solutions project; sync `vision_project_attributes`
+1. Add a **Custom** switch (shadcn Switch component) at the top of the form, next to the title
+2. Add `is_custom` to `AttributeFormData`
 
-**Sheet 3: Views** — one row per view
-| Product Code* | View Name* | Vision Project | Positions | Equipment |
+**When Custom is OFF (default — current behaviour):**
+- Data Type = dropdown from `DATA_TYPES` config (Decimal, Date, Alphanumeric, Julian Date)
+- Unit of Measure = dropdown from matching `UNIT_OPTIONS`
+- Validation Type = button group from config
 
-- Vision Project = name from Sheet 2 (resolved to ID on import)
-- Positions/Equipment = comma-separated names
+**When Custom is ON:**
+- Data Type = dropdown of existing types + "Other" option
+  - If "Other" selected → show a text input for custom type name
+  - If existing type selected → show its standard unit options + "Other" at the bottom
+- Unit of Measure = standard dropdown (if existing type selected) with an **"Other"** option appended
+  - If "Other" selected → show a text input for custom unit
+  - If data type is fully custom ("Other") → just show a text input for unit (optional)
+- Validation Type = standard options if existing type, otherwise defaults to "Single Value" with free-text option
 
-**Sheet 4: View Attributes** — one row per attribute per view
-| Product Code* | View Name* | Attribute Name* | Set/Variable | Value |
+### Table Changes (`AttributesManagement.tsx`)
 
-### Import behaviour for Vision Projects
-- Match by name (case-insensitive) within the solutions project
-- If exists: offer update (description, attributes) via the conflict review dialog
-- If new: create the vision project and link its attributes
-- If a View references a Vision Project name not on Sheet 2 AND not in the DB: flag as validation error
+- Yellow `Badge` on the Name column or a separate "Custom" badge when `is_custom === true`
+- Tooltip: "Custom attribute — pending official addition to the system"
+- Custom data types and units display their raw string values (since they won't match config labels)
 
-### Export behaviour
-- Sheet 2 populated from `vision_projects` + `vision_project_attributes` → `project_attributes` → `master_attributes` for attribute names
+### Form Data Flow
+```text
+is_custom: false → standard config-driven dropdowns (current behaviour)
+is_custom: true  → existing type + "Other" for data type
+                 → existing units + "Other" for unit of measure
+                 → free-text inputs shown when "Other" selected
+```
 
-### Conflict review
-Vision projects follow the same accept/reject pattern as products and views — the review dialog gains a "Vision Projects" section.
-
-### Files
-
+### Files to Modify
 | File | Change |
 |------|--------|
-| `src/lib/productBulkService.ts` | New — export/import logic for all 4 sheets |
-| `src/components/products/ProductImportReviewDialog.tsx` | New — conflict review dialog with sections for Products, Vision Projects, Views, View Attributes |
-| `src/pages/app/solutions/tabs/SolutionsProducts.tsx` | Add Export/Import buttons, file input, wire dialogs |
+| Migration | Add `is_custom` column, drop CHECK constraint |
+| `AttributeDialog.tsx` | Add Custom switch, "Other" options, conditional text inputs |
+| `attributeConfig.ts` | No change needed — custom values bypass config lookup |
+| `AttributesManagement.tsx` | Yellow badge for custom attributes, handle unknown data type/unit labels |
 
-### Mitigations (carried forward + new)
-- Orphan detection across all sheets (Sheet 3 refs Sheet 1 & 2; Sheet 4 refs Sheet 3)
-- Data validation dropdowns in exported Excel (Product Code, Vision Project Name)
-- Case-insensitive name matching for all resolutions
-- Duplicate name detection per sheet
-- Dry-run summary before applying
-- Vision Project attribute names validated against project's `project_attributes`
+### Edge Cases
+- Editing a custom attribute preserves `is_custom = true` and shows the custom fields pre-filled
+- Export/import in the bulk service will carry through `is_custom` flag
+- `getDataTypeConfig()` returning `undefined` for custom types is already handled (used with optional chaining throughout)
 

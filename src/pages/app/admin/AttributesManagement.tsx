@@ -48,6 +48,7 @@ export default function AttributesManagement() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [usageMap, setUsageMap] = useState<Record<string, { id: string; name: string }[]>>({});
+  const [showCustomOnly, setShowCustomOnly] = useState(false);
 
   useEffect(() => {
     fetchAttributes();

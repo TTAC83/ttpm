@@ -110,6 +110,7 @@ export default function AttributesManagement() {
       min_value: null,
       max_value: null,
       apply_min_max_date: data.apply_min_max_date,
+      is_custom: data.is_custom,
     };
 
     try {

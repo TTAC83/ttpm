@@ -158,6 +158,9 @@ export default function AttributesManagement() {
     return map[value] || value;
   };
 
+  const customCount = attributes.filter(a => a.is_custom).length;
+  const filtered = useMemo(() => showCustomOnly ? attributes.filter(a => a.is_custom) : attributes, [attributes, showCustomOnly]);
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -165,9 +168,21 @@ export default function AttributesManagement() {
           <h1 className="text-3xl font-bold">Attributes</h1>
           <p className="text-muted-foreground mt-1">Manage master attributes used across projects and products</p>
         </div>
-        <Button onClick={handleOpenAdd}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Attribute
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Switch id="custom-filter" checked={showCustomOnly} onCheckedChange={setShowCustomOnly} />
+            <Label htmlFor="custom-filter" className="text-sm cursor-pointer">
+              Show Custom Only
+            </Label>
+            {showCustomOnly && (
+              <span className="text-xs text-muted-foreground">
+                {customCount} custom / {attributes.length} total
+              </span>
+            )}
+          </div>
+          <Button onClick={handleOpenAdd}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Attribute
         </Button>
       </div>
 

@@ -14,6 +14,7 @@ export interface ExecutiveSummaryRow {
   product_gaps_status: 'none' | 'non_critical' | 'critical';
   escalation_status: 'none' | 'active' | 'critical';
   planned_go_live_date: string | null;
+  contract_signed_date: string | null;
 }
 
 export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]> {

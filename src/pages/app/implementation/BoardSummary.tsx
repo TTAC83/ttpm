@@ -93,6 +93,7 @@ export default function BoardSummary() {
     const headers = [
       'Customer Name',
       'Project',
+      'Contract Signed',
       'Product Gaps',
       'Planned Go Live'
     ];

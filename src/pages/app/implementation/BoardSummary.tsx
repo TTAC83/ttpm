@@ -223,6 +223,12 @@ export default function BoardSummary() {
                 Project {sortColumn === 'project_name' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
               <TableHead 
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => handleSort('contract_signed_date')}
+              >
+                Contract Signed {sortColumn === 'contract_signed_date' && (sortDirection === 'asc' ? '↑' : '↓')}
+              </TableHead>
+              <TableHead 
                 className="text-center cursor-pointer hover:bg-muted/50"
                 onClick={() => handleSort('product_gaps_status')}
               >

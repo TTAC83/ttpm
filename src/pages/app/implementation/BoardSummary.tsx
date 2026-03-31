@@ -93,6 +93,7 @@ export default function BoardSummary() {
     const headers = [
       'Customer Name',
       'Project',
+      'Contract Signed',
       'Product Gaps',
       'Planned Go Live'
     ];
@@ -100,6 +101,7 @@ export default function BoardSummary() {
     const data = sortedData.map(row => [
       row.customer_name,
       row.project_name,
+      row.contract_signed_date ? format(new Date(row.contract_signed_date), 'dd MMM yyyy') : '',
       row.product_gaps_status === 'critical' ? 'Critical' : 
         row.product_gaps_status === 'non_critical' ? 'Non-Critical' : 'None',
       row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : ''
@@ -108,7 +110,7 @@ export default function BoardSummary() {
     // Add table using autoTable (requires jspdf-autotable plugin, so we'll do it manually)
     let y = 30;
     const lineHeight = 7;
-    const colWidths = [50, 50, 30, 35];
+    const colWidths = [50, 50, 35, 30, 35];
     
     // Draw headers
     doc.setFontSize(10);
@@ -146,6 +148,7 @@ export default function BoardSummary() {
     const data = sortedData.map(row => ({
       'Customer Name': row.customer_name,
       'Project': row.project_name,
+      'Contract Signed': row.contract_signed_date ? format(new Date(row.contract_signed_date), 'dd MMM yyyy') : '',
       'Product Gaps': row.product_gaps_status === 'critical' ? 'Critical' : 
         row.product_gaps_status === 'non_critical' ? 'Non-Critical' : 'None',
       'Planned Go Live': row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : ''
@@ -159,6 +162,7 @@ export default function BoardSummary() {
     const colWidths = [
       { wch: 30 }, // Customer Name
       { wch: 30 }, // Project
+      { wch: 20 }, // Contract Signed
       { wch: 15 }, // Product Gaps
       { wch: 20 }  // Planned Go Live
     ];
@@ -219,6 +223,12 @@ export default function BoardSummary() {
                 Project {sortColumn === 'project_name' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
               <TableHead 
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => handleSort('contract_signed_date')}
+              >
+                Contract Signed {sortColumn === 'contract_signed_date' && (sortDirection === 'asc' ? '↑' : '↓')}
+              </TableHead>
+              <TableHead 
                 className="text-center cursor-pointer hover:bg-muted/50"
                 onClick={() => handleSort('product_gaps_status')}
               >
@@ -235,7 +245,7 @@ export default function BoardSummary() {
           <TableBody>
             {sortedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                   No implementation projects found.
                 </TableCell>
               </TableRow>
@@ -248,6 +258,9 @@ export default function BoardSummary() {
                 >
                   <TableCell className="font-medium">{row.customer_name}</TableCell>
                   <TableCell>{row.project_name}</TableCell>
+                  <TableCell>
+                    {row.contract_signed_date ? format(new Date(row.contract_signed_date), 'dd MMM yyyy') : ''}
+                  </TableCell>
                   <TableCell className="text-center">
                     {renderProductGapsIcon(row.product_gaps_status)}
                   </TableCell>

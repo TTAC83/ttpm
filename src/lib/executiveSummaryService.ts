@@ -14,6 +14,7 @@ export interface ExecutiveSummaryRow {
   product_gaps_status: 'none' | 'non_critical' | 'critical';
   escalation_status: 'none' | 'active' | 'critical';
   planned_go_live_date: string | null;
+  contract_signed_date: string | null;
 }
 
 export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]> {
@@ -26,7 +27,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
   // Fetch all implementation projects with company info and go-live data from projects table
   const { data: projects, error: projectsError } = await supabase
     .from('projects')
-    .select('id, name, company_id, planned_go_live_date, companies(name)')
+    .select('id, name, company_id, planned_go_live_date, contract_signed_date, companies(name)')
     .in('domain', ['IoT', 'Vision', 'Hybrid'])
     .order('name');
 
@@ -187,7 +188,8 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       phase_live: review?.phase_live ?? null,
       product_gaps_status,
       escalation_status,
-      planned_go_live_date: project.planned_go_live_date || null
+      planned_go_live_date: project.planned_go_live_date || null,
+      contract_signed_date: project.contract_signed_date || null
     };
   });
 }

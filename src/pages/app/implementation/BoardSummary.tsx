@@ -110,7 +110,7 @@ export default function BoardSummary() {
     // Add table using autoTable (requires jspdf-autotable plugin, so we'll do it manually)
     let y = 30;
     const lineHeight = 7;
-    const colWidths = [50, 50, 30, 35];
+    const colWidths = [50, 50, 35, 30, 35];
     
     // Draw headers
     doc.setFontSize(10);

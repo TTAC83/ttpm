@@ -258,6 +258,9 @@ export default function BoardSummary() {
                 >
                   <TableCell className="font-medium">{row.customer_name}</TableCell>
                   <TableCell>{row.project_name}</TableCell>
+                  <TableCell>
+                    {row.contract_signed_date ? format(new Date(row.contract_signed_date), 'dd MMM yyyy') : ''}
+                  </TableCell>
                   <TableCell className="text-center">
                     {renderProductGapsIcon(row.product_gaps_status)}
                   </TableCell>

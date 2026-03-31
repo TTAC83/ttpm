@@ -188,7 +188,8 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       phase_live: review?.phase_live ?? null,
       product_gaps_status,
       escalation_status,
-      planned_go_live_date: project.planned_go_live_date || null
+      planned_go_live_date: project.planned_go_live_date || null,
+      contract_signed_date: project.contract_signed_date || null
     };
   });
 }

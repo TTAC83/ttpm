@@ -148,6 +148,7 @@ export default function BoardSummary() {
     const data = sortedData.map(row => ({
       'Customer Name': row.customer_name,
       'Project': row.project_name,
+      'Contract Signed': row.contract_signed_date ? format(new Date(row.contract_signed_date), 'dd MMM yyyy') : '',
       'Product Gaps': row.product_gaps_status === 'critical' ? 'Critical' : 
         row.product_gaps_status === 'non_critical' ? 'Non-Critical' : 'None',
       'Planned Go Live': row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : ''

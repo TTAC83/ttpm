@@ -162,6 +162,7 @@ export default function BoardSummary() {
     const colWidths = [
       { wch: 30 }, // Customer Name
       { wch: 30 }, // Project
+      { wch: 20 }, // Contract Signed
       { wch: 15 }, // Product Gaps
       { wch: 20 }  // Planned Go Live
     ];

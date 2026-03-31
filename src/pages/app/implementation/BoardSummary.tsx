@@ -245,7 +245,7 @@ export default function BoardSummary() {
           <TableBody>
             {sortedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                   No implementation projects found.
                 </TableCell>
               </TableRow>

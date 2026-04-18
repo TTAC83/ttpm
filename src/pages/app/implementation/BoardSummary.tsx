@@ -94,9 +94,10 @@ export default function BoardSummary() {
     doc.setFontSize(10);
     doc.text(`Exported: ${format(new Date(), 'dd MMM yyyy HH:mm')}`, 14, 22);
 
-    const headers = ['Type', 'Customer Name', 'Project / Site', 'Contract Signed', 'Product Gaps', 'Churn Risk', 'Planned Go Live'];
+    const headers = ['Type', 'Domain', 'Customer Name', 'Project / Site', 'Contract Signed', 'Product Gaps', 'Churn Risk', 'Planned Go Live'];
     const data = sortedData.map(row => [
       row.row_type === 'bau' ? 'BAU' : 'Implementation',
+      row.domain || '—',
       row.customer_name,
       row.project_name,
       row.contract_signed_date ? format(new Date(row.contract_signed_date), 'dd MMM yyyy') : '',
@@ -109,7 +110,7 @@ export default function BoardSummary() {
 
     let y = 30;
     const lineHeight = 7;
-    const colWidths = [28, 45, 45, 30, 28, 25, 30];
+    const colWidths = [24, 22, 40, 40, 28, 24, 22, 28];
 
     doc.setFontSize(9);
     doc.setFont(undefined, 'bold');
@@ -141,6 +142,7 @@ export default function BoardSummary() {
   const exportToExcel = () => {
     const data = sortedData.map(row => ({
       'Type': row.row_type === 'bau' ? 'BAU' : 'Implementation',
+      'Domain': row.domain || '—',
       'Customer Name': row.customer_name,
       'Project / Site': row.project_name,
       'Contract Signed': row.contract_signed_date ? format(new Date(row.contract_signed_date), 'dd MMM yyyy') : '',
@@ -154,7 +156,7 @@ export default function BoardSummary() {
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Board Summary');
-    worksheet['!cols'] = [{ wch: 16 }, { wch: 30 }, { wch: 30 }, { wch: 18 }, { wch: 15 }, { wch: 14 }, { wch: 18 }];
+    worksheet['!cols'] = [{ wch: 16 }, { wch: 12 }, { wch: 30 }, { wch: 30 }, { wch: 18 }, { wch: 15 }, { wch: 14 }, { wch: 18 }];
     XLSX.writeFile(workbook, `board-summary-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
 
@@ -214,6 +216,9 @@ export default function BoardSummary() {
               <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('row_type')}>
                 Type {sortColumn === 'row_type' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
+              <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('domain')}>
+                Domain {sortColumn === 'domain' && (sortDirection === 'asc' ? '↑' : '↓')}
+              </TableHead>
               <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('customer_name')}>
                 Customer Name {sortColumn === 'customer_name' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
@@ -237,7 +242,7 @@ export default function BoardSummary() {
           <TableBody>
             {sortedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   No records found.
                 </TableCell>
               </TableRow>
@@ -254,6 +259,9 @@ export default function BoardSummary() {
                     ) : (
                       <Badge variant="default">Implementation</Badge>
                     )}
+                  </TableCell>
+                  <TableCell>
+                    {row.domain ? <Badge variant="outline">{row.domain}</Badge> : <span className="text-muted-foreground">—</span>}
                   </TableCell>
                   <TableCell className="font-medium">{row.customer_name}</TableCell>
                   <TableCell>{row.project_name}</TableCell>

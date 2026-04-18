@@ -18,6 +18,7 @@ export interface ExecutiveSummaryRow {
   row_type: 'implementation' | 'bau';
   churn_risk: string | null;
   bau_status: string | null;
+  domain: string | null;
 }
 
 export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]> {
@@ -30,7 +31,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
   // Fetch all implementation projects with company info and go-live data from projects table
   const { data: projects, error: projectsError } = await supabase
     .from('projects')
-    .select('id, name, company_id, planned_go_live_date, contract_signed_date, companies(name)')
+    .select('id, name, company_id, domain, planned_go_live_date, contract_signed_date, companies(name)')
     .in('domain', ['IoT', 'Vision', 'Hybrid'])
     .order('name');
 
@@ -196,6 +197,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       row_type: 'implementation' as const,
       churn_risk: null,
       bau_status: null,
+      domain: project.domain || null,
     };
   });
 
@@ -245,6 +247,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       row_type: 'bau' as const,
       churn_risk: r?.churn_risk || (c.churn_risk as string | null) || null,
       bau_status: r?.status || c.current_status || null,
+      domain: 'BAU',
     };
   });
 

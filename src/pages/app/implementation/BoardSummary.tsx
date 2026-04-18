@@ -216,6 +216,9 @@ export default function BoardSummary() {
               <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('row_type')}>
                 Type {sortColumn === 'row_type' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
+              <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('domain')}>
+                Domain {sortColumn === 'domain' && (sortDirection === 'asc' ? '↑' : '↓')}
+              </TableHead>
               <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('customer_name')}>
                 Customer Name {sortColumn === 'customer_name' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>

@@ -18,6 +18,7 @@ export interface ExecutiveSummaryRow {
   row_type: 'implementation' | 'bau';
   churn_risk: string | null;
   bau_status: string | null;
+  domain: string | null;
 }
 
 export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]> {

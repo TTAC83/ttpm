@@ -149,7 +149,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
   });
 
   // Build the summary rows
-  return projects.map(project => {
+  const implRows: ExecutiveSummaryRow[] = projects.map(project => {
     // Get project's company review by company_id (for health and status only)
     const currentWeekReview = reviewMap.get(project.company_id);
     const mostRecentReview = mostRecentReviewMap.get(project.company_id);

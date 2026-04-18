@@ -247,6 +247,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       row_type: 'bau' as const,
       churn_risk: r?.churn_risk || (c.churn_risk as string | null) || null,
       bau_status: r?.status || c.current_status || null,
+      domain: 'BAU',
     };
   });
 

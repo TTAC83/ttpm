@@ -242,7 +242,7 @@ export default function BoardSummary() {
           <TableBody>
             {sortedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   No records found.
                 </TableCell>
               </TableRow>
@@ -259,6 +259,9 @@ export default function BoardSummary() {
                     ) : (
                       <Badge variant="default">Implementation</Badge>
                     )}
+                  </TableCell>
+                  <TableCell>
+                    {row.domain ? <Badge variant="outline">{row.domain}</Badge> : <span className="text-muted-foreground">—</span>}
                   </TableCell>
                   <TableCell className="font-medium">{row.customer_name}</TableCell>
                   <TableCell>{row.project_name}</TableCell>

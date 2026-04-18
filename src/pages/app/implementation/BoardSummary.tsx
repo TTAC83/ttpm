@@ -94,9 +94,10 @@ export default function BoardSummary() {
     doc.setFontSize(10);
     doc.text(`Exported: ${format(new Date(), 'dd MMM yyyy HH:mm')}`, 14, 22);
 
-    const headers = ['Type', 'Customer Name', 'Project / Site', 'Contract Signed', 'Product Gaps', 'Churn Risk', 'Planned Go Live'];
+    const headers = ['Type', 'Domain', 'Customer Name', 'Project / Site', 'Contract Signed', 'Product Gaps', 'Churn Risk', 'Planned Go Live'];
     const data = sortedData.map(row => [
       row.row_type === 'bau' ? 'BAU' : 'Implementation',
+      row.domain || '—',
       row.customer_name,
       row.project_name,
       row.contract_signed_date ? format(new Date(row.contract_signed_date), 'dd MMM yyyy') : '',
@@ -109,7 +110,7 @@ export default function BoardSummary() {
 
     let y = 30;
     const lineHeight = 7;
-    const colWidths = [28, 45, 45, 30, 28, 25, 30];
+    const colWidths = [24, 22, 40, 40, 28, 24, 22, 28];
 
     doc.setFontSize(9);
     doc.setFont(undefined, 'bold');

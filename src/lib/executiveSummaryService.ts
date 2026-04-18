@@ -15,6 +15,9 @@ export interface ExecutiveSummaryRow {
   escalation_status: 'none' | 'active' | 'critical';
   planned_go_live_date: string | null;
   contract_signed_date: string | null;
+  row_type: 'implementation' | 'bau';
+  churn_risk: string | null;
+  bau_status: string | null;
 }
 
 export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]> {
@@ -146,7 +149,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
   });
 
   // Build the summary rows
-  return projects.map(project => {
+  const implRows: ExecutiveSummaryRow[] = projects.map(project => {
     // Get project's company review by company_id (for health and status only)
     const currentWeekReview = reviewMap.get(project.company_id);
     const mostRecentReview = mostRecentReviewMap.get(project.company_id);
@@ -189,7 +192,61 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       product_gaps_status,
       escalation_status,
       planned_go_live_date: project.planned_go_live_date || null,
-      contract_signed_date: project.contract_signed_date || null
+      contract_signed_date: project.contract_signed_date || null,
+      row_type: 'implementation' as const,
+      churn_risk: null,
+      bau_status: null,
     };
   });
+
+  // Fetch BAU customers
+  const { data: bauCustomers, error: bauError } = await supabase
+    .from('bau_customers')
+    .select('id, name, site_name, churn_risk, current_status, companies!inner(name)')
+    .eq('customer_type', 'bau')
+    .order('name');
+
+  if (bauError) throw bauError;
+
+  // Get most recent BAU weekly reviews per customer
+  const { data: bauReviews } = await supabase
+    .from('bau_weekly_reviews')
+    .select('bau_customer_id, health, churn_risk, status, reason_code, date_from')
+    .order('date_from', { ascending: false });
+
+  const bauReviewMap = new Map<string, { health: string | null; churn_risk: string | null; status: string | null; reason_code: string | null }>();
+  (bauReviews || []).forEach(r => {
+    if (!bauReviewMap.has(r.bau_customer_id)) {
+      bauReviewMap.set(r.bau_customer_id, {
+        health: r.health,
+        churn_risk: r.churn_risk,
+        status: r.status,
+        reason_code: r.reason_code,
+      });
+    }
+  });
+
+  const bauRows: ExecutiveSummaryRow[] = (bauCustomers || []).map(c => {
+    const r = bauReviewMap.get(c.id);
+    return {
+      project_id: c.id,
+      customer_name: c.companies?.name || c.name,
+      project_name: c.site_name || c.name || 'BAU',
+      customer_health: (r?.health as 'green' | 'red' | null) || null,
+      reason_code: r?.reason_code || null,
+      project_on_track: null,
+      phase_installation: null,
+      phase_onboarding: null,
+      phase_live: null,
+      product_gaps_status: 'none' as const,
+      escalation_status: 'none' as const,
+      planned_go_live_date: null,
+      contract_signed_date: null,
+      row_type: 'bau' as const,
+      churn_risk: r?.churn_risk || (c.churn_risk as string | null) || null,
+      bau_status: r?.status || c.current_status || null,
+    };
+  });
+
+  return [...implRows, ...bauRows];
 }

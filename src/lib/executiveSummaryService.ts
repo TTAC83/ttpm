@@ -197,6 +197,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       row_type: 'implementation' as const,
       churn_risk: null,
       bau_status: null,
+      domain: project.domain || null,
     };
   });
 

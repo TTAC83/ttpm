@@ -163,7 +163,7 @@ export default function BoardSummary() {
       customer_name: [],
       project_name: [],
       live_status: [],
-      contract_signed_date: [],
+      project_age: [],
       planned_go_live_date: [],
       implementation_lead_name: [],
       tech_lead_name: [],

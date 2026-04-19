@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { fetchExecutiveSummaryData } from "@/lib/executiveSummaryService";
+import { fetchExecutiveSummaryData, type ExecutiveSummaryRow } from "@/lib/executiveSummaryService";
 import {
   Table,
   TableBody,
@@ -12,14 +12,24 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TableHeaderFilter, SortDirection, FilterOption } from "@/components/ui/table-header-filter";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { FileDown, FileSpreadsheet, CheckCircle2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { format, differenceInMonths, differenceInWeeks, differenceInDays, addMonths, addWeeks } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
 
 type ColumnKey =
   | 'domain'
+  | 'project_classification'
   | 'customer_name'
   | 'project_name'
   | 'live_status'
@@ -31,6 +41,7 @@ type ColumnKey =
 
 const COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: 'domain', label: 'Domain' },
+  { key: 'project_classification', label: 'Project / Product' },
   { key: 'customer_name', label: 'Customer Name' },
   { key: 'project_name', label: 'Project / Site' },
   { key: 'live_status', label: 'Live Status' },
@@ -60,10 +71,12 @@ const formatProjectAge = (signedDate: string | null | undefined): string => {
 
 export default function BoardSummary() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [sortColumn, setSortColumn] = useState<ColumnKey | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<ColumnKey, string[]>>({
     domain: [],
+    project_classification: [],
     customer_name: [],
     project_name: [],
     live_status: [],
@@ -167,6 +180,7 @@ export default function BoardSummary() {
   const clearAllFilters = () => {
     setFilters({
       domain: [],
+      project_classification: [],
       customer_name: [],
       project_name: [],
       live_status: [],

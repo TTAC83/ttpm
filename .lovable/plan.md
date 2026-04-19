@@ -1,51 +1,50 @@
 
 
-The user wants BAU customers added to the Board Summary at `/app/implementation/board-summary`. Currently it only shows implementation projects (IoT/Vision/Hybrid). BAU customers have their own weekly review system (`bau_weekly_reviews`) with health, churn_risk, status, escalation.
-
-Let me check the current BoardSummary structure and BAU data shape to plan integration.
-
-Looking at:
-- `src/lib/executiveSummaryService.ts` — fetches projects + impl_weekly_reviews
-- `src/lib/bauWeeklyService.ts` — already has `getBauBoardSummary` returning customer_name, health, churn_risk, status
-- `src/pages/app/implementation/BoardSummary.tsx` — current table
-
-Plan:
-
-## Add BAU Customers to Board Summary
-
-### Approach
-Append BAU customer rows to the existing implementation projects table with a "Type" indicator column so users can distinguish Implementation projects from BAU customers. Both share similar fields (customer name, health) so they can coexist in one view.
+## Remove Type Column + Add Implementation Lead, Tech Lead, Tech Sponsor
 
 ### Data fetching changes (`src/lib/executiveSummaryService.ts`)
-- Extend `ExecutiveSummaryRow` interface with:
-  - `row_type: 'implementation' | 'bau'`
-  - `churn_risk: string | null` (BAU has it, impl shows null)
-  - `bau_status: string | null` (BAU's status field)
-- After fetching implementation rows, fetch BAU customers with their most recent weekly review (reuse logic from `getBauBoardSummary` in `bauWeeklyService.ts`)
-- Map BAU customers into the same row shape:
-  - `customer_name` = BAU customer name
-  - `project_name` = site_name or "BAU"
-  - `customer_health` = review.health
-  - `churn_risk` = review.churn_risk
-  - All implementation-specific fields (phases, gaps, escalation, dates) = null
-- Return combined array
+
+**1. Add lead fields to `ExecutiveSummaryRow`:**
+- `implementation_lead_name: string | null`
+- `tech_lead_name: string | null`
+- `tech_sponsor_name: string | null`
+
+**2. Update queries:**
+- Add `implementation_lead, tech_lead, tech_sponsor` to the `projects` select.
+- Add `implementation_lead, tech_lead, tech_sponsor` to the `bau_customers` select.
+- Collect all unique user IDs across both result sets, then do a single batch query: `profiles.select('user_id, name').in('user_id', ids)` to build a `userId → name` map.
+- Map names into both impl rows and bau rows.
 
 ### UI changes (`src/pages/app/implementation/BoardSummary.tsx`)
-- Add a **Type** column at the start showing a badge: "Implementation" (blue) or "BAU" (purple)
-- Add a **Churn Risk** column (only meaningful for BAU rows; show "—" for implementation)
-- Add filter toggle in header: "All / Implementation only / BAU only" using a small button group or Select
-- Update sorting to handle the new columns
-- For BAU rows, leave implementation-only cells (phases, product gaps, escalation, planned go-live, contract signed) blank or show "—"
-- Update PDF and Excel exports to include the Type column and filtered scope
+
+**1. Remove the Type column** — delete the `TableHead` and `TableCell` for Type. Update colSpan from 6 → 8 (we're removing 1, adding 3, so net 8 columns total: Domain, Customer, Project, Contract Signed, Planned Go Live, Impl Lead, Tech Lead, Tech Sponsor).
+
+**2. Add three new columns** (after Planned Go Live):
+- "Implementation Lead"
+- "Dev/Tech Lead"
+- "Dev/Tech Sponsor"
+- Each cell shows the name or "—" when null. All sortable.
+
+**3. Keep the Type filter dropdown** in the header (still useful even without the column) — it filters rows by implementation/BAU.
+
+**4. Update PDF export:**
+- Remove "Type" from headers.
+- Add "Implementation Lead", "Tech Lead", "Tech Sponsor" to headers.
+- Adjust `colWidths` (PDF is A4 landscape ≈ 280mm usable; use widths like `[22, 40, 40, 28, 28, 35, 35, 35]`).
+
+**5. Update Excel export:**
+- Remove "Type" key.
+- Add "Implementation Lead", "Tech Lead", "Tech Sponsor" keys.
+- Adjust `wch` widths accordingly.
 
 ### Files to modify
 | File | Change |
 |------|--------|
-| `src/lib/executiveSummaryService.ts` | Fetch + merge BAU customers into rows |
-| `src/pages/app/implementation/BoardSummary.tsx` | Add Type column, Churn Risk column, filter toggle, update exports |
+| `src/lib/executiveSummaryService.ts` | Fetch lead user IDs + resolve names via profiles batch query |
+| `src/pages/app/implementation/BoardSummary.tsx` | Remove Type column; add 3 lead columns; update sort + exports |
 
 ### Edge cases
-- BAU customers without any weekly review yet: include with health = null (shown as "Not Set")
-- Filter persists during the session (component state, no need to save)
-- Sorting by health/customer_name works across mixed types
+- Lead fields are nullable on both `projects` and `bau_customers` → display "—".
+- Single batched profile fetch avoids N+1 queries.
+- Type filter dropdown remains functional even though the visible Type column is gone.
 

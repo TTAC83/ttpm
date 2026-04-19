@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { TableHeaderFilter, SortDirection, FilterOption } from "@/components/ui/table-header-filter";
 import { FileDown, FileSpreadsheet, CheckCircle2 } from "lucide-react";
 import { useState, useMemo } from "react";
-import { format } from "date-fns";
+import { format, differenceInMonths, differenceInWeeks, differenceInDays, addMonths, addWeeks } from "date-fns";
 import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
 
@@ -23,7 +23,7 @@ type ColumnKey =
   | 'customer_name'
   | 'project_name'
   | 'live_status'
-  | 'contract_signed_date'
+  | 'project_age'
   | 'planned_go_live_date'
   | 'implementation_lead_name'
   | 'tech_lead_name'
@@ -34,12 +34,29 @@ const COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: 'customer_name', label: 'Customer Name' },
   { key: 'project_name', label: 'Project / Site' },
   { key: 'live_status', label: 'Live Status' },
-  { key: 'contract_signed_date', label: 'Contract Signed' },
+  { key: 'project_age', label: 'Project Age' },
   { key: 'planned_go_live_date', label: 'Planned Go Live' },
   { key: 'implementation_lead_name', label: 'Implementation Lead' },
   { key: 'tech_lead_name', label: 'Dev/Tech Lead' },
   { key: 'tech_sponsor_name', label: 'Dev/Tech Sponsor' },
 ];
+
+const formatProjectAge = (signedDate: string | null | undefined): string => {
+  if (!signedDate) return '—';
+  const start = new Date(signedDate);
+  const now = new Date();
+  if (isNaN(start.getTime()) || start > now) return '—';
+  const months = differenceInMonths(now, start);
+  const afterMonths = addMonths(start, months);
+  const weeks = differenceInWeeks(now, afterMonths);
+  const afterWeeks = addWeeks(afterMonths, weeks);
+  const days = differenceInDays(now, afterWeeks);
+  const parts: string[] = [];
+  if (months > 0) parts.push(`${months}m`);
+  if (months > 0 || weeks > 0) parts.push(`${weeks}w`);
+  parts.push(`${days}d`);
+  return parts.join(' ');
+};
 
 export default function BoardSummary() {
   const navigate = useNavigate();

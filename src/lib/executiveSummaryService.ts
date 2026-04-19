@@ -109,9 +109,9 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
   
   (allRecentReviews || []).forEach(r => {
     const hasData = r.customer_health !== null || r.project_status !== null;
+    const hasPhases = r.phase_installation || r.phase_onboarding || r.phase_live;
     const existing = mostRecentReviewMap.get(r.company_id);
-    
-    // Set if no existing record, or if this one has data and the existing one doesn't
+
     if (!existing) {
       mostRecentReviewMap.set(r.company_id, {
         health: r.customer_health,
@@ -121,8 +121,8 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
         phase_onboarding: r.phase_onboarding,
         phase_live: r.phase_live
       });
-    } else if (hasData && existing.health === null && existing.status === null) {
-      // Replace empty record with one that has data
+    } else if ((hasData || hasPhases) && !existing.health && !existing.status && !existing.phase_installation && !existing.phase_onboarding && !existing.phase_live) {
+      // Replace empty record with one that has data or phases
       mostRecentReviewMap.set(r.company_id, {
         health: r.customer_health,
         status: r.project_status,
@@ -225,7 +225,8 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
     const currentWeekReview = reviewMap.get(project.company_id);
     const mostRecentReview = mostRecentReviewMap.get(project.company_id);
     const currentWeekHasData = currentWeekReview &&
-      (currentWeekReview.health !== null || currentWeekReview.status !== null);
+      (currentWeekReview.health !== null || currentWeekReview.status !== null ||
+       currentWeekReview.phase_installation || currentWeekReview.phase_onboarding || currentWeekReview.phase_live);
     const review = currentWeekHasData ? currentWeekReview : mostRecentReview;
 
     const gaps = gapsMap.get(project.id);

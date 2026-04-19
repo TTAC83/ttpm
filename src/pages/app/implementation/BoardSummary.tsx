@@ -264,7 +264,7 @@ export default function BoardSummary() {
 
     let y = 30;
     const lineHeight = 7;
-    const colWidths = [20, 38, 38, 22, 24, 24, 32, 32, 32];
+    const colWidths = [18, 26, 34, 34, 22, 22, 22, 30, 30, 30];
 
     doc.setFontSize(9);
     doc.setFont(undefined, 'bold');

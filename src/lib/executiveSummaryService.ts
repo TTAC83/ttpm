@@ -22,18 +22,19 @@ export interface ExecutiveSummaryRow {
   implementation_lead_name: string | null;
   tech_lead_name: string | null;
   tech_sponsor_name: string | null;
-  live_status: 'Installation' | 'Onboarding' | 'Live' | null;
+  live_status: Array<'Installation' | 'Onboarding' | 'Live'>;
 }
 
-function derivePhaseStatus(
+function derivePhaseStatuses(
   phase_installation: boolean | null | undefined,
   phase_onboarding: boolean | null | undefined,
   phase_live: boolean | null | undefined
-): 'Installation' | 'Onboarding' | 'Live' | null {
-  if (phase_live) return 'Live';
-  if (phase_onboarding) return 'Onboarding';
-  if (phase_installation) return 'Installation';
-  return null;
+): Array<'Installation' | 'Onboarding' | 'Live'> {
+  const out: Array<'Installation' | 'Onboarding' | 'Live'> = [];
+  if (phase_installation) out.push('Installation');
+  if (phase_onboarding) out.push('Onboarding');
+  if (phase_live) out.push('Live');
+  return out;
 }
 
 export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]> {

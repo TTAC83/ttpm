@@ -67,7 +67,7 @@ export default function BoardSummary() {
     customer_name: [],
     project_name: [],
     live_status: [],
-    contract_signed_date: [],
+    project_age: [],
     planned_go_live_date: [],
     implementation_lead_name: [],
     tech_lead_name: [],
@@ -86,8 +86,11 @@ export default function BoardSummary() {
   const cellValue = (row: typeof summaryData[number], key: ColumnKey): string => {
     const v = (row as any)[key];
     if (v === null || v === undefined || v === '') return '—';
-    if (key === 'contract_signed_date' || key === 'planned_go_live_date') {
+    if (key === 'planned_go_live_date') {
       return format(new Date(v), 'dd MMM yyyy');
+    }
+    if (key === 'project_age') {
+      return formatProjectAge(row.contract_signed_date);
     }
     if (key === 'live_status') {
       if (Array.isArray(v)) return v.length ? v.join(', ') : '—';

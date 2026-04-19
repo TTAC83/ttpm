@@ -311,5 +311,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
     };
   });
 
-  return [...implRows, ...bauRows];
+  return [...implRows, ...bauRows].filter(
+    row => !isExcluded(row.customer_name, row.project_name)
+  );
 }

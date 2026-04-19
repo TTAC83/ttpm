@@ -97,6 +97,15 @@ export default function BoardSummary() {
       COLUMNS.every(({ key }) => {
         const sel = filters[key];
         if (!sel.length) return true;
+        if (key === 'live_status') {
+          const rowStatuses = Array.isArray(row.live_status)
+            ? row.live_status
+            : row.live_status ? [String(row.live_status)] : [];
+          return sel.some(s => rowStatuses.includes(s as any));
+        }
+        if (key === 'domain') {
+          return sel.includes(row.domain || '—');
+        }
         return sel.includes(cellValue(row, key));
       })
     );

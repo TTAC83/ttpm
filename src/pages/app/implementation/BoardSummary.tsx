@@ -97,6 +97,15 @@ export default function BoardSummary() {
       COLUMNS.every(({ key }) => {
         const sel = filters[key];
         if (!sel.length) return true;
+        if (key === 'live_status') {
+          const rowStatuses = Array.isArray(row.live_status)
+            ? row.live_status
+            : row.live_status ? [String(row.live_status)] : [];
+          return sel.some(s => rowStatuses.includes(s as any));
+        }
+        if (key === 'domain') {
+          return sel.includes(row.domain || '—');
+        }
         return sel.includes(cellValue(row, key));
       })
     );
@@ -143,6 +152,33 @@ export default function BoardSummary() {
   };
 
   const hasAnyFilter = Object.values(filters).some(v => v.length > 0);
+
+  // Build chip slicer values (Domain & Live Status) from full dataset
+  const domainChips = useMemo(() => {
+    const set = new Set<string>();
+    summaryData.forEach(r => { if (r.domain) set.add(r.domain); });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [summaryData]);
+
+  const liveStatusChips = useMemo(() => {
+    const set = new Set<string>();
+    summaryData.forEach(r => {
+      if (Array.isArray(r.live_status)) r.live_status.forEach(s => set.add(s));
+      else if (typeof r.live_status === 'string' && r.live_status) set.add(r.live_status);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [summaryData]);
+
+  const toggleChip = (key: ColumnKey, value: string) => {
+    setFilters(prev => {
+      const current = prev[key];
+      const next = current.includes(value) ? current.filter(v => v !== value) : [...current, value];
+      return { ...prev, [key]: next };
+    });
+  };
+
+  // For live_status (array column), keep filter logic working with cellValue join
+  const isChipActive = (key: ColumnKey, value: string) => filters[key].some(v => v.split(', ').includes(value) || v === value);
 
   const handleRowClick = (row: typeof sortedData[number]) => {
     if (row.row_type === 'bau') {
@@ -234,6 +270,49 @@ export default function BoardSummary() {
             <FileSpreadsheet className="mr-2 h-4 w-4" />
             Export Excel
           </Button>
+        </div>
+      </div>
+
+      <div className="space-y-3 rounded-lg border bg-card p-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-muted-foreground min-w-[90px]">Domain:</span>
+          {domainChips.length === 0 ? (
+            <span className="text-sm text-muted-foreground">No domains</span>
+          ) : (
+            domainChips.map(d => {
+              const active = filters.domain.includes(d);
+              return (
+                <Badge
+                  key={d}
+                  variant={active ? 'default' : 'outline'}
+                  className="cursor-pointer select-none"
+                  onClick={() => toggleChip('domain', d)}
+                >
+                  {d}
+                </Badge>
+              );
+            })
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-muted-foreground min-w-[90px]">Live Status:</span>
+          {liveStatusChips.length === 0 ? (
+            <span className="text-sm text-muted-foreground">No statuses</span>
+          ) : (
+            liveStatusChips.map(s => {
+              const active = filters.live_status.includes(s);
+              return (
+                <Badge
+                  key={s}
+                  variant={active ? 'default' : 'outline'}
+                  className="cursor-pointer select-none"
+                  onClick={() => toggleChip('live_status', s)}
+                >
+                  {s}
+                </Badge>
+              );
+            })
+          )}
         </div>
       </div>
 

@@ -241,7 +241,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       implementation_lead_name: nameOf((project as any).implementation_lead),
       tech_lead_name: nameOf((project as any).tech_lead),
       tech_sponsor_name: nameOf((project as any).tech_sponsor),
-      live_status: derivePhaseStatus(review?.phase_installation, review?.phase_onboarding, review?.phase_live),
+      live_status: derivePhaseStatuses(review?.phase_installation, review?.phase_onboarding, review?.phase_live),
     };
   });
 

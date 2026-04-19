@@ -58,8 +58,12 @@ export default function BoardSummary() {
   });
 
   const { data: summaryData = [], isLoading } = useQuery({
-    queryKey: ['executive-summary'],
+    queryKey: ['executive-summary', 'board-summary'],
     queryFn: fetchExecutiveSummaryData,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   const cellValue = (row: typeof summaryData[number], key: ColumnKey): string => {

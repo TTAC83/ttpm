@@ -142,17 +142,13 @@ export default function BoardSummary() {
       'Customer Name': row.customer_name,
       'Project / Site': row.project_name,
       'Contract Signed': row.contract_signed_date ? format(new Date(row.contract_signed_date), 'dd MMM yyyy') : '',
-      'Product Gaps': row.row_type === 'bau' ? '—' :
-        (row.product_gaps_status === 'critical' ? 'Critical' :
-         row.product_gaps_status === 'non_critical' ? 'Non-Critical' : 'None'),
-      'Churn Risk': row.churn_risk || '—',
       'Planned Go Live': row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : '',
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Board Summary');
-    worksheet['!cols'] = [{ wch: 16 }, { wch: 12 }, { wch: 30 }, { wch: 30 }, { wch: 18 }, { wch: 15 }, { wch: 14 }, { wch: 18 }];
+    worksheet['!cols'] = [{ wch: 16 }, { wch: 12 }, { wch: 30 }, { wch: 30 }, { wch: 18 }, { wch: 18 }];
     XLSX.writeFile(workbook, `board-summary-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
 

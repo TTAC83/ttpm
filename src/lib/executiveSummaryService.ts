@@ -152,59 +152,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
     });
   });
 
-  // Build the summary rows
-  const implRows: ExecutiveSummaryRow[] = projects.map(project => {
-    // Get project's company review by company_id (for health and status only)
-    const currentWeekReview = reviewMap.get(project.company_id);
-    const mostRecentReview = mostRecentReviewMap.get(project.company_id);
-    
-    // Check if current week review has actual data (health or status set)
-    const currentWeekHasData = currentWeekReview && 
-      (currentWeekReview.health !== null || currentWeekReview.status !== null);
-    
-    // Use current week review ONLY if it has actual data, otherwise fall back to most recent
-    const review = currentWeekHasData ? currentWeekReview : mostRecentReview;
-    
-    const gaps = gapsMap.get(project.id);
-    const escData = escalationsMap.get(project.id);
-    
-    if (review) {
-      console.log('✅ Found review for project', project.name, 'company_id:', project.company_id, 
-        currentWeekHasData ? '(current week)' : '(inherited from most recent)', review);
-    }
-
-    let product_gaps_status: 'none' | 'non_critical' | 'critical' = 'none';
-    if (gaps?.hasAny) {
-      product_gaps_status = gaps.hasCritical ? 'critical' : 'non_critical';
-    }
-
-    let escalation_status: 'none' | 'active' | 'critical' = 'none';
-    if (escData?.hasAny) {
-      escalation_status = escData.hasCritical ? 'critical' : 'active';
-    }
-
-    return {
-      project_id: project.id,
-      customer_name: project.companies?.name || 'N/A',
-      project_name: project.name,
-      customer_health: (review?.health as 'green' | 'red' | null) || null,
-      reason_code: review?.reason_code || null,
-      project_on_track: (review?.status as 'on_track' | 'off_track' | null) || null,
-      phase_installation: review?.phase_installation ?? null,
-      phase_onboarding: review?.phase_onboarding ?? null,
-      phase_live: review?.phase_live ?? null,
-      product_gaps_status,
-      escalation_status,
-      planned_go_live_date: project.planned_go_live_date || null,
-      contract_signed_date: project.contract_signed_date || null,
-      row_type: 'implementation' as const,
-      churn_risk: null,
-      bau_status: null,
-      domain: project.domain || null,
-    };
-  });
-
-  // Fetch BAU customers
+  // Fetch BAU customers (need this before building rows so we can collect all user IDs)
   const { data: bauCustomers, error: bauError } = await supabase
     .from('bau_customers')
     .select('id, name, site_name, churn_risk, current_status, customer_project_lead, tech_lead, tech_sponsor, companies!inner(name)')
@@ -237,6 +185,51 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
     });
   }
   const nameOf = (id: string | null | undefined) => (id ? profileMap.get(id) || null : null);
+
+  // Build the summary rows
+  const implRows: ExecutiveSummaryRow[] = projects.map(project => {
+    const currentWeekReview = reviewMap.get(project.company_id);
+    const mostRecentReview = mostRecentReviewMap.get(project.company_id);
+    const currentWeekHasData = currentWeekReview &&
+      (currentWeekReview.health !== null || currentWeekReview.status !== null);
+    const review = currentWeekHasData ? currentWeekReview : mostRecentReview;
+
+    const gaps = gapsMap.get(project.id);
+    const escData = escalationsMap.get(project.id);
+
+    let product_gaps_status: 'none' | 'non_critical' | 'critical' = 'none';
+    if (gaps?.hasAny) {
+      product_gaps_status = gaps.hasCritical ? 'critical' : 'non_critical';
+    }
+
+    let escalation_status: 'none' | 'active' | 'critical' = 'none';
+    if (escData?.hasAny) {
+      escalation_status = escData.hasCritical ? 'critical' : 'active';
+    }
+
+    return {
+      project_id: project.id,
+      customer_name: project.companies?.name || 'N/A',
+      project_name: project.name,
+      customer_health: (review?.health as 'green' | 'red' | null) || null,
+      reason_code: review?.reason_code || null,
+      project_on_track: (review?.status as 'on_track' | 'off_track' | null) || null,
+      phase_installation: review?.phase_installation ?? null,
+      phase_onboarding: review?.phase_onboarding ?? null,
+      phase_live: review?.phase_live ?? null,
+      product_gaps_status,
+      escalation_status,
+      planned_go_live_date: project.planned_go_live_date || null,
+      contract_signed_date: project.contract_signed_date || null,
+      row_type: 'implementation' as const,
+      churn_risk: null,
+      bau_status: null,
+      domain: project.domain || null,
+      implementation_lead_name: nameOf((project as any).implementation_lead),
+      tech_lead_name: nameOf((project as any).tech_lead),
+      tech_sponsor_name: nameOf((project as any).tech_sponsor),
+    };
+  });
 
   // Get most recent BAU weekly reviews per customer
   const { data: bauReviews } = await supabase
@@ -276,6 +269,9 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       churn_risk: r?.churn_risk || (c.churn_risk as string | null) || null,
       bau_status: r?.status || c.current_status || null,
       domain: 'BAU',
+      implementation_lead_name: nameOf((c as any).customer_project_lead),
+      tech_lead_name: nameOf((c as any).tech_lead),
+      tech_sponsor_name: nameOf((c as any).tech_sponsor),
     };
   });
 

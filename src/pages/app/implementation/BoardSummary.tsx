@@ -22,6 +22,7 @@ type ColumnKey =
   | 'domain'
   | 'customer_name'
   | 'project_name'
+  | 'live_status'
   | 'contract_signed_date'
   | 'planned_go_live_date'
   | 'implementation_lead_name'
@@ -32,6 +33,7 @@ const COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: 'domain', label: 'Domain' },
   { key: 'customer_name', label: 'Customer Name' },
   { key: 'project_name', label: 'Project / Site' },
+  { key: 'live_status', label: 'Live Status' },
   { key: 'contract_signed_date', label: 'Contract Signed' },
   { key: 'planned_go_live_date', label: 'Planned Go Live' },
   { key: 'implementation_lead_name', label: 'Implementation Lead' },
@@ -47,6 +49,7 @@ export default function BoardSummary() {
     domain: [],
     customer_name: [],
     project_name: [],
+    live_status: [],
     contract_signed_date: [],
     planned_go_live_date: [],
     implementation_lead_name: [],
@@ -122,6 +125,7 @@ export default function BoardSummary() {
       domain: [],
       customer_name: [],
       project_name: [],
+      live_status: [],
       contract_signed_date: [],
       planned_go_live_date: [],
       implementation_lead_name: [],
@@ -152,7 +156,7 @@ export default function BoardSummary() {
 
     let y = 30;
     const lineHeight = 7;
-    const colWidths = [22, 40, 40, 26, 26, 35, 35, 35];
+    const colWidths = [20, 38, 38, 22, 24, 24, 32, 32, 32];
 
     doc.setFontSize(9);
     doc.setFont(undefined, 'bold');
@@ -190,7 +194,7 @@ export default function BoardSummary() {
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Board Summary');
-    worksheet['!cols'] = [{ wch: 12 }, { wch: 30 }, { wch: 30 }, { wch: 18 }, { wch: 18 }, { wch: 22 }, { wch: 22 }, { wch: 22 }];
+    worksheet['!cols'] = [{ wch: 12 }, { wch: 28 }, { wch: 28 }, { wch: 14 }, { wch: 16 }, { wch: 16 }, { wch: 22 }, { wch: 22 }, { wch: 22 }];
     XLSX.writeFile(workbook, `board-summary-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
 
@@ -268,6 +272,15 @@ export default function BoardSummary() {
                   </TableCell>
                   <TableCell className="font-medium">{row.customer_name}</TableCell>
                   <TableCell>{row.project_name}</TableCell>
+                  <TableCell>
+                    {row.live_status ? (
+                      <Badge variant={row.live_status === 'Live' ? 'default' : 'outline'}>
+                        {row.live_status}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     {row.contract_signed_date ? format(new Date(row.contract_signed_date), 'dd MMM yyyy') : ''}
                   </TableCell>

@@ -94,23 +94,19 @@ export default function BoardSummary() {
     doc.setFontSize(10);
     doc.text(`Exported: ${format(new Date(), 'dd MMM yyyy HH:mm')}`, 14, 22);
 
-    const headers = ['Type', 'Domain', 'Customer Name', 'Project / Site', 'Contract Signed', 'Product Gaps', 'Churn Risk', 'Planned Go Live'];
+    const headers = ['Type', 'Domain', 'Customer Name', 'Project / Site', 'Contract Signed', 'Planned Go Live'];
     const data = sortedData.map(row => [
       row.row_type === 'bau' ? 'BAU' : 'Implementation',
       row.domain || '—',
       row.customer_name,
       row.project_name,
       row.contract_signed_date ? format(new Date(row.contract_signed_date), 'dd MMM yyyy') : '',
-      row.row_type === 'bau' ? '—' :
-        (row.product_gaps_status === 'critical' ? 'Critical' :
-         row.product_gaps_status === 'non_critical' ? 'Non-Critical' : 'None'),
-      row.churn_risk || '—',
       row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : '',
     ]);
 
     let y = 30;
     const lineHeight = 7;
-    const colWidths = [24, 22, 40, 40, 28, 24, 22, 28];
+    const colWidths = [28, 25, 50, 50, 35, 35];
 
     doc.setFontSize(9);
     doc.setFont(undefined, 'bold');
@@ -146,17 +142,13 @@ export default function BoardSummary() {
       'Customer Name': row.customer_name,
       'Project / Site': row.project_name,
       'Contract Signed': row.contract_signed_date ? format(new Date(row.contract_signed_date), 'dd MMM yyyy') : '',
-      'Product Gaps': row.row_type === 'bau' ? '—' :
-        (row.product_gaps_status === 'critical' ? 'Critical' :
-         row.product_gaps_status === 'non_critical' ? 'Non-Critical' : 'None'),
-      'Churn Risk': row.churn_risk || '—',
       'Planned Go Live': row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : '',
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Board Summary');
-    worksheet['!cols'] = [{ wch: 16 }, { wch: 12 }, { wch: 30 }, { wch: 30 }, { wch: 18 }, { wch: 15 }, { wch: 14 }, { wch: 18 }];
+    worksheet['!cols'] = [{ wch: 16 }, { wch: 12 }, { wch: 30 }, { wch: 30 }, { wch: 18 }, { wch: 18 }];
     XLSX.writeFile(workbook, `board-summary-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
 
@@ -228,12 +220,6 @@ export default function BoardSummary() {
               <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('contract_signed_date')}>
                 Contract Signed {sortColumn === 'contract_signed_date' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
-              <TableHead className="text-center cursor-pointer hover:bg-muted/50" onClick={() => handleSort('product_gaps_status')}>
-                Product Gaps {sortColumn === 'product_gaps_status' && (sortDirection === 'asc' ? '↑' : '↓')}
-              </TableHead>
-              <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('churn_risk')}>
-                Churn Risk {sortColumn === 'churn_risk' && (sortDirection === 'asc' ? '↑' : '↓')}
-              </TableHead>
               <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('planned_go_live_date')}>
                 Planned Go Live {sortColumn === 'planned_go_live_date' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
@@ -242,7 +228,7 @@ export default function BoardSummary() {
           <TableBody>
             {sortedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   No records found.
                 </TableCell>
               </TableRow>
@@ -267,12 +253,6 @@ export default function BoardSummary() {
                   <TableCell>{row.project_name}</TableCell>
                   <TableCell>
                     {row.contract_signed_date ? format(new Date(row.contract_signed_date), 'dd MMM yyyy') : ''}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {row.row_type === 'bau' ? <span className="text-muted-foreground">—</span> : renderProductGapsIcon(row.product_gaps_status)}
-                  </TableCell>
-                  <TableCell>
-                    {row.churn_risk || <span className="text-muted-foreground">—</span>}
                   </TableCell>
                   <TableCell>
                     {row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : ''}

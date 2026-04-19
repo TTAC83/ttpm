@@ -68,6 +68,10 @@ export default function BoardSummary() {
     if (key === 'contract_signed_date' || key === 'planned_go_live_date') {
       return format(new Date(v), 'dd MMM yyyy');
     }
+    if (key === 'live_status') {
+      if (Array.isArray(v)) return v.length ? v.join(', ') : '—';
+      return String(v);
+    }
     return String(v);
   };
 
@@ -273,10 +277,14 @@ export default function BoardSummary() {
                   <TableCell className="font-medium">{row.customer_name}</TableCell>
                   <TableCell>{row.project_name}</TableCell>
                   <TableCell>
-                    {row.live_status ? (
-                      <Badge variant={row.live_status === 'Live' ? 'default' : 'outline'}>
-                        {row.live_status}
-                      </Badge>
+                    {row.live_status && row.live_status.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {row.live_status.map((status) => (
+                          <Badge key={status} variant={status === 'Live' ? 'default' : 'outline'}>
+                            {status}
+                          </Badge>
+                        ))}
+                      </div>
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}

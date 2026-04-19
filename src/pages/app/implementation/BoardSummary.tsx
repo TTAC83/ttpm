@@ -228,7 +228,7 @@ export default function BoardSummary() {
           <TableBody>
             {sortedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   No records found.
                 </TableCell>
               </TableRow>
@@ -253,12 +253,6 @@ export default function BoardSummary() {
                   <TableCell>{row.project_name}</TableCell>
                   <TableCell>
                     {row.contract_signed_date ? format(new Date(row.contract_signed_date), 'dd MMM yyyy') : ''}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {row.row_type === 'bau' ? <span className="text-muted-foreground">—</span> : renderProductGapsIcon(row.product_gaps_status)}
-                  </TableCell>
-                  <TableCell>
-                    {row.churn_risk || <span className="text-muted-foreground">—</span>}
                   </TableCell>
                   <TableCell>
                     {row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : ''}

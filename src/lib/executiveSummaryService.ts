@@ -285,6 +285,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       implementation_lead_name: nameOf((c as any).customer_project_lead),
       tech_lead_name: nameOf((c as any).tech_lead),
       tech_sponsor_name: nameOf((c as any).tech_sponsor),
+      live_status: 'Live' as const,
     };
   });
 

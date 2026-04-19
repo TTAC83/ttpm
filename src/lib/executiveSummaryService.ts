@@ -37,6 +37,27 @@ function derivePhaseStatuses(
   return out;
 }
 
+const EXCLUDED_COMPANY_NAMES = new Set([
+  'whs birmingham',
+  'stonegate',
+  'southern champion',
+  'rge peterborough',
+  'rge baltic',
+  'mccolgans',
+  'internal meetings for calendar',
+  'cranswick watton',
+  'bpi ardeer',
+  'bpia ardeer',
+]);
+
+function isExcluded(companyName: string | null | undefined, projectName?: string | null): boolean {
+  const c = (companyName || '').trim().toLowerCase();
+  const p = (projectName || '').trim().toLowerCase();
+  if (EXCLUDED_COMPANY_NAMES.has(c)) return true;
+  if (EXCLUDED_COMPANY_NAMES.has(p)) return true;
+  return false;
+}
+
 export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]> {
   // Calculate current week's Monday
   const currentMonday = startOfWeek(new Date(), { weekStartsOn: 1 });

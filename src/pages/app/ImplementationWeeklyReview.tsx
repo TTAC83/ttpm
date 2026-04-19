@@ -557,11 +557,13 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     queryFn: () => loadReview(companyId, weekStart),
   });
 
-  // Query for previous week's review to carry forward phases/hypercare
+  // Query for previous week's review to carry forward phases/hypercare.
+  // Always run alongside reviewQ so we can fall back to inherited phases when
+  // the current row exists but its phase fields are still empty (created by an
+  // early auto-save before the user set any phases).
   const previousReviewQ = useQuery({
     queryKey: ["impl-previous-review", companyId, weekStart],
     queryFn: () => loadPreviousReview(companyId, weekStart),
-    enabled: !reviewQ.isLoading && reviewQ.data === null, // Only fetch if no current review exists
   });
 
   // Load profiles for task assignment

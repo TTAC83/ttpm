@@ -297,7 +297,16 @@ export default function BoardSummary() {
                     {row.contract_signed_date ? format(new Date(row.contract_signed_date), 'dd MMM yyyy') : ''}
                   </TableCell>
                   <TableCell>
-                    {row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : ''}
+                    {Array.isArray(row.live_status) && row.live_status.length === 1 && row.live_status[0] === 'Live' ? (
+                      <Badge className="bg-green-600 hover:bg-green-600 text-white gap-1">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Live
+                      </Badge>
+                    ) : row.planned_go_live_date ? (
+                      format(new Date(row.planned_go_live_date), 'dd MMM yyyy')
+                    ) : (
+                      ''
+                    )}
                   </TableCell>
                   <TableCell>{row.implementation_lead_name || <span className="text-muted-foreground">—</span>}</TableCell>
                   <TableCell>{row.tech_lead_name || <span className="text-muted-foreground">—</span>}</TableCell>

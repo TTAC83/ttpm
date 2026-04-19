@@ -96,8 +96,8 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
 
   if (recentError) throw recentError;
 
-  // Build a map of the most recent review per company that has actual data
-  // Prioritize reviews that have health or status set (not null)
+  // For each company, track the most recent review with health/status
+  // and (separately) the most recent review with any phase set.
   const mostRecentReviewMap = new Map<string, {
     health: string | null;
     status: string | null;
@@ -106,13 +106,17 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
     phase_onboarding: boolean | null;
     phase_live: boolean | null;
   }>();
-  
+  const mostRecentPhasesMap = new Map<string, {
+    phase_installation: boolean | null;
+    phase_onboarding: boolean | null;
+    phase_live: boolean | null;
+  }>();
+
   (allRecentReviews || []).forEach(r => {
     const hasData = r.customer_health !== null || r.project_status !== null;
     const hasPhases = r.phase_installation || r.phase_onboarding || r.phase_live;
-    const existing = mostRecentReviewMap.get(r.company_id);
 
-    if (!existing) {
+    if (!mostRecentReviewMap.has(r.company_id)) {
       mostRecentReviewMap.set(r.company_id, {
         health: r.customer_health,
         status: r.project_status,
@@ -121,12 +125,23 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
         phase_onboarding: r.phase_onboarding,
         phase_live: r.phase_live
       });
-    } else if ((hasData || hasPhases) && !existing.health && !existing.status && !existing.phase_installation && !existing.phase_onboarding && !existing.phase_live) {
-      // Replace empty record with one that has data or phases
-      mostRecentReviewMap.set(r.company_id, {
-        health: r.customer_health,
-        status: r.project_status,
-        reason_code: r.reason_code,
+    } else {
+      const existing = mostRecentReviewMap.get(r.company_id)!;
+      if (hasData && !existing.health && !existing.status) {
+        mostRecentReviewMap.set(r.company_id, {
+          health: r.customer_health,
+          status: r.project_status,
+          reason_code: r.reason_code,
+          phase_installation: r.phase_installation,
+          phase_onboarding: r.phase_onboarding,
+          phase_live: r.phase_live
+        });
+      }
+    }
+
+    // Track most recent review (by week_start desc, already sorted) that has phases set
+    if (hasPhases && !mostRecentPhasesMap.has(r.company_id)) {
+      mostRecentPhasesMap.set(r.company_id, {
         phase_installation: r.phase_installation,
         phase_onboarding: r.phase_onboarding,
         phase_live: r.phase_live

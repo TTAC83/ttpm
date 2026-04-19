@@ -244,6 +244,10 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
        currentWeekReview.phase_installation || currentWeekReview.phase_onboarding || currentWeekReview.phase_live);
     const review = currentWeekHasData ? currentWeekReview : mostRecentReview;
 
+    // Phases: prefer the most recent review (any week) that has any phase set,
+    // so newly entered phases on a future week's review are surfaced.
+    const phaseSource = mostRecentPhasesMap.get(project.company_id) ?? review ?? null;
+
     const gaps = gapsMap.get(project.id);
     const escData = escalationsMap.get(project.id);
 
@@ -264,9 +268,9 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       customer_health: (review?.health as 'green' | 'red' | null) || null,
       reason_code: review?.reason_code || null,
       project_on_track: (review?.status as 'on_track' | 'off_track' | null) || null,
-      phase_installation: review?.phase_installation ?? null,
-      phase_onboarding: review?.phase_onboarding ?? null,
-      phase_live: review?.phase_live ?? null,
+      phase_installation: phaseSource?.phase_installation ?? null,
+      phase_onboarding: phaseSource?.phase_onboarding ?? null,
+      phase_live: phaseSource?.phase_live ?? null,
       product_gaps_status,
       escalation_status,
       planned_go_live_date: project.planned_go_live_date || null,
@@ -278,7 +282,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       implementation_lead_name: nameOf((project as any).implementation_lead),
       tech_lead_name: nameOf((project as any).tech_lead),
       tech_sponsor_name: nameOf((project as any).tech_sponsor),
-      live_status: derivePhaseStatuses(review?.phase_installation, review?.phase_onboarding, review?.phase_live),
+      live_status: derivePhaseStatuses(phaseSource?.phase_installation, phaseSource?.phase_onboarding, phaseSource?.phase_live),
     };
   });
 

@@ -144,6 +144,33 @@ export default function BoardSummary() {
 
   const hasAnyFilter = Object.values(filters).some(v => v.length > 0);
 
+  // Build chip slicer values (Domain & Live Status) from full dataset
+  const domainChips = useMemo(() => {
+    const set = new Set<string>();
+    summaryData.forEach(r => { if (r.domain) set.add(r.domain); });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [summaryData]);
+
+  const liveStatusChips = useMemo(() => {
+    const set = new Set<string>();
+    summaryData.forEach(r => {
+      if (Array.isArray(r.live_status)) r.live_status.forEach(s => set.add(s));
+      else if (typeof r.live_status === 'string' && r.live_status) set.add(r.live_status);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [summaryData]);
+
+  const toggleChip = (key: ColumnKey, value: string) => {
+    setFilters(prev => {
+      const current = prev[key];
+      const next = current.includes(value) ? current.filter(v => v !== value) : [...current, value];
+      return { ...prev, [key]: next };
+    });
+  };
+
+  // For live_status (array column), keep filter logic working with cellValue join
+  const isChipActive = (key: ColumnKey, value: string) => filters[key].some(v => v.split(', ').includes(value) || v === value);
+
   const handleRowClick = (row: typeof sortedData[number]) => {
     if (row.row_type === 'bau') {
       navigate(`/app/bau/${row.project_id}`);

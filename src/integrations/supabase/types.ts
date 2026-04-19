@@ -4221,6 +4221,7 @@ export type Database = {
           payment_terms_days: number | null
           planned_go_live_date: string | null
           product_description: string | null
+          project_classification: string | null
           project_coordinator: string | null
           project_goals: string | null
           receivers_required: number | null
@@ -4300,6 +4301,7 @@ export type Database = {
           payment_terms_days?: number | null
           planned_go_live_date?: string | null
           product_description?: string | null
+          project_classification?: string | null
           project_coordinator?: string | null
           project_goals?: string | null
           receivers_required?: number | null
@@ -4379,6 +4381,7 @@ export type Database = {
           payment_terms_days?: number | null
           planned_go_live_date?: string | null
           product_description?: string | null
+          project_classification?: string | null
           project_coordinator?: string | null
           project_goals?: string | null
           receivers_required?: number | null

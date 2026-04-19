@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { fetchExecutiveSummaryData } from "@/lib/executiveSummaryService";
+import { fetchExecutiveSummaryData, type ExecutiveSummaryRow } from "@/lib/executiveSummaryService";
 import {
   Table,
   TableBody,
@@ -12,14 +12,24 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TableHeaderFilter, SortDirection, FilterOption } from "@/components/ui/table-header-filter";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { FileDown, FileSpreadsheet, CheckCircle2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { format, differenceInMonths, differenceInWeeks, differenceInDays, addMonths, addWeeks } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
 
 type ColumnKey =
   | 'domain'
+  | 'project_classification'
   | 'customer_name'
   | 'project_name'
   | 'live_status'
@@ -31,6 +41,7 @@ type ColumnKey =
 
 const COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: 'domain', label: 'Domain' },
+  { key: 'project_classification', label: 'Project / Product' },
   { key: 'customer_name', label: 'Customer Name' },
   { key: 'project_name', label: 'Project / Site' },
   { key: 'live_status', label: 'Live Status' },
@@ -60,10 +71,12 @@ const formatProjectAge = (signedDate: string | null | undefined): string => {
 
 export default function BoardSummary() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [sortColumn, setSortColumn] = useState<ColumnKey | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<ColumnKey, string[]>>({
     domain: [],
+    project_classification: [],
     customer_name: [],
     project_name: [],
     live_status: [],
@@ -167,6 +180,7 @@ export default function BoardSummary() {
   const clearAllFilters = () => {
     setFilters({
       domain: [],
+      project_classification: [],
       customer_name: [],
       project_name: [],
       live_status: [],
@@ -215,6 +229,29 @@ export default function BoardSummary() {
     }
   };
 
+  const handleClassificationChange = async (row: ExecutiveSummaryRow, value: 'Project' | 'Product') => {
+    const queryKey = ['executive-summary', 'board-summary'];
+    const previous = queryClient.getQueryData<ExecutiveSummaryRow[]>(queryKey);
+    // Optimistic update
+    queryClient.setQueryData<ExecutiveSummaryRow[]>(queryKey, (old) =>
+      (old || []).map(r =>
+        r.row_type === row.row_type && r.project_id === row.project_id
+          ? { ...r, project_classification: value }
+          : r
+      )
+    );
+    const { error } = await supabase
+      .from('projects')
+      .update({ project_classification: value })
+      .eq('id', row.project_id);
+    if (error) {
+      queryClient.setQueryData(queryKey, previous);
+      toast.error('Failed to update classification');
+    } else {
+      toast.success('Classification updated');
+    }
+  };
+
   const exportToPDF = () => {
     const doc = new jsPDF('l', 'mm', 'a4');
     doc.setFontSize(16);
@@ -227,7 +264,7 @@ export default function BoardSummary() {
 
     let y = 30;
     const lineHeight = 7;
-    const colWidths = [20, 38, 38, 22, 24, 24, 32, 32, 32];
+    const colWidths = [18, 26, 34, 34, 22, 22, 22, 30, 30, 30];
 
     doc.setFontSize(9);
     doc.setFont(undefined, 'bold');
@@ -265,7 +302,7 @@ export default function BoardSummary() {
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Board Summary');
-    worksheet['!cols'] = [{ wch: 12 }, { wch: 28 }, { wch: 28 }, { wch: 14 }, { wch: 16 }, { wch: 16 }, { wch: 22 }, { wch: 22 }, { wch: 22 }];
+    worksheet['!cols'] = [{ wch: 12 }, { wch: 16 }, { wch: 28 }, { wch: 28 }, { wch: 14 }, { wch: 16 }, { wch: 16 }, { wch: 22 }, { wch: 22 }, { wch: 22 }];
     XLSX.writeFile(workbook, `board-summary-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
 
@@ -383,6 +420,24 @@ export default function BoardSummary() {
                 >
                   <TableCell>
                     {row.domain ? <Badge variant="outline">{row.domain}</Badge> : <span className="text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    {row.row_type === 'bau' ? (
+                      <span className="text-muted-foreground">—</span>
+                    ) : (
+                      <Select
+                        value={row.project_classification ?? undefined}
+                        onValueChange={(v) => handleClassificationChange(row, v as 'Project' | 'Product')}
+                      >
+                        <SelectTrigger className="h-8 w-[130px]">
+                          <SelectValue placeholder="—" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Project">Project</SelectItem>
+                          <SelectItem value="Product">Product</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
                   </TableCell>
                   <TableCell className="font-medium">{row.customer_name}</TableCell>
                   <TableCell>{row.project_name}</TableCell>

@@ -23,6 +23,7 @@ export interface ExecutiveSummaryRow {
   tech_lead_name: string | null;
   tech_sponsor_name: string | null;
   live_status: Array<'Installation' | 'Onboarding' | 'Live'>;
+  project_classification: string | null;
 }
 
 function derivePhaseStatuses(
@@ -68,7 +69,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
   // Fetch all implementation projects with company info and go-live data from projects table
   const { data: projects, error: projectsError } = await supabase
     .from('projects')
-    .select('id, name, company_id, domain, planned_go_live_date, contract_signed_date, implementation_lead, tech_lead, tech_sponsor, companies(name)')
+    .select('id, name, company_id, domain, planned_go_live_date, contract_signed_date, project_classification, implementation_lead, tech_lead, tech_sponsor, companies(name)')
     .in('domain', ['IoT', 'Vision', 'Hybrid'])
     .order('name');
 
@@ -283,6 +284,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       tech_lead_name: nameOf((project as any).tech_lead),
       tech_sponsor_name: nameOf((project as any).tech_sponsor),
       live_status: derivePhaseStatuses(phaseSource?.phase_installation, phaseSource?.phase_onboarding, phaseSource?.phase_live),
+      project_classification: (project as any).project_classification || null,
     };
   });
 
@@ -328,6 +330,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       tech_lead_name: nameOf((c as any).tech_lead),
       tech_sponsor_name: nameOf((c as any).tech_sponsor),
       live_status: ['Live'],
+      project_classification: null,
     };
   });
 

@@ -277,7 +277,7 @@ export default function BoardSummary() {
                   <TableCell className="font-medium">{row.customer_name}</TableCell>
                   <TableCell>{row.project_name}</TableCell>
                   <TableCell>
-                    {row.live_status && row.live_status.length > 0 ? (
+                    {Array.isArray(row.live_status) && row.live_status.length > 0 ? (
                       <div className="flex flex-wrap gap-1">
                         {row.live_status.map((status) => (
                           <Badge key={status} variant={status === 'Live' ? 'default' : 'outline'}>
@@ -285,6 +285,10 @@ export default function BoardSummary() {
                           </Badge>
                         ))}
                       </div>
+                    ) : row.live_status && typeof row.live_status === 'string' ? (
+                      <Badge variant={row.live_status === 'Live' ? 'default' : 'outline'}>
+                        {row.live_status}
+                      </Badge>
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}

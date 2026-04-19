@@ -19,6 +19,9 @@ export interface ExecutiveSummaryRow {
   churn_risk: string | null;
   bau_status: string | null;
   domain: string | null;
+  implementation_lead_name: string | null;
+  tech_lead_name: string | null;
+  tech_sponsor_name: string | null;
 }
 
 export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]> {
@@ -31,7 +34,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
   // Fetch all implementation projects with company info and go-live data from projects table
   const { data: projects, error: projectsError } = await supabase
     .from('projects')
-    .select('id, name, company_id, domain, planned_go_live_date, contract_signed_date, companies(name)')
+    .select('id, name, company_id, domain, planned_go_live_date, contract_signed_date, implementation_lead, tech_lead, tech_sponsor, companies(name)')
     .in('domain', ['IoT', 'Vision', 'Hybrid'])
     .order('name');
 
@@ -149,26 +152,50 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
     });
   });
 
+  // Fetch BAU customers (need this before building rows so we can collect all user IDs)
+  const { data: bauCustomers, error: bauError } = await supabase
+    .from('bau_customers')
+    .select('id, name, site_name, churn_risk, current_status, customer_project_lead, tech_lead, tech_sponsor, companies!inner(name)')
+    .eq('customer_type', 'bau')
+    .order('name');
+
+  if (bauError) throw bauError;
+
+  // Collect all unique user IDs and batch-fetch names
+  const userIds = new Set<string>();
+  projects.forEach(p => {
+    if ((p as any).implementation_lead) userIds.add((p as any).implementation_lead);
+    if ((p as any).tech_lead) userIds.add((p as any).tech_lead);
+    if ((p as any).tech_sponsor) userIds.add((p as any).tech_sponsor);
+  });
+  (bauCustomers || []).forEach(c => {
+    if ((c as any).customer_project_lead) userIds.add((c as any).customer_project_lead);
+    if ((c as any).tech_lead) userIds.add((c as any).tech_lead);
+    if ((c as any).tech_sponsor) userIds.add((c as any).tech_sponsor);
+  });
+
+  const profileMap = new Map<string, string>();
+  if (userIds.size > 0) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('user_id, name')
+      .in('user_id', Array.from(userIds));
+    (profiles || []).forEach(p => {
+      if (p.user_id) profileMap.set(p.user_id, p.name || '');
+    });
+  }
+  const nameOf = (id: string | null | undefined) => (id ? profileMap.get(id) || null : null);
+
   // Build the summary rows
   const implRows: ExecutiveSummaryRow[] = projects.map(project => {
-    // Get project's company review by company_id (for health and status only)
     const currentWeekReview = reviewMap.get(project.company_id);
     const mostRecentReview = mostRecentReviewMap.get(project.company_id);
-    
-    // Check if current week review has actual data (health or status set)
-    const currentWeekHasData = currentWeekReview && 
+    const currentWeekHasData = currentWeekReview &&
       (currentWeekReview.health !== null || currentWeekReview.status !== null);
-    
-    // Use current week review ONLY if it has actual data, otherwise fall back to most recent
     const review = currentWeekHasData ? currentWeekReview : mostRecentReview;
-    
+
     const gaps = gapsMap.get(project.id);
     const escData = escalationsMap.get(project.id);
-    
-    if (review) {
-      console.log('✅ Found review for project', project.name, 'company_id:', project.company_id, 
-        currentWeekHasData ? '(current week)' : '(inherited from most recent)', review);
-    }
 
     let product_gaps_status: 'none' | 'non_critical' | 'critical' = 'none';
     if (gaps?.hasAny) {
@@ -198,17 +225,11 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       churn_risk: null,
       bau_status: null,
       domain: project.domain || null,
+      implementation_lead_name: nameOf((project as any).implementation_lead),
+      tech_lead_name: nameOf((project as any).tech_lead),
+      tech_sponsor_name: nameOf((project as any).tech_sponsor),
     };
   });
-
-  // Fetch BAU customers
-  const { data: bauCustomers, error: bauError } = await supabase
-    .from('bau_customers')
-    .select('id, name, site_name, churn_risk, current_status, companies!inner(name)')
-    .eq('customer_type', 'bau')
-    .order('name');
-
-  if (bauError) throw bauError;
 
   // Get most recent BAU weekly reviews per customer
   const { data: bauReviews } = await supabase
@@ -248,6 +269,9 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       churn_risk: r?.churn_risk || (c.churn_risk as string | null) || null,
       bau_status: r?.status || c.current_status || null,
       domain: 'BAU',
+      implementation_lead_name: nameOf((c as any).customer_project_lead),
+      tech_lead_name: nameOf((c as any).tech_lead),
+      tech_sponsor_name: nameOf((c as any).tech_sponsor),
     };
   });
 

@@ -1,38 +1,49 @@
 
-Replace the "Contract Signed" column with a "Project Age" column on the Board Summary.
+Add an editable "Project/Product" column to the Board Summary table with a Product/Project dropdown per row.
 
-## Behavior
+## Data layer
 
-- **Column header**: "Project Age" (replaces "Contract Signed")
-- **Value**: Time elapsed since `contract_signed_date` until today, formatted as `Xm Yw Zd` (e.g., `3m 2w 4d`).
-  - Skip zero units only when leading (e.g., `2w 3d` if under a month, `5d` if under a week).
-  - If no contract signed date → show `—`.
-- **Live override**: If `live_status` is exactly `['Live']` (sole status), show the green Live badge with checkmark in this cell instead of the age (mirroring the Planned Go Live behavior).
+New column on `projects` table (Implementation projects only — BAU rows in this view come from `bau_customers` and the user is focused on the implementation board):
 
-## Implementation (1 file)
+- `project_classification` — text, nullable, CHECK constraint `IN ('Product','Project')`.
 
-**`src/pages/app/implementation/BoardSummary.tsx`**
+Migration:
+```sql
+ALTER TABLE public.projects
+  ADD COLUMN project_classification text
+  CHECK (project_classification IN ('Product','Project'));
+```
 
-1. Rename column key `contract_signed_date` → `project_age` in `COLUMNS`, `filters` state, and `clearAllFilters`. Update the `ColumnKey` type.
-2. Add a helper `formatProjectAge(signedDate: string | null): string`:
-   - Use `differenceInMonths`, `differenceInWeeks`, `differenceInDays` from `date-fns` to compute months / remaining weeks / remaining days.
-   - Return `—` when null.
-3. Update `cellValue` so `project_age` returns the formatted string (used for filter options, sort, and exports).
-4. Update sorting: for `project_age`, sort by the underlying `contract_signed_date` (older = larger age) so values order naturally instead of alphabetically.
-5. Replace the `<TableCell>` for the contract-signed column with new logic:
-   ```tsx
-   {Array.isArray(row.live_status) && row.live_status.length === 1 && row.live_status[0] === 'Live' ? (
-     <Badge className="bg-success hover:bg-success text-success-foreground gap-1">
-       <CheckCircle2 className="h-3 w-3" /> Live
-     </Badge>
-   ) : (
-     formatProjectAge(row.contract_signed_date)
-   )}
-   ```
-6. Update PDF/Excel exports — they already use `cellValue`, so they automatically pick up the formatted age. Adjust the PDF column width slightly (the age string is shorter than a date).
+For BAU rows, the cell will show `—` and be non-editable (BAU customers aren't classified this way). If the user later wants BAU classification too, we can add the same column to `bau_customers`.
+
+## Service layer
+
+`src/lib/executiveSummaryService.ts`
+- Select `project_classification` in the implementation projects query.
+- Add `project_classification: string | null` to each row in the returned dataset (BAU rows return `null`).
+
+## UI layer
+
+`src/pages/app/implementation/BoardSummary.tsx`
+
+1. Add `'project_classification'` to `ColumnKey`, `COLUMNS` (label "Project / Product"), `filters` initial state, and `clearAllFilters`. Place it right after `domain`.
+2. `cellValue`: return the raw value or `—`.
+3. Render an inline `Select` (shadcn) inside the `<TableCell>`:
+   - Options: `Project`, `Product`.
+   - For BAU rows (`row.row_type === 'bau'`): render `—` text only.
+   - On change: optimistic update via `queryClient.setQueryData`, then `supabase.from('projects').update({ project_classification: value }).eq('id', row.project_id)`. Toast on error and rollback.
+   - Use `e.stopPropagation()` on the Select trigger so the row navigation click doesn't fire.
+4. Filter dropdown for the column works automatically via `cellValue`.
+5. PDF/Excel exports automatically include the new column via `cellValue`.
+
+## Files touched
+
+- New migration: `supabase/migrations/<timestamp>_add_project_classification.sql`
+- `src/lib/executiveSummaryService.ts`
+- `src/pages/app/implementation/BoardSummary.tsx`
 
 ## Notes
 
-- No DB or service-layer changes needed; `contract_signed_date` is already returned by `fetchExecutiveSummaryData`.
-- Filter chips at the top (Domain, Live Status) are unaffected.
-- Filter dropdown for the Project Age column will list distinct age strings as they appear today (acceptable for an at-a-glance board).
+- Position: directly after Domain (logical grouping of project metadata).
+- Default value: `null` (shown as `—`) until user picks.
+- No RLS changes needed — existing `projects` update policies cover this.

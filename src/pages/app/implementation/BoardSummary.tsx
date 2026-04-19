@@ -229,6 +229,29 @@ export default function BoardSummary() {
     }
   };
 
+  const handleClassificationChange = async (row: ExecutiveSummaryRow, value: 'Project' | 'Product') => {
+    const queryKey = ['executive-summary', 'board-summary'];
+    const previous = queryClient.getQueryData<ExecutiveSummaryRow[]>(queryKey);
+    // Optimistic update
+    queryClient.setQueryData<ExecutiveSummaryRow[]>(queryKey, (old) =>
+      (old || []).map(r =>
+        r.row_type === row.row_type && r.project_id === row.project_id
+          ? { ...r, project_classification: value }
+          : r
+      )
+    );
+    const { error } = await supabase
+      .from('projects')
+      .update({ project_classification: value })
+      .eq('id', row.project_id);
+    if (error) {
+      queryClient.setQueryData(queryKey, previous);
+      toast.error('Failed to update classification');
+    } else {
+      toast.success('Classification updated');
+    }
+  };
+
   const exportToPDF = () => {
     const doc = new jsPDF('l', 'mm', 'a4');
     doc.setFontSize(16);

@@ -22,6 +22,7 @@ type ColumnKey =
   | 'domain'
   | 'customer_name'
   | 'project_name'
+  | 'live_status'
   | 'contract_signed_date'
   | 'planned_go_live_date'
   | 'implementation_lead_name'
@@ -32,6 +33,7 @@ const COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: 'domain', label: 'Domain' },
   { key: 'customer_name', label: 'Customer Name' },
   { key: 'project_name', label: 'Project / Site' },
+  { key: 'live_status', label: 'Live Status' },
   { key: 'contract_signed_date', label: 'Contract Signed' },
   { key: 'planned_go_live_date', label: 'Planned Go Live' },
   { key: 'implementation_lead_name', label: 'Implementation Lead' },
@@ -47,6 +49,7 @@ export default function BoardSummary() {
     domain: [],
     customer_name: [],
     project_name: [],
+    live_status: [],
     contract_signed_date: [],
     planned_go_live_date: [],
     implementation_lead_name: [],

@@ -273,6 +273,49 @@ export default function BoardSummary() {
         </div>
       </div>
 
+      <div className="space-y-3 rounded-lg border bg-card p-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-muted-foreground min-w-[90px]">Domain:</span>
+          {domainChips.length === 0 ? (
+            <span className="text-sm text-muted-foreground">No domains</span>
+          ) : (
+            domainChips.map(d => {
+              const active = filters.domain.includes(d);
+              return (
+                <Badge
+                  key={d}
+                  variant={active ? 'default' : 'outline'}
+                  className="cursor-pointer select-none"
+                  onClick={() => toggleChip('domain', d)}
+                >
+                  {d}
+                </Badge>
+              );
+            })
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-muted-foreground min-w-[90px]">Live Status:</span>
+          {liveStatusChips.length === 0 ? (
+            <span className="text-sm text-muted-foreground">No statuses</span>
+          ) : (
+            liveStatusChips.map(s => {
+              const active = filters.live_status.includes(s);
+              return (
+                <Badge
+                  key={s}
+                  variant={active ? 'default' : 'outline'}
+                  className="cursor-pointer select-none"
+                  onClick={() => toggleChip('live_status', s)}
+                >
+                  {s}
+                </Badge>
+              );
+            })
+          )}
+        </div>
+      </div>
+
       <div className="text-sm text-muted-foreground">
         Showing {sortedData.length} of {summaryData.length}
       </div>

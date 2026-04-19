@@ -22,6 +22,18 @@ export interface ExecutiveSummaryRow {
   implementation_lead_name: string | null;
   tech_lead_name: string | null;
   tech_sponsor_name: string | null;
+  live_status: 'Installation' | 'Onboarding' | 'Live' | null;
+}
+
+function derivePhaseStatus(
+  phase_installation: boolean | null | undefined,
+  phase_onboarding: boolean | null | undefined,
+  phase_live: boolean | null | undefined
+): 'Installation' | 'Onboarding' | 'Live' | null {
+  if (phase_live) return 'Live';
+  if (phase_onboarding) return 'Onboarding';
+  if (phase_installation) return 'Installation';
+  return null;
 }
 
 export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]> {

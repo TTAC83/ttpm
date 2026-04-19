@@ -94,19 +94,21 @@ export default function BoardSummary() {
     doc.setFontSize(10);
     doc.text(`Exported: ${format(new Date(), 'dd MMM yyyy HH:mm')}`, 14, 22);
 
-    const headers = ['Type', 'Domain', 'Customer Name', 'Project / Site', 'Contract Signed', 'Planned Go Live'];
+    const headers = ['Domain', 'Customer Name', 'Project / Site', 'Contract Signed', 'Planned Go Live', 'Implementation Lead', 'Dev/Tech Lead', 'Dev/Tech Sponsor'];
     const data = sortedData.map(row => [
-      row.row_type === 'bau' ? 'BAU' : 'Implementation',
       row.domain || '—',
       row.customer_name,
       row.project_name,
       row.contract_signed_date ? format(new Date(row.contract_signed_date), 'dd MMM yyyy') : '',
       row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : '',
+      row.implementation_lead_name || '—',
+      row.tech_lead_name || '—',
+      row.tech_sponsor_name || '—',
     ]);
 
     let y = 30;
     const lineHeight = 7;
-    const colWidths = [28, 25, 50, 50, 35, 35];
+    const colWidths = [22, 40, 40, 26, 26, 35, 35, 35];
 
     doc.setFontSize(9);
     doc.setFont(undefined, 'bold');
@@ -122,7 +124,7 @@ export default function BoardSummary() {
       x = 14;
       row.forEach((cell, i) => {
         const text = String(cell || '');
-        doc.text(text.substring(0, 30), x, y);
+        doc.text(text.substring(0, 28), x, y);
         x += colWidths[i];
       });
       y += lineHeight;
@@ -137,18 +139,20 @@ export default function BoardSummary() {
 
   const exportToExcel = () => {
     const data = sortedData.map(row => ({
-      'Type': row.row_type === 'bau' ? 'BAU' : 'Implementation',
       'Domain': row.domain || '—',
       'Customer Name': row.customer_name,
       'Project / Site': row.project_name,
       'Contract Signed': row.contract_signed_date ? format(new Date(row.contract_signed_date), 'dd MMM yyyy') : '',
       'Planned Go Live': row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : '',
+      'Implementation Lead': row.implementation_lead_name || '—',
+      'Dev/Tech Lead': row.tech_lead_name || '—',
+      'Dev/Tech Sponsor': row.tech_sponsor_name || '—',
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Board Summary');
-    worksheet['!cols'] = [{ wch: 16 }, { wch: 12 }, { wch: 30 }, { wch: 30 }, { wch: 18 }, { wch: 18 }];
+    worksheet['!cols'] = [{ wch: 12 }, { wch: 30 }, { wch: 30 }, { wch: 18 }, { wch: 18 }, { wch: 22 }, { wch: 22 }, { wch: 22 }];
     XLSX.writeFile(workbook, `board-summary-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
 
@@ -205,9 +209,6 @@ export default function BoardSummary() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('row_type')}>
-                Type {sortColumn === 'row_type' && (sortDirection === 'asc' ? '↑' : '↓')}
-              </TableHead>
               <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('domain')}>
                 Domain {sortColumn === 'domain' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
@@ -223,12 +224,21 @@ export default function BoardSummary() {
               <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('planned_go_live_date')}>
                 Planned Go Live {sortColumn === 'planned_go_live_date' && (sortDirection === 'asc' ? '↑' : '↓')}
               </TableHead>
+              <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('implementation_lead_name')}>
+                Implementation Lead {sortColumn === 'implementation_lead_name' && (sortDirection === 'asc' ? '↑' : '↓')}
+              </TableHead>
+              <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('tech_lead_name')}>
+                Dev/Tech Lead {sortColumn === 'tech_lead_name' && (sortDirection === 'asc' ? '↑' : '↓')}
+              </TableHead>
+              <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('tech_sponsor_name')}>
+                Dev/Tech Sponsor {sortColumn === 'tech_sponsor_name' && (sortDirection === 'asc' ? '↑' : '↓')}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   No records found.
                 </TableCell>
               </TableRow>
@@ -240,13 +250,6 @@ export default function BoardSummary() {
                   onClick={() => handleRowClick(row)}
                 >
                   <TableCell>
-                    {row.row_type === 'bau' ? (
-                      <Badge variant="secondary">BAU</Badge>
-                    ) : (
-                      <Badge variant="default">Implementation</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
                     {row.domain ? <Badge variant="outline">{row.domain}</Badge> : <span className="text-muted-foreground">—</span>}
                   </TableCell>
                   <TableCell className="font-medium">{row.customer_name}</TableCell>
@@ -257,6 +260,9 @@ export default function BoardSummary() {
                   <TableCell>
                     {row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : ''}
                   </TableCell>
+                  <TableCell>{row.implementation_lead_name || <span className="text-muted-foreground">—</span>}</TableCell>
+                  <TableCell>{row.tech_lead_name || <span className="text-muted-foreground">—</span>}</TableCell>
+                  <TableCell>{row.tech_sponsor_name || <span className="text-muted-foreground">—</span>}</TableCell>
                 </TableRow>
               ))
             )}

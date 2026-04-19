@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TableHeaderFilter, SortDirection, FilterOption } from "@/components/ui/table-header-filter";
-import { FileDown, FileSpreadsheet } from "lucide-react";
+import { FileDown, FileSpreadsheet, CheckCircle2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import jsPDF from "jspdf";
@@ -297,7 +297,16 @@ export default function BoardSummary() {
                     {row.contract_signed_date ? format(new Date(row.contract_signed_date), 'dd MMM yyyy') : ''}
                   </TableCell>
                   <TableCell>
-                    {row.planned_go_live_date ? format(new Date(row.planned_go_live_date), 'dd MMM yyyy') : ''}
+                    {Array.isArray(row.live_status) && row.live_status.length === 1 && row.live_status[0] === 'Live' ? (
+                      <Badge className="bg-success hover:bg-success text-success-foreground gap-1">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Live
+                      </Badge>
+                    ) : row.planned_go_live_date ? (
+                      format(new Date(row.planned_go_live_date), 'dd MMM yyyy')
+                    ) : (
+                      ''
+                    )}
                   </TableCell>
                   <TableCell>{row.implementation_lead_name || <span className="text-muted-foreground">—</span>}</TableCell>
                   <TableCell>{row.tech_lead_name || <span className="text-muted-foreground">—</span>}</TableCell>

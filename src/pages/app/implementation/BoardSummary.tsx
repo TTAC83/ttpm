@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TableHeaderFilter, SortDirection, FilterOption } from "@/components/ui/table-header-filter";
-import { FileDown, FileSpreadsheet } from "lucide-react";
+import { FileDown, FileSpreadsheet, CheckCircle2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import jsPDF from "jspdf";

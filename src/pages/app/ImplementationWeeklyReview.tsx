@@ -557,11 +557,13 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     queryFn: () => loadReview(companyId, weekStart),
   });
 
-  // Query for previous week's review to carry forward phases/hypercare
+  // Query for previous week's review to carry forward phases/hypercare.
+  // Always run alongside reviewQ so we can fall back to inherited phases when
+  // the current row exists but its phase fields are still empty (created by an
+  // early auto-save before the user set any phases).
   const previousReviewQ = useQuery({
     queryKey: ["impl-previous-review", companyId, weekStart],
     queryFn: () => loadPreviousReview(companyId, weekStart),
-    enabled: !reviewQ.isLoading && reviewQ.data === null, // Only fetch if no current review exists
   });
 
   // Load profiles for task assignment
@@ -639,7 +641,9 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     };
   }, [projectStatus, customerHealth, notes, reasonCode, weeklySummary, phaseInstallation, phaseInstallationDetails, phaseOnboarding, phaseOnboardingDetails, phaseLive, phaseLiveDetails, hypercare]);
 
-  // Reset states immediately when companyId or weekStart changes - set loading to prevent auto-save
+  // Reset states immediately when companyId or weekStart changes - set loading to prevent auto-save.
+  // NOTE: phase/hypercare fields are intentionally NOT reset here — they are inherited fields
+  // populated by the load effect below from either the current row or the latest prior review.
   useEffect(() => {
     isLoadingRef.current = true; // Prevent auto-save during reset/load
     setProjectStatus(null);
@@ -649,63 +653,122 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
     setWeeklySummary("");
     setStatusTouched(false);
     setHealthTouched(false);
-    setPhaseInstallation(false);
-    setPhaseInstallationDetails("");
-    setPhaseOnboarding(false);
-    setPhaseOnboardingDetails("");
-    setPhaseLive(false);
-    setPhaseLiveDetails("");
-    setHypercare(false);
   }, [companyId, weekStart]);
 
-  // Load saved data when reviewQ.data changes OR when query completes (even with null)
+  // Load saved data when reviewQ.data changes OR when query completes (even with null).
+  // Phases/hypercare are treated as inherited fields: if the current row's phases are all
+  // empty, fall back to the latest prior review.
   useEffect(() => {
-    // Only proceed once the query has finished loading
-    if (reviewQ.isLoading) return;
-    
+    // Wait until BOTH queries have settled before populating state or allowing auto-save.
+    if (reviewQ.isLoading || previousReviewQ.isLoading) return;
+
+    const prev = previousReviewQ.data;
+    const inheritedPhases = {
+      phaseInstallation: prev?.phase_installation ?? false,
+      phaseInstallationDetails: prev?.phase_installation_details ?? "",
+      phaseOnboarding: prev?.phase_onboarding ?? false,
+      phaseOnboardingDetails: prev?.phase_onboarding_details ?? "",
+      phaseLive: prev?.phase_live ?? false,
+      phaseLiveDetails: prev?.phase_live_details ?? "",
+      hypercare: prev?.hypercare ?? false,
+    };
+
     if (reviewQ.data) {
-      // Current week has data - use it
-      setProjectStatus(reviewQ.data.project_status ?? null);
-      setCustomerHealth(reviewQ.data.customer_health ?? null);
-      setNotes(reviewQ.data.notes ?? "");
-      setReasonCode(reviewQ.data.reason_code ?? "");
-      setWeeklySummary(reviewQ.data.weekly_summary ?? "");
-      setPhaseInstallation(reviewQ.data.phase_installation ?? false);
-      setPhaseInstallationDetails(reviewQ.data.phase_installation_details ?? "");
-      setPhaseOnboarding(reviewQ.data.phase_onboarding ?? false);
-      setPhaseOnboardingDetails(reviewQ.data.phase_onboarding_details ?? "");
-      setPhaseLive(reviewQ.data.phase_live ?? false);
-      setPhaseLiveDetails(reviewQ.data.phase_live_details ?? "");
-      setHypercare(reviewQ.data.hypercare ?? false);
-      
-      // Allow auto-save after data is loaded (with a small delay to let state settle)
+      const cur = reviewQ.data;
+      setProjectStatus(cur.project_status ?? null);
+      setCustomerHealth(cur.customer_health ?? null);
+      setNotes(cur.notes ?? "");
+      setReasonCode(cur.reason_code ?? "");
+      setWeeklySummary(cur.weekly_summary ?? "");
+
+      // Detect a "phase-empty" current row: all phase booleans false AND all detail strings empty.
+      // If so, prefer the inherited values from the latest prior review.
+      const phaseInstall = cur.phase_installation ?? false;
+      const phaseOnboard = cur.phase_onboarding ?? false;
+      const phaseLiveCur = cur.phase_live ?? false;
+      const phaseInstallDet = cur.phase_installation_details ?? "";
+      const phaseOnboardDet = cur.phase_onboarding_details ?? "";
+      const phaseLiveDet = cur.phase_live_details ?? "";
+      const hypercareCur = cur.hypercare ?? false;
+      const allPhasesEmpty =
+        !phaseInstall && !phaseOnboard && !phaseLiveCur &&
+        !phaseInstallDet && !phaseOnboardDet && !phaseLiveDet && !hypercareCur;
+
+      if (allPhasesEmpty && prev) {
+        setPhaseInstallation(inheritedPhases.phaseInstallation);
+        setPhaseInstallationDetails(inheritedPhases.phaseInstallationDetails);
+        setPhaseOnboarding(inheritedPhases.phaseOnboarding);
+        setPhaseOnboardingDetails(inheritedPhases.phaseOnboardingDetails);
+        setPhaseLive(inheritedPhases.phaseLive);
+        setPhaseLiveDetails(inheritedPhases.phaseLiveDetails);
+        setHypercare(inheritedPhases.hypercare);
+
+        const hasCarryForwardData = inheritedPhases.phaseInstallation || inheritedPhases.phaseOnboarding ||
+                                    inheritedPhases.phaseLive || inheritedPhases.hypercare ||
+                                    inheritedPhases.phaseInstallationDetails || inheritedPhases.phaseOnboardingDetails ||
+                                    inheritedPhases.phaseLiveDetails;
+
+        if (hasCarryForwardData) {
+          // Persist inherited phases onto the existing current-week row immediately.
+          const timer = setTimeout(() => {
+            isLoadingRef.current = false;
+            saveReview({
+              companyId,
+              weekStartISO: weekStart,
+              projectStatus: cur.project_status ?? null,
+              customerHealth: cur.customer_health ?? null,
+              notes: cur.notes ?? null,
+              reasonCode: cur.reason_code ?? null,
+              weeklySummary: cur.weekly_summary ?? null,
+              phaseInstallation: inheritedPhases.phaseInstallation,
+              phaseInstallationDetails: inheritedPhases.phaseInstallationDetails || null,
+              phaseOnboarding: inheritedPhases.phaseOnboarding,
+              phaseOnboardingDetails: inheritedPhases.phaseOnboardingDetails || null,
+              phaseLive: inheritedPhases.phaseLive,
+              phaseLiveDetails: inheritedPhases.phaseLiveDetails || null,
+              hypercare: inheritedPhases.hypercare,
+            }).then(() => {
+              qc.invalidateQueries({ queryKey: ["impl-companies-health", weekStart] });
+              qc.invalidateQueries({ queryKey: ["impl-review", companyId, weekStart] });
+            }).catch((e) => {
+              console.error('Failed to persist inherited phases:', e);
+            });
+          }, 150);
+          return () => clearTimeout(timer);
+        }
+      } else {
+        setPhaseInstallation(phaseInstall);
+        setPhaseInstallationDetails(phaseInstallDet);
+        setPhaseOnboarding(phaseOnboard);
+        setPhaseOnboardingDetails(phaseOnboardDet);
+        setPhaseLive(phaseLiveCur);
+        setPhaseLiveDetails(phaseLiveDet);
+        setHypercare(hypercareCur);
+      }
+
       const timer = setTimeout(() => {
         isLoadingRef.current = false;
       }, 100);
       return () => clearTimeout(timer);
-    } else if (!previousReviewQ.isLoading) {
+    } else {
       // No current week data - carry forward phases/hypercare from previous week
-      if (previousReviewQ.data) {
-        const prevData = previousReviewQ.data;
-        const hasCarryForwardData = prevData.phase_installation || prevData.phase_onboarding || 
-                                    prevData.phase_live || prevData.hypercare ||
-                                    prevData.phase_installation_details || prevData.phase_onboarding_details ||
-                                    prevData.phase_live_details;
-        
-        setPhaseInstallation(prevData.phase_installation ?? false);
-        setPhaseInstallationDetails(prevData.phase_installation_details ?? "");
-        setPhaseOnboarding(prevData.phase_onboarding ?? false);
-        setPhaseOnboardingDetails(prevData.phase_onboarding_details ?? "");
-        setPhaseLive(prevData.phase_live ?? false);
-        setPhaseLiveDetails(prevData.phase_live_details ?? "");
-        setHypercare(prevData.hypercare ?? false);
-        
-        // If there's carried-forward data, save it to the current week immediately
+      if (prev) {
+        const hasCarryForwardData = inheritedPhases.phaseInstallation || inheritedPhases.phaseOnboarding ||
+                                    inheritedPhases.phaseLive || inheritedPhases.hypercare ||
+                                    inheritedPhases.phaseInstallationDetails || inheritedPhases.phaseOnboardingDetails ||
+                                    inheritedPhases.phaseLiveDetails;
+
+        setPhaseInstallation(inheritedPhases.phaseInstallation);
+        setPhaseInstallationDetails(inheritedPhases.phaseInstallationDetails);
+        setPhaseOnboarding(inheritedPhases.phaseOnboarding);
+        setPhaseOnboardingDetails(inheritedPhases.phaseOnboardingDetails);
+        setPhaseLive(inheritedPhases.phaseLive);
+        setPhaseLiveDetails(inheritedPhases.phaseLiveDetails);
+        setHypercare(inheritedPhases.hypercare);
+
         if (hasCarryForwardData) {
-          // Allow auto-save and then trigger it
           const timer = setTimeout(() => {
             isLoadingRef.current = false;
-            // Trigger save with carried-forward data
             saveReview({
               companyId,
               weekStartISO: weekStart,
@@ -714,15 +777,14 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
               notes: null,
               reasonCode: null,
               weeklySummary: null,
-              phaseInstallation: prevData.phase_installation ?? null,
-              phaseInstallationDetails: prevData.phase_installation_details ?? null,
-              phaseOnboarding: prevData.phase_onboarding ?? null,
-              phaseOnboardingDetails: prevData.phase_onboarding_details ?? null,
-              phaseLive: prevData.phase_live ?? null,
-              phaseLiveDetails: prevData.phase_live_details ?? null,
-              hypercare: prevData.hypercare ?? null,
+              phaseInstallation: inheritedPhases.phaseInstallation,
+              phaseInstallationDetails: inheritedPhases.phaseInstallationDetails || null,
+              phaseOnboarding: inheritedPhases.phaseOnboarding,
+              phaseOnboardingDetails: inheritedPhases.phaseOnboardingDetails || null,
+              phaseLive: inheritedPhases.phaseLive,
+              phaseLiveDetails: inheritedPhases.phaseLiveDetails || null,
+              hypercare: inheritedPhases.hypercare,
             }).then(() => {
-              // Invalidate to update the left pane
               qc.invalidateQueries({ queryKey: ["impl-companies-health", weekStart] });
               qc.invalidateQueries({ queryKey: ["impl-review", companyId, weekStart] });
             }).catch((e) => {
@@ -731,9 +793,17 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
           }, 150);
           return () => clearTimeout(timer);
         }
+      } else {
+        // No prior review either — explicit defaults.
+        setPhaseInstallation(false);
+        setPhaseInstallationDetails("");
+        setPhaseOnboarding(false);
+        setPhaseOnboardingDetails("");
+        setPhaseLive(false);
+        setPhaseLiveDetails("");
+        setHypercare(false);
       }
-      
-      // Allow auto-save after data is loaded
+
       const timer = setTimeout(() => {
         isLoadingRef.current = false;
       }, 100);

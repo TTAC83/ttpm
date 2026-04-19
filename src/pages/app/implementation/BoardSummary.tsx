@@ -125,6 +125,7 @@ export default function BoardSummary() {
       domain: [],
       customer_name: [],
       project_name: [],
+      live_status: [],
       contract_signed_date: [],
       planned_go_live_date: [],
       implementation_lead_name: [],

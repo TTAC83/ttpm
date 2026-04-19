@@ -225,7 +225,8 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
     const currentWeekReview = reviewMap.get(project.company_id);
     const mostRecentReview = mostRecentReviewMap.get(project.company_id);
     const currentWeekHasData = currentWeekReview &&
-      (currentWeekReview.health !== null || currentWeekReview.status !== null);
+      (currentWeekReview.health !== null || currentWeekReview.status !== null ||
+       currentWeekReview.phase_installation || currentWeekReview.phase_onboarding || currentWeekReview.phase_live);
     const review = currentWeekHasData ? currentWeekReview : mostRecentReview;
 
     const gaps = gapsMap.get(project.id);

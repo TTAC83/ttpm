@@ -134,8 +134,15 @@ export default function BoardSummary() {
   const sortedData = useMemo(() => {
     if (!sortColumn || !sortDirection) return filteredData;
     return [...filteredData].sort((a, b) => {
-      let aVal: any = a[sortColumn as keyof typeof a];
-      let bVal: any = b[sortColumn as keyof typeof b];
+      let aVal: any;
+      let bVal: any;
+      if (sortColumn === 'project_age') {
+        aVal = a.contract_signed_date ? new Date(a.contract_signed_date).getTime() : null;
+        bVal = b.contract_signed_date ? new Date(b.contract_signed_date).getTime() : null;
+      } else {
+        aVal = a[sortColumn as keyof typeof a];
+        bVal = b[sortColumn as keyof typeof b];
+      }
       if (aVal === null || aVal === undefined) return 1;
       if (bVal === null || bVal === undefined) return -1;
       if (typeof aVal === 'string') {
@@ -397,7 +404,14 @@ export default function BoardSummary() {
                     )}
                   </TableCell>
                   <TableCell>
-                    {row.contract_signed_date ? format(new Date(row.contract_signed_date), 'dd MMM yyyy') : ''}
+                    {Array.isArray(row.live_status) && row.live_status.length === 1 && row.live_status[0] === 'Live' ? (
+                      <Badge className="bg-success hover:bg-success text-success-foreground gap-1">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Live
+                      </Badge>
+                    ) : (
+                      formatProjectAge(row.contract_signed_date)
+                    )}
                   </TableCell>
                   <TableCell>
                     {Array.isArray(row.live_status) && row.live_status.length === 1 && row.live_status[0] === 'Live' ? (

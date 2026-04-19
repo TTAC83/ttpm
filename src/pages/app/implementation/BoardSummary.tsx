@@ -298,7 +298,7 @@ export default function BoardSummary() {
                   </TableCell>
                   <TableCell>
                     {Array.isArray(row.live_status) && row.live_status.length === 1 && row.live_status[0] === 'Live' ? (
-                      <Badge className="bg-green-600 hover:bg-green-600 text-white gap-1">
+                      <Badge className="bg-success hover:bg-success text-success-foreground gap-1">
                         <CheckCircle2 className="h-3 w-3" />
                         Live
                       </Badge>

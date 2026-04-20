@@ -384,6 +384,7 @@ export type Database = {
           notes: string | null
           planned_go_live_date: string | null
           primary_contact: string | null
+          project_classification: string | null
           project_goals: string | null
           receivers_required: number | null
           s3_bucket_required: boolean | null
@@ -435,6 +436,7 @@ export type Database = {
           notes?: string | null
           planned_go_live_date?: string | null
           primary_contact?: string | null
+          project_classification?: string | null
           project_goals?: string | null
           receivers_required?: number | null
           s3_bucket_required?: boolean | null
@@ -486,6 +488,7 @@ export type Database = {
           notes?: string | null
           planned_go_live_date?: string | null
           primary_contact?: string | null
+          project_classification?: string | null
           project_goals?: string | null
           receivers_required?: number | null
           s3_bucket_required?: boolean | null

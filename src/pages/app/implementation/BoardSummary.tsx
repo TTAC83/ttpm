@@ -328,7 +328,7 @@ export default function BoardSummary() {
     return (
       <div className="container mx-auto p-6">
         <div className="flex justify-center items-center h-64">
-          <p className="text-muted-foreground">Loading board summary...</p>
+          <p className="text-muted-foreground">Loading summary...</p>
         </div>
       </div>
     );

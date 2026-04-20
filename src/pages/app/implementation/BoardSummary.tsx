@@ -307,7 +307,7 @@ export default function BoardSummary() {
       }
     });
 
-    doc.save(`board-summary-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+    doc.save(`summary-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
   };
 
   const exportToExcel = () => {

@@ -521,13 +521,13 @@ export default function BoardSummary() {
         Showing {sortedData.length} of {summaryData.length}
       </div>
 
-      <div className="border rounded-lg overflow-hidden">
-        <div ref={topScrollRef} className="overflow-x-auto overflow-y-hidden" style={{ height: 14 }}>
+      <div ref={tableScrollRef} className="border rounded-lg overflow-auto max-h-[calc(100vh-200px)]">
+        <div ref={topScrollRef} className="sticky top-0 z-30 overflow-x-auto overflow-y-hidden bg-background border-b" style={{ height: 14 }}>
           <div style={{ width: tableScrollWidth, height: 1 }} />
         </div>
-        <div ref={tableScrollRef} className="overflow-auto max-h-[calc(100vh-280px)]">
+        <div>
           <Table>
-            <TableHeader className="sticky top-0 z-20 bg-background shadow-[0_1px_0_0_hsl(var(--border))]">
+            <TableHeader className="sticky top-[14px] z-20 bg-background shadow-[0_1px_0_0_hsl(var(--border))]">
               <TableRow>
                 {COLUMNS.map(({ key, label }) => (
                   <TableHead key={key} className="bg-background">

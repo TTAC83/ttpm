@@ -90,6 +90,8 @@ export default function BoardSummary() {
     domain: [],
     project_classification: [],
     customer_name: [],
+    customer_health: [],
+    project_on_track: [],
     project_name: [],
     live_status: [],
     project_age: [],

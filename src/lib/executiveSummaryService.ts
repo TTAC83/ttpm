@@ -205,7 +205,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
   // Fetch BAU customers (need this before building rows so we can collect all user IDs)
   const { data: bauCustomers, error: bauError } = await supabase
     .from('bau_customers')
-    .select('id, name, site_name, churn_risk, current_status, customer_project_lead, tech_lead, tech_sponsor, companies!inner(name)')
+    .select('id, name, site_name, churn_risk, current_status, customer_project_lead, tech_lead, tech_sponsor, project_classification, companies!inner(name)')
     .eq('customer_type', 'bau')
     .order('name');
 

@@ -15,6 +15,7 @@ export type SortDirection = 'asc' | 'desc' | null;
 export interface FilterOption {
   value: string;
   label: string;
+  count?: number;
 }
 
 interface TableHeaderFilterProps {
@@ -47,7 +48,7 @@ export function TableHeaderFilter({
   // Convert to MultiSelectOption format
   const multiSelectOptions: MultiSelectOption[] = options.map(opt => ({
     value: opt.value,
-    label: opt.label,
+    label: opt.count !== undefined ? `${opt.label} (${opt.count})` : opt.label,
   }));
 
   const handleSortClick = () => {

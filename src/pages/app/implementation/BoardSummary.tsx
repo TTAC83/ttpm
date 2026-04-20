@@ -441,22 +441,18 @@ export default function BoardSummary() {
                     {row.domain ? <Badge variant="outline">{row.domain}</Badge> : <span className="text-muted-foreground">—</span>}
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
-                    {row.row_type === 'bau' ? (
-                      <span className="text-muted-foreground">—</span>
-                    ) : (
-                      <Select
-                        value={row.project_classification ?? undefined}
-                        onValueChange={(v) => handleClassificationChange(row, v as 'Project' | 'Product')}
-                      >
-                        <SelectTrigger className="h-8 w-[130px]">
-                          <SelectValue placeholder="—" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Project">Project</SelectItem>
-                          <SelectItem value="Product">Product</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
+                    <Select
+                      value={row.project_classification ?? undefined}
+                      onValueChange={(v) => handleClassificationChange(row, v as 'Project' | 'Product')}
+                    >
+                      <SelectTrigger className="h-8 w-[130px]">
+                        <SelectValue placeholder="—" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Project">Project</SelectItem>
+                        <SelectItem value="Product">Product</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   <TableCell className="font-medium">{row.customer_name}</TableCell>
                   <TableCell>

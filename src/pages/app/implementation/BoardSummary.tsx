@@ -97,28 +97,49 @@ export default function BoardSummary() {
   const queryClient = useQueryClient();
   const topScrollRef = useRef<HTMLDivElement>(null);
   const tableScrollRef = useRef<HTMLDivElement>(null);
+  const tableContentRef = useRef<HTMLDivElement>(null);
   const [tableScrollWidth, setTableScrollWidth] = useState(0);
 
   // Sync top scrollbar <-> table scroll
   useEffect(() => {
     const top = topScrollRef.current;
     const tbl = tableScrollRef.current;
-    if (!top || !tbl) return;
+    const content = tableContentRef.current;
+    if (!top || !tbl || !content) return;
+
     let lock = false;
-    const onTop = () => { if (lock) return; lock = true; tbl.scrollLeft = top.scrollLeft; lock = false; };
-    const onTbl = () => { if (lock) return; lock = true; top.scrollLeft = tbl.scrollLeft; lock = false; };
+    const onTop = () => {
+      if (lock) return;
+      lock = true;
+      tbl.scrollLeft = top.scrollLeft;
+      lock = false;
+    };
+    const onTbl = () => {
+      if (lock) return;
+      lock = true;
+      top.scrollLeft = tbl.scrollLeft;
+      lock = false;
+    };
+
     top.addEventListener('scroll', onTop);
     tbl.addEventListener('scroll', onTbl);
-    const update = () => setTableScrollWidth(tbl.scrollWidth);
+
+    const update = () => {
+      setTableScrollWidth(content.scrollWidth);
+      top.scrollLeft = tbl.scrollLeft;
+    };
+
     update();
     const ro = new ResizeObserver(update);
     ro.observe(tbl);
+    ro.observe(content);
+
     return () => {
       top.removeEventListener('scroll', onTop);
       tbl.removeEventListener('scroll', onTbl);
       ro.disconnect();
     };
-  });
+  }, []);
   const [sortColumn, setSortColumn] = useState<ColumnKey | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<ColumnKey, string[]>>({
@@ -548,13 +569,16 @@ export default function BoardSummary() {
         Showing {sortedData.length} of {summaryData.length}
       </div>
 
-      <div ref={tableScrollRef} className="border rounded-lg overflow-auto max-h-[calc(100vh-200px)]">
-        <div ref={topScrollRef} className="sticky top-0 z-30 overflow-x-auto overflow-y-hidden bg-background border-b" style={{ height: 14 }}>
+      <div className="sticky top-0 z-40 overflow-hidden rounded-lg border bg-background">
+        <div ref={topScrollRef} className="overflow-x-auto overflow-y-hidden" style={{ height: 14 }}>
           <div style={{ width: tableScrollWidth, height: 1 }} />
         </div>
-        <div className="[&>div]:w-max [&>div]:overflow-x-hidden [&>div]:overflow-y-visible">
+      </div>
+
+      <div ref={tableScrollRef} className="border rounded-lg overflow-auto max-h-[calc(100vh-200px)]">
+        <div ref={tableContentRef} className="[&>div]:w-max [&>div]:overflow-x-hidden [&>div]:overflow-y-visible">
           <Table className="w-max min-w-full">
-            <TableHeader className="sticky top-[14px] z-20 bg-background shadow-[0_1px_0_0_hsl(var(--border))]">
+            <TableHeader className="sticky top-0 z-20 bg-background shadow-[0_1px_0_0_hsl(var(--border))]">
               <TableRow>
                 {COLUMNS.map(({ key, label }) => (
                   <TableHead key={key} className="bg-background">

@@ -111,6 +111,8 @@ export default function BoardSummary() {
   });
 
   const cellValue = (row: typeof summaryData[number], key: ColumnKey): string => {
+    if (key === 'customer_health') return healthLabel(row);
+    if (key === 'project_on_track') return onTrackLabel(row);
     const v = (row as any)[key];
     if (v === null || v === undefined || v === '') return '—';
     if (key === 'planned_go_live_date') {

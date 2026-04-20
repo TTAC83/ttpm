@@ -273,7 +273,7 @@ export default function BoardSummary() {
   const exportToPDF = () => {
     const doc = new jsPDF('l', 'mm', 'a4');
     doc.setFontSize(16);
-    doc.text('Board Summary', 14, 15);
+    doc.text('Summary', 14, 15);
     doc.setFontSize(10);
     doc.text(`Exported: ${format(new Date(), 'dd MMM yyyy HH:mm')}`, 14, 22);
 

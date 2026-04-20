@@ -60,8 +60,16 @@ const COLUMNS: { key: ColumnKey; label: string }[] = [
 const healthLabel = (row: { customer_health: string | null }): string =>
   row.customer_health === 'red' ? 'Red' : 'Green';
 
-const onTrackLabel = (row: { project_on_track: string | null; row_type: string }): string => {
+const isLiveRow = (row: { live_status: any }): boolean => {
+  const v = row.live_status;
+  if (Array.isArray(v)) return v.some(s => String(s).toLowerCase().includes('live'));
+  if (typeof v === 'string') return v.toLowerCase().includes('live');
+  return false;
+};
+
+const onTrackLabel = (row: { project_on_track: string | null; row_type: string; live_status: any }): string => {
   if (row.row_type === 'bau') return '—';
+  if (isLiveRow(row)) return '—';
   return row.project_on_track === 'off_track' ? 'Off Track' : 'On Track';
 };
 

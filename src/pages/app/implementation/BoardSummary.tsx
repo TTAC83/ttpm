@@ -407,6 +407,37 @@ export default function BoardSummary() {
         </div>
       </div>
 
+      {/* KPI bar */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        {[
+          { label: 'Total Customers', value: kpis.total, tone: 'default' },
+          { label: 'Healthy', value: kpis.healthy, tone: 'success' },
+          { label: 'At Risk', value: kpis.atRisk, tone: 'destructive' },
+          { label: 'On Track', value: kpis.onTrack, tone: 'success' },
+          { label: 'Off Track', value: kpis.offTrack, tone: 'destructive' },
+          { label: 'Live', value: kpis.live, tone: 'success' },
+          { label: 'In Onboarding', value: kpis.onboarding, tone: 'default' },
+          { label: 'In Installation', value: kpis.installation, tone: 'default' },
+          { label: 'Critical Escalations', value: kpis.criticalEscalations, tone: 'destructive' },
+          { label: 'Critical Product Gaps', value: kpis.criticalProductGaps, tone: 'destructive' },
+        ].map(kpi => (
+          <Card key={kpi.label}>
+            <CardContent className="py-3 px-4">
+              <div className={
+                kpi.tone === 'success'
+                  ? 'text-2xl font-bold text-success'
+                  : kpi.tone === 'destructive'
+                    ? 'text-2xl font-bold text-destructive'
+                    : 'text-2xl font-bold text-foreground'
+              }>
+                {kpi.value}
+              </div>
+              <div className="text-xs text-muted-foreground mt-0.5">{kpi.label}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
       <div className="space-y-3 rounded-lg border bg-card p-4">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm font-medium text-muted-foreground min-w-[90px]">Domain:</span>

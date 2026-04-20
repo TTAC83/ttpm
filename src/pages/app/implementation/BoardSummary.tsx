@@ -449,6 +449,8 @@ export default function BoardSummary() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {[
           { label: 'Total Customers', value: kpis.total, tone: 'default' },
+          { label: 'Project', value: kpis.project, tone: 'default' },
+          { label: 'Product', value: kpis.product, tone: 'default' },
           { label: 'Healthy', value: kpis.healthy, tone: 'success' },
           { label: 'At Risk', value: kpis.atRisk, tone: 'destructive' },
           { label: 'On Track', value: kpis.onTrack, tone: 'success' },

@@ -24,6 +24,7 @@ export interface ExecutiveSummaryRow {
   tech_sponsor_name: string | null;
   live_status: Array<'Installation' | 'Onboarding' | 'Live'>;
   project_classification: string | null;
+  weekly_summary: string | null;
 }
 
 function derivePhaseStatuses(
@@ -92,7 +93,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
   // Include ALL reviews (including future weeks) to capture the latest entered data
   const { data: allRecentReviews, error: recentError } = await supabase
     .from('impl_weekly_reviews')
-    .select('company_id, customer_health, project_status, reason_code, phase_installation, phase_onboarding, phase_live, week_start')
+    .select('company_id, customer_health, project_status, reason_code, phase_installation, phase_onboarding, phase_live, week_start, weekly_summary, reviewed_at')
     .order('week_start', { ascending: false });
 
   if (recentError) throw recentError;
@@ -149,6 +150,21 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       });
     }
   });
+
+  // Most recent non-empty weekly_summary per company by reviewed_at desc
+  const weeklySummaryMap = new Map<string, string>();
+  [...(allRecentReviews || [])]
+    .sort((a: any, b: any) => {
+      const ta = a.reviewed_at ? new Date(a.reviewed_at).getTime() : 0;
+      const tb = b.reviewed_at ? new Date(b.reviewed_at).getTime() : 0;
+      return tb - ta;
+    })
+    .forEach((r: any) => {
+      const summary = (r.weekly_summary || '').trim();
+      if (summary && !weeklySummaryMap.has(r.company_id)) {
+        weeklySummaryMap.set(r.company_id, summary);
+      }
+    });
 
   // Fetch product gaps grouped by project
   const { data: productGaps, error: gapsError } = await supabase
@@ -285,13 +301,14 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       tech_sponsor_name: nameOf((project as any).tech_sponsor),
       live_status: derivePhaseStatuses(phaseSource?.phase_installation, phaseSource?.phase_onboarding, phaseSource?.phase_live),
       project_classification: (project as any).project_classification || null,
+      weekly_summary: weeklySummaryMap.get(project.company_id) || null,
     };
   });
 
   // Get most recent BAU weekly reviews per customer
   const { data: bauReviews } = await supabase
     .from('bau_weekly_reviews')
-    .select('bau_customer_id, health, churn_risk, status, reason_code, date_from')
+    .select('bau_customer_id, health, churn_risk, status, reason_code, escalation, date_from, reviewed_at')
     .order('date_from', { ascending: false });
 
   const bauReviewMap = new Map<string, { health: string | null; churn_risk: string | null; status: string | null; reason_code: string | null }>();
@@ -305,6 +322,21 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       });
     }
   });
+
+  // Most recent non-empty escalation per BAU customer by reviewed_at desc
+  const bauWeeklySummaryMap = new Map<string, string>();
+  [...(bauReviews || [])]
+    .sort((a: any, b: any) => {
+      const ta = a.reviewed_at ? new Date(a.reviewed_at).getTime() : 0;
+      const tb = b.reviewed_at ? new Date(b.reviewed_at).getTime() : 0;
+      return tb - ta;
+    })
+    .forEach((r: any) => {
+      const summary = (r.escalation || '').trim();
+      if (summary && !bauWeeklySummaryMap.has(r.bau_customer_id)) {
+        bauWeeklySummaryMap.set(r.bau_customer_id, summary);
+      }
+    });
 
   const bauRows: ExecutiveSummaryRow[] = (bauCustomers || []).map(c => {
     const r = bauReviewMap.get(c.id);
@@ -331,6 +363,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       tech_sponsor_name: nameOf((c as any).tech_sponsor),
       live_status: ['Live'],
       project_classification: (c as any).project_classification || null,
+      weekly_summary: bauWeeklySummaryMap.get(c.id) || null,
     };
   });
 

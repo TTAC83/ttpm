@@ -36,6 +36,7 @@ type ColumnKey =
   | 'project_on_track'
   | 'project_name'
   | 'live_status'
+  | 'weekly_summary'
   | 'project_age'
   | 'planned_go_live_date'
   | 'implementation_lead_name'
@@ -50,6 +51,7 @@ const COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: 'project_on_track', label: 'On Track' },
   { key: 'project_name', label: 'Project / Site' },
   { key: 'live_status', label: 'Live Status' },
+  { key: 'weekly_summary', label: 'Weekly Summary' },
   { key: 'project_age', label: 'Project Age' },
   { key: 'planned_go_live_date', label: 'Planned Go Live' },
   { key: 'implementation_lead_name', label: 'Implementation Lead' },
@@ -103,6 +105,7 @@ export default function BoardSummary() {
     project_on_track: [],
     project_name: [],
     live_status: [],
+    weekly_summary: [],
     project_age: [],
     planned_go_live_date: [],
     implementation_lead_name: [],
@@ -261,6 +264,7 @@ export default function BoardSummary() {
       project_on_track: [],
       project_name: [],
       live_status: [],
+      weekly_summary: [],
       project_age: [],
       planned_go_live_date: [],
       implementation_lead_name: [],
@@ -342,7 +346,7 @@ export default function BoardSummary() {
 
     let y = 30;
     const lineHeight = 7;
-    const colWidths = [16, 22, 30, 14, 18, 30, 22, 18, 18, 26, 26, 26];
+    const colWidths = [16, 22, 30, 14, 18, 30, 22, 40, 18, 18, 26, 26, 26];
 
     doc.setFontSize(9);
     doc.setFont(undefined, 'bold');
@@ -380,7 +384,7 @@ export default function BoardSummary() {
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Summary');
-    worksheet['!cols'] = [{ wch: 12 }, { wch: 16 }, { wch: 28 }, { wch: 10 }, { wch: 12 }, { wch: 28 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 22 }, { wch: 22 }, { wch: 22 }];
+    worksheet['!cols'] = [{ wch: 12 }, { wch: 16 }, { wch: 28 }, { wch: 10 }, { wch: 12 }, { wch: 28 }, { wch: 14 }, { wch: 40 }, { wch: 14 }, { wch: 16 }, { wch: 22 }, { wch: 22 }, { wch: 22 }];
     XLSX.writeFile(workbook, `summary-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
 
@@ -575,6 +579,13 @@ export default function BoardSummary() {
                       <Badge variant={row.live_status === 'Live' ? 'default' : 'outline'}>
                         {row.live_status}
                       </Badge>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="max-w-[280px]">
+                    {row.weekly_summary ? (
+                      <div className="truncate" title={row.weekly_summary}>{row.weekly_summary}</div>
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}

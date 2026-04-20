@@ -105,6 +105,7 @@ export default function BoardSummary() {
     project_on_track: [],
     project_name: [],
     live_status: [],
+    weekly_summary: [],
     project_age: [],
     planned_go_live_date: [],
     implementation_lead_name: [],

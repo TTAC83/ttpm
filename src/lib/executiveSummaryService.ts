@@ -151,6 +151,21 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
     }
   });
 
+  // Most recent non-empty weekly_summary per company by reviewed_at desc
+  const weeklySummaryMap = new Map<string, string>();
+  [...(allRecentReviews || [])]
+    .sort((a: any, b: any) => {
+      const ta = a.reviewed_at ? new Date(a.reviewed_at).getTime() : 0;
+      const tb = b.reviewed_at ? new Date(b.reviewed_at).getTime() : 0;
+      return tb - ta;
+    })
+    .forEach((r: any) => {
+      const summary = (r.weekly_summary || '').trim();
+      if (summary && !weeklySummaryMap.has(r.company_id)) {
+        weeklySummaryMap.set(r.company_id, summary);
+      }
+    });
+
   // Fetch product gaps grouped by project
   const { data: productGaps, error: gapsError } = await supabase
     .from('product_gaps')

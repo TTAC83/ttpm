@@ -447,35 +447,56 @@ export default function BoardSummary() {
 
       {/* KPI bar */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        {[
-          { label: 'Total Customers', value: kpis.total, tone: 'default' },
-          { label: 'Project', value: kpis.project, tone: 'default' },
-          { label: 'Product', value: kpis.product, tone: 'default' },
-          { label: 'Healthy', value: kpis.healthy, tone: 'success' },
-          { label: 'At Risk', value: kpis.atRisk, tone: 'destructive' },
-          { label: 'On Track', value: kpis.onTrack, tone: 'success' },
-          { label: 'Off Track', value: kpis.offTrack, tone: 'destructive' },
-          { label: 'Live', value: kpis.live, tone: 'success' },
-          { label: 'In Onboarding', value: kpis.onboarding, tone: 'default' },
-          { label: 'In Installation', value: kpis.installation, tone: 'default' },
-          { label: 'Critical Escalations', value: kpis.criticalEscalations, tone: 'destructive' },
-          { label: 'Critical Product Gaps', value: kpis.criticalProductGaps, tone: 'destructive' },
-        ].map(kpi => (
-          <Card key={kpi.label}>
-            <CardContent className="py-3 px-4">
-              <div className={
-                kpi.tone === 'success'
-                  ? 'text-2xl font-bold text-success'
-                  : kpi.tone === 'destructive'
-                    ? 'text-2xl font-bold text-destructive'
-                    : 'text-2xl font-bold text-foreground'
-              }>
-                {kpi.value}
-              </div>
-              <div className="text-xs text-muted-foreground mt-0.5">{kpi.label}</div>
-            </CardContent>
-          </Card>
-        ))}
+        {([
+          { label: 'Total Customers', value: kpis.total, tone: 'default', filterKey: null, filterValues: [] },
+          { label: 'Project', value: kpis.project, tone: 'default', filterKey: 'project_classification' as ColumnKey, filterValues: ['Project'] },
+          { label: 'Product', value: kpis.product, tone: 'default', filterKey: 'project_classification' as ColumnKey, filterValues: ['Product'] },
+          { label: 'Healthy', value: kpis.healthy, tone: 'success', filterKey: 'customer_health' as ColumnKey, filterValues: ['Green'] },
+          { label: 'At Risk', value: kpis.atRisk, tone: 'destructive', filterKey: 'customer_health' as ColumnKey, filterValues: ['Red'] },
+          { label: 'On Track', value: kpis.onTrack, tone: 'success', filterKey: 'project_on_track' as ColumnKey, filterValues: ['On Track'] },
+          { label: 'Off Track', value: kpis.offTrack, tone: 'destructive', filterKey: 'project_on_track' as ColumnKey, filterValues: ['Off Track'] },
+          { label: 'Live', value: kpis.live, tone: 'success', filterKey: 'live_status' as ColumnKey, filterValues: ['Live'] },
+          { label: 'In Onboarding', value: kpis.onboarding, tone: 'default', filterKey: 'live_status' as ColumnKey, filterValues: ['Onboarding'] },
+          { label: 'In Installation', value: kpis.installation, tone: 'default', filterKey: 'live_status' as ColumnKey, filterValues: ['Installation'] },
+          { label: 'Critical Escalations', value: kpis.criticalEscalations, tone: 'destructive', filterKey: null, filterValues: [] },
+          { label: 'Critical Product Gaps', value: kpis.criticalProductGaps, tone: 'destructive', filterKey: null, filterValues: [] },
+        ] as const).map(kpi => {
+          const isActive = kpi.filterKey
+            ? kpi.filterValues.length > 0 && kpi.filterValues.every(v => filters[kpi.filterKey as ColumnKey].includes(v))
+            : false;
+          const clickable = !!kpi.filterKey;
+          const handleClick = () => {
+            if (!kpi.filterKey) return;
+            const key = kpi.filterKey as ColumnKey;
+            setFilters(prev => ({
+              ...prev,
+              [key]: isActive ? [] : [...kpi.filterValues],
+            }));
+          };
+          return (
+            <Card
+              key={kpi.label}
+              onClick={handleClick}
+              className={
+                (clickable ? 'cursor-pointer transition-colors hover:bg-muted/50 ' : '') +
+                (isActive ? 'ring-2 ring-primary' : '')
+              }
+            >
+              <CardContent className="py-3 px-4">
+                <div className={
+                  kpi.tone === 'success'
+                    ? 'text-2xl font-bold text-success'
+                    : kpi.tone === 'destructive'
+                      ? 'text-2xl font-bold text-destructive'
+                      : 'text-2xl font-bold text-foreground'
+                }>
+                  {kpi.value}
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">{kpi.label}</div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       <div className="space-y-3 rounded-lg border bg-card p-4">

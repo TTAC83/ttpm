@@ -1,49 +1,40 @@
 
-Add an editable "Project/Product" column to the Board Summary table with a Product/Project dropdown per row.
+Rename the page to "Summary" and add visual icon indicators for **Customer Health** and **Project On Track** status, sourcing from the latest weekly review with a green default fallback.
 
-## Data layer
+## Changes
 
-New column on `projects` table (Implementation projects only — BAU rows in this view come from `bau_customers` and the user is focused on the implementation board):
+### 1. Rename page to "Summary"
 
-- `project_classification` — text, nullable, CHECK constraint `IN ('Product','Project')`.
+- **`src/pages/app/implementation/BoardSummary.tsx`** — Update `<CardTitle>` from "BAU Board Summary" (or current title) to **"Summary"**. Update the PDF/Excel export filenames and PDF title accordingly (`summary.pdf`, `summary.xlsx`, "Summary" header).
+- **`src/config/nav.ts`** — Update the nav label for the `/app/implementation/board-summary` route from its current name to **"Summary"**.
 
-Migration:
-```sql
-ALTER TABLE public.projects
-  ADD COLUMN project_classification text
-  CHECK (project_classification IN ('Product','Project'));
-```
+I'll keep the route URL (`/app/implementation/board-summary`) unchanged to avoid breaking bookmarks.
 
-For BAU rows, the cell will show `—` and be non-editable (BAU customers aren't classified this way). If the user later wants BAU classification too, we can add the same column to `bau_customers`.
+### 2. Add icon indicators for Customer Health & Project On Track
 
-## Service layer
+The data already flows through `fetchExecutiveSummaryData` (`customer_health: 'green' | 'red' | null` and `project_on_track: 'on_track' | 'off_track' | null`).
 
-`src/lib/executiveSummaryService.ts`
-- Select `project_classification` in the implementation projects query.
-- Add `project_classification: string | null` to each row in the returned dataset (BAU rows return `null`).
+**Default-to-green rule**: When a customer has no entry in the latest weekly review (i.e. value is `null`), treat as `green` / `on_track` for display purposes. This applies to **implementation rows only** — BAU rows already have their own logic and aren't affected.
 
-## UI layer
+**Columns added** (positioned right after `customer_name`, before `domain`):
+- `customer_health` — header "Health"
+- `project_on_track` — header "On Track"
 
-`src/pages/app/implementation/BoardSummary.tsx`
+**Cell rendering**:
+- **Customer Health**:
+  - `green` or `null` → green filled circle icon (`Circle` from lucide, `fill-success text-success`)
+  - `red` → red filled circle (`fill-destructive text-destructive`)
+- **Project On Track**:
+  - `on_track` or `null` → green `CheckCircle2`
+  - `off_track` → red `XCircle`
+- BAU rows: show health using the same logic; on-track column shows `—` (not applicable).
 
-1. Add `'project_classification'` to `ColumnKey`, `COLUMNS` (label "Project / Product"), `filters` initial state, and `clearAllFilters`. Place it right after `domain`.
-2. `cellValue`: return the raw value or `—`.
-3. Render an inline `Select` (shadcn) inside the `<TableCell>`:
-   - Options: `Project`, `Product`.
-   - For BAU rows (`row.row_type === 'bau'`): render `—` text only.
-   - On change: optimistic update via `queryClient.setQueryData`, then `supabase.from('projects').update({ project_classification: value }).eq('id', row.project_id)`. Toast on error and rollback.
-   - Use `e.stopPropagation()` on the Select trigger so the row navigation click doesn't fire.
-4. Filter dropdown for the column works automatically via `cellValue`.
-5. PDF/Excel exports automatically include the new column via `cellValue`.
+**Sorting/filtering/exports**:
+- Add both keys to `ColumnKey`, `COLUMNS`, `filters` initial state, and `clearAllFilters`.
+- `cellValue` returns human-readable strings: `"Green"` / `"Red"` for health, `"On Track"` / `"Off Track"` for status (using the green default for `null`). This drives filter dropdowns and PDF/Excel exports.
 
-## Files touched
+### Files touched
+1. `src/pages/app/implementation/BoardSummary.tsx` — title rename, two new columns with icon cells, sorting/filter wiring, export label tweaks.
+2. `src/config/nav.ts` — nav label rename.
 
-- New migration: `supabase/migrations/<timestamp>_add_project_classification.sql`
-- `src/lib/executiveSummaryService.ts`
-- `src/pages/app/implementation/BoardSummary.tsx`
-
-## Notes
-
-- Position: directly after Domain (logical grouping of project metadata).
-- Default value: `null` (shown as `—`) until user picks.
-- No RLS changes needed — existing `projects` update policies cover this.
+No DB or service-layer changes needed.

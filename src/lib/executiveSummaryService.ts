@@ -308,7 +308,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
   // Get most recent BAU weekly reviews per customer
   const { data: bauReviews } = await supabase
     .from('bau_weekly_reviews')
-    .select('bau_customer_id, health, churn_risk, status, reason_code, date_from')
+    .select('bau_customer_id, health, churn_risk, status, reason_code, escalation, date_from, reviewed_at')
     .order('date_from', { ascending: false });
 
   const bauReviewMap = new Map<string, { health: string | null; churn_risk: string | null; status: string | null; reason_code: string | null }>();
@@ -322,6 +322,21 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       });
     }
   });
+
+  // Most recent non-empty escalation per BAU customer by reviewed_at desc
+  const bauWeeklySummaryMap = new Map<string, string>();
+  [...(bauReviews || [])]
+    .sort((a: any, b: any) => {
+      const ta = a.reviewed_at ? new Date(a.reviewed_at).getTime() : 0;
+      const tb = b.reviewed_at ? new Date(b.reviewed_at).getTime() : 0;
+      return tb - ta;
+    })
+    .forEach((r: any) => {
+      const summary = (r.escalation || '').trim();
+      if (summary && !bauWeeklySummaryMap.has(r.bau_customer_id)) {
+        bauWeeklySummaryMap.set(r.bau_customer_id, summary);
+      }
+    });
 
   const bauRows: ExecutiveSummaryRow[] = (bauCustomers || []).map(c => {
     const r = bauReviewMap.get(c.id);

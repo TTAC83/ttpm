@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { TableHeaderFilter, SortDirection, FilterOption } from "@/components/ui/table-header-filter";
 import {
   Select,
@@ -128,22 +129,11 @@ export default function BoardSummary() {
     return String(v);
   };
 
-  // Build filter options per column from the full dataset
-  const filterOptions = useMemo(() => {
-    const map: Record<ColumnKey, FilterOption[]> = {} as any;
-    COLUMNS.forEach(({ key }) => {
-      const set = new Set<string>();
-      summaryData.forEach(row => set.add(cellValue(row, key)));
-      map[key] = Array.from(set)
-        .sort((a, b) => a.localeCompare(b))
-        .map(v => ({ value: v, label: v }));
-    });
-    return map;
-  }, [summaryData]);
-
-  const filteredData = useMemo(() => {
-    return summaryData.filter(row =>
+  // Helper: apply filters but optionally exclude one column (for facet counts)
+  const applyFilters = (rows: typeof summaryData, excludeKey?: ColumnKey) => {
+    return rows.filter(row =>
       COLUMNS.every(({ key }) => {
+        if (key === excludeKey) return true;
         const sel = filters[key];
         if (!sel.length) return true;
         if (key === 'live_status') {
@@ -158,7 +148,47 @@ export default function BoardSummary() {
         return sel.includes(cellValue(row, key));
       })
     );
+  };
+
+  // Build filter options per column with facet counts (excluding the column's own filter)
+  const filterOptions = useMemo(() => {
+    const map: Record<ColumnKey, FilterOption[]> = {} as any;
+    COLUMNS.forEach(({ key }) => {
+      const facetRows = applyFilters(summaryData, key);
+      const counts = new Map<string, number>();
+      // Seed all values from full dataset so unselected options still appear
+      summaryData.forEach(row => {
+        if (key === 'live_status') {
+          const arr = Array.isArray(row.live_status)
+            ? row.live_status
+            : row.live_status ? [String(row.live_status)] : [];
+          if (arr.length === 0) counts.set('—', counts.get('—') ?? 0);
+          arr.forEach(s => counts.set(String(s), counts.get(String(s)) ?? 0));
+        } else {
+          counts.set(cellValue(row, key), counts.get(cellValue(row, key)) ?? 0);
+        }
+      });
+      // Count from facet-filtered rows
+      facetRows.forEach(row => {
+        if (key === 'live_status') {
+          const arr = Array.isArray(row.live_status)
+            ? row.live_status
+            : row.live_status ? [String(row.live_status)] : [];
+          if (arr.length === 0) counts.set('—', (counts.get('—') ?? 0) + 1);
+          arr.forEach(s => counts.set(String(s), (counts.get(String(s)) ?? 0) + 1));
+        } else {
+          const v = cellValue(row, key);
+          counts.set(v, (counts.get(v) ?? 0) + 1);
+        }
+      });
+      map[key] = Array.from(counts.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([value, count]) => ({ value, label: value, count }));
+    });
+    return map;
   }, [summaryData, filters]);
+
+  const filteredData = useMemo(() => applyFilters(summaryData), [summaryData, filters]);
 
   const sortedData = useMemo(() => {
     if (!sortColumn || !sortDirection) return filteredData;
@@ -183,6 +213,27 @@ export default function BoardSummary() {
       return 0;
     });
   }, [filteredData, sortColumn, sortDirection]);
+
+  // KPIs computed from filtered dataset
+  const kpis = useMemo(() => {
+    const rows = filteredData;
+    const hasLiveStatus = (r: typeof rows[number], status: string) => {
+      if (Array.isArray(r.live_status)) return r.live_status.includes(status as any);
+      return r.live_status === status;
+    };
+    return {
+      total: rows.length,
+      healthy: rows.filter(r => r.customer_health !== 'red').length,
+      atRisk: rows.filter(r => r.customer_health === 'red').length,
+      onTrack: rows.filter(r => r.row_type !== 'bau' && r.project_on_track !== 'off_track').length,
+      offTrack: rows.filter(r => r.row_type !== 'bau' && r.project_on_track === 'off_track').length,
+      live: rows.filter(r => hasLiveStatus(r, 'Live')).length,
+      onboarding: rows.filter(r => hasLiveStatus(r, 'Onboarding')).length,
+      installation: rows.filter(r => hasLiveStatus(r, 'Installation')).length,
+      criticalEscalations: rows.filter(r => (r as any).escalation_status === 'critical').length,
+      criticalProductGaps: rows.filter(r => (r as any).product_gaps_status === 'critical').length,
+    };
+  }, [filteredData]);
 
   const handleSortChange = (key: ColumnKey, direction: SortDirection) => {
     setSortColumn(direction ? key : null);
@@ -354,6 +405,37 @@ export default function BoardSummary() {
             Export Excel
           </Button>
         </div>
+      </div>
+
+      {/* KPI bar */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        {[
+          { label: 'Total Customers', value: kpis.total, tone: 'default' },
+          { label: 'Healthy', value: kpis.healthy, tone: 'success' },
+          { label: 'At Risk', value: kpis.atRisk, tone: 'destructive' },
+          { label: 'On Track', value: kpis.onTrack, tone: 'success' },
+          { label: 'Off Track', value: kpis.offTrack, tone: 'destructive' },
+          { label: 'Live', value: kpis.live, tone: 'success' },
+          { label: 'In Onboarding', value: kpis.onboarding, tone: 'default' },
+          { label: 'In Installation', value: kpis.installation, tone: 'default' },
+          { label: 'Critical Escalations', value: kpis.criticalEscalations, tone: 'destructive' },
+          { label: 'Critical Product Gaps', value: kpis.criticalProductGaps, tone: 'destructive' },
+        ].map(kpi => (
+          <Card key={kpi.label}>
+            <CardContent className="py-3 px-4">
+              <div className={
+                kpi.tone === 'success'
+                  ? 'text-2xl font-bold text-success'
+                  : kpi.tone === 'destructive'
+                    ? 'text-2xl font-bold text-destructive'
+                    : 'text-2xl font-bold text-foreground'
+              }>
+                {kpi.value}
+              </div>
+              <div className="text-xs text-muted-foreground mt-0.5">{kpi.label}</div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <div className="space-y-3 rounded-lg border bg-card p-4">

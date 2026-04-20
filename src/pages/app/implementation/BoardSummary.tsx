@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FileDown, FileSpreadsheet, CheckCircle2, XCircle, Circle } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { format, differenceInMonths, differenceInWeeks, differenceInDays, addMonths, addWeeks } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";

@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileDown, FileSpreadsheet, CheckCircle2 } from "lucide-react";
+import { FileDown, FileSpreadsheet, CheckCircle2, XCircle, Circle } from "lucide-react";
 import { useState, useMemo } from "react";
 import { format, differenceInMonths, differenceInWeeks, differenceInDays, addMonths, addWeeks } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";

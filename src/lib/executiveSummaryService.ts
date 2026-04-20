@@ -24,6 +24,7 @@ export interface ExecutiveSummaryRow {
   tech_sponsor_name: string | null;
   live_status: Array<'Installation' | 'Onboarding' | 'Live'>;
   project_classification: string | null;
+  weekly_summary: string | null;
 }
 
 function derivePhaseStatuses(

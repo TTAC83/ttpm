@@ -214,6 +214,27 @@ export default function BoardSummary() {
     });
   }, [filteredData, sortColumn, sortDirection]);
 
+  // KPIs computed from filtered dataset
+  const kpis = useMemo(() => {
+    const rows = filteredData;
+    const hasLiveStatus = (r: typeof rows[number], status: string) => {
+      if (Array.isArray(r.live_status)) return r.live_status.includes(status as any);
+      return r.live_status === status;
+    };
+    return {
+      total: rows.length,
+      healthy: rows.filter(r => r.customer_health !== 'red').length,
+      atRisk: rows.filter(r => r.customer_health === 'red').length,
+      onTrack: rows.filter(r => r.row_type !== 'bau' && r.project_on_track !== 'off_track').length,
+      offTrack: rows.filter(r => r.row_type !== 'bau' && r.project_on_track === 'off_track').length,
+      live: rows.filter(r => hasLiveStatus(r, 'Live')).length,
+      onboarding: rows.filter(r => hasLiveStatus(r, 'Onboarding')).length,
+      installation: rows.filter(r => hasLiveStatus(r, 'Installation')).length,
+      criticalEscalations: rows.filter(r => (r as any).escalation_status === 'critical').length,
+      criticalProductGaps: rows.filter(r => (r as any).product_gaps_status === 'critical').length,
+    };
+  }, [filteredData]);
+
   const handleSortChange = (key: ColumnKey, direction: SortDirection) => {
     setSortColumn(direction ? key : null);
     setSortDirection(direction);

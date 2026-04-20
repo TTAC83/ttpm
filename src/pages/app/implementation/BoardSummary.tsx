@@ -525,8 +525,8 @@ export default function BoardSummary() {
         <div ref={topScrollRef} className="sticky top-0 z-30 overflow-x-auto overflow-y-hidden bg-background border-b" style={{ height: 14 }}>
           <div style={{ width: tableScrollWidth, height: 1 }} />
         </div>
-        <div>
-          <Table>
+        <div className="[&>div]:w-max [&>div]:overflow-x-hidden [&>div]:overflow-y-visible">
+          <Table className="w-max min-w-full">
             <TableHeader className="sticky top-[14px] z-20 bg-background shadow-[0_1px_0_0_hsl(var(--border))]">
               <TableRow>
                 {COLUMNS.map(({ key, label }) => (

@@ -1,40 +1,43 @@
 
-Rename the page to "Summary" and add visual icon indicators for **Customer Health** and **Project On Track** status, sourcing from the latest weekly review with a green default fallback.
+Add a KPI summary bar at the top of the Summary page and show counts on each filter dropdown.
 
-## Changes
+## KPI Bar (top of page, above filters)
 
-### 1. Rename page to "Summary"
+Compact card row showing aggregate counts across all filtered rows. Each KPI is a small card with a number + label.
 
-- **`src/pages/app/implementation/BoardSummary.tsx`** — Update `<CardTitle>` from "BAU Board Summary" (or current title) to **"Summary"**. Update the PDF/Excel export filenames and PDF title accordingly (`summary.pdf`, `summary.xlsx`, "Summary" header).
-- **`src/config/nav.ts`** — Update the nav label for the `/app/implementation/board-summary` route from its current name to **"Summary"**.
+**KPIs to display:**
+1. **Total Customers** — count of all rows
+2. **Healthy** — count where health resolves to Green
+3. **At Risk** — count where health resolves to Red
+4. **On Track** — count where status resolves to On Track (impl rows only)
+5. **Off Track** — count where status resolves to Off Track (impl rows only)
+6. **Live** — count where `live_status` includes "Live"
+7. **In Onboarding** — count where `live_status` includes "Onboarding"
+8. **In Installation** — count where `live_status` includes "Installation"
+9. **Critical Escalations** — count where `escalation_status === 'critical'`
+10. **Critical Product Gaps** — count where `product_gaps_status === 'critical'`
 
-I'll keep the route URL (`/app/implementation/board-summary`) unchanged to avoid breaking bookmarks.
+Layout: responsive grid (`grid-cols-2 md:grid-cols-5`) of small `Card` tiles — large number, small muted label. Compact (py-3) so it doesn't dominate the page.
 
-### 2. Add icon indicators for Customer Health & Project On Track
+KPIs reflect the **filtered** dataset (so they update live as the user toggles filters/search), making them act as a real-time summary.
 
-The data already flows through `fetchExecutiveSummaryData` (`customer_health: 'green' | 'red' | null` and `project_on_track: 'on_track' | 'off_track' | null`).
+## Filter chip counts
 
-**Default-to-green rule**: When a customer has no entry in the latest weekly review (i.e. value is `null`), treat as `green` / `on_track` for display purposes. This applies to **implementation rows only** — BAU rows already have their own logic and aren't affected.
+The page currently has filter dropdowns (Domain, Live Status, etc.) at the top. For each option in every filter dropdown, append a count badge showing how many rows in the **currently filtered dataset (excluding that filter itself)** match that option. This is the standard "facet count" pattern — toggling Domain still shows accurate Live Status counts.
 
-**Columns added** (positioned right after `customer_name`, before `domain`):
-- `customer_health` — header "Health"
-- `project_on_track` — header "On Track"
+**Implementation approach:**
+- Helper `getOptionCount(columnKey, optionValue)`: applies all filters EXCEPT the one being rendered, then counts rows where `cellValue(row, columnKey) === optionValue`.
+- In the filter dropdown rendering (likely `TableHeaderFilter` or inline `Popover` checkboxes), render the label as `Option name (12)`.
 
-**Cell rendering**:
-- **Customer Health**:
-  - `green` or `null` → green filled circle icon (`Circle` from lucide, `fill-success text-success`)
-  - `red` → red filled circle (`fill-destructive text-destructive`)
-- **Project On Track**:
-  - `on_track` or `null` → green `CheckCircle2`
-  - `off_track` → red `XCircle`
-- BAU rows: show health using the same logic; on-track column shows `—` (not applicable).
+If the existing filter UI is a shared `TableHeaderFilter` component, I'll extend its options API to accept `{ value, label, count }` so counts render alongside labels without duplicating logic.
 
-**Sorting/filtering/exports**:
-- Add both keys to `ColumnKey`, `COLUMNS`, `filters` initial state, and `clearAllFilters`.
-- `cellValue` returns human-readable strings: `"Green"` / `"Red"` for health, `"On Track"` / `"Off Track"` for status (using the green default for `null`). This drives filter dropdowns and PDF/Excel exports.
+## Files touched
 
-### Files touched
-1. `src/pages/app/implementation/BoardSummary.tsx` — title rename, two new columns with icon cells, sorting/filter wiring, export label tweaks.
-2. `src/config/nav.ts` — nav label rename.
+1. `src/pages/app/implementation/BoardSummary.tsx` — Add KPI bar component above the filter row; compute counts from filtered data; wire facet counts into filter options.
+2. (If needed) `src/components/ui/table-header-filter.tsx` — extend option type to include optional `count` for badge rendering.
 
-No DB or service-layer changes needed.
+## Notes
+
+- All computation is client-side from the existing query result — no DB or service-layer changes.
+- KPIs and facet counts both react to filters/search for a consistent "live drill-down" feel.
+- BAU rows are excluded from On Track / Off Track counts (those KPIs only apply to implementation rows, matching the existing column logic).

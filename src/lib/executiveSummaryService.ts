@@ -330,7 +330,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       tech_lead_name: nameOf((c as any).tech_lead),
       tech_sponsor_name: nameOf((c as any).tech_sponsor),
       live_status: ['Live'],
-      project_classification: null,
+      project_classification: (c as any).project_classification || null,
     };
   });
 

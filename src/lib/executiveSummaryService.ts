@@ -363,6 +363,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       tech_sponsor_name: nameOf((c as any).tech_sponsor),
       live_status: ['Live'],
       project_classification: (c as any).project_classification || null,
+      weekly_summary: bauWeeklySummaryMap.get(c.id) || null,
     };
   });
 

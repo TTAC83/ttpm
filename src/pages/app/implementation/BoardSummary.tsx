@@ -95,6 +95,30 @@ const formatProjectAge = (signedDate: string | null | undefined): string => {
 export default function BoardSummary() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+  const [tableScrollWidth, setTableScrollWidth] = useState(0);
+
+  // Sync top scrollbar <-> table scroll
+  useEffect(() => {
+    const top = topScrollRef.current;
+    const tbl = tableScrollRef.current;
+    if (!top || !tbl) return;
+    let lock = false;
+    const onTop = () => { if (lock) return; lock = true; tbl.scrollLeft = top.scrollLeft; lock = false; };
+    const onTbl = () => { if (lock) return; lock = true; top.scrollLeft = tbl.scrollLeft; lock = false; };
+    top.addEventListener('scroll', onTop);
+    tbl.addEventListener('scroll', onTbl);
+    const update = () => setTableScrollWidth(tbl.scrollWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(tbl);
+    return () => {
+      top.removeEventListener('scroll', onTop);
+      tbl.removeEventListener('scroll', onTbl);
+      ro.disconnect();
+    };
+  });
   const [sortColumn, setSortColumn] = useState<ColumnKey | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<ColumnKey, string[]>>({

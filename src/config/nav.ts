@@ -108,7 +108,7 @@ export const NAV: NavItem[] = [
         roles: ["internal_admin", "internal_user"]
       },
       { 
-        label: "Board Summary", 
+        label: "Summary", 
         to: "/app/implementation/board-summary", 
         iconName: "PieChart",
         matchPaths: ["/app/implementation/board-summary"],

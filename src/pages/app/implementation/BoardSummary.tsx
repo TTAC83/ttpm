@@ -650,6 +650,7 @@ export default function BoardSummary() {
             )}
           </TableBody>
         </Table>
+        </div>
       </div>
     </div>
   );

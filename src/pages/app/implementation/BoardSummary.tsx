@@ -129,22 +129,11 @@ export default function BoardSummary() {
     return String(v);
   };
 
-  // Build filter options per column from the full dataset
-  const filterOptions = useMemo(() => {
-    const map: Record<ColumnKey, FilterOption[]> = {} as any;
-    COLUMNS.forEach(({ key }) => {
-      const set = new Set<string>();
-      summaryData.forEach(row => set.add(cellValue(row, key)));
-      map[key] = Array.from(set)
-        .sort((a, b) => a.localeCompare(b))
-        .map(v => ({ value: v, label: v }));
-    });
-    return map;
-  }, [summaryData]);
-
-  const filteredData = useMemo(() => {
-    return summaryData.filter(row =>
+  // Helper: apply filters but optionally exclude one column (for facet counts)
+  const applyFilters = (rows: typeof summaryData, excludeKey?: ColumnKey) => {
+    return rows.filter(row =>
       COLUMNS.every(({ key }) => {
+        if (key === excludeKey) return true;
         const sel = filters[key];
         if (!sel.length) return true;
         if (key === 'live_status') {
@@ -159,7 +148,47 @@ export default function BoardSummary() {
         return sel.includes(cellValue(row, key));
       })
     );
+  };
+
+  // Build filter options per column with facet counts (excluding the column's own filter)
+  const filterOptions = useMemo(() => {
+    const map: Record<ColumnKey, FilterOption[]> = {} as any;
+    COLUMNS.forEach(({ key }) => {
+      const facetRows = applyFilters(summaryData, key);
+      const counts = new Map<string, number>();
+      // Seed all values from full dataset so unselected options still appear
+      summaryData.forEach(row => {
+        if (key === 'live_status') {
+          const arr = Array.isArray(row.live_status)
+            ? row.live_status
+            : row.live_status ? [String(row.live_status)] : [];
+          if (arr.length === 0) counts.set('—', counts.get('—') ?? 0);
+          arr.forEach(s => counts.set(String(s), counts.get(String(s)) ?? 0));
+        } else {
+          counts.set(cellValue(row, key), counts.get(cellValue(row, key)) ?? 0);
+        }
+      });
+      // Count from facet-filtered rows
+      facetRows.forEach(row => {
+        if (key === 'live_status') {
+          const arr = Array.isArray(row.live_status)
+            ? row.live_status
+            : row.live_status ? [String(row.live_status)] : [];
+          if (arr.length === 0) counts.set('—', (counts.get('—') ?? 0) + 1);
+          arr.forEach(s => counts.set(String(s), (counts.get(String(s)) ?? 0) + 1));
+        } else {
+          const v = cellValue(row, key);
+          counts.set(v, (counts.get(v) ?? 0) + 1);
+        }
+      });
+      map[key] = Array.from(counts.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([value, count]) => ({ value, label: value, count }));
+    });
+    return map;
   }, [summaryData, filters]);
+
+  const filteredData = useMemo(() => applyFilters(summaryData), [summaryData, filters]);
 
   const sortedData = useMemo(() => {
     if (!sortColumn || !sortDirection) return filteredData;

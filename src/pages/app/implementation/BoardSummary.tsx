@@ -267,6 +267,8 @@ export default function BoardSummary() {
       installation: rows.filter(r => hasLiveStatus(r, 'Installation')).length,
       criticalEscalations: rows.filter(r => (r as any).escalation_status === 'critical').length,
       criticalProductGaps: rows.filter(r => (r as any).product_gaps_status === 'critical').length,
+      project: rows.filter(r => r.project_classification === 'Project').length,
+      product: rows.filter(r => r.project_classification === 'Product').length,
     };
   }, [filteredData]);
 
@@ -447,6 +449,8 @@ export default function BoardSummary() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {[
           { label: 'Total Customers', value: kpis.total, tone: 'default' },
+          { label: 'Project', value: kpis.project, tone: 'default' },
+          { label: 'Product', value: kpis.product, tone: 'default' },
           { label: 'Healthy', value: kpis.healthy, tone: 'success' },
           { label: 'At Risk', value: kpis.atRisk, tone: 'destructive' },
           { label: 'On Track', value: kpis.onTrack, tone: 'success' },

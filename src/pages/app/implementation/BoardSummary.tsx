@@ -60,8 +60,16 @@ const COLUMNS: { key: ColumnKey; label: string }[] = [
 const healthLabel = (row: { customer_health: string | null }): string =>
   row.customer_health === 'red' ? 'Red' : 'Green';
 
-const onTrackLabel = (row: { project_on_track: string | null; row_type: string }): string => {
+const isLiveRow = (row: { live_status: any }): boolean => {
+  const v = row.live_status;
+  if (Array.isArray(v)) return v.some(s => String(s).toLowerCase().includes('live'));
+  if (typeof v === 'string') return v.toLowerCase().includes('live');
+  return false;
+};
+
+const onTrackLabel = (row: { project_on_track: string | null; row_type: string; live_status: any }): string => {
   if (row.row_type === 'bau') return '—';
+  if (isLiveRow(row)) return '—';
   return row.project_on_track === 'off_track' ? 'Off Track' : 'On Track';
 };
 
@@ -225,8 +233,8 @@ export default function BoardSummary() {
       total: rows.length,
       healthy: rows.filter(r => r.customer_health !== 'red').length,
       atRisk: rows.filter(r => r.customer_health === 'red').length,
-      onTrack: rows.filter(r => r.row_type !== 'bau' && r.project_on_track !== 'off_track').length,
-      offTrack: rows.filter(r => r.row_type !== 'bau' && r.project_on_track === 'off_track').length,
+      onTrack: rows.filter(r => r.row_type !== 'bau' && !isLiveRow(r) && r.project_on_track !== 'off_track').length,
+      offTrack: rows.filter(r => r.row_type !== 'bau' && !isLiveRow(r) && r.project_on_track === 'off_track').length,
       live: rows.filter(r => hasLiveStatus(r, 'Live')).length,
       onboarding: rows.filter(r => hasLiveStatus(r, 'Onboarding')).length,
       installation: rows.filter(r => hasLiveStatus(r, 'Installation')).length,
@@ -545,7 +553,7 @@ export default function BoardSummary() {
                     )}
                   </TableCell>
                   <TableCell>
-                    {row.row_type === 'bau' ? (
+                    {row.row_type === 'bau' || isLiveRow(row) ? (
                       <span className="text-muted-foreground">—</span>
                     ) : row.project_on_track === 'off_track' ? (
                       <XCircle className="h-4 w-4 text-destructive" aria-label="Off Track" />

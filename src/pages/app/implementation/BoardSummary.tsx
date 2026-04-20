@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileDown, FileSpreadsheet, CheckCircle2 } from "lucide-react";
+import { FileDown, FileSpreadsheet, CheckCircle2, XCircle, Circle } from "lucide-react";
 import { useState, useMemo } from "react";
 import { format, differenceInMonths, differenceInWeeks, differenceInDays, addMonths, addWeeks } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +31,8 @@ type ColumnKey =
   | 'domain'
   | 'project_classification'
   | 'customer_name'
+  | 'customer_health'
+  | 'project_on_track'
   | 'project_name'
   | 'live_status'
   | 'project_age'
@@ -43,6 +45,8 @@ const COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: 'domain', label: 'Domain' },
   { key: 'project_classification', label: 'Project / Product' },
   { key: 'customer_name', label: 'Customer Name' },
+  { key: 'customer_health', label: 'Health' },
+  { key: 'project_on_track', label: 'On Track' },
   { key: 'project_name', label: 'Project / Site' },
   { key: 'live_status', label: 'Live Status' },
   { key: 'project_age', label: 'Project Age' },
@@ -51,6 +55,14 @@ const COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: 'tech_lead_name', label: 'Dev/Tech Lead' },
   { key: 'tech_sponsor_name', label: 'Dev/Tech Sponsor' },
 ];
+
+const healthLabel = (row: { customer_health: string | null }): string =>
+  row.customer_health === 'red' ? 'Red' : 'Green';
+
+const onTrackLabel = (row: { project_on_track: string | null; row_type: string }): string => {
+  if (row.row_type === 'bau') return '—';
+  return row.project_on_track === 'off_track' ? 'Off Track' : 'On Track';
+};
 
 const formatProjectAge = (signedDate: string | null | undefined): string => {
   if (!signedDate) return '—';
@@ -78,6 +90,8 @@ export default function BoardSummary() {
     domain: [],
     project_classification: [],
     customer_name: [],
+    customer_health: [],
+    project_on_track: [],
     project_name: [],
     live_status: [],
     project_age: [],
@@ -97,6 +111,8 @@ export default function BoardSummary() {
   });
 
   const cellValue = (row: typeof summaryData[number], key: ColumnKey): string => {
+    if (key === 'customer_health') return healthLabel(row);
+    if (key === 'project_on_track') return onTrackLabel(row);
     const v = (row as any)[key];
     if (v === null || v === undefined || v === '') return '—';
     if (key === 'planned_go_live_date') {
@@ -182,6 +198,8 @@ export default function BoardSummary() {
       domain: [],
       project_classification: [],
       customer_name: [],
+      customer_health: [],
+      project_on_track: [],
       project_name: [],
       live_status: [],
       project_age: [],
@@ -255,7 +273,7 @@ export default function BoardSummary() {
   const exportToPDF = () => {
     const doc = new jsPDF('l', 'mm', 'a4');
     doc.setFontSize(16);
-    doc.text('Board Summary', 14, 15);
+    doc.text('Summary', 14, 15);
     doc.setFontSize(10);
     doc.text(`Exported: ${format(new Date(), 'dd MMM yyyy HH:mm')}`, 14, 22);
 
@@ -264,7 +282,7 @@ export default function BoardSummary() {
 
     let y = 30;
     const lineHeight = 7;
-    const colWidths = [18, 26, 34, 34, 22, 22, 22, 30, 30, 30];
+    const colWidths = [16, 22, 30, 14, 18, 30, 22, 18, 18, 26, 26, 26];
 
     doc.setFontSize(9);
     doc.setFont(undefined, 'bold');
@@ -289,7 +307,7 @@ export default function BoardSummary() {
       }
     });
 
-    doc.save(`board-summary-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+    doc.save(`summary-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
   };
 
   const exportToExcel = () => {
@@ -301,16 +319,16 @@ export default function BoardSummary() {
 
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Board Summary');
-    worksheet['!cols'] = [{ wch: 12 }, { wch: 16 }, { wch: 28 }, { wch: 28 }, { wch: 14 }, { wch: 16 }, { wch: 16 }, { wch: 22 }, { wch: 22 }, { wch: 22 }];
-    XLSX.writeFile(workbook, `board-summary-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Summary');
+    worksheet['!cols'] = [{ wch: 12 }, { wch: 16 }, { wch: 28 }, { wch: 10 }, { wch: 12 }, { wch: 28 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 22 }, { wch: 22 }, { wch: 22 }];
+    XLSX.writeFile(workbook, `summary-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
 
   if (isLoading) {
     return (
       <div className="container mx-auto p-6">
         <div className="flex justify-center items-center h-64">
-          <p className="text-muted-foreground">Loading board summary...</p>
+          <p className="text-muted-foreground">Loading summary...</p>
         </div>
       </div>
     );
@@ -319,7 +337,7 @@ export default function BoardSummary() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Board Summary</h1>
+        <h1 className="text-3xl font-bold">Summary</h1>
         <div className="flex gap-2">
           {hasAnyFilter && (
             <Button onClick={clearAllFilters} variant="ghost" size="sm">
@@ -440,6 +458,22 @@ export default function BoardSummary() {
                     )}
                   </TableCell>
                   <TableCell className="font-medium">{row.customer_name}</TableCell>
+                  <TableCell>
+                    {row.customer_health === 'red' ? (
+                      <Circle className="h-4 w-4 fill-destructive text-destructive" aria-label="Red" />
+                    ) : (
+                      <Circle className="h-4 w-4 fill-success text-success" aria-label="Green" />
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {row.row_type === 'bau' ? (
+                      <span className="text-muted-foreground">—</span>
+                    ) : row.project_on_track === 'off_track' ? (
+                      <XCircle className="h-4 w-4 text-destructive" aria-label="Off Track" />
+                    ) : (
+                      <CheckCircle2 className="h-4 w-4 text-success" aria-label="On Track" />
+                    )}
+                  </TableCell>
                   <TableCell>{row.project_name}</TableCell>
                   <TableCell>
                     {Array.isArray(row.live_status) && row.live_status.length > 0 ? (

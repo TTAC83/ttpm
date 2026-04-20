@@ -325,7 +325,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       row_type: 'bau' as const,
       churn_risk: r?.churn_risk || (c.churn_risk as string | null) || null,
       bau_status: r?.status || c.current_status || null,
-      domain: 'BAU',
+      domain: 'IoT',
       implementation_lead_name: nameOf((c as any).customer_project_lead),
       tech_lead_name: nameOf((c as any).tech_lead),
       tech_sponsor_name: nameOf((c as any).tech_sponsor),

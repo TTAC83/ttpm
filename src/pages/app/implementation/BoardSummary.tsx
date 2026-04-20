@@ -36,6 +36,7 @@ type ColumnKey =
   | 'project_on_track'
   | 'project_name'
   | 'live_status'
+  | 'weekly_summary'
   | 'project_age'
   | 'planned_go_live_date'
   | 'implementation_lead_name'
@@ -50,6 +51,7 @@ const COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: 'project_on_track', label: 'On Track' },
   { key: 'project_name', label: 'Project / Site' },
   { key: 'live_status', label: 'Live Status' },
+  { key: 'weekly_summary', label: 'Weekly Summary' },
   { key: 'project_age', label: 'Project Age' },
   { key: 'planned_go_live_date', label: 'Planned Go Live' },
   { key: 'implementation_lead_name', label: 'Implementation Lead' },

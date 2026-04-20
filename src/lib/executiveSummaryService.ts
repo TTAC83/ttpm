@@ -301,6 +301,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       tech_sponsor_name: nameOf((project as any).tech_sponsor),
       live_status: derivePhaseStatuses(phaseSource?.phase_installation, phaseSource?.phase_onboarding, phaseSource?.phase_live),
       project_classification: (project as any).project_classification || null,
+      weekly_summary: weeklySummaryMap.get(project.company_id) || null,
     };
   });
 

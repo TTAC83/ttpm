@@ -549,9 +549,9 @@ export default function BoardSummary() {
                     </Select>
                   </TableCell>
                   <TableCell className="font-medium">{row.customer_name}</TableCell>
-                  <TableCell className="min-w-[260px] max-w-[320px]">
+                  <TableCell className="min-w-[320px] max-w-[420px] align-top">
                     {row.weekly_summary ? (
-                      <div className="line-clamp-2 whitespace-pre-wrap text-sm" title={row.weekly_summary}>
+                      <div className="whitespace-pre-wrap break-words text-sm leading-snug">
                         {row.weekly_summary}
                       </div>
                     ) : (

@@ -93,7 +93,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
   // Include ALL reviews (including future weeks) to capture the latest entered data
   const { data: allRecentReviews, error: recentError } = await supabase
     .from('impl_weekly_reviews')
-    .select('company_id, customer_health, project_status, reason_code, phase_installation, phase_onboarding, phase_live, week_start')
+    .select('company_id, customer_health, project_status, reason_code, phase_installation, phase_onboarding, phase_live, week_start, weekly_summary, reviewed_at')
     .order('week_start', { ascending: false });
 
   if (recentError) throw recentError;

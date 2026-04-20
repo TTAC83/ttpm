@@ -258,8 +258,9 @@ export default function BoardSummary() {
           : r
       )
     );
+    const table = row.row_type === 'bau' ? 'bau_customers' : 'projects';
     const { error } = await supabase
-      .from('projects')
+      .from(table)
       .update({ project_classification: value })
       .eq('id', row.project_id);
     if (error) {

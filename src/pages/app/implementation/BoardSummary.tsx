@@ -267,6 +267,8 @@ export default function BoardSummary() {
       installation: rows.filter(r => hasLiveStatus(r, 'Installation')).length,
       criticalEscalations: rows.filter(r => (r as any).escalation_status === 'critical').length,
       criticalProductGaps: rows.filter(r => (r as any).product_gaps_status === 'critical').length,
+      project: rows.filter(r => r.project_classification === 'Project').length,
+      product: rows.filter(r => r.project_classification === 'Product').length,
     };
   }, [filteredData]);
 

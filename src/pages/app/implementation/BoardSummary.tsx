@@ -521,26 +521,30 @@ export default function BoardSummary() {
         Showing {sortedData.length} of {summaryData.length}
       </div>
 
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {COLUMNS.map(({ key, label }) => (
-                <TableHead key={key}>
-                  <TableHeaderFilter
-                    label={label}
-                    sortable
-                    filterable
-                    sortDirection={sortColumn === key ? sortDirection : null}
-                    onSortChange={(dir) => handleSortChange(key, dir)}
-                    options={filterOptions[key]}
-                    selectedValues={filters[key]}
-                    onFilterChange={(values) => handleFilterChange(key, values)}
-                  />
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
+      <div className="border rounded-lg overflow-hidden">
+        <div ref={topScrollRef} className="overflow-x-auto overflow-y-hidden" style={{ height: 14 }}>
+          <div style={{ width: tableScrollWidth, height: 1 }} />
+        </div>
+        <div ref={tableScrollRef} className="overflow-auto max-h-[calc(100vh-280px)]">
+          <Table>
+            <TableHeader className="sticky top-0 z-20 bg-background shadow-[0_1px_0_0_hsl(var(--border))]">
+              <TableRow>
+                {COLUMNS.map(({ key, label }) => (
+                  <TableHead key={key} className="bg-background">
+                    <TableHeaderFilter
+                      label={label}
+                      sortable
+                      filterable
+                      sortDirection={sortColumn === key ? sortDirection : null}
+                      onSortChange={(dir) => handleSortChange(key, dir)}
+                      options={filterOptions[key]}
+                      selectedValues={filters[key]}
+                      onFilterChange={(values) => handleFilterChange(key, values)}
+                    />
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
           <TableBody>
             {sortedData.length === 0 ? (
               <TableRow>

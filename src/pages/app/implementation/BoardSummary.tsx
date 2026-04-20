@@ -507,6 +507,7 @@ export default function BoardSummary() {
           ) : (
             domainChips.map(d => {
               const active = filters.domain.includes(d);
+              const count = filterOptions.domain?.find(o => o.value === d)?.count ?? 0;
               return (
                 <Badge
                   key={d}
@@ -514,7 +515,7 @@ export default function BoardSummary() {
                   className="cursor-pointer select-none"
                   onClick={() => toggleChip('domain', d)}
                 >
-                  {d}
+                  {d} <span className="ml-1 opacity-70">({count})</span>
                 </Badge>
               );
             })
@@ -527,6 +528,7 @@ export default function BoardSummary() {
           ) : (
             liveStatusChips.map(s => {
               const active = filters.live_status.includes(s);
+              const count = filterOptions.live_status?.find(o => o.value === s)?.count ?? 0;
               return (
                 <Badge
                   key={s}
@@ -534,7 +536,7 @@ export default function BoardSummary() {
                   className="cursor-pointer select-none"
                   onClick={() => toggleChip('live_status', s)}
                 >
-                  {s}
+                  {s} <span className="ml-1 opacity-70">({count})</span>
                 </Badge>
               );
             })

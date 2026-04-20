@@ -31,6 +31,8 @@ type ColumnKey =
   | 'domain'
   | 'project_classification'
   | 'customer_name'
+  | 'customer_health'
+  | 'project_on_track'
   | 'project_name'
   | 'live_status'
   | 'project_age'
@@ -43,6 +45,8 @@ const COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: 'domain', label: 'Domain' },
   { key: 'project_classification', label: 'Project / Product' },
   { key: 'customer_name', label: 'Customer Name' },
+  { key: 'customer_health', label: 'Health' },
+  { key: 'project_on_track', label: 'On Track' },
   { key: 'project_name', label: 'Project / Site' },
   { key: 'live_status', label: 'Live Status' },
   { key: 'project_age', label: 'Project Age' },
@@ -51,6 +55,14 @@ const COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: 'tech_lead_name', label: 'Dev/Tech Lead' },
   { key: 'tech_sponsor_name', label: 'Dev/Tech Sponsor' },
 ];
+
+const healthLabel = (row: { customer_health: string | null }): string =>
+  row.customer_health === 'red' ? 'Red' : 'Green';
+
+const onTrackLabel = (row: { project_on_track: string | null; row_type: string }): string => {
+  if (row.row_type === 'bau') return '—';
+  return row.project_on_track === 'off_track' ? 'Off Track' : 'On Track';
+};
 
 const formatProjectAge = (signedDate: string | null | undefined): string => {
   if (!signedDate) return '—';

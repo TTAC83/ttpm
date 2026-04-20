@@ -553,7 +553,7 @@ export default function BoardSummary() {
                     )}
                   </TableCell>
                   <TableCell>
-                    {row.row_type === 'bau' ? (
+                    {row.row_type === 'bau' || isLiveRow(row) ? (
                       <span className="text-muted-foreground">—</span>
                     ) : row.project_on_track === 'off_track' ? (
                       <XCircle className="h-4 w-4 text-destructive" aria-label="Off Track" />

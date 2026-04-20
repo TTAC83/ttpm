@@ -384,7 +384,7 @@ export default function BoardSummary() {
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Summary');
-    worksheet['!cols'] = [{ wch: 12 }, { wch: 16 }, { wch: 28 }, { wch: 10 }, { wch: 12 }, { wch: 28 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 22 }, { wch: 22 }, { wch: 22 }];
+    worksheet['!cols'] = [{ wch: 12 }, { wch: 16 }, { wch: 28 }, { wch: 10 }, { wch: 12 }, { wch: 28 }, { wch: 14 }, { wch: 40 }, { wch: 14 }, { wch: 16 }, { wch: 22 }, { wch: 22 }, { wch: 22 }];
     XLSX.writeFile(workbook, `summary-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
 

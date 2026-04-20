@@ -458,6 +458,22 @@ export default function BoardSummary() {
                     )}
                   </TableCell>
                   <TableCell className="font-medium">{row.customer_name}</TableCell>
+                  <TableCell>
+                    {row.customer_health === 'red' ? (
+                      <Circle className="h-4 w-4 fill-destructive text-destructive" aria-label="Red" />
+                    ) : (
+                      <Circle className="h-4 w-4 fill-success text-success" aria-label="Green" />
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {row.row_type === 'bau' ? (
+                      <span className="text-muted-foreground">—</span>
+                    ) : row.project_on_track === 'off_track' ? (
+                      <XCircle className="h-4 w-4 text-destructive" aria-label="Off Track" />
+                    ) : (
+                      <CheckCircle2 className="h-4 w-4 text-success" aria-label="On Track" />
+                    )}
+                  </TableCell>
                   <TableCell>{row.project_name}</TableCell>
                   <TableCell>
                     {Array.isArray(row.live_status) && row.live_status.length > 0 ? (

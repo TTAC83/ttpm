@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FileDown, FileSpreadsheet, CheckCircle2, XCircle, Circle } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { format, differenceInMonths, differenceInWeeks, differenceInDays, addMonths, addWeeks } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -95,6 +95,30 @@ const formatProjectAge = (signedDate: string | null | undefined): string => {
 export default function BoardSummary() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+  const [tableScrollWidth, setTableScrollWidth] = useState(0);
+
+  // Sync top scrollbar <-> table scroll
+  useEffect(() => {
+    const top = topScrollRef.current;
+    const tbl = tableScrollRef.current;
+    if (!top || !tbl) return;
+    let lock = false;
+    const onTop = () => { if (lock) return; lock = true; tbl.scrollLeft = top.scrollLeft; lock = false; };
+    const onTbl = () => { if (lock) return; lock = true; top.scrollLeft = tbl.scrollLeft; lock = false; };
+    top.addEventListener('scroll', onTop);
+    tbl.addEventListener('scroll', onTbl);
+    const update = () => setTableScrollWidth(tbl.scrollWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(tbl);
+    return () => {
+      top.removeEventListener('scroll', onTop);
+      tbl.removeEventListener('scroll', onTbl);
+      ro.disconnect();
+    };
+  });
   const [sortColumn, setSortColumn] = useState<ColumnKey | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<ColumnKey, string[]>>({
@@ -497,26 +521,30 @@ export default function BoardSummary() {
         Showing {sortedData.length} of {summaryData.length}
       </div>
 
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {COLUMNS.map(({ key, label }) => (
-                <TableHead key={key}>
-                  <TableHeaderFilter
-                    label={label}
-                    sortable
-                    filterable
-                    sortDirection={sortColumn === key ? sortDirection : null}
-                    onSortChange={(dir) => handleSortChange(key, dir)}
-                    options={filterOptions[key]}
-                    selectedValues={filters[key]}
-                    onFilterChange={(values) => handleFilterChange(key, values)}
-                  />
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
+      <div className="border rounded-lg overflow-hidden">
+        <div ref={topScrollRef} className="overflow-x-auto overflow-y-hidden" style={{ height: 14 }}>
+          <div style={{ width: tableScrollWidth, height: 1 }} />
+        </div>
+        <div ref={tableScrollRef} className="overflow-auto max-h-[calc(100vh-280px)]">
+          <Table>
+            <TableHeader className="sticky top-0 z-20 bg-background shadow-[0_1px_0_0_hsl(var(--border))]">
+              <TableRow>
+                {COLUMNS.map(({ key, label }) => (
+                  <TableHead key={key} className="bg-background">
+                    <TableHeaderFilter
+                      label={label}
+                      sortable
+                      filterable
+                      sortDirection={sortColumn === key ? sortDirection : null}
+                      onSortChange={(dir) => handleSortChange(key, dir)}
+                      options={filterOptions[key]}
+                      selectedValues={filters[key]}
+                      onFilterChange={(values) => handleFilterChange(key, values)}
+                    />
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
           <TableBody>
             {sortedData.length === 0 ? (
               <TableRow>
@@ -549,9 +577,9 @@ export default function BoardSummary() {
                     </Select>
                   </TableCell>
                   <TableCell className="font-medium">{row.customer_name}</TableCell>
-                  <TableCell className="min-w-[260px] max-w-[320px]">
+                  <TableCell className="min-w-[320px] max-w-[420px] align-top">
                     {row.weekly_summary ? (
-                      <div className="line-clamp-2 whitespace-pre-wrap text-sm" title={row.weekly_summary}>
+                      <div className="whitespace-pre-wrap break-words text-sm leading-snug">
                         {row.weekly_summary}
                       </div>
                     ) : (
@@ -622,6 +650,7 @@ export default function BoardSummary() {
             )}
           </TableBody>
         </Table>
+        </div>
       </div>
     </div>
   );

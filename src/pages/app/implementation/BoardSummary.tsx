@@ -47,11 +47,11 @@ const COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: 'domain', label: 'Domain' },
   { key: 'project_classification', label: 'Project / Product' },
   { key: 'customer_name', label: 'Customer Name' },
+  { key: 'weekly_summary', label: 'Weekly Summary' },
   { key: 'customer_health', label: 'Health' },
   { key: 'project_on_track', label: 'On Track' },
   { key: 'project_name', label: 'Project / Site' },
   { key: 'live_status', label: 'Live Status' },
-  { key: 'weekly_summary', label: 'Weekly Summary' },
   { key: 'project_age', label: 'Project Age' },
   { key: 'planned_go_live_date', label: 'Planned Go Live' },
   { key: 'implementation_lead_name', label: 'Implementation Lead' },
@@ -549,6 +549,15 @@ export default function BoardSummary() {
                     </Select>
                   </TableCell>
                   <TableCell className="font-medium">{row.customer_name}</TableCell>
+                  <TableCell className="min-w-[260px] max-w-[320px]">
+                    {row.weekly_summary ? (
+                      <div className="line-clamp-2 whitespace-pre-wrap text-sm" title={row.weekly_summary}>
+                        {row.weekly_summary}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     {row.customer_health === 'red' ? (
                       <Circle className="h-4 w-4 fill-destructive text-destructive" aria-label="Red" />
@@ -579,13 +588,6 @@ export default function BoardSummary() {
                       <Badge variant={row.live_status === 'Live' ? 'default' : 'outline'}>
                         {row.live_status}
                       </Badge>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="max-w-[280px]">
-                    {row.weekly_summary ? (
-                      <div className="truncate" title={row.weekly_summary}>{row.weekly_summary}</div>
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}

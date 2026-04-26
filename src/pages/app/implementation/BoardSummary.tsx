@@ -38,7 +38,10 @@ type ColumnKey =
   | 'live_status'
   | 'weekly_summary'
   | 'project_age'
+  | 'contract_start_date'
   | 'planned_go_live_date'
+  | 'time_to_first_value_weeks'
+  | 'time_to_meaningful_adoption_weeks'
   | 'implementation_lead_name'
   | 'tech_lead_name'
   | 'tech_sponsor_name';
@@ -53,7 +56,10 @@ const COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: 'project_name', label: 'Project / Site' },
   { key: 'live_status', label: 'Live Status' },
   { key: 'project_age', label: 'Project Age' },
+  { key: 'contract_start_date', label: 'Contract Start' },
   { key: 'planned_go_live_date', label: 'Planned Go Live' },
+  { key: 'time_to_first_value_weeks', label: 'Time to First Value (wks)' },
+  { key: 'time_to_meaningful_adoption_weeks', label: 'Time to Meaningful Adoption (wks)' },
   { key: 'implementation_lead_name', label: 'Implementation Lead' },
   { key: 'tech_lead_name', label: 'Dev/Tech Lead' },
   { key: 'tech_sponsor_name', label: 'Dev/Tech Sponsor' },

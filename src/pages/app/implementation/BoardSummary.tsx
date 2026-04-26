@@ -179,13 +179,14 @@ export default function BoardSummary() {
   const cellValue = (row: typeof summaryData[number], key: ColumnKey): string => {
     if (key === 'customer_health') return healthLabel(row);
     if (key === 'project_on_track') return onTrackLabel(row);
+    if (key === 'project_age') return formatProjectAge(row.contract_signed_date);
     const v = (row as any)[key];
     if (v === null || v === undefined || v === '') return '—';
-    if (key === 'planned_go_live_date') {
+    if (key === 'planned_go_live_date' || key === 'contract_start_date') {
       return format(new Date(v), 'dd MMM yyyy');
     }
-    if (key === 'project_age') {
-      return formatProjectAge(row.contract_signed_date);
+    if (key === 'time_to_first_value_weeks' || key === 'time_to_meaningful_adoption_weeks') {
+      return String(v);
     }
     if (key === 'live_status') {
       if (Array.isArray(v)) return v.length ? v.join(', ') : '—';

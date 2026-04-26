@@ -467,15 +467,28 @@ export default function BoardSummary() {
 
   const exportToExcel = () => {
     const data = sortedData.map(row => {
-      const obj: Record<string, string> = {};
-      COLUMNS.forEach(c => { obj[c.label] = cellValue(row, c.key); });
+      const obj: Record<string, any> = {};
+      COLUMNS.forEach(c => {
+        if (c.key === 'project_age') {
+          obj[c.label] = formatProjectAge(row.contract_signed_date);
+        } else if (c.key === 'time_to_first_value_weeks' || c.key === 'time_to_meaningful_adoption_weeks') {
+          const v = (row as any)[c.key];
+          obj[c.label] = v === null || v === undefined ? '' : Number(v);
+        } else if (c.key === 'planned_go_live_date' || c.key === 'contract_start_date') {
+          const v = (row as any)[c.key];
+          obj[c.label] = v ? format(new Date(v), 'dd MMM yyyy') : '';
+        } else {
+          const text = cellValue(row, c.key);
+          obj[c.label] = text === '—' ? '' : text;
+        }
+      });
       return obj;
     });
 
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Summary');
-    worksheet['!cols'] = [{ wch: 12 }, { wch: 16 }, { wch: 28 }, { wch: 10 }, { wch: 12 }, { wch: 28 }, { wch: 14 }, { wch: 40 }, { wch: 14 }, { wch: 16 }, { wch: 22 }, { wch: 22 }, { wch: 22 }];
+    worksheet['!cols'] = COLUMNS.map(() => ({ wch: 18 }));
     XLSX.writeFile(workbook, `summary-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
 

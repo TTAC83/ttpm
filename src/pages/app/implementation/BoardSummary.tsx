@@ -424,6 +424,8 @@ export default function BoardSummary() {
       toast.error('Failed to update');
     }
   };
+
+  const exportToPDF = () => {
     const doc = new jsPDF('l', 'mm', 'a4');
     doc.setFontSize(16);
     doc.text('Summary', 14, 15);

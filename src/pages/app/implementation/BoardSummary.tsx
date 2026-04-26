@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { FileDown, FileSpreadsheet, CheckCircle2, XCircle, Circle } from "lucide-react";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { format, differenceInMonths, differenceInWeeks, differenceInDays, addMonths, addWeeks } from "date-fns";
@@ -38,7 +39,10 @@ type ColumnKey =
   | 'live_status'
   | 'weekly_summary'
   | 'project_age'
+  | 'contract_start_date'
   | 'planned_go_live_date'
+  | 'time_to_first_value_weeks'
+  | 'time_to_meaningful_adoption_weeks'
   | 'implementation_lead_name'
   | 'tech_lead_name'
   | 'tech_sponsor_name';
@@ -53,7 +57,10 @@ const COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: 'project_name', label: 'Project / Site' },
   { key: 'live_status', label: 'Live Status' },
   { key: 'project_age', label: 'Project Age' },
+  { key: 'contract_start_date', label: 'Contract Start' },
   { key: 'planned_go_live_date', label: 'Planned Go Live' },
+  { key: 'time_to_first_value_weeks', label: 'Time to First Value (wks)' },
+  { key: 'time_to_meaningful_adoption_weeks', label: 'Time to Meaningful Adoption (wks)' },
   { key: 'implementation_lead_name', label: 'Implementation Lead' },
   { key: 'tech_lead_name', label: 'Dev/Tech Lead' },
   { key: 'tech_sponsor_name', label: 'Dev/Tech Sponsor' },
@@ -152,7 +159,10 @@ export default function BoardSummary() {
     live_status: [],
     weekly_summary: [],
     project_age: [],
+    contract_start_date: [],
     planned_go_live_date: [],
+    time_to_first_value_weeks: [],
+    time_to_meaningful_adoption_weeks: [],
     implementation_lead_name: [],
     tech_lead_name: [],
     tech_sponsor_name: [],
@@ -170,13 +180,14 @@ export default function BoardSummary() {
   const cellValue = (row: typeof summaryData[number], key: ColumnKey): string => {
     if (key === 'customer_health') return healthLabel(row);
     if (key === 'project_on_track') return onTrackLabel(row);
+    if (key === 'project_age') return formatProjectAge(row.contract_signed_date);
     const v = (row as any)[key];
     if (v === null || v === undefined || v === '') return '—';
-    if (key === 'planned_go_live_date') {
+    if (key === 'planned_go_live_date' || key === 'contract_start_date') {
       return format(new Date(v), 'dd MMM yyyy');
     }
-    if (key === 'project_age') {
-      return formatProjectAge(row.contract_signed_date);
+    if (key === 'time_to_first_value_weeks' || key === 'time_to_meaningful_adoption_weeks') {
+      return String(v);
     }
     if (key === 'live_status') {
       if (Array.isArray(v)) return v.length ? v.join(', ') : '—';
@@ -313,7 +324,10 @@ export default function BoardSummary() {
       live_status: [],
       weekly_summary: [],
       project_age: [],
+      contract_start_date: [],
       planned_go_live_date: [],
+      time_to_first_value_weeks: [],
+      time_to_meaningful_adoption_weeks: [],
       implementation_lead_name: [],
       tech_lead_name: [],
       tech_sponsor_name: [],
@@ -381,6 +395,37 @@ export default function BoardSummary() {
     }
   };
 
+  const handleWeeksChange = async (
+    row: ExecutiveSummaryRow,
+    field: 'time_to_first_value_weeks' | 'time_to_meaningful_adoption_weeks',
+    rawValue: string
+  ) => {
+    if (row.row_type === 'bau') return;
+    const trimmed = rawValue.trim();
+    const parsed = trimmed === '' ? null : Number(trimmed);
+    if (parsed !== null && (!Number.isFinite(parsed) || parsed < 0)) {
+      toast.error('Enter a non-negative number');
+      return;
+    }
+    const queryKey = ['executive-summary', 'board-summary'];
+    const previous = queryClient.getQueryData<ExecutiveSummaryRow[]>(queryKey);
+    queryClient.setQueryData<ExecutiveSummaryRow[]>(queryKey, (old) =>
+      (old || []).map(r =>
+        r.row_type === row.row_type && r.project_id === row.project_id
+          ? { ...r, [field]: parsed }
+          : r
+      )
+    );
+    const { error } = await supabase
+      .from('projects')
+      .update({ [field]: parsed })
+      .eq('id', row.project_id);
+    if (error) {
+      queryClient.setQueryData(queryKey, previous);
+      toast.error('Failed to update');
+    }
+  };
+
   const exportToPDF = () => {
     const doc = new jsPDF('l', 'mm', 'a4');
     doc.setFontSize(16);
@@ -423,15 +468,28 @@ export default function BoardSummary() {
 
   const exportToExcel = () => {
     const data = sortedData.map(row => {
-      const obj: Record<string, string> = {};
-      COLUMNS.forEach(c => { obj[c.label] = cellValue(row, c.key); });
+      const obj: Record<string, any> = {};
+      COLUMNS.forEach(c => {
+        if (c.key === 'project_age') {
+          obj[c.label] = formatProjectAge(row.contract_signed_date);
+        } else if (c.key === 'time_to_first_value_weeks' || c.key === 'time_to_meaningful_adoption_weeks') {
+          const v = (row as any)[c.key];
+          obj[c.label] = v === null || v === undefined ? '' : Number(v);
+        } else if (c.key === 'planned_go_live_date' || c.key === 'contract_start_date') {
+          const v = (row as any)[c.key];
+          obj[c.label] = v ? format(new Date(v), 'dd MMM yyyy') : '';
+        } else {
+          const text = cellValue(row, c.key);
+          obj[c.label] = text === '—' ? '' : text;
+        }
+      });
       return obj;
     });
 
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Summary');
-    worksheet['!cols'] = [{ wch: 12 }, { wch: 16 }, { wch: 28 }, { wch: 10 }, { wch: 12 }, { wch: 28 }, { wch: 14 }, { wch: 40 }, { wch: 14 }, { wch: 16 }, { wch: 22 }, { wch: 22 }, { wch: 22 }];
+    worksheet['!cols'] = COLUMNS.map(() => ({ wch: 18 }));
     XLSX.writeFile(workbook, `summary-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
 
@@ -682,6 +740,9 @@ export default function BoardSummary() {
                     )}
                   </TableCell>
                   <TableCell>
+                    {row.contract_start_date ? format(new Date(row.contract_start_date), 'dd MMM yyyy') : <span className="text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell>
                     {Array.isArray(row.live_status) && row.live_status.length === 1 && row.live_status[0] === 'Live' ? (
                       <Badge className="bg-success hover:bg-success text-success-foreground gap-1">
                         <CheckCircle2 className="h-3 w-3" />
@@ -691,6 +752,46 @@ export default function BoardSummary() {
                       format(new Date(row.planned_go_live_date), 'dd MMM yyyy')
                     ) : (
                       ''
+                    )}
+                  </TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    {row.row_type === 'bau' ? (
+                      <span className="text-muted-foreground">—</span>
+                    ) : (
+                      <Input
+                        type="number"
+                        min={0}
+                        defaultValue={row.time_to_first_value_weeks ?? ''}
+                        onBlur={(e) => {
+                          const next = e.target.value;
+                          const current = row.time_to_first_value_weeks;
+                          const nextNum = next.trim() === '' ? null : Number(next);
+                          if (nextNum !== current) {
+                            handleWeeksChange(row, 'time_to_first_value_weeks', next);
+                          }
+                        }}
+                        className="h-8 w-20"
+                      />
+                    )}
+                  </TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    {row.row_type === 'bau' ? (
+                      <span className="text-muted-foreground">—</span>
+                    ) : (
+                      <Input
+                        type="number"
+                        min={0}
+                        defaultValue={row.time_to_meaningful_adoption_weeks ?? ''}
+                        onBlur={(e) => {
+                          const next = e.target.value;
+                          const current = row.time_to_meaningful_adoption_weeks;
+                          const nextNum = next.trim() === '' ? null : Number(next);
+                          if (nextNum !== current) {
+                            handleWeeksChange(row, 'time_to_meaningful_adoption_weeks', next);
+                          }
+                        }}
+                        className="h-8 w-20"
+                      />
                     )}
                   </TableCell>
                   <TableCell>{row.implementation_lead_name || <span className="text-muted-foreground">—</span>}</TableCell>

@@ -4256,6 +4256,8 @@ export type Database = {
           tech_sponsor: string | null
           technical_project_lead: string | null
           testimonial: boolean | null
+          time_to_first_value_weeks: number | null
+          time_to_meaningful_adoption_weeks: number | null
           total_sites: number | null
           tv_display_devices_required: number | null
           useful_links: Json | null
@@ -4336,6 +4338,8 @@ export type Database = {
           tech_sponsor?: string | null
           technical_project_lead?: string | null
           testimonial?: boolean | null
+          time_to_first_value_weeks?: number | null
+          time_to_meaningful_adoption_weeks?: number | null
           total_sites?: number | null
           tv_display_devices_required?: number | null
           useful_links?: Json | null
@@ -4416,6 +4420,8 @@ export type Database = {
           tech_sponsor?: string | null
           technical_project_lead?: string | null
           testimonial?: boolean | null
+          time_to_first_value_weeks?: number | null
+          time_to_meaningful_adoption_weeks?: number | null
           total_sites?: number | null
           tv_display_devices_required?: number | null
           useful_links?: Json | null

@@ -15,6 +15,9 @@ export interface ExecutiveSummaryRow {
   escalation_status: 'none' | 'active' | 'critical';
   planned_go_live_date: string | null;
   contract_signed_date: string | null;
+  contract_start_date: string | null;
+  time_to_first_value_weeks: number | null;
+  time_to_meaningful_adoption_weeks: number | null;
   row_type: 'implementation' | 'bau';
   churn_risk: string | null;
   bau_status: string | null;
@@ -70,7 +73,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
   // Fetch all implementation projects with company info and go-live data from projects table
   const { data: projects, error: projectsError } = await supabase
     .from('projects')
-    .select('id, name, company_id, domain, planned_go_live_date, contract_signed_date, project_classification, implementation_lead, tech_lead, tech_sponsor, companies(name)')
+    .select('id, name, company_id, domain, planned_go_live_date, contract_signed_date, contract_start_date, time_to_first_value_weeks, time_to_meaningful_adoption_weeks, project_classification, implementation_lead, tech_lead, tech_sponsor, companies(name)')
     .in('domain', ['IoT', 'Vision', 'Hybrid'])
     .order('name');
 
@@ -292,6 +295,9 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       escalation_status,
       planned_go_live_date: project.planned_go_live_date || null,
       contract_signed_date: project.contract_signed_date || null,
+      contract_start_date: (project as any).contract_start_date || null,
+      time_to_first_value_weeks: (project as any).time_to_first_value_weeks ?? null,
+      time_to_meaningful_adoption_weeks: (project as any).time_to_meaningful_adoption_weeks ?? null,
       row_type: 'implementation' as const,
       churn_risk: null,
       bau_status: null,
@@ -354,6 +360,9 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
       escalation_status: 'none' as const,
       planned_go_live_date: null,
       contract_signed_date: null,
+      contract_start_date: null,
+      time_to_first_value_weeks: null,
+      time_to_meaningful_adoption_weeks: null,
       row_type: 'bau' as const,
       churn_risk: r?.churn_risk || (c.churn_risk as string | null) || null,
       bau_status: r?.status || c.current_status || null,

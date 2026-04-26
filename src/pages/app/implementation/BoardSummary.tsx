@@ -394,7 +394,36 @@ export default function BoardSummary() {
     }
   };
 
-  const exportToPDF = () => {
+  const handleWeeksChange = async (
+    row: ExecutiveSummaryRow,
+    field: 'time_to_first_value_weeks' | 'time_to_meaningful_adoption_weeks',
+    rawValue: string
+  ) => {
+    if (row.row_type === 'bau') return;
+    const trimmed = rawValue.trim();
+    const parsed = trimmed === '' ? null : Number(trimmed);
+    if (parsed !== null && (!Number.isFinite(parsed) || parsed < 0)) {
+      toast.error('Enter a non-negative number');
+      return;
+    }
+    const queryKey = ['executive-summary', 'board-summary'];
+    const previous = queryClient.getQueryData<ExecutiveSummaryRow[]>(queryKey);
+    queryClient.setQueryData<ExecutiveSummaryRow[]>(queryKey, (old) =>
+      (old || []).map(r =>
+        r.row_type === row.row_type && r.project_id === row.project_id
+          ? { ...r, [field]: parsed }
+          : r
+      )
+    );
+    const { error } = await supabase
+      .from('projects')
+      .update({ [field]: parsed })
+      .eq('id', row.project_id);
+    if (error) {
+      queryClient.setQueryData(queryKey, previous);
+      toast.error('Failed to update');
+    }
+  };
     const doc = new jsPDF('l', 'mm', 'a4');
     doc.setFontSize(16);
     doc.text('Summary', 14, 15);

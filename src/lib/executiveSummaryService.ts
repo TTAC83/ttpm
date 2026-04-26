@@ -73,7 +73,7 @@ export async function fetchExecutiveSummaryData(): Promise<ExecutiveSummaryRow[]
   // Fetch all implementation projects with company info and go-live data from projects table
   const { data: projects, error: projectsError } = await supabase
     .from('projects')
-    .select('id, name, company_id, domain, planned_go_live_date, contract_signed_date, project_classification, implementation_lead, tech_lead, tech_sponsor, companies(name)')
+    .select('id, name, company_id, domain, planned_go_live_date, contract_signed_date, contract_start_date, time_to_first_value_weeks, time_to_meaningful_adoption_weeks, project_classification, implementation_lead, tech_lead, tech_sponsor, companies(name)')
     .in('domain', ['IoT', 'Vision', 'Hybrid'])
     .order('name');
 

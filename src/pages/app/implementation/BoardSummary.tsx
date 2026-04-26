@@ -740,6 +740,9 @@ export default function BoardSummary() {
                     )}
                   </TableCell>
                   <TableCell>
+                    {row.contract_start_date ? format(new Date(row.contract_start_date), 'dd MMM yyyy') : <span className="text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell>
                     {Array.isArray(row.live_status) && row.live_status.length === 1 && row.live_status[0] === 'Live' ? (
                       <Badge className="bg-success hover:bg-success text-success-foreground gap-1">
                         <CheckCircle2 className="h-3 w-3" />
@@ -749,6 +752,46 @@ export default function BoardSummary() {
                       format(new Date(row.planned_go_live_date), 'dd MMM yyyy')
                     ) : (
                       ''
+                    )}
+                  </TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    {row.row_type === 'bau' ? (
+                      <span className="text-muted-foreground">—</span>
+                    ) : (
+                      <Input
+                        type="number"
+                        min={0}
+                        defaultValue={row.time_to_first_value_weeks ?? ''}
+                        onBlur={(e) => {
+                          const next = e.target.value;
+                          const current = row.time_to_first_value_weeks;
+                          const nextNum = next.trim() === '' ? null : Number(next);
+                          if (nextNum !== current) {
+                            handleWeeksChange(row, 'time_to_first_value_weeks', next);
+                          }
+                        }}
+                        className="h-8 w-20"
+                      />
+                    )}
+                  </TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    {row.row_type === 'bau' ? (
+                      <span className="text-muted-foreground">—</span>
+                    ) : (
+                      <Input
+                        type="number"
+                        min={0}
+                        defaultValue={row.time_to_meaningful_adoption_weeks ?? ''}
+                        onBlur={(e) => {
+                          const next = e.target.value;
+                          const current = row.time_to_meaningful_adoption_weeks;
+                          const nextNum = next.trim() === '' ? null : Number(next);
+                          if (nextNum !== current) {
+                            handleWeeksChange(row, 'time_to_meaningful_adoption_weeks', next);
+                          }
+                        }}
+                        className="h-8 w-20"
+                      />
                     )}
                   </TableCell>
                   <TableCell>{row.implementation_lead_name || <span className="text-muted-foreground">—</span>}</TableCell>

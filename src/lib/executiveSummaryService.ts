@@ -15,6 +15,9 @@ export interface ExecutiveSummaryRow {
   escalation_status: 'none' | 'active' | 'critical';
   planned_go_live_date: string | null;
   contract_signed_date: string | null;
+  contract_start_date: string | null;
+  time_to_first_value_weeks: number | null;
+  time_to_meaningful_adoption_weeks: number | null;
   row_type: 'implementation' | 'bau';
   churn_risk: string | null;
   bau_status: string | null;

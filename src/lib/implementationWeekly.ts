@@ -304,7 +304,7 @@ export async function loadReview(companyId: string, weekStartISO: string): Promi
 export async function loadPreviousReview(companyId: string, beforeWeekStartISO: string): Promise<ImplWeeklyReview | null> {
   const { data, error } = await supabase
     .from("impl_weekly_reviews")
-    .select("project_status,customer_health,churn_risk,notes,reason_code,weekly_summary,planned_go_live_date,current_status,phase_installation,phase_installation_details,phase_onboarding,phase_onboarding_details,phase_live,phase_live_details,hypercare")
+    .select("project_status,customer_health,churn_risk,notes,reason_code,weekly_summary,planned_go_live_date,current_status,phase_installation,phase_installation_details,phase_onboarding,phase_onboarding_details,phase_live,phase_live_details,hypercare,week_start,week_end,reviewed_at")
     .eq("company_id", companyId)
     .lt("week_start", beforeWeekStartISO)
     .order("week_start", { ascending: false })

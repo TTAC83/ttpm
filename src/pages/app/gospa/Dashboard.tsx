@@ -80,7 +80,65 @@ export default function GospaDashboard() {
         </CardContent>
       </Card>
 
-      {/* Overdue + Blockers */}
+      {/* Strategies & Plans overview */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2"><ListTree className="h-5 w-5"/> Strategies & Plans</CardTitle>
+          <Link to="/app/gospa/strategy"><Button variant="outline" size="sm">Full tree</Button></Link>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {(objectivesQ.data ?? []).map(o => {
+            const strats = (stratsQ.data ?? []).filter(s => s.objective_id === o.id);
+            if (!strats.length) return (
+              <div key={o.id} className="text-sm border-l-2 border-muted pl-3">
+                <Link to={`/app/gospa/objectives/${o.id}`} className="font-medium hover:text-primary">{o.title}</Link>
+                <span className="text-xs text-muted-foreground ml-2">— no strategies yet. <Link to={`/app/gospa/objectives/${o.id}`} className="text-primary underline">Add</Link></span>
+              </div>
+            );
+            return (
+              <div key={o.id} className="border-l-2 border-primary/40 pl-3 space-y-2">
+                <Link to={`/app/gospa/objectives/${o.id}`} className="font-semibold hover:text-primary inline-flex items-center gap-1">
+                  <RAGBadge value={o.rag_status}/> {o.title}
+                </Link>
+                {strats.map(s => {
+                  const plans = (plansQ.data ?? []).filter(p => p.strategy_id === s.id);
+                  return (
+                    <div key={s.id} className="ml-4 border-l border-muted pl-3 space-y-1">
+                      <div className="flex items-center gap-2 text-sm">
+                        <ChevronRight className="h-3 w-3 text-muted-foreground"/>
+                        <span className="font-medium">{s.title}</span>
+                        <StatusPill value={s.status}/>
+                      </div>
+                      {plans.length ? (
+                        <div className="ml-5 space-y-0.5">
+                          {plans.map(p => {
+                            const planActions = (actionsQ.data ?? []).filter(a => a.gospa_plan_id === p.id);
+                            const done = planActions.filter(a => a.status === "Done").length;
+                            const pct = planActions.length ? Math.round((done / planActions.length) * 100) : 0;
+                            return (
+                              <div key={p.id} className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <span>📋 {p.title}</span>
+                                <span>·</span>
+                                <span>{p.start_date ?? "—"} → {p.end_date ?? "—"}</span>
+                                <span>·</span>
+                                <span>{done}/{planActions.length} ({pct}%)</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="ml-5 text-xs text-muted-foreground italic">No plans yet.</div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+          {!objectivesQ.data?.length && <div className="text-sm text-muted-foreground">Create a goal and objectives to start adding strategies and plans.</div>}
+        </CardContent>
+      </Card>
+
       <div className="grid md:grid-cols-2 gap-4">
         <Card>
           <CardHeader><CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-destructive"/> Overdue Actions</CardTitle></CardHeader>

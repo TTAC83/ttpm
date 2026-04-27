@@ -6824,6 +6824,7 @@ export type Database = {
         | "customer_user"
         | "tech_lead"
         | "tech_sponsor"
+        | "gospa_admin"
       bau_health_enum: "Excellent" | "Good" | "Watch" | "AtRisk"
       bau_health_simple: "green" | "red"
       change_req_status_enum:
@@ -7015,6 +7016,7 @@ export const Constants = {
         "customer_user",
         "tech_lead",
         "tech_sponsor",
+        "gospa_admin",
       ],
       bau_health_enum: ["Excellent", "Good", "Watch", "AtRisk"],
       bau_health_simple: ["green", "red"],

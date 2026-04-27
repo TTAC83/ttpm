@@ -15,10 +15,11 @@ const labels: Record<GospaStatus, string> = {
   done: "Done",
 };
 
-export function StatusPill({ value, className }: { value: GospaStatus; className?: string }) {
+export function StatusPill({ value, className }: { value: GospaStatus | null | undefined; className?: string }) {
+  const v: GospaStatus = (value ?? "not_started") as GospaStatus;
   return (
-    <span className={cn("inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium", styles[value], className)}>
-      {labels[value]}
+    <span className={cn("inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium", styles[v], className)}>
+      {labels[v]}
     </span>
   );
 }

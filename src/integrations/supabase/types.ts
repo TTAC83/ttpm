@@ -2146,6 +2146,446 @@ export type Database = {
         }
         Relationships: []
       }
+      gospa_blockers: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          linked_id: string
+          linked_type: Database["public"]["Enums"]["gospa_blocker_link"]
+          owner: string | null
+          severity: Database["public"]["Enums"]["gospa_severity"]
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description: string
+          id?: string
+          linked_id: string
+          linked_type: Database["public"]["Enums"]["gospa_blocker_link"]
+          owner?: string | null
+          severity?: Database["public"]["Enums"]["gospa_severity"]
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          linked_id?: string
+          linked_type?: Database["public"]["Enums"]["gospa_blocker_link"]
+          owner?: string | null
+          severity?: Database["public"]["Enums"]["gospa_severity"]
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      gospa_decisions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          decision_date: string
+          decision_owner: string | null
+          description: string
+          id: string
+          objective_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          decision_date?: string
+          decision_owner?: string | null
+          description: string
+          id?: string
+          objective_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          decision_date?: string
+          decision_owner?: string | null
+          description?: string
+          id?: string
+          objective_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gospa_decisions_objective_id_fkey"
+            columns: ["objective_id"]
+            isOneToOne: false
+            referencedRelation: "gospa_objectives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gospa_goals: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          owner: string | null
+          status: Database["public"]["Enums"]["gospa_status"]
+          timeframe_end: string | null
+          timeframe_start: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          owner?: string | null
+          status?: Database["public"]["Enums"]["gospa_status"]
+          timeframe_end?: string | null
+          timeframe_start?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          owner?: string | null
+          status?: Database["public"]["Enums"]["gospa_status"]
+          timeframe_end?: string | null
+          timeframe_start?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      gospa_metric_history: {
+        Row: {
+          id: string
+          metric_id: string
+          recorded_at: string
+          recorded_by: string | null
+          value: number
+        }
+        Insert: {
+          id?: string
+          metric_id: string
+          recorded_at?: string
+          recorded_by?: string | null
+          value: number
+        }
+        Update: {
+          id?: string
+          metric_id?: string
+          recorded_at?: string
+          recorded_by?: string | null
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gospa_metric_history_metric_id_fkey"
+            columns: ["metric_id"]
+            isOneToOne: false
+            referencedRelation: "gospa_metrics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gospa_metrics: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          current_value: number | null
+          data_source: string | null
+          description: string | null
+          frequency: Database["public"]["Enums"]["gospa_metric_freq"]
+          id: string
+          last_updated: string
+          name: string
+          objective_id: string
+          owner: string | null
+          target_value: number | null
+          trend: Database["public"]["Enums"]["gospa_metric_trend"]
+          unit: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          current_value?: number | null
+          data_source?: string | null
+          description?: string | null
+          frequency?: Database["public"]["Enums"]["gospa_metric_freq"]
+          id?: string
+          last_updated?: string
+          name: string
+          objective_id: string
+          owner?: string | null
+          target_value?: number | null
+          trend?: Database["public"]["Enums"]["gospa_metric_trend"]
+          unit?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          current_value?: number | null
+          data_source?: string | null
+          description?: string | null
+          frequency?: Database["public"]["Enums"]["gospa_metric_freq"]
+          id?: string
+          last_updated?: string
+          name?: string
+          objective_id?: string
+          owner?: string | null
+          target_value?: number | null
+          trend?: Database["public"]["Enums"]["gospa_metric_trend"]
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gospa_metrics_objective_id_fkey"
+            columns: ["objective_id"]
+            isOneToOne: false
+            referencedRelation: "gospa_objectives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gospa_objectives: {
+        Row: {
+          ai_summary: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          goal_id: string
+          id: string
+          order_index: number
+          owner: string | null
+          rag_status: Database["public"]["Enums"]["gospa_rag"]
+          strategic_direction: string | null
+          target_outcome: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          ai_summary?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          goal_id: string
+          id?: string
+          order_index?: number
+          owner?: string | null
+          rag_status?: Database["public"]["Enums"]["gospa_rag"]
+          strategic_direction?: string | null
+          target_outcome?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          ai_summary?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          goal_id?: string
+          id?: string
+          order_index?: number
+          owner?: string | null
+          rag_status?: Database["public"]["Enums"]["gospa_rag"]
+          strategic_direction?: string | null
+          target_outcome?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gospa_objectives_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "gospa_goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gospa_plans: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          owner: string | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["gospa_status"]
+          strategy_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          owner?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["gospa_status"]
+          strategy_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          owner?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["gospa_status"]
+          strategy_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gospa_plans_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "gospa_strategies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gospa_questions: {
+        Row: {
+          answer_text: string | null
+          confidence_score: number | null
+          created_at: string
+          evidence: string | null
+          id: string
+          last_updated: string
+          objective_id: string
+          opportunities: string | null
+          order_index: number
+          owner: string | null
+          question_text: string
+          risks: string | null
+        }
+        Insert: {
+          answer_text?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          evidence?: string | null
+          id?: string
+          last_updated?: string
+          objective_id: string
+          opportunities?: string | null
+          order_index: number
+          owner?: string | null
+          question_text: string
+          risks?: string | null
+        }
+        Update: {
+          answer_text?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          evidence?: string | null
+          id?: string
+          last_updated?: string
+          objective_id?: string
+          opportunities?: string | null
+          order_index?: number
+          owner?: string | null
+          question_text?: string
+          risks?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gospa_questions_objective_id_fkey"
+            columns: ["objective_id"]
+            isOneToOne: false
+            referencedRelation: "gospa_objectives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gospa_strategies: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          objective_id: string
+          owner: string | null
+          rag_status: Database["public"]["Enums"]["gospa_rag"]
+          status: Database["public"]["Enums"]["gospa_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          objective_id: string
+          owner?: string | null
+          rag_status?: Database["public"]["Enums"]["gospa_rag"]
+          status?: Database["public"]["Enums"]["gospa_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          objective_id?: string
+          owner?: string | null
+          rag_status?: Database["public"]["Enums"]["gospa_rag"]
+          status?: Database["public"]["Enums"]["gospa_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gospa_strategies_objective_id_fkey"
+            columns: ["objective_id"]
+            isOneToOne: false
+            referencedRelation: "gospa_objectives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gospa_weekly_reviews: {
+        Row: {
+          generated_at: string
+          generated_by: string | null
+          id: string
+          summary_md: string | null
+          week_start: string
+        }
+        Insert: {
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          summary_md?: string | null
+          week_start: string
+        }
+        Update: {
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          summary_md?: string | null
+          week_start?: string
+        }
+        Relationships: []
+      }
       hardware_master: {
         Row: {
           comments: string | null
@@ -4097,6 +4537,10 @@ export type Database = {
           actual_start: string | null
           assignee: string | null
           created_at: string
+          gospa_flag: boolean
+          gospa_objective_id: string | null
+          gospa_plan_id: string | null
+          gospa_strategy_id: string | null
           id: string
           master_task_id: number | null
           parent_task_id: string | null
@@ -4114,6 +4558,10 @@ export type Database = {
           actual_start?: string | null
           assignee?: string | null
           created_at?: string
+          gospa_flag?: boolean
+          gospa_objective_id?: string | null
+          gospa_plan_id?: string | null
+          gospa_strategy_id?: string | null
           id?: string
           master_task_id?: number | null
           parent_task_id?: string | null
@@ -4131,6 +4579,10 @@ export type Database = {
           actual_start?: string | null
           assignee?: string | null
           created_at?: string
+          gospa_flag?: boolean
+          gospa_objective_id?: string | null
+          gospa_plan_id?: string | null
+          gospa_strategy_id?: string | null
           id?: string
           master_task_id?: number | null
           parent_task_id?: string | null
@@ -4150,6 +4602,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "project_tasks_gospa_objective_id_fkey"
+            columns: ["gospa_objective_id"]
+            isOneToOne: false
+            referencedRelation: "gospa_objectives"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tasks_gospa_plan_id_fkey"
+            columns: ["gospa_plan_id"]
+            isOneToOne: false
+            referencedRelation: "gospa_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tasks_gospa_strategy_id_fkey"
+            columns: ["gospa_strategy_id"]
+            isOneToOne: false
+            referencedRelation: "gospa_strategies"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "project_tasks_master_task_id_fkey"
@@ -6607,6 +7080,8 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"][]
       }
+      gospa_can_read: { Args: never; Returns: boolean }
+      gospa_can_write: { Args: never; Returns: boolean }
       has_expense_access: { Args: never; Returns: boolean }
       has_expense_admin_access: { Args: never; Returns: boolean }
       has_role: {
@@ -6857,6 +7332,12 @@ export type Database = {
         | "In Design"
         | "In Dev"
         | "Complete"
+      gospa_blocker_link: "objective" | "plan" | "action"
+      gospa_metric_freq: "weekly" | "monthly" | "quarterly"
+      gospa_metric_trend: "up" | "flat" | "down"
+      gospa_rag: "red" | "amber" | "green"
+      gospa_severity: "low" | "medium" | "high" | "critical"
+      gospa_status: "not_started" | "in_progress" | "blocked" | "done"
       hardware_stage_enum:
         | "ordered"
         | "configured"
@@ -7054,6 +7535,12 @@ export const Constants = {
         "In Dev",
         "Complete",
       ],
+      gospa_blocker_link: ["objective", "plan", "action"],
+      gospa_metric_freq: ["weekly", "monthly", "quarterly"],
+      gospa_metric_trend: ["up", "flat", "down"],
+      gospa_rag: ["red", "amber", "green"],
+      gospa_severity: ["low", "medium", "high", "critical"],
+      gospa_status: ["not_started", "in_progress", "blocked", "done"],
       hardware_stage_enum: [
         "ordered",
         "configured",

@@ -274,6 +274,13 @@ const App = () => (
                   </AuthGuard>
                 } 
               />
+              <Route path="gospa" element={<InternalRoute><GospaDashboard /></InternalRoute>} />
+              <Route path="gospa/goals" element={<InternalRoute><GospaGoalsList /></InternalRoute>} />
+              <Route path="gospa/objectives/:id" element={<InternalRoute><GospaObjectiveWorkspace /></InternalRoute>} />
+              <Route path="gospa/strategy-tree" element={<InternalRoute><GospaStrategyTree /></InternalRoute>} />
+              <Route path="gospa/timeline" element={<InternalRoute><GospaTimeline /></InternalRoute>} />
+              <Route path="gospa/weekly-review" element={<InternalRoute><GospaWeeklyReview /></InternalRoute>} />
+              <Route path="gospa/metrics" element={<InternalRoute><GospaMetrics /></InternalRoute>} />
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

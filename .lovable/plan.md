@@ -1,54 +1,173 @@
-## Goal
+# GOSPA Execution Framework — Implementation Plan
 
-When reviewing a customer for the current week, surface **last week's review** at a glance so the reviewer doesn't have to flip between weeks. Make it scannable, non-intrusive, and zero extra DB cost.
+A new **company-wide** strategic execution module inside TTPM, fully integrated with existing users, projects, and tasks. Delivered as a single full MVP.
 
-## UX approach
+---
 
-**Where:** A new collapsible "Last week" panel sits **directly above the "Weekly Review" controls card** for the selected customer. It's the natural reading order — context first, then this week's input.
+## 1. Where it lives
 
-**What it shows** (compact, two-row layout):
-- **Header row**: `Last week · {week label}` + small status chips
-  - Project Status pill (green "On track" / red "Off track" / muted "Not set")
-  - Customer Health pill (green "Healthy" / red "At risk" / muted "Not set")
-  - Churn Risk pill (only if set)
-  - Reason Code pill (only if status/health was negative)
-- **Body** (two columns on desktop, stacked on mobile):
-  - **Notes / Escalation** — full text, muted card background
-  - **Weekly Summary** — full text, muted card background
-  - Each block shows `—` when empty, with a subtle "(none recorded)" hint
+- New top-level sidebar group **"GOSPA"** (icon: Target), visible to internal users.
+  - Dashboard
+  - Goals
+  - Objective Workspace (deep link)
+  - Strategy Tree
+  - Timeline (Gantt)
+  - Weekly Review
+  - Metrics
+- Routes under `/app/gospa/*` mounted in `src/App.tsx`.
+- Internal-only via `InternalRoute`; edit gated by new `gospa_admin` role.
 
-**Interaction:**
-- Panel is **collapsed by default** when this week already has a saved status/health (avoid noise once the user is mid-review).
-- Panel is **expanded by default** when this week is still blank (max value when starting fresh).
-- Header has a **"Copy to this week"** ghost button → pre-fills `notes`, `weeklySummary`, `projectStatus`, `customerHealth`, `reasonCode` into the form fields (does NOT auto-save; user reviews/edits and the existing debounced auto-save persists). Disabled when there is no previous review.
-- Empty state when no prior review exists: small muted line "No previous review for this customer."
+---
 
-**Sidebar enhancement (small, optional but high-value):**
-- In the customer list, when this week has no review yet but a prior week does, show a tiny grey dot icon next to the customer name with tooltip `"Last reviewed: {date} — {status}"`. Helps the reviewer see who has carryover context vs. fresh customers. *(Stretch — included in the same change since data is already loaded.)*
+## 2. Data model (new tables)
 
-## Data approach (efficient)
+All tables are **company-wide** (no project_id required). RLS: read = any authenticated internal user; write = `gospa_admin` OR record `owner = auth.uid()` (per the rules below).
 
-**No new queries, no new columns.** The page already calls `loadPreviousReview(companyId, weekStart)` via `previousReviewQ` — currently used only for inheriting phases/hypercare. That same query already returns `project_status`, `customer_health`, `notes`, `reason_code`, `weekly_summary`, `churn_risk`. We just render those fields in the new panel.
+```text
+gospa_goals          (id, title, description, owner, timeframe_start, timeframe_end, status, created_at, updated_at)
+gospa_objectives     (id, goal_id FK, title, description, owner, rag_status, target_outcome, order_index 1..6, strategic_direction TEXT, ai_summary TEXT)
+gospa_questions      (id, objective_id FK, order_index 1..6, question_text, answer_text, evidence, risks, opportunities, confidence_score 0..100, owner, last_updated)
+gospa_strategies     (id, objective_id FK, title, description, owner, status, rag_status)
+gospa_plans          (id, strategy_id FK, title, description, owner, start_date, end_date, status)
+gospa_metrics        (id, objective_id FK, name, description, owner, target_value NUMERIC, current_value NUMERIC, unit, frequency ENUM(weekly,monthly), trend ENUM(up,flat,down), data_source, last_updated)
+gospa_metric_history (id, metric_id FK, value NUMERIC, recorded_at, recorded_by)   -- powers charts
+gospa_decisions      (id, objective_id FK, description, decision_owner, decision_date, status)
+gospa_blockers       (id, linked_type ENUM(objective,plan,action), linked_id UUID, description, severity ENUM(low,med,high,critical), owner, status)
+gospa_weekly_reviews (id, week_start DATE UNIQUE, summary_md TEXT, generated_at, generated_by)
+```
 
-The function uses an indexed `(company_id, week_start)` lookup with `LIMIT 1`, so there's no additional DB cost.
+**Actions = existing `project_tasks` table, extended:**
+```text
+ALTER TABLE project_tasks ADD COLUMN gospa_plan_id UUID REFERENCES gospa_plans(id),
+                          ADD COLUMN gospa_objective_id UUID REFERENCES gospa_objectives(id),
+                          ADD COLUMN gospa_strategy_id UUID REFERENCES gospa_strategies(id),
+                          ADD COLUMN gospa_flag BOOLEAN DEFAULT false;
+```
+- `project_id` and `solutions_project_id` remain nullable → enables **standalone GOSPA actions** (no project) as agreed.
+- A trigger enforces: when `gospa_flag = true` then `gospa_plan_id IS NOT NULL` (no orphans).
+- A relaxation migration drops the existing NOT NULL/XOR check on project ownership (if any) so a row can have only `gospa_plan_id`.
 
-To show the previous week's **date label** in the header, extend `loadPreviousReview` to also select `week_start` (one extra column, same row) and add it to the `ImplWeeklyReview` type.
+**Permissions:**
+- Add `'gospa_admin'` to `app_role` enum.
+- RLS uses existing `has_role(auth.uid(), 'gospa_admin')` pattern + `is_internal()` for read.
+- Application-layer roles map to: Admin (gospa_admin or internal_admin), Objective Owner (record.owner = uid), Contributor (any internal — actions/plans only), Viewer (external users → read denied for now).
 
-For the sidebar dot (stretch), the existing `companies-health` query for the current week can be paired with a single batched query: `select company_id, max(week_start) ... where week_start < {currentWeek} group by company_id`. One round-trip, ~30 rows. Cached for the session.
+**Enums:** `gospa_status` (not_started, in_progress, blocked, done), `gospa_rag` (red, amber, green), `gospa_metric_freq`, `gospa_severity`.
 
-## Files touched
+---
 
-1. **`src/lib/implementationWeekly.ts`**
-   - Add `week_start` to the `select` in `loadPreviousReview` and to the `ImplWeeklyReview` return shape (optional field `previous_week_start?: string`).
-   - *(Stretch)* Add `loadLastReviewedMap(beforeWeekStart): Promise<Map<companyId, {week_start, project_status, customer_health}>>`.
+## 3. UI screens
 
-2. **`src/pages/app/ImplementationWeeklyReview.tsx`**
-   - New small component `LastWeekContextPanel` (rendered just before line 1587 "Weekly Review" Card) that consumes `previousReviewQ.data` and exposes a "Copy to this week" handler that calls the existing `setProjectStatus / setCustomerHealth / setNotes / setReasonCode / setWeeklySummary` setters.
-   - Default-collapsed logic: `defaultOpen = !reviewQ.data?.project_status && !reviewQ.data?.customer_health`.
-   - *(Stretch)* Wire `loadLastReviewedMap` into the sidebar list to render a `History` icon with tooltip.
+### A. GOSPA Dashboard `/app/gospa`
+- Goal summary card (active goal + timeframe)
+- Objective grid: RAG chip, % strategy completion, owner avatar
+- KPI strip: overdue actions, open blockers, decisions awaiting
+- Top metrics widget (current vs target, sparkline)
+- "Upcoming weekly review" CTA → opens Weekly Review mode
 
-## Out of scope
+### B. Objective Workspace `/app/gospa/objectives/:id`
+Tabs / sections:
+- **A. Questions** — 6 fixed question cards (auto-seeded on objective create) with always-editable answer / evidence / risks / opportunities / confidence slider. Auto-save on blur (per `useSaveWithRetry` rule).
+- **B. Strategic Direction** — free-text + "Generate AI summary" button (edge function).
+- **C. Strategies** — list, inline create, RAG + status.
+- **D. Plans** — nested under each strategy; date range + owner.
+- **E. Actions** — table of `project_tasks` where `gospa_objective_id = :id`. Inline create (writes to project_tasks with `gospa_flag=true`). Filter by plan / owner / status.
 
-- Showing more than one week back (a "history" drawer can come later if needed).
-- Editing last week's review from this panel (read-only — keeps the mental model clean: this screen is for *this* week).
-- Phase carry-forward UX (already implemented).
+### C. Strategy-to-Execution Tree `/app/gospa/tree`
+- Custom SVG tree (reuses Gantt SVG patterns from `src/features/gantt`):
+  Goal → Objective → Strategy → Plan → Actions.
+- Each node: owner avatar, status pill, RAG dot, progress %.
+- Click node → drill into that record.
+
+### D. Timeline / Gantt `/app/gospa/timeline`
+- Reuses existing `src/features/gantt` SVG components (no Bryntum, per memory rule).
+- Rows = Plans with nested Actions.
+- Drag-and-drop to update `start_date/end_date` (plans) and `planned_start/planned_end` (actions).
+- Filters: Objective, Owner.
+- Dependency rendering reuses `GanttDependencyLines`.
+
+### E. Weekly GOSPA Review `/app/gospa/weekly-review`
+Meeting interface (left rail = objective list, main = panel):
+- Per-objective panel: summary, metrics current vs target, due-this-week actions, overdue actions, open blockers, decisions required.
+- In-line: create action, change status, log decision, update metric (writes `gospa_metric_history`).
+- "Finish review" button → calls edge function `gospa-weekly-summary` → stores into `gospa_weekly_reviews.summary_md` and offers download.
+
+### F. Metrics Module `/app/gospa/metrics`
+- List + filter by objective.
+- Detail drawer: line chart of `gospa_metric_history`, target line overlay, variance %, trend arrow.
+- Manual entry form (records into `gospa_metric_history` and updates `current_value` + `trend` + `last_updated`).
+
+---
+
+## 4. Light AI helpers (Lovable AI Gateway)
+
+Edge functions, all using `google/gemini-3-flash-preview` via `LOVABLE_API_KEY`:
+- `gospa-summarise-questions` — input: 6 Q&A; output: strategic insight paragraph (writes `objectives.ai_summary`).
+- `gospa-suggest-strategies` — input: objective + answers; output: 3–5 candidate strategies (returned to UI for the user to accept/reject).
+- `gospa-quality-check` — server-side scan flagging objectives with: missing owner, missing dates on plans, low action progress vs target outcome, no metrics.
+- `gospa-weekly-summary` — composes the weekly review markdown.
+
+All called via `supabase.functions.invoke`; no client-side prompts.
+
+---
+
+## 5. Behaviour rules (enforced)
+
+- Strategy → Objective: NOT NULL FK.
+- Plan → Strategy: NOT NULL FK.
+- Action `gospa_flag=true` → `gospa_plan_id NOT NULL` (DB trigger + UI guard).
+- Setting `gospa_objective_id` on a task auto-derives `gospa_strategy_id` from its plan (trigger).
+- Deleting an Objective cascades through Strategies/Plans/Questions/Metrics; Actions are detached (gospa fields nulled, gospa_flag=false) — no task deletion.
+
+---
+
+## 6. Files to be created / edited
+
+**Migrations** (single migration file):
+- New enums, tables, RLS policies, triggers, `gospa_admin` role.
+- ALTER `project_tasks` (4 new columns + trigger).
+
+**Edge functions:**
+- `supabase/functions/gospa-summarise-questions/index.ts`
+- `supabase/functions/gospa-suggest-strategies/index.ts`
+- `supabase/functions/gospa-quality-check/index.ts`
+- `supabase/functions/gospa-weekly-summary/index.ts`
+
+**Frontend (new):**
+- `src/lib/gospaService.ts` — typed CRUD + AI invokers.
+- `src/hooks/useGospa*.ts` — TanStack queries.
+- `src/pages/app/gospa/Dashboard.tsx`
+- `src/pages/app/gospa/GoalsList.tsx`
+- `src/pages/app/gospa/ObjectiveWorkspace.tsx`
+- `src/pages/app/gospa/StrategyTree.tsx`
+- `src/pages/app/gospa/Timeline.tsx`
+- `src/pages/app/gospa/WeeklyReview.tsx`
+- `src/pages/app/gospa/Metrics.tsx`
+- `src/components/gospa/` — QuestionCard, StrategyCard, PlanCard, ActionTable, MetricChart, RAGBadge, OwnerPicker, BlockerDrawer, DecisionDialog, TreeNode.
+
+**Frontend (edited):**
+- `src/App.tsx` — register 7 GOSPA routes.
+- `src/config/nav.ts` — new "GOSPA" group with sub-items.
+- `src/integrations/supabase/types.ts` — auto-regenerated after migration.
+
+---
+
+## 7. Design language
+
+- Executive minimal: cards on `bg-card`, RAG dots (red/amber/green semantic tokens), avatar stacks for owners, progress bars using `bg-primary`, monochrome icons (lucide).
+- All inline edits use the **Always Editable** pattern (no Edit/Save toggle, save on blur) per project memory.
+- All multi-step saves use `useSaveWithRetry`.
+
+---
+
+## 8. Build order (single delivery)
+
+1. Migration (tables, enums, role, trigger, RLS, project_tasks ALTER).
+2. `gospaService.ts` + hooks.
+3. Goals list + Objective Workspace (Questions, Strategies, Plans, Actions).
+4. Strategy Tree + Timeline (Gantt reuse).
+5. Dashboard + Weekly Review + Metrics.
+6. Four AI edge functions.
+7. Nav + routes wiring + smoke test.
+
+After approval I'll execute the migration first, then ship the code.

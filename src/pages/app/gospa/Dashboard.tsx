@@ -7,6 +7,8 @@ import { RAGBadge } from "@/components/gospa/RAGBadge";
 import { Target, AlertTriangle, CheckCircle2, TrendingUp, Calendar, ChevronRight, ListTree } from "lucide-react";
 import { StatusPill } from "@/components/gospa/StatusPill";
 
+const isDoneAction = (status: string | null) => status === "Done" || status === "done";
+
 export default function GospaDashboard() {
   const goalsQ = useQuery({ queryKey: ["gospa-goals"], queryFn: async () => (await gospa.listGoals()).data ?? [] });
   const objectivesQ = useQuery({ queryKey: ["gospa-objectives"], queryFn: async () => (await gospa.listObjectives()).data ?? [] });
@@ -84,7 +86,7 @@ export default function GospaDashboard() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2"><ListTree className="h-5 w-5"/> Strategies & Plans</CardTitle>
-          <Link to="/app/gospa/strategy"><Button variant="outline" size="sm">Full tree</Button></Link>
+          <Link to="/app/gospa/strategy-tree"><Button variant="outline" size="sm">Full tree</Button></Link>
         </CardHeader>
         <CardContent className="space-y-4">
           {(objectivesQ.data ?? []).map(o => {
@@ -113,7 +115,7 @@ export default function GospaDashboard() {
                         <div className="ml-5 space-y-0.5">
                           {plans.map(p => {
                             const planActions = (actionsQ.data ?? []).filter(a => a.gospa_plan_id === p.id);
-                            const done = planActions.filter(a => a.status === "Done").length;
+                            const done = planActions.filter(a => isDoneAction(a.status)).length;
                             const pct = planActions.length ? Math.round((done / planActions.length) * 100) : 0;
                             return (
                               <div key={p.id} className="flex items-center gap-2 text-xs text-muted-foreground">

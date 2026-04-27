@@ -2585,4 +2585,4 @@ function LastWeekContextPanel({ previous, isLoading, defaultOpen, onCopyToThisWe
       )}
     </Card>
   );
-};
+}

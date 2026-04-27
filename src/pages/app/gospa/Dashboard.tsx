@@ -4,7 +4,8 @@ import { gospa } from "@/lib/gospaService";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RAGBadge } from "@/components/gospa/RAGBadge";
-import { Target, AlertTriangle, CheckCircle2, TrendingUp, Calendar } from "lucide-react";
+import { Target, AlertTriangle, CheckCircle2, TrendingUp, Calendar, ChevronRight, ListTree } from "lucide-react";
+import { StatusPill } from "@/components/gospa/StatusPill";
 
 export default function GospaDashboard() {
   const goalsQ = useQuery({ queryKey: ["gospa-goals"], queryFn: async () => (await gospa.listGoals()).data ?? [] });
@@ -12,6 +13,8 @@ export default function GospaDashboard() {
   const blockersQ = useQuery({ queryKey: ["gospa-blockers"], queryFn: async () => (await gospa.listBlockers()).data ?? [] });
   const actionsQ = useQuery({ queryKey: ["gospa-actions"], queryFn: async () => (await gospa.listActions()).data ?? [] });
   const metricsQ = useQuery({ queryKey: ["gospa-metrics"], queryFn: async () => (await gospa.listMetrics()).data ?? [] });
+  const stratsQ = useQuery({ queryKey: ["gospa-strats-all"], queryFn: async () => (await gospa.listStrategies()).data ?? [] });
+  const plansQ = useQuery({ queryKey: ["gospa-plans-all"], queryFn: async () => (await gospa.listPlans()).data ?? [] });
 
   const today = new Date().toISOString().slice(0, 10);
   const overdue = (actionsQ.data ?? []).filter(a => a.planned_end && a.planned_end < today && a.status !== "Done");

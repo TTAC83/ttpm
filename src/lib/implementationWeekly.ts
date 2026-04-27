@@ -272,6 +272,9 @@ export type ImplWeeklyReview = {
   phase_live: boolean | null;
   phase_live_details: string | null;
   hypercare: boolean | null;
+  week_start?: string | null;
+  week_end?: string | null;
+  reviewed_at?: string | null;
 };
 
 export async function loadReview(companyId: string, weekStartISO: string): Promise<ImplWeeklyReview | null> {

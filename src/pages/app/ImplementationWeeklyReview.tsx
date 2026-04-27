@@ -2468,7 +2468,7 @@ type LastWeekContextPanelProps = {
   onCopyToThisWeek: () => void;
 };
 
-const LastWeekContextPanel: React.FC<LastWeekContextPanelProps> = ({ previous, isLoading, defaultOpen, onCopyToThisWeek }) => {
+function LastWeekContextPanel({ previous, isLoading, defaultOpen, onCopyToThisWeek }: LastWeekContextPanelProps) {
   const [open, setOpen] = useState(defaultOpen);
   const lastDefaultRef = useRef(defaultOpen);
 
@@ -2585,4 +2585,4 @@ const LastWeekContextPanel: React.FC<LastWeekContextPanelProps> = ({ previous, i
       )}
     </Card>
   );
-};
+}

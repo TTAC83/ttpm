@@ -17,7 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { CalendarIcon, Plus, Smile, Frown, CheckCircle, AlertCircle, Save, X, AlertTriangle } from "lucide-react";
+import { CalendarIcon, Plus, Smile, Frown, CheckCircle, AlertCircle, Save, X, AlertTriangle, History, ChevronDown, ChevronUp, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { computeTaskStatus } from "@/lib/taskStatus";
 import { supabase } from "@/integrations/supabase/client";
@@ -1583,6 +1583,23 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
         )}
       </Card>
 
+      {/* Last Week Context Panel */}
+      <LastWeekContextPanel
+        previous={previousReviewQ.data}
+        isLoading={previousReviewQ.isLoading}
+        defaultOpen={!reviewQ.data?.project_status && !reviewQ.data?.customer_health}
+        onCopyToThisWeek={() => {
+          const p = previousReviewQ.data;
+          if (!p) return;
+          if (p.project_status) { setProjectStatus(p.project_status); setStatusTouched(true); }
+          if (p.customer_health) { setCustomerHealth(p.customer_health); setHealthTouched(true); }
+          if (p.reason_code) setReasonCode(p.reason_code);
+          if (p.notes) setNotes(p.notes);
+          if (p.weekly_summary) setWeeklySummary(p.weekly_summary);
+          toast.success("Copied last week's review into this week. Review and edit before it auto-saves.");
+        }}
+      />
+
       {/* Weekly Review Controls */}
       <Card className="p-4 space-y-4">
         <h2 className="font-semibold">Weekly Review</h2>
@@ -2441,5 +2458,131 @@ const EditActionDialog = ({
         </div>
       </form>
     </>
+  );
+};
+// ----- Last Week Context Panel -----
+type LastWeekContextPanelProps = {
+  previous: import("@/lib/implementationWeekly").ImplWeeklyReview | null | undefined;
+  isLoading: boolean;
+  defaultOpen: boolean;
+  onCopyToThisWeek: () => void;
+};
+
+const LastWeekContextPanel: React.FC<LastWeekContextPanelProps> = ({ previous, isLoading, defaultOpen, onCopyToThisWeek }) => {
+  const [open, setOpen] = useState(defaultOpen);
+  const lastDefaultRef = useRef(defaultOpen);
+
+  // Only re-sync open state when defaultOpen changes (e.g. user switches customer)
+  useEffect(() => {
+    if (lastDefaultRef.current !== defaultOpen) {
+      lastDefaultRef.current = defaultOpen;
+      setOpen(defaultOpen);
+    }
+  }, [defaultOpen]);
+
+  if (isLoading) {
+    return (
+      <Card className="p-3 bg-muted/30 border-dashed">
+        <div className="text-xs text-muted-foreground">Loading last week's review…</div>
+      </Card>
+    );
+  }
+
+  if (!previous) {
+    return (
+      <Card className="p-3 bg-muted/30 border-dashed">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <History className="h-3.5 w-3.5" />
+          No previous review for this customer.
+        </div>
+      </Card>
+    );
+  }
+
+  const weekLabel = previous.week_start
+    ? format(new Date(previous.week_start + "T00:00:00"), "MMM d, yyyy")
+    : "previous week";
+
+  const statusLabel =
+    previous.project_status === "on_track" ? "On track" :
+    previous.project_status === "off_track" ? "Off track" : "Not set";
+  const statusClass =
+    previous.project_status === "on_track" ? "bg-green-100 text-green-800 border-green-300" :
+    previous.project_status === "off_track" ? "bg-red-100 text-red-800 border-red-300" :
+    "bg-muted text-muted-foreground border-border";
+
+  const healthLabel =
+    previous.customer_health === "green" ? "Healthy" :
+    previous.customer_health === "red" ? "At risk" : "Not set";
+  const healthClass =
+    previous.customer_health === "green" ? "bg-green-100 text-green-800 border-green-300" :
+    previous.customer_health === "red" ? "bg-red-100 text-red-800 border-red-300" :
+    "bg-muted text-muted-foreground border-border";
+
+  const churnClass =
+    previous.churn_risk === "Low" ? "bg-green-100 text-green-800 border-green-300" :
+    previous.churn_risk === "Medium" ? "bg-yellow-100 text-yellow-800 border-yellow-300" :
+    previous.churn_risk === "High" ? "bg-orange-100 text-orange-800 border-orange-300" :
+    previous.churn_risk === "Certain" ? "bg-red-100 text-red-800 border-red-300" :
+    "";
+
+  return (
+    <Card className="p-3 bg-muted/30 border-dashed">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <button
+          type="button"
+          onClick={() => setOpen(o => !o)}
+          className="flex items-center gap-2 text-sm font-medium hover:opacity-80 transition-opacity"
+          aria-expanded={open}
+        >
+          <History className="h-4 w-4 text-muted-foreground" />
+          <span>Last week</span>
+          <span className="text-muted-foreground font-normal">· {weekLabel}</span>
+          {open ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+        </button>
+
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Badge variant="outline" className={cn("text-xs", statusClass)}>{statusLabel}</Badge>
+          <Badge variant="outline" className={cn("text-xs", healthClass)}>{healthLabel}</Badge>
+          {previous.churn_risk && (
+            <Badge variant="outline" className={cn("text-xs", churnClass)}>Churn: {previous.churn_risk}</Badge>
+          )}
+          {previous.reason_code && (
+            <Badge variant="outline" className="text-xs">Reason: {previous.reason_code.replace(/-/g, " ")}</Badge>
+          )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs"
+            onClick={onCopyToThisWeek}
+          >
+            <Copy className="h-3 w-3 mr-1" />
+            Copy to this week
+          </Button>
+        </div>
+      </div>
+
+      {open && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+          <div className="rounded-md bg-background/60 border p-3">
+            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Notes / Escalation</div>
+            {previous.notes && previous.notes.trim() ? (
+              <div className="text-sm whitespace-pre-wrap">{previous.notes}</div>
+            ) : (
+              <div className="text-sm text-muted-foreground italic">— (none recorded)</div>
+            )}
+          </div>
+          <div className="rounded-md bg-background/60 border p-3">
+            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Weekly Summary</div>
+            {previous.weekly_summary && previous.weekly_summary.trim() ? (
+              <div className="text-sm whitespace-pre-wrap">{previous.weekly_summary}</div>
+            ) : (
+              <div className="text-sm text-muted-foreground italic">— (none recorded)</div>
+            )}
+          </div>
+        </div>
+      )}
+    </Card>
   );
 };

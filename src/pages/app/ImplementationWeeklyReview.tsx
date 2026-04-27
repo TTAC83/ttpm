@@ -1583,6 +1583,23 @@ function CompanyWeeklyPanel({ companyId, weekStart }: { companyId: string; weekS
         )}
       </Card>
 
+      {/* Last Week Context Panel */}
+      <LastWeekContextPanel
+        previous={previousReviewQ.data}
+        isLoading={previousReviewQ.isLoading}
+        defaultOpen={!reviewQ.data?.project_status && !reviewQ.data?.customer_health}
+        onCopyToThisWeek={() => {
+          const p = previousReviewQ.data;
+          if (!p) return;
+          if (p.project_status) { setProjectStatus(p.project_status); setStatusTouched(true); }
+          if (p.customer_health) { setCustomerHealth(p.customer_health); setHealthTouched(true); }
+          if (p.reason_code) setReasonCode(p.reason_code);
+          if (p.notes) setNotes(p.notes);
+          if (p.weekly_summary) setWeeklySummary(p.weekly_summary);
+          toast.success("Copied last week's review into this week. Review and edit before it auto-saves.");
+        }}
+      />
+
       {/* Weekly Review Controls */}
       <Card className="p-4 space-y-4">
         <h2 className="font-semibold">Weekly Review</h2>

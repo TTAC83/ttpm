@@ -67,6 +67,13 @@ import ProcessingRequired from "./pages/app/vision-models/ProcessingRequired";
 import DeploymentRequired from "./pages/app/vision-models/DeploymentRequired";
 import ValidationRequired from "./pages/app/vision-models/ValidationRequired";
 import Complete from "./pages/app/vision-models/Complete";
+import GospaDashboard from "./pages/app/gospa/Dashboard";
+import GospaGoalsList from "./pages/app/gospa/GoalsList";
+import GospaObjectiveWorkspace from "./pages/app/gospa/ObjectiveWorkspace";
+import GospaStrategyTree from "./pages/app/gospa/StrategyTree";
+import GospaTimeline from "./pages/app/gospa/Timeline";
+import GospaWeeklyReview from "./pages/app/gospa/WeeklyReview";
+import GospaMetrics from "./pages/app/gospa/Metrics";
 
 const queryClient = new QueryClient();
 

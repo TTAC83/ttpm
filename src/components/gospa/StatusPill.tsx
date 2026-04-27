@@ -15,8 +15,11 @@ const labels: Record<GospaStatus, string> = {
   done: "Done",
 };
 
+const isGospaStatus = (value: unknown): value is GospaStatus =>
+  value === "not_started" || value === "in_progress" || value === "blocked" || value === "done";
+
 export function StatusPill({ value, className }: { value: GospaStatus | null | undefined; className?: string }) {
-  const v: GospaStatus = (value ?? "not_started") as GospaStatus;
+  const v: GospaStatus = isGospaStatus(value) ? value : "not_started";
   return (
     <span className={cn("inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium", styles[v], className)}>
       {labels[v]}

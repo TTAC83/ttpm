@@ -7,8 +7,11 @@ const styles: Record<GospaRag, string> = {
   green: "bg-green-600 text-white",
 };
 
+const isGospaRag = (value: unknown): value is GospaRag =>
+  value === "red" || value === "amber" || value === "green";
+
 export function RAGBadge({ value, className }: { value: GospaRag | null | undefined; className?: string }) {
-  const v: GospaRag = (value ?? "green") as GospaRag;
+  const v: GospaRag = isGospaRag(value) ? value : "green";
   return (
     <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium", styles[v], className)}>
       <span className="h-1.5 w-1.5 rounded-full bg-current opacity-90" />
@@ -17,11 +20,12 @@ export function RAGBadge({ value, className }: { value: GospaRag | null | undefi
   );
 }
 
-export function RAGDot({ value, className }: { value: GospaRag; className?: string }) {
+export function RAGDot({ value, className }: { value: GospaRag | null | undefined; className?: string }) {
   const dot: Record<GospaRag, string> = {
     red: "bg-destructive",
     amber: "bg-yellow-500",
     green: "bg-green-600",
   };
-  return <span className={cn("inline-block h-2.5 w-2.5 rounded-full", dot[value], className)} />;
+  const v: GospaRag = isGospaRag(value) ? value : "green";
+  return <span className={cn("inline-block h-2.5 w-2.5 rounded-full", dot[v], className)} />;
 }

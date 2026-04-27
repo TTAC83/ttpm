@@ -17,7 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { CalendarIcon, Plus, Smile, Frown, CheckCircle, AlertCircle, Save, X, AlertTriangle } from "lucide-react";
+import { CalendarIcon, Plus, Smile, Frown, CheckCircle, AlertCircle, Save, X, AlertTriangle, History, ChevronDown, ChevronUp, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { computeTaskStatus } from "@/lib/taskStatus";
 import { supabase } from "@/integrations/supabase/client";

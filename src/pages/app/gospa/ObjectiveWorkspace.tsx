@@ -247,7 +247,7 @@ export default function ObjectiveWorkspace() {
   );
 }
 
-function NewItemRow({ placeholder, onCreate }: { placeholder: string; onCreate: (text: string) => void | Promise<void> }) {
+function NewItemRow({ placeholder, onCreate }: { placeholder: string; onCreate: (text: string) => any }) {
   const [t, setT] = useState("");
   return (
     <div className="flex gap-2">

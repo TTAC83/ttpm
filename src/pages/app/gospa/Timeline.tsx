@@ -23,7 +23,7 @@ export default function GospaTimeline() {
               <span className="text-xs font-mono text-muted-foreground w-14">{i.kind}</span>
               <span className="flex-1 truncate">{i.title}</span>
               <span className="text-xs text-muted-foreground">{i.start ?? "—"} → {i.end ?? "—"}</span>
-              {typeof i.status === "string" && i.kind === "Plan" && <StatusPill value={i.status}/>}
+              {typeof i.status === "string" && i.kind === "Plan" && <StatusPill value={i.status as any}/>}
               {typeof i.status === "string" && i.kind === "Action" && <span className="text-xs">{i.status}</span>}
             </div>
           ))}

@@ -7,11 +7,12 @@ const styles: Record<GospaRag, string> = {
   green: "bg-green-600 text-white",
 };
 
-export function RAGBadge({ value, className }: { value: GospaRag; className?: string }) {
+export function RAGBadge({ value, className }: { value: GospaRag | null | undefined; className?: string }) {
+  const v: GospaRag = (value ?? "green") as GospaRag;
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium", styles[value], className)}>
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium", styles[v], className)}>
       <span className="h-1.5 w-1.5 rounded-full bg-current opacity-90" />
-      {value.toUpperCase()}
+      {v.toUpperCase()}
     </span>
   );
 }

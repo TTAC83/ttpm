@@ -65,6 +65,21 @@ export const NAV: NavItem[] = [
     ]
   },
 
+  // GOSPA Execution Framework
+  {
+    label: "GOSPA",
+    iconName: "BarChart3",
+    roles: ["internal_admin", "internal_user"],
+    children: [
+      { label: "Dashboard", to: "/app/gospa", matchPaths: ["/app/gospa"] },
+      { label: "Goals & Objectives", to: "/app/gospa/goals", matchPaths: ["/app/gospa/goals"] },
+      { label: "Strategy Tree", to: "/app/gospa/strategy-tree", matchPaths: ["/app/gospa/strategy-tree"] },
+      { label: "Timeline", to: "/app/gospa/timeline", matchPaths: ["/app/gospa/timeline"] },
+      { label: "Metrics", to: "/app/gospa/metrics", matchPaths: ["/app/gospa/metrics"] },
+      { label: "Weekly Review", to: "/app/gospa/weekly-review", matchPaths: ["/app/gospa/weekly-review"] },
+    ]
+  },
+
   // 3) BAU
   {
     label: "BAU",

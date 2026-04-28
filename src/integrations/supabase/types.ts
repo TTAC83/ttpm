@@ -2462,11 +2462,50 @@ export type Database = {
           },
         ]
       }
+      gospa_question_entries: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string
+          entry_type: string
+          id: string
+          question_id: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by?: string
+          entry_type: string
+          id?: string
+          question_id: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string
+          entry_type?: string
+          id?: string
+          question_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gospa_question_entries_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "gospa_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gospa_questions: {
         Row: {
           answer_text: string | null
           confidence_score: number | null
           created_at: string
+          created_by: string | null
           evidence: string | null
           id: string
           last_updated: string
@@ -2481,6 +2520,7 @@ export type Database = {
           answer_text?: string | null
           confidence_score?: number | null
           created_at?: string
+          created_by?: string | null
           evidence?: string | null
           id?: string
           last_updated?: string
@@ -2495,6 +2535,7 @@ export type Database = {
           answer_text?: string | null
           confidence_score?: number | null
           created_at?: string
+          created_by?: string | null
           evidence?: string | null
           id?: string
           last_updated?: string

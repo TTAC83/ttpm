@@ -27,6 +27,7 @@ import { NAV, visibleItemsForRole, ICON_MAP, type Role, type NavItem } from '@/c
 import thingtraxLogoFull from '@/assets/thingtrax-logo-full.png';
 import thingtraxLogoIcon from '@/assets/thingtrax-logo-icon.png';
 import { useExpenseAccess } from '@/hooks/useExpenseAccess';
+import { isGospaAllowed } from '@/components/auth/GospaRoute';
 import { useState, useEffect } from 'react';
 import InstallButton from '@/components/pwa/InstallButton';
 import InstallHelpModal from '@/components/pwa/InstallHelpModal';

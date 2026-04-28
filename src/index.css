@@ -382,3 +382,17 @@ All colors MUST be HSL.
     transform: translate3d(0, 0, 0);
   }
 }
+
+/* GOSPA Present mode - upscale rich text for projection */
+.gospa-present-content { font-size: 22px; line-height: 1.6; }
+.gospa-present-content .prose { color: inherit; max-width: none; }
+.gospa-present-content h1 { font-size: 40px; }
+.gospa-present-content h2 { font-size: 32px; }
+.gospa-present-content h3 { font-size: 26px; }
+.gospa-present-content p { margin: 0.6rem 0; font-size: 22px; }
+.gospa-present-content ul, .gospa-present-content ol { padding-left: 1.5rem; margin: 0.6rem 0; }
+.gospa-present-content li { margin: 0.4rem 0; font-size: 22px; }
+.gospa-present-content a { color: hsl(var(--thingtrax-green)); text-decoration: underline; }
+.gospa-present-content table { font-size: 20px; }
+.gospa-present-content th, .gospa-present-content td { padding: 0.5rem 0.75rem; border-color: rgba(255,255,255,0.2); }
+.gospa-present-content strong { color: #fff; }

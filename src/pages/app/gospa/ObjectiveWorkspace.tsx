@@ -16,9 +16,10 @@ import { RAGBadge } from "@/components/gospa/RAGBadge";
 import { StatusPill } from "@/components/gospa/StatusPill";
 import { RichTextEditor } from "@/components/gospa/RichTextEditor";
 import { RichTextView } from "@/components/gospa/RichTextView";
-import { Plus, Trash2, Sparkles, ArrowLeft, AlertTriangle, Link2, ExternalLink, Check, X, Pencil } from "lucide-react";
+import { Plus, Trash2, Sparkles, ArrowLeft, AlertTriangle, Link2, ExternalLink, Check, X, Pencil, Play } from "lucide-react";
 import { toast } from "sonner";
 import type { GospaRag, GospaStatus } from "@/lib/gospaService";
+import { PresentObjectiveDialog } from "@/components/gospa/PresentObjectiveDialog";
 
 const RAGS: GospaRag[] = ["green", "amber", "red"];
 const STATUSES: GospaStatus[] = ["not_started", "in_progress", "blocked", "done"];
@@ -61,6 +62,7 @@ export default function ObjectiveWorkspace() {
 
   const obj = objQ.data;
   const planByStrategy = (sid: string) => (plansQ.data ?? []).filter(p => p.strategy_id === sid);
+  const [presentOpen, setPresentOpen] = useState(false);
 
   // Collect every user_id that owns a question or an entry, so we can resolve names in one go.
   const allOwnerIds = useMemo(() => {
@@ -95,8 +97,25 @@ export default function ObjectiveWorkspace() {
             <SelectTrigger className="w-32"><SelectValue/></SelectTrigger>
             <SelectContent>{RAGS.map(r => <SelectItem key={r} value={r}><RAGBadge value={r}/></SelectItem>)}</SelectContent>
           </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!questionsQ.data?.length}
+            onClick={() => setPresentOpen(true)}
+          >
+            <Play className="h-4 w-4 mr-2"/> Present
+          </Button>
         </div>
       </div>
+
+      <PresentObjectiveDialog
+        open={presentOpen}
+        onClose={() => setPresentOpen(false)}
+        objectiveTitle={obj.title}
+        questions={(questionsQ.data ?? []) as any}
+        entries={(entriesQ.data ?? []) as any}
+        nameOf={nameOf}
+      />
 
       <Tabs defaultValue="questions">
         <TabsList>

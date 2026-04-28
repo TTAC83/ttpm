@@ -27,6 +27,7 @@ import { NAV, visibleItemsForRole, ICON_MAP, type Role, type NavItem } from '@/c
 import thingtraxLogoFull from '@/assets/thingtrax-logo-full.png';
 import thingtraxLogoIcon from '@/assets/thingtrax-logo-icon.png';
 import { useExpenseAccess } from '@/hooks/useExpenseAccess';
+import { isGospaAllowed } from '@/components/auth/GospaRoute';
 import { useState, useEffect } from 'react';
 import InstallButton from '@/components/pwa/InstallButton';
 import InstallHelpModal from '@/components/pwa/InstallHelpModal';
@@ -145,6 +146,9 @@ export const AppLayout = () => {
   // Filter out expenses if user doesn't have expense access
   visibleItems = visibleItems.filter(item => {
     if (item.label === 'Expenses' && !hasExpenseAccess) {
+      return false;
+    }
+    if (item.label === 'GOSPA' && !isGospaAllowed(user?.email)) {
       return false;
     }
     return true;

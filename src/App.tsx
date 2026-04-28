@@ -59,6 +59,7 @@ import ExecutiveSummary from "./pages/app/implementation/ExecutiveSummary";
 import BoardSummary from "./pages/app/implementation/BoardSummary";
 import TeamsReport from "./pages/app/implementation/TeamsReport";
 import { InternalRoute } from "@/components/auth/InternalRoute";
+import { GospaRoute } from "@/components/auth/GospaRoute";
 import ExpansionReport from "./pages/app/global-dashboards/ExpansionReport";
 import ScheduleRequired from "./pages/app/vision-models/ScheduleRequired";
 import FootageRequired from "./pages/app/vision-models/FootageRequired";
@@ -274,13 +275,13 @@ const App = () => (
                   </AuthGuard>
                 } 
               />
-              <Route path="gospa" element={<InternalRoute><GospaDashboard /></InternalRoute>} />
-              <Route path="gospa/goals" element={<InternalRoute><GospaGoalsList /></InternalRoute>} />
-              <Route path="gospa/objectives/:id" element={<InternalRoute><GospaObjectiveWorkspace /></InternalRoute>} />
-              <Route path="gospa/strategy-tree" element={<InternalRoute><GospaStrategyTree /></InternalRoute>} />
-              <Route path="gospa/timeline" element={<InternalRoute><GospaTimeline /></InternalRoute>} />
-              <Route path="gospa/weekly-review" element={<InternalRoute><GospaWeeklyReview /></InternalRoute>} />
-              <Route path="gospa/metrics" element={<InternalRoute><GospaMetrics /></InternalRoute>} />
+              <Route path="gospa" element={<GospaRoute><GospaDashboard /></GospaRoute>} />
+              <Route path="gospa/goals" element={<GospaRoute><GospaGoalsList /></GospaRoute>} />
+              <Route path="gospa/objectives/:id" element={<GospaRoute><GospaObjectiveWorkspace /></GospaRoute>} />
+              <Route path="gospa/strategy-tree" element={<GospaRoute><GospaStrategyTree /></GospaRoute>} />
+              <Route path="gospa/timeline" element={<GospaRoute><GospaTimeline /></GospaRoute>} />
+              <Route path="gospa/weekly-review" element={<GospaRoute><GospaWeeklyReview /></GospaRoute>} />
+              <Route path="gospa/metrics" element={<GospaRoute><GospaMetrics /></GospaRoute>} />
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

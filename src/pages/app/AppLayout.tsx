@@ -147,6 +147,9 @@ export const AppLayout = () => {
     if (item.label === 'Expenses' && !hasExpenseAccess) {
       return false;
     }
+    if (item.label === 'GOSPA' && !isGospaAllowed(user?.email)) {
+      return false;
+    }
     return true;
   });
   console.log('🔍 DEBUG - Visible items after filtering:', visibleItems.map(i => i.label));

@@ -74,11 +74,11 @@ export const ScheduleXCalendar = ({ events, onEventClick, onSlotClick, onEventUp
         const meta = metaMap.get(String(calendarEvent.id));
         if (meta && onEventClick) onEventClick(meta);
       },
-      onClickDate: (date) => {
-        if (onSlotClick) onSlotClick(new Date(date));
+      onClickDate: (date: any) => {
+        if (onSlotClick) onSlotClick(new Date(String(date)));
       },
-      onClickDateTime: (dateTime) => {
-        if (onSlotClick) onSlotClick(new Date(dateTime));
+      onClickDateTime: (dateTime: any) => {
+        if (onSlotClick) onSlotClick(new Date(String(dateTime)));
       },
       onEventUpdate: (updatedEvent) => {
         const meta = metaMap.get(String(updatedEvent.id));

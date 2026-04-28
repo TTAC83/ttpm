@@ -93,7 +93,10 @@ export default function ObjectiveWorkspace() {
                   </Button>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <Textarea defaultValue={q.answer_text ?? ""} placeholder="Answer" onBlur={e => gospa.updateQuestion(q.id, { answer_text: e.target.value }).then(() => qc.invalidateQueries({ queryKey: ["gospa-q", id] }))}/>
+                  <EvidenceLinks
+                    value={q.answer_text ?? ""}
+                    onChange={(v) => gospa.updateQuestion(q.id, { answer_text: v }).then(() => qc.invalidateQueries({ queryKey: ["gospa-q", id] }))}
+                  />
                   <Textarea defaultValue={q.evidence ?? ""} placeholder="Summary" rows={2} onBlur={e => gospa.updateQuestion(q.id, { evidence: e.target.value })}/>
                   <div className="grid grid-cols-2 gap-2">
                     <Textarea defaultValue={q.risks ?? ""} placeholder="Risks" rows={2} onBlur={e => gospa.updateQuestion(q.id, { risks: e.target.value })}/>

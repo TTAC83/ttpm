@@ -8,6 +8,7 @@ export const GOSPA_ALLOWED_EMAILS = [
   "paul@thingtrax.com",
   "agupta@thingtrax.com",
   "ishafqat@thingtrax.com",
+  "willem@thingtrax.com",
 ];
 
 export function isGospaAllowed(email?: string | null): boolean {

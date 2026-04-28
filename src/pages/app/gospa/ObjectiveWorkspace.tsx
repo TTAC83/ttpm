@@ -189,8 +189,30 @@ export default function ObjectiveWorkspace() {
             <Card key={s.id}>
               <CardContent className="pt-4 flex items-start gap-3">
                 <div className="flex-1">
-                  <Input className="font-medium border-0 px-0 h-auto bg-transparent" defaultValue={s.title} onBlur={e => gospa.updateStrategy(s.id, { title: e.target.value })}/>
-                  <Textarea rows={2} className="mt-1" defaultValue={s.description ?? ""} placeholder="Description" onBlur={e => gospa.updateStrategy(s.id, { description: e.target.value })}/>
+                  <Input
+                    className="font-medium border-0 px-0 h-auto bg-transparent"
+                    defaultValue={s.title}
+                    onBlur={async e => {
+                      if (e.target.value === (s.title ?? "")) return;
+                      const { error } = await gospa.updateStrategy(s.id, { title: e.target.value });
+                      if (error) return toast.error(error.message);
+                      toast.success("Strategy saved");
+                      qc.invalidateQueries({ queryKey: ["gospa-strat", id] });
+                    }}
+                  />
+                  <Textarea
+                    rows={2}
+                    className="mt-1"
+                    defaultValue={s.description ?? ""}
+                    placeholder="Description"
+                    onBlur={async e => {
+                      if (e.target.value === (s.description ?? "")) return;
+                      const { error } = await gospa.updateStrategy(s.id, { description: e.target.value });
+                      if (error) return toast.error(error.message);
+                      toast.success("Description saved");
+                      qc.invalidateQueries({ queryKey: ["gospa-strat", id] });
+                    }}
+                  />
                 </div>
                 <Select value={s.status} onValueChange={v => gospa.updateStrategy(s.id, { status: v as GospaStatus }).then(() => qc.invalidateQueries({ queryKey: ["gospa-strat", id] }))}>
                   <SelectTrigger className="w-32"><SelectValue/></SelectTrigger>

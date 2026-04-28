@@ -1,143 +1,105 @@
-# Switch Global Calendar to Schedule-X
+## Goal
 
-Replace the current `react-day-picker`-based event grid with **Schedule-X** (`@schedule-x/react`), a modern, lightweight, MIT-licensed calendar built specifically for events. All backend, filters, dialogs, and permission logic stay the same — only the calendar view layer changes.
+Add a "Present" mode to the Objective Workspace (`/app/gospa/objectives/:id`) so a user can walk an audience through every question and the answers it has received. Output is fullscreen, Thingtrax-branded, and renders the existing rich-text answers (including clickable links) at presentation size.
 
----
+## UX design
 
-## 1. Data engineer perspective
+**Trigger**
+- Add a `Present` button (Play icon) in the Objective header next to the RAG selector. Only visible when at least one question exists.
 
-Nothing in the database changes. `project_events`, attendees, RLS, and the `calendarEventsService` are already correct.
-
-What does change is the **shape we hand to the view**. Schedule-X expects events in this format:
-
-```ts
-{
-  id: string,
-  title: string,
-  start: 'YYYY-MM-DD HH:mm' | 'YYYY-MM-DD',  // date-only for all-day
-  end:   'YYYY-MM-DD HH:mm' | 'YYYY-MM-DD',
-  calendarId?: string,            // used for colour grouping
-  // anything else lives in a custom payload we read in the modal
-  _meta: CalendarEvent
-}
+**Layout (per slide)**
+```
+┌──────────────────────────────────────────────────────────────┐
+│ [Thingtrax logo]            Objective title    1 / 14   [✕]  │
+│──────────────────────────────────────────────────────────────│
+│  Q3.  How do we reduce changeover time on Line 4?            │
+│                                                              │
+│  Answered by: Allan Carney                                   │
+│                                                              │
+│  ┌── Key insights ──────────────────────────────────────┐   │
+│  │  <RichTextView> rendered at presentation size         │   │
+│  │  • bullet                                             │   │
+│  │  • bullet with [hyperlink ↗]                          │   │
+│  └───────────────────────────────────────────────────────┘   │
+│                                                              │
+│  ┌── Supporting evidence ───────────────────────────────┐   │
+│  │  • https://… (opens new tab)                          │   │
+│  └───────────────────────────────────────────────────────┘   │
+│                                                              │
+│──────────────────────────────────────────────────────────────│
+│  ◀ Prev          • • • ● • • • • • • •          Next ▶       │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-We will add a tiny mapper in `src/lib/calendarEventsService.ts` (or a sibling `calendarEventMappers.ts`):
+- Black/white branded chrome using existing `--thingtrax-black` and `--thingtrax-green` tokens; logo is `@/assets/thingtrax-logo-full.png` top-left.
+- Body uses a centered max-width column (~1100px) with generous line-height. Base font 22–24px so text reads from a meeting room. Rich-text styles inherit through a scoped wrapper that bumps `prose` sizes (similar to the slides skill pattern).
+- Hyperlinks open in new tab — `RichTextView` already renders `<a>`; we'll wrap rendered content with a click handler that forces `target="_blank" rel="noopener"` on any anchor without one.
+- Long answers scroll inside the slide body (no clipping); slide chrome stays fixed.
 
-- `toScheduleXEvent(ev: CalendarEvent)` — converts our row to the SX shape.
-  - All events are treated as **all-day** (our DB stores date-only `start_date`/`end_date`); SX detects this when `start`/`end` have no time component.
-  - `calendarId` is derived from scope: `implementation` | `solutions` | `standalone`, with a separate `critical` override colour.
-- `fromScheduleXDates(start, end)` — converts back to ISO date strings for save.
+**Slide ordering**
 
-Filtering stays **service-side / client-side as today** — we just feed the filtered list into SX. SX itself is purely a view layer.
+For each question (ordered by `order_index`), generate one slide per user who has contributed an answer entry of type `summary` or `link`.
+- Group entries by `created_by` within the question.
+- A user's slide shows ALL of their entries for that question (their `summary` insights + their `link` evidence stacked).
+- If a question has no answers, render a single "No answers yet" slide so audiences see the question was asked.
+- Title block on each slide always shows the question text + "Answered by {name}" (or "Awaiting answer").
 
-No migration, no RLS changes, no new tables.
+Slide order: `Q1/UserA → Q1/UserB → Q2/UserA → Q2/UserC → …`
 
----
+**Navigation**
+- `→` / `Space` / `PageDown` / on-screen Next → next slide.
+- `←` / `PageUp` / on-screen Prev → previous slide.
+- `Home` / `End` jump to first / last.
+- `Esc` or the ✕ button exits present mode.
+- Bottom progress dots; current slide highlighted in Thingtrax green.
 
-## 2. UX / UI perspective
+**Fullscreen behaviour**
+- On Present: call `document.documentElement.requestFullscreen()` (best-effort, fall back to a fixed-position cover if the API rejects).
+- Listen to `fullscreenchange` and exit cleanly if the user presses browser ESC.
+- Hide cursor after 3s of inactivity inside the presenter.
 
-### Problems with the current calendar
-- Two stacked months always visible → wastes vertical space, forces scroll.
-- Cell heights jump as events render (`h-24` overrides on a date-picker).
-- No week / day view — bad for days with many events.
-- No drag-to-move, no click-an-event-to-open (we hijack click to create).
-- "+3 more" is the only overflow handling.
+## Technical implementation
 
-### What Schedule-X gives us
-- **Four views with one switcher**: Month grid, Month agenda, Week, Day.
-- Stable cell sizes; events render as coloured chips with proper overflow handling.
-- Click event → opens our existing edit dialog.
-- Click empty slot → opens create dialog with that date pre-filled.
-- Drag-and-drop to reschedule (optional plugin — we'll wire it to call `updateEvent`).
-- Built-in "Today" button, prev/next, current-time indicator.
-- Keyboard navigation and screen-reader labels out of the box.
+**New files**
+- `src/components/gospa/PresentObjectiveDialog.tsx`
+  - Props: `open`, `onOpenChange`, `objective`, `questions`, `entries`, `nameOf`.
+  - Builds the slide list (memoised) from `questions` + `entries`.
+  - Renders a fixed-position branded overlay (no shadcn Dialog — we want full control over fullscreen & keyboard).
+  - Handles fullscreen lifecycle, keyboard nav, cursor auto-hide.
+  - Uses `RichTextView` for answer content inside a `.gospa-present-content` scoped wrapper.
 
-### Proposed layout
+**Modifications**
+- `src/pages/app/gospa/ObjectiveWorkspace.tsx`
+  - Import `Play` icon and `PresentObjectiveDialog`.
+  - Add `presentOpen` state.
+  - Add `<Button variant="outline" onClick={() => setPresentOpen(true)}><Play/> Present</Button>` in the header (next to the RAG select). Disable if no questions.
+  - Render `<PresentObjectiveDialog ... />` at the bottom of the page, passing already-loaded `questionsQ.data`, `entriesQ.data`, `obj`, and `nameOf`.
 
-```
-┌────────────────────────────────────────────────────────────┐
-│  📅 Global Calendar                       [+ New Event]    │
-├────────────────────────────────────────────────────────────┤
-│  Filters:  [Company ▾]  [Scope ▾]  [Attendees ▾]   [Reset] │
-├────────────────────────────────────────────────────────────┤
-│  Legend:  ● Implementation  ● Solutions  ● Standalone  ● Critical │
-├────────────────────────────────────────────────────────────┤
-│  [<] [Today] [>]   April 2026         [Month|Week|Day|List]│
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │                  Schedule-X grid                      │  │
-│  │  (fixed cell size, event chips coloured by scope)     │  │
-│  └──────────────────────────────────────────────────────┘  │
-└────────────────────────────────────────────────────────────┘
-```
+- `src/index.css`
+  - Add a small scoped block to upscale `RichTextView` content inside the presenter:
+  ```css
+  .gospa-present-content { font-size: 22px; line-height: 1.6; }
+  .gospa-present-content h1 { font-size: 40px; }
+  .gospa-present-content h2 { font-size: 32px; }
+  .gospa-present-content h3 { font-size: 26px; }
+  .gospa-present-content a  { color: hsl(var(--thingtrax-green)); text-decoration: underline; }
+  .gospa-present-content ul, .gospa-present-content ol { padding-left: 1.5rem; }
+  .gospa-present-content li { margin: 0.4rem 0; }
+  ```
 
-The big "Calendar Events" list card below stays — it's useful as a filterable agenda when users want to scan everything. We'll move it into a collapsible "List view" section so the calendar is the hero.
+**Link safety**
 
-### Colour mapping (uses existing design tokens, no hard-coded hex)
-- Implementation → `--primary`
-- Solutions → `--accent`
-- Standalone → `--muted-foreground`
-- Critical → `--destructive` (overrides scope colour and adds a small ⚠ icon in the chip)
+After `RichTextView` renders, run a small effect on the slide container that finds `a[href]` and sets `target="_blank"` and `rel="noopener noreferrer"` if missing. (Keeps the existing DOMPurify allow-list intact — no schema changes needed.)
 
----
+**Data**
 
-## 3. Frontend implementation plan
+No DB or service changes. Uses existing:
+- `gospa.listQuestions(objectiveId)`
+- `gospa.listQuestionEntriesForObjective(objectiveId)` (already loaded by the page)
+- `useUserNames` for owner display names
 
-### Dependencies
-Add Schedule-X core + react adapter + plugins we actually need:
+## Out of scope
 
-```
-@schedule-x/react
-@schedule-x/calendar
-@schedule-x/theme-default
-@schedule-x/events-service
-@schedule-x/event-modal           (we'll suppress its built-in modal — see below)
-@schedule-x/drag-and-drop
-@schedule-x/current-time
-```
-
-All MIT-licensed, total bundle ~50 KB gzipped.
-
-### New files
-- `src/components/calendar/ScheduleXCalendar.tsx` — wraps `useCalendarApp` + `<ScheduleXCalendar />`, exposes `onEventClick`, `onSlotClick`, `onEventUpdate` props.
-- `src/lib/calendarEventMappers.ts` — `toScheduleXEvent`, `fromScheduleXDates`, scope→calendarId helper.
-- `src/components/calendar/CalendarLegend.tsx` — small chip row.
-
-### Edited files
-- `src/pages/app/GlobalCalendar.tsx`
-  - Remove the two `<Calendar>` cards + custom `renderDay`.
-  - Replace with `<ScheduleXCalendar events={mappedEvents} ... />`.
-  - Wire callbacks:
-    - `onEventClick(ev)` → `setEditing(meta); setDialogOpen(true)`.
-    - `onSlotClick(date)` → `setEditing(null); setDefaultDate(date); setDialogOpen(true)`.
-    - `onEventUpdate({id, start, end})` → optimistic update + `calendarEventsService.updateEvent(...)`, with rollback on failure (uses existing `useSaveWithRetry` pattern from project memory).
-  - Keep all filter state and the events-list card (made collapsible / "List view" toggle).
-- `src/index.css` — import Schedule-X theme CSS (`@schedule-x/theme-default/dist/index.css`) and override the few CSS variables it exposes (`--sx-color-primary`, `--sx-internal-color-text`, etc.) so it picks up our shadcn tokens and dark mode.
-
-### Drag-and-drop permission
-`onEventUpdate` is gated by the same `canEdit(ev)` check we already use; non-editable events get `draggable: false` in the mapper.
-
-### View persistence
-Persist last-used view (`month-grid` | `week` | `day` | `month-agenda`) in `localStorage` so users land where they left off.
-
-### Migration safety
-- `CreateGlobalEventDialog`, `calendarEventsService`, RLS, attendee logic — all untouched.
-- The current calendar code is removed in one commit; no behind-a-flag rollout (the existing UI is broken enough that a clean swap is preferable).
-- Mobile / tablet: Schedule-X is responsive; week/day views work well on the Lenovo tablets used in the field (per project memory on tablet usage).
-
-### Out of scope (can be follow-ups)
-- Recurring events (DB doesn't model them).
-- Resource view (one column per attendee) — possible later via SX's resource scheduler if needed.
-- iCal export.
-
----
-
-## Acceptance criteria
-1. Month, Week, Day, and Agenda views available via a built-in switcher.
-2. Cells / rows do not resize as events load.
-3. Clicking an empty slot opens the existing create dialog with that date pre-filled.
-4. Clicking an event opens the existing edit dialog (only if user can edit).
-5. Dragging an event to a new date updates `start_date`/`end_date` in `project_events` and rolls back on error.
-6. All existing filters (Company, Scope, Attendees) continue to drive both the calendar and the agenda list.
-7. Colours follow design tokens and respect dark mode.
-8. No database, RLS, or service-layer changes required.
+- Editing answers inside Present mode.
+- Exporting slides to PDF/PPTX.
+- Cross-objective presenting (single objective only for this iteration).

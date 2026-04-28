@@ -63,43 +63,45 @@ export const ScheduleXCalendar = ({ events, onEventClick, onSlotClick, onEventUp
     return m;
   }, [events]);
 
-  const calendarApp = useCalendarApp({
-    views: [createViewMonthGrid(), createViewWeek(), createViewDay(), createViewMonthAgenda()],
-    defaultView: initialView,
-    events,
-    calendars,
-    plugins: [eventsServiceRef.current, dragAndDropRef.current, currentTimeRef.current],
-    callbacks: {
-      onEventClick: (calendarEvent) => {
-        const meta = metaMap.get(String(calendarEvent.id));
-        if (meta && onEventClick) onEventClick(meta);
-      },
-      onClickDate: (date: any) => {
-        if (onSlotClick) onSlotClick(new Date(String(date)));
-      },
-      onClickDateTime: (dateTime: any) => {
-        if (onSlotClick) onSlotClick(new Date(String(dateTime)));
-      },
-      onEventUpdate: (updatedEvent) => {
-        const meta = metaMap.get(String(updatedEvent.id));
-        if (meta && onEventUpdate) {
-          onEventUpdate(
-            String(updatedEvent.id),
-            String(updatedEvent.start),
-            String(updatedEvent.end),
-            meta
-          );
-        }
-      },
-      onRangeUpdate: () => {
-        // persist current view
-        try {
-          const view = (calendarApp as any)?.calendarState?.view?.value;
-          if (view) localStorage.setItem(VIEW_STORAGE_KEY, view);
-        } catch { /* noop */ }
+  const calendarApp = useCalendarApp(
+    {
+      views: [createViewMonthGrid(), createViewWeek(), createViewDay(), createViewMonthAgenda()],
+      defaultView: initialView as any,
+      events,
+      calendars,
+      callbacks: {
+        onEventClick: (calendarEvent: any) => {
+          const meta = metaMap.get(String(calendarEvent.id));
+          if (meta && onEventClick) onEventClick(meta);
+        },
+        onClickDate: (date: any) => {
+          if (onSlotClick) onSlotClick(new Date(String(date)));
+        },
+        onClickDateTime: (dateTime: any) => {
+          if (onSlotClick) onSlotClick(new Date(String(dateTime)));
+        },
+        onEventUpdate: (updatedEvent: any) => {
+          const meta = metaMap.get(String(updatedEvent.id));
+          if (meta && onEventUpdate) {
+            onEventUpdate(
+              String(updatedEvent.id),
+              String(updatedEvent.start),
+              String(updatedEvent.end),
+              meta
+            );
+          }
+        },
+        onRangeUpdate: () => {
+          try {
+            const view = (calendarApp as any)?.calendarState?.view?.value;
+            if (view) localStorage.setItem(VIEW_STORAGE_KEY, view);
+          } catch { /* noop */ }
+        },
       },
     },
-  });
+    [eventsServiceRef.current, dragAndDropRef.current, currentTimeRef.current]
+  );
+
 
   // Sync events when prop changes
   useEffect(() => {

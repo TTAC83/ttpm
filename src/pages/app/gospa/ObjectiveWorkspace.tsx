@@ -148,7 +148,7 @@ export default function ObjectiveWorkspace() {
                       currentUserId={currentUserId} nameOf={nameOf} onChanged={invalidateEntries}
                     />
                     <EntrySection
-                      label="Summary" type="summary" questionId={q.id} entries={entriesFor("summary")}
+                      label="Key insights" type="summary" questionId={q.id} entries={entriesFor("summary")}
                       currentUserId={currentUserId} nameOf={nameOf} onChanged={invalidateEntries}
                     />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

@@ -50,6 +50,22 @@ export const gospa = {
     supabase.from("gospa_questions").update({ ...patch, last_updated: new Date().toISOString() }).eq("id", id).select().single(),
   deleteQuestion: (id: string) => supabase.from("gospa_questions").delete().eq("id", id),
 
+  // Question entries (per-user attributed Summary / Risk / Opportunity / Link rows)
+  listQuestionEntries: (questionId: string) =>
+    supabase.from("gospa_question_entries").select("*").eq("question_id", questionId).order("created_at"),
+  listQuestionEntriesForObjective: async (objectiveId: string) => {
+    const { data: qs } = await supabase.from("gospa_questions").select("id").eq("objective_id", objectiveId);
+    const ids = (qs ?? []).map(q => q.id);
+    if (!ids.length) return { data: [] as any[], error: null } as any;
+    return supabase.from("gospa_question_entries").select("*").in("question_id", ids).order("created_at");
+  },
+  createQuestionEntry: (e: { question_id: string; entry_type: "summary"|"risk"|"opportunity"|"link"; content: string }) =>
+    supabase.from("gospa_question_entries").insert(e).select().single(),
+  updateQuestionEntry: (id: string, content: string) =>
+    supabase.from("gospa_question_entries").update({ content }).eq("id", id).select().single(),
+  deleteQuestionEntry: (id: string) =>
+    supabase.from("gospa_question_entries").delete().eq("id", id),
+
   // Strategies
   listStrategies: (objectiveId?: string) => {
     let q = supabase.from("gospa_strategies").select("*").order("created_at");

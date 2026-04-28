@@ -420,13 +420,22 @@ function EntrySection({
               <li key={e.id} className="flex items-start gap-2 border rounded-md px-2 py-1 bg-muted/30">
                 <div className="flex-1 min-w-0">
                   {isEditing ? (
-                    <Textarea
-                      value={editValue}
-                      onChange={ev => setEditValue(ev.target.value)}
-                      rows={2}
-                      className="text-sm"
-                      autoFocus
-                    />
+                    type === "summary" ? (
+                      <RichTextEditor
+                        value={editValue}
+                        onChange={setEditValue}
+                        placeholder="Edit key insight…"
+                        autoFocus
+                      />
+                    ) : (
+                      <Textarea
+                        value={editValue}
+                        onChange={ev => setEditValue(ev.target.value)}
+                        rows={2}
+                        className="text-sm"
+                        autoFocus
+                      />
+                    )
                   ) : type === "link" ? (
                     <a href={e.content} target="_blank" rel="noopener noreferrer"
                        className="text-sm text-primary hover:underline inline-flex items-center gap-1 break-all"
@@ -434,6 +443,8 @@ function EntrySection({
                       <ExternalLink className="h-3 w-3 shrink-0" />
                       <span className="break-all">{e.content}</span>
                     </a>
+                  ) : type === "summary" ? (
+                    <RichTextView html={e.content} className="text-sm" />
                   ) : (
                     <div className="text-sm whitespace-pre-wrap break-words">{e.content}</div>
                   )}
@@ -467,17 +478,32 @@ function EntrySection({
           })}
         </ul>
       )}
-      <div className="flex gap-2">
-        <Input
-          placeholder={PLACEHOLDERS[type]}
-          value={draft}
-          onChange={e => setDraft(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
-        />
-        <Button type="button" variant="outline" size="sm" onClick={add}>
-          <Plus className="h-4 w-4"/>
-        </Button>
-      </div>
+      {type === "summary" ? (
+        <div className="space-y-2">
+          <RichTextEditor
+            value={draft}
+            onChange={setDraft}
+            placeholder={PLACEHOLDERS[type]}
+          />
+          <div className="flex justify-end">
+            <Button type="button" variant="outline" size="sm" onClick={add}>
+              <Plus className="h-4 w-4 mr-1"/> Add insight
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <Input
+            placeholder={PLACEHOLDERS[type]}
+            value={draft}
+            onChange={e => setDraft(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
+          />
+          <Button type="button" variant="outline" size="sm" onClick={add}>
+            <Plus className="h-4 w-4"/>
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

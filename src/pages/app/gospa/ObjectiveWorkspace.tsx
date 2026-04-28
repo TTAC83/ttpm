@@ -151,16 +151,6 @@ export default function ObjectiveWorkspace() {
                       label="Key insights" type="summary" questionId={q.id} entries={entriesFor("summary")}
                       currentUserId={currentUserId} nameOf={nameOf} onChanged={invalidateEntries}
                     />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <EntrySection
-                        label="Risks" type="risk" questionId={q.id} entries={entriesFor("risk")}
-                        currentUserId={currentUserId} nameOf={nameOf} onChanged={invalidateEntries}
-                      />
-                      <EntrySection
-                        label="Opportunities" type="opportunity" questionId={q.id} entries={entriesFor("opportunity")}
-                        currentUserId={currentUserId} nameOf={nameOf} onChanged={invalidateEntries}
-                      />
-                    </div>
                   </CardContent>
                 </Card>
               );

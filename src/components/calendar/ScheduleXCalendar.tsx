@@ -83,10 +83,12 @@ export const ScheduleXCalendar = ({ events, onEventClick, onSlotClick, onEventUp
         onEventUpdate: (updatedEvent: any) => {
           const meta = metaMap.get(String(updatedEvent.id));
           if (meta && onEventUpdate) {
+            const startStr = updatedEvent.start?.toString?.() ?? String(updatedEvent.start);
+            const endStr = updatedEvent.end?.toString?.() ?? String(updatedEvent.end);
             onEventUpdate(
               String(updatedEvent.id),
-              String(updatedEvent.start),
-              String(updatedEvent.end),
+              startStr.slice(0, 10),
+              endStr.slice(0, 10),
               meta
             );
           }

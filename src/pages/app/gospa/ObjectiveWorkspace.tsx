@@ -69,24 +69,40 @@ export default function ObjectiveWorkspace() {
         </TabsList>
 
         {/* QUESTIONS */}
-        <TabsContent value="questions" className="grid md:grid-cols-2 gap-3">
-          {(questionsQ.data ?? []).map(q => (
-            <Card key={q.id}>
-              <CardHeader className="pb-2"><CardTitle className="text-sm">Q{q.order_index}. {q.question_text}</CardTitle></CardHeader>
-              <CardContent className="space-y-2">
-                <Textarea defaultValue={q.answer_text ?? ""} placeholder="Answer" onBlur={e => gospa.updateQuestion(q.id, { answer_text: e.target.value }).then(() => qc.invalidateQueries({ queryKey: ["gospa-q", id] }))}/>
-                <Textarea defaultValue={q.evidence ?? ""} placeholder="Evidence" rows={2} onBlur={e => gospa.updateQuestion(q.id, { evidence: e.target.value })}/>
-                <div className="grid grid-cols-2 gap-2">
-                  <Textarea defaultValue={q.risks ?? ""} placeholder="Risks" rows={2} onBlur={e => gospa.updateQuestion(q.id, { risks: e.target.value })}/>
-                  <Textarea defaultValue={q.opportunities ?? ""} placeholder="Opportunities" rows={2} onBlur={e => gospa.updateQuestion(q.id, { opportunities: e.target.value })}/>
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground mb-1">Confidence: {q.confidence_score ?? 0}%</div>
-                  <Slider defaultValue={[q.confidence_score ?? 0]} max={100} step={5} onValueCommit={v => gospa.updateQuestion(q.id, { confidence_score: v[0] })}/>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        <TabsContent value="questions" className="space-y-3">
+          <NewItemRow placeholder="Add a question for this objective" onCreate={async (t) => {
+            const nextIdx = ((questionsQ.data ?? []).reduce((m, q) => Math.max(m, q.order_index ?? 0), 0)) + 1;
+            const { error } = await gospa.createQuestion({ objective_id: id, question_text: t, order_index: nextIdx });
+            if (error) return toast.error(error.message);
+            qc.invalidateQueries({ queryKey: ["gospa-q", id] });
+          }}/>
+          <div className="grid md:grid-cols-2 gap-3">
+            {(questionsQ.data ?? []).map(q => (
+              <Card key={q.id}>
+                <CardHeader className="pb-2 flex flex-row items-start gap-2 space-y-0">
+                  <span className="text-sm font-semibold mt-2">Q{q.order_index}.</span>
+                  <Input
+                    className="flex-1 font-medium border-0 px-0 h-auto bg-transparent focus-visible:ring-0"
+                    defaultValue={q.question_text}
+                    placeholder="Question"
+                    onBlur={e => e.target.value !== q.question_text && gospa.updateQuestion(q.id, { question_text: e.target.value }).then(() => qc.invalidateQueries({ queryKey: ["gospa-q", id] }))}
+                  />
+                  <Button variant="ghost" size="icon" onClick={() => gospa.deleteQuestion(q.id).then(() => qc.invalidateQueries({ queryKey: ["gospa-q", id] }))}>
+                    <Trash2 className="h-4 w-4 text-destructive"/>
+                  </Button>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <Textarea defaultValue={q.answer_text ?? ""} placeholder="Answer" onBlur={e => gospa.updateQuestion(q.id, { answer_text: e.target.value }).then(() => qc.invalidateQueries({ queryKey: ["gospa-q", id] }))}/>
+                  <Textarea defaultValue={q.evidence ?? ""} placeholder="Summary" rows={2} onBlur={e => gospa.updateQuestion(q.id, { evidence: e.target.value })}/>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Textarea defaultValue={q.risks ?? ""} placeholder="Risks" rows={2} onBlur={e => gospa.updateQuestion(q.id, { risks: e.target.value })}/>
+                    <Textarea defaultValue={q.opportunities ?? ""} placeholder="Opportunities" rows={2} onBlur={e => gospa.updateQuestion(q.id, { opportunities: e.target.value })}/>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            {!questionsQ.data?.length && <div className="text-sm text-muted-foreground md:col-span-2">No questions yet. Add one above.</div>}
+          </div>
         </TabsContent>
 
         {/* DIRECTION */}
@@ -100,7 +116,7 @@ export default function ObjectiveWorkspace() {
                 const { data, error } = await gospaAI.summariseQuestions(id);
                 if (error) return toast.error(error.message);
                 toast.success("Summary generated"); qc.invalidateQueries({ queryKey: ["gospa-obj", id] });
-              }}><Sparkles className="h-4 w-4 mr-2"/>Generate AI summary from 6 answers</Button>
+              }}><Sparkles className="h-4 w-4 mr-2"/>Generate AI summary from answers</Button>
               {obj.ai_summary && <Card className="bg-muted/40"><CardContent className="pt-4 text-sm whitespace-pre-wrap">{obj.ai_summary}</CardContent></Card>}
             </CardContent>
           </Card>

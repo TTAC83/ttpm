@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
+
 import { RAGBadge } from "@/components/gospa/RAGBadge";
 import { StatusPill } from "@/components/gospa/StatusPill";
 import { Plus, Trash2, Sparkles, ArrowLeft, AlertTriangle } from "lucide-react";

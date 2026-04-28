@@ -382,8 +382,13 @@ function EntrySection({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
 
+  const isEmptyHtml = (s: string) => !s || s.replace(/<[^>]+>/g, "").trim() === "";
+
   const add = async () => {
-    const v = type === "link" ? normalizeUrl(draft) : draft.trim();
+    let v: string;
+    if (type === "link") v = normalizeUrl(draft);
+    else if (type === "summary") v = isEmptyHtml(draft) ? "" : draft;
+    else v = draft.trim();
     if (!v) return;
     const { error } = await gospa.createQuestionEntry({ question_id: questionId, entry_type: type, content: v });
     if (error) return toast.error(error.message);
@@ -392,7 +397,10 @@ function EntrySection({
   };
 
   const save = async (id: string) => {
-    const v = type === "link" ? normalizeUrl(editValue) : editValue.trim();
+    let v: string;
+    if (type === "link") v = normalizeUrl(editValue);
+    else if (type === "summary") v = isEmptyHtml(editValue) ? "" : editValue;
+    else v = editValue.trim();
     if (!v) return;
     const { error } = await gospa.updateQuestionEntry(id, v);
     if (error) return toast.error(error.message);

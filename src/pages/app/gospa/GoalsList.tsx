@@ -37,7 +37,7 @@ export default function GoalsList() {
     const existing = (objsQ.data ?? []).filter(o => o.goal_id === newObjFor);
     const { error } = await gospa.createObjective({ goal_id: newObjFor, title: oTitle, target_outcome: oOutcome, order_index: Math.min(existing.length + 1, 6) });
     if (error) return toast.error(error.message);
-    toast.success("Objective created (6 questions auto-seeded)");
+    toast.success("Objective created");
     setNewObjFor(null); setOTitle(""); setOOutcome("");
     qc.invalidateQueries({ queryKey: ["gospa-objectives"] });
   };

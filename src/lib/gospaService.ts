@@ -44,8 +44,11 @@ export const gospa = {
   // Questions
   listQuestions: (objectiveId: string) =>
     supabase.from("gospa_questions").select("*").eq("objective_id", objectiveId).order("order_index"),
+  createQuestion: (q: { objective_id: string; question_text: string; order_index: number }) =>
+    supabase.from("gospa_questions").insert(q).select().single(),
   updateQuestion: (id: string, patch: Partial<Question>) =>
     supabase.from("gospa_questions").update({ ...patch, last_updated: new Date().toISOString() }).eq("id", id).select().single(),
+  deleteQuestion: (id: string) => supabase.from("gospa_questions").delete().eq("id", id),
 
   // Strategies
   listStrategies: (objectiveId?: string) => {

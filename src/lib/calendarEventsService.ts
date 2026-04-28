@@ -153,22 +153,14 @@ export const calendarEventsService = {
     const projMap = new Map<string, { name: string; company_id: string | null }>();
     const solMap = new Map<string, { name: string; company_id: string | null }>();
 
-    const promises: Promise<any>[] = [];
     if (projIds.length) {
-      promises.push(
-        supabase.from("projects").select("id, name, company_id").in("id", projIds).then((r) => {
-          (r.data ?? []).forEach((p: any) => projMap.set(p.id, { name: p.name, company_id: p.company_id }));
-        })
-      );
+      const r = await supabase.from("projects").select("id, name, company_id").in("id", projIds);
+      (r.data ?? []).forEach((p: any) => projMap.set(p.id, { name: p.name, company_id: p.company_id }));
     }
     if (solIds.length) {
-      promises.push(
-        supabase.from("solutions_projects").select("id, name, company_id").in("id", solIds).then((r) => {
-          (r.data ?? []).forEach((p: any) => solMap.set(p.id, { name: p.name, company_id: p.company_id }));
-        })
-      );
+      const r = await supabase.from("solutions_projects").select("id, name, company_id").in("id", solIds);
+      (r.data ?? []).forEach((p: any) => solMap.set(p.id, { name: p.name, company_id: p.company_id }));
     }
-    await Promise.all(promises);
 
     const companyIds = Array.from(new Set([
       ...Array.from(projMap.values()).map((v) => v.company_id).filter(Boolean) as string[],

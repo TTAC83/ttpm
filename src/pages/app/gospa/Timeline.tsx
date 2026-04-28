@@ -1,9 +1,48 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { gospa } from "@/lib/gospaService";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusPill } from "@/components/gospa/StatusPill";
+import { Button } from "@/components/ui/button";
+import { GospaGanttChart } from "@/features/gospa-gantt/GospaGanttChart";
+import { BarChart3, List } from "lucide-react";
 
 export default function GospaTimeline() {
+  const [view, setView] = useState<"gantt" | "list">("gantt");
+
+  return (
+    <div className="p-6 max-w-[1600px] mx-auto space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-3xl font-bold">GOSPA Timeline</h1>
+          <p className="text-sm text-muted-foreground">Goals → Objectives → Strategies → Plans → Actions across time.</p>
+        </div>
+        <div className="flex items-center border rounded-md overflow-hidden">
+          <Button
+            variant={view === "gantt" ? "default" : "ghost"}
+            size="sm"
+            className="rounded-none"
+            onClick={() => setView("gantt")}
+          >
+            <BarChart3 className="h-4 w-4 mr-1"/>Gantt
+          </Button>
+          <Button
+            variant={view === "list" ? "default" : "ghost"}
+            size="sm"
+            className="rounded-none"
+            onClick={() => setView("list")}
+          >
+            <List className="h-4 w-4 mr-1"/>List
+          </Button>
+        </div>
+      </div>
+
+      {view === "gantt" ? <GospaGanttChart /> : <ListView />}
+    </div>
+  );
+}
+
+function ListView() {
   const plansQ = useQuery({ queryKey: ["gospa-plans-all"], queryFn: async () => (await gospa.listPlans()).data ?? [] });
   const actionsQ = useQuery({ queryKey: ["gospa-actions-all"], queryFn: async () => (await gospa.listActions()).data ?? [] });
 
@@ -13,24 +52,20 @@ export default function GospaTimeline() {
   ].filter(i => i.start || i.end).sort((a, b) => (a.start ?? "").localeCompare(b.start ?? ""));
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-4">
-      <h1 className="text-3xl font-bold">GOSPA Timeline</h1>
-      <Card>
-        <CardHeader><CardTitle className="text-base">Plans & Actions ({items.length})</CardTitle></CardHeader>
-        <CardContent className="space-y-1">
-          {items.map(i => (
-            <div key={`${i.kind}-${i.id}`} className="flex items-center gap-3 text-sm border-b py-1">
-              <span className="text-xs font-mono text-muted-foreground w-14">{i.kind}</span>
-              <span className="flex-1 truncate">{i.title}</span>
-              <span className="text-xs text-muted-foreground">{i.start ?? "—"} → {i.end ?? "—"}</span>
-              {typeof i.status === "string" && i.kind === "Plan" && <StatusPill value={i.status as any}/>}
-              {typeof i.status === "string" && i.kind === "Action" && <span className="text-xs">{i.status}</span>}
-            </div>
-          ))}
-          {!items.length && <div className="text-sm text-muted-foreground">Add dates to plans/actions to see them here.</div>}
-        </CardContent>
-      </Card>
-      <p className="text-xs text-muted-foreground">Tip: a full SVG Gantt with drag-resize will reuse <code>src/features/gantt</code> in the next iteration.</p>
-    </div>
+    <Card>
+      <CardHeader><CardTitle className="text-base">Plans & Actions ({items.length})</CardTitle></CardHeader>
+      <CardContent className="space-y-1">
+        {items.map(i => (
+          <div key={`${i.kind}-${i.id}`} className="flex items-center gap-3 text-sm border-b py-1">
+            <span className="text-xs font-mono text-muted-foreground w-14">{i.kind}</span>
+            <span className="flex-1 truncate">{i.title}</span>
+            <span className="text-xs text-muted-foreground">{i.start ?? "—"} → {i.end ?? "—"}</span>
+            {typeof i.status === "string" && i.kind === "Plan" && <StatusPill value={i.status as any}/>}
+            {typeof i.status === "string" && i.kind === "Action" && <span className="text-xs">{i.status}</span>}
+          </div>
+        ))}
+        {!items.length && <div className="text-sm text-muted-foreground">Add dates to plans/actions to see them here.</div>}
+      </CardContent>
+    </Card>
   );
 }

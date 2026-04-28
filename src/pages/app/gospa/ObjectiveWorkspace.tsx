@@ -359,65 +359,131 @@ function ActionCreator({ plans, onCreated }: { plans: any[]; onCreated: () => vo
   );
 }
 
-function EvidenceLinks({ value, onChange }: { value: string; onChange: (v: string) => any }) {
-  const links = (value || "").split("\n").map(s => s.trim()).filter(Boolean);
+type EntryType = "summary" | "risk" | "opportunity" | "link";
+
+const PLACEHOLDERS: Record<EntryType, string> = {
+  summary: "Add a summary point",
+  risk: "Add a risk",
+  opportunity: "Add an opportunity",
+  link: "Paste a link (https://…)",
+};
+
+const normalizeUrl = (raw: string) => {
+  const t = raw.trim();
+  if (!t) return "";
+  return /^https?:\/\//i.test(t) ? t : `https://${t}`;
+};
+
+function EntrySection({
+  label, icon, type, questionId, entries, currentUserId, nameOf, onChanged,
+}: {
+  label: string;
+  icon?: React.ReactNode;
+  type: EntryType;
+  questionId: string;
+  entries: any[];
+  currentUserId: string;
+  nameOf: (uid?: string | null) => string;
+  onChanged: () => void;
+}) {
   const [draft, setDraft] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
 
-  const normalize = (raw: string) => {
-    const t = raw.trim();
-    if (!t) return "";
-    if (/^https?:\/\//i.test(t)) return t;
-    return `https://${t}`;
-  };
-
-  const add = () => {
-    const url = normalize(draft);
-    if (!url) return;
-    const next = [...links, url].join("\n");
+  const add = async () => {
+    const v = type === "link" ? normalizeUrl(draft) : draft.trim();
+    if (!v) return;
+    const { error } = await gospa.createQuestionEntry({ question_id: questionId, entry_type: type, content: v });
+    if (error) return toast.error(error.message);
     setDraft("");
-    onChange(next);
+    onChanged();
   };
 
-  const remove = (idx: number) => {
-    const next = links.filter((_, i) => i !== idx).join("\n");
-    onChange(next);
+  const save = async (id: string) => {
+    const v = type === "link" ? normalizeUrl(editValue) : editValue.trim();
+    if (!v) return;
+    const { error } = await gospa.updateQuestionEntry(id, v);
+    if (error) return toast.error(error.message);
+    setEditingId(null);
+    onChanged();
+  };
+
+  const remove = async (id: string) => {
+    const { error } = await gospa.deleteQuestionEntry(id);
+    if (error) return toast.error(error.message);
+    onChanged();
   };
 
   return (
     <div className="space-y-2">
       <div className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-        <Link2 className="h-3 w-3" /> Supporting evidence links
+        {icon} {label}
       </div>
-      {links.length > 0 && (
+      {entries.length > 0 && (
         <ul className="space-y-1">
-          {links.map((url, i) => (
-            <li key={i} className="flex items-center gap-2 border rounded-md px-2 py-1 bg-muted/30">
-              <a
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 text-sm text-primary hover:underline truncate inline-flex items-center gap-1"
-                title={url}
-              >
-                <ExternalLink className="h-3 w-3 shrink-0" />
-                <span className="truncate">{url}</span>
-              </a>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => remove(i)}>
-                <Trash2 className="h-3 w-3 text-destructive" />
-              </Button>
-            </li>
-          ))}
+          {entries.map(e => {
+            const mine = e.created_by === currentUserId;
+            const isEditing = editingId === e.id;
+            return (
+              <li key={e.id} className="flex items-start gap-2 border rounded-md px-2 py-1 bg-muted/30">
+                <div className="flex-1 min-w-0">
+                  {isEditing ? (
+                    <Textarea
+                      value={editValue}
+                      onChange={ev => setEditValue(ev.target.value)}
+                      rows={2}
+                      className="text-sm"
+                      autoFocus
+                    />
+                  ) : type === "link" ? (
+                    <a href={e.content} target="_blank" rel="noopener noreferrer"
+                       className="text-sm text-primary hover:underline inline-flex items-center gap-1 break-all"
+                       title={e.content}>
+                      <ExternalLink className="h-3 w-3 shrink-0" />
+                      <span className="break-all">{e.content}</span>
+                    </a>
+                  ) : (
+                    <div className="text-sm whitespace-pre-wrap break-words">{e.content}</div>
+                  )}
+                  <Badge variant="secondary" className="text-[10px] font-normal mt-1">
+                    Added by {nameOf(e.created_by)}
+                  </Badge>
+                </div>
+                {mine && !isEditing && (
+                  <div className="flex gap-1 shrink-0">
+                    <Button variant="ghost" size="icon" className="h-6 w-6"
+                      onClick={() => { setEditingId(e.id); setEditValue(e.content); }}>
+                      <Pencil className="h-3 w-3"/>
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => remove(e.id)}>
+                      <Trash2 className="h-3 w-3 text-destructive"/>
+                    </Button>
+                  </div>
+                )}
+                {mine && isEditing && (
+                  <div className="flex gap-1 shrink-0">
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => save(e.id)}>
+                      <Check className="h-3 w-3"/>
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingId(null)}>
+                      <X className="h-3 w-3"/>
+                    </Button>
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
       <div className="flex gap-2">
         <Input
-          placeholder="Paste a link (https://…)"
+          placeholder={PLACEHOLDERS[type]}
           value={draft}
           onChange={e => setDraft(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
         />
         <Button type="button" variant="outline" size="sm" onClick={add}>
-          <Plus className="h-4 w-4" />
+          <Plus className="h-4 w-4"/>
         </Button>
       </div>
     </div>

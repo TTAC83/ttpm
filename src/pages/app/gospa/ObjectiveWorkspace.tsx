@@ -14,6 +14,8 @@ import { Badge } from "@/components/ui/badge";
 
 import { RAGBadge } from "@/components/gospa/RAGBadge";
 import { StatusPill } from "@/components/gospa/StatusPill";
+import { RichTextEditor } from "@/components/gospa/RichTextEditor";
+import { RichTextView } from "@/components/gospa/RichTextView";
 import { Plus, Trash2, Sparkles, ArrowLeft, AlertTriangle, Link2, ExternalLink, Check, X, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import type { GospaRag, GospaStatus } from "@/lib/gospaService";

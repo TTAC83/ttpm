@@ -362,7 +362,7 @@ function ActionCreator({ plans, onCreated }: { plans: any[]; onCreated: () => vo
 type EntryType = "summary" | "risk" | "opportunity" | "link";
 
 const PLACEHOLDERS: Record<EntryType, string> = {
-  summary: "Add a summary point",
+  summary: "Add a key insight",
   risk: "Add a risk",
   opportunity: "Add an opportunity",
   link: "Paste a link (https://…)",

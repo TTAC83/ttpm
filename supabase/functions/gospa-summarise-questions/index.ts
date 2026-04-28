@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
     if (questionIds.length) {
       const { data: ents, error: eErr } = await supaUser
         .from("gospa_question_entries")
-        .select("question_id, type, content, confidence")
+        .select("question_id, entry_type, content")
         .in("question_id", questionIds);
       if (eErr) throw eErr;
       entries = ents ?? [];
@@ -55,14 +55,11 @@ Deno.serve(async (req) => {
 
     const formatted = (questions ?? []).map((q, i) => {
       const qEntries = entries.filter(e => e.question_id === q.id);
-      const insights = qEntries.filter(e => e.type === "summary").map(e => stripHtml(e.content)).filter(Boolean);
-      const answers = qEntries.filter(e => e.type !== "summary").map(e => stripHtml(e.content)).filter(Boolean);
-      const conf = qEntries.map(e => e.confidence).filter((c): c is number => typeof c === "number");
-      const avgConf = conf.length ? (conf.reduce((a, b) => a + b, 0) / conf.length).toFixed(1) : "n/a";
+      const insights = qEntries.filter(e => e.entry_type === "summary").map(e => stripHtml(e.content)).filter(Boolean);
+      const answers = qEntries.filter(e => e.entry_type !== "summary").map(e => stripHtml(e.content)).filter(Boolean);
       return `Q${i + 1}. ${q.question_text}
 Key insights: ${insights.length ? insights.join(" | ") : "(none)"}
-Other notes: ${answers.length ? answers.join(" | ") : "(none)"}
-Avg confidence: ${avgConf}/10`;
+Other notes: ${answers.length ? answers.join(" | ") : "(none)"}`;
     }).join("\n\n");
 
     const prompt = `Objective: ${objective.title}

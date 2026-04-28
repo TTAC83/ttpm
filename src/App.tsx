@@ -59,6 +59,7 @@ import ExecutiveSummary from "./pages/app/implementation/ExecutiveSummary";
 import BoardSummary from "./pages/app/implementation/BoardSummary";
 import TeamsReport from "./pages/app/implementation/TeamsReport";
 import { InternalRoute } from "@/components/auth/InternalRoute";
+import { GospaRoute } from "@/components/auth/GospaRoute";
 import ExpansionReport from "./pages/app/global-dashboards/ExpansionReport";
 import ScheduleRequired from "./pages/app/vision-models/ScheduleRequired";
 import FootageRequired from "./pages/app/vision-models/FootageRequired";

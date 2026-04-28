@@ -298,3 +298,68 @@ function ActionCreator({ plans, onCreated }: { plans: any[]; onCreated: () => vo
     </CardContent></Card>
   );
 }
+
+function EvidenceLinks({ value, onChange }: { value: string; onChange: (v: string) => any }) {
+  const links = (value || "").split("\n").map(s => s.trim()).filter(Boolean);
+  const [draft, setDraft] = useState("");
+
+  const normalize = (raw: string) => {
+    const t = raw.trim();
+    if (!t) return "";
+    if (/^https?:\/\//i.test(t)) return t;
+    return `https://${t}`;
+  };
+
+  const add = () => {
+    const url = normalize(draft);
+    if (!url) return;
+    const next = [...links, url].join("\n");
+    setDraft("");
+    onChange(next);
+  };
+
+  const remove = (idx: number) => {
+    const next = links.filter((_, i) => i !== idx).join("\n");
+    onChange(next);
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+        <Link2 className="h-3 w-3" /> Supporting evidence links
+      </div>
+      {links.length > 0 && (
+        <ul className="space-y-1">
+          {links.map((url, i) => (
+            <li key={i} className="flex items-center gap-2 border rounded-md px-2 py-1 bg-muted/30">
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 text-sm text-primary hover:underline truncate inline-flex items-center gap-1"
+                title={url}
+              >
+                <ExternalLink className="h-3 w-3 shrink-0" />
+                <span className="truncate">{url}</span>
+              </a>
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => remove(i)}>
+                <Trash2 className="h-3 w-3 text-destructive" />
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="flex gap-2">
+        <Input
+          placeholder="Paste a link (https://…)"
+          value={draft}
+          onChange={e => setDraft(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
+        />
+        <Button type="button" variant="outline" size="sm" onClick={add}>
+          <Plus className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}

@@ -1,53 +1,71 @@
-## GOSPA — Per-Entry Authorship & Edit Restrictions
+## Goal
 
-Today every GOSPA question card lets anyone in the allow-list edit the same single Summary / Risks / Opportunities / Links fields. We'll change the model so each entry is its own row, badged with the author's name, and only that author (the "owner") can edit or delete it.
+Replace the plain textarea used for **Key Insights** entries in the GOSPA Objective Workspace with a rich-text editor that supports:
 
-### What the user will see
+- **Bold**, *italic*, **underline**
+- Font size selection
+- Bulleted and numbered lists
+- Pasting formatted content (including tables) directly from Microsoft Word and PowerPoint
 
-For each question card:
+Existing per-user attribution and edit-locking remain unchanged — only the content editor and rendering change.
 
-- **"Add a summary point" / "Add a risk" / "Add an opportunity" / "Add a link"** input row at the top of each section — submitting creates a new entry owned by the current user.
-- Each existing entry renders as its own row with:
-  - The entry text (or clickable link) on the left.
-  - An **"Added by {Name}"** badge on the right.
-  - Edit / delete controls **only visible to the entry's author** — for everyone else the entry is read-only.
-- The question title row also gets an **"Added by {Name}"** badge. Only the question's creator can rename or delete the whole question.
+## Approach
 
-Links section keeps the existing "click-to-open in new tab" behaviour.
+Use **TipTap** (ProseMirror-based, React-friendly, MIT-licensed). It supports the entire feature set out-of-the-box, including pasting from Word/PowerPoint with formatting and tables preserved. Content will be stored as **HTML** in the existing `gospa_question_entries.content` column (text type — no schema change required).
 
-### Database changes (one migration)
+### Why TipTap
+- First-class clipboard handling for Office paste (Word/PowerPoint produce HTML on the clipboard; TipTap's StarterKit + Table extensions consume it cleanly).
+- Modular extensions, headless — styles via Tailwind `prose` classes so it matches the existing design.
+- Already commonly paired with shadcn/ui projects.
 
-New table `gospa_question_entries`:
+### Packages to add
+- `@tiptap/react`
+- `@tiptap/starter-kit` (paragraphs, bold, italic, lists, headings, history)
+- `@tiptap/extension-underline`
+- `@tiptap/extension-text-style` + `@tiptap/extension-font-size` (font size control)
+- `@tiptap/extension-table`, `@tiptap/extension-table-row`, `@tiptap/extension-table-cell`, `@tiptap/extension-table-header`
+- `@tiptap/extension-link` (preserve hyperlinks pasted from Office)
+- `@tailwindcss/typography` (for `prose` rendering of saved HTML) — only if not already present
 
-| column | type | notes |
-|---|---|---|
-| `id` | uuid PK | |
-| `question_id` | uuid FK → gospa_questions, on delete cascade | |
-| `entry_type` | text, check in (`summary`, `risk`, `opportunity`, `link`) | |
-| `content` | text | the summary text / risk text / link URL |
-| `created_by` | uuid (auth.users) not null default auth.uid() | the owner |
-| `created_at` / `updated_at` | timestamptz | |
+## What changes
 
-RLS policies:
-- **SELECT**: any GOSPA-allowed user (`gospa_can_read()`).
-- **INSERT**: `gospa_can_read()` AND `created_by = auth.uid()`.
-- **UPDATE / DELETE**: `created_by = auth.uid()` (author only).
+### 1. New component: `src/components/gospa/RichTextEditor.tsx`
+- Controlled TipTap editor with a compact toolbar:
+  - Bold • Italic • Underline
+  - Font size dropdown (12 / 14 / 16 / 18 / 20 / 24 px)
+  - Bullet list • Numbered list
+  - Clear formatting
+- `value: string` (HTML), `onChange(html: string)`, `placeholder`, `autoFocus` props.
+- Uses `editor.getHTML()` on update; sanitises pasted Office HTML via TipTap's built-in transformer (StarterKit handles MS-Word junk well; we'll also strip empty `<p>` and Office-specific `class="Mso..."` attributes via a small paste rule).
+- Table support enabled with `resizable: true`.
 
-Add `created_by uuid` to `gospa_questions` (nullable, default `auth.uid()`), and tighten the existing UPDATE/DELETE policies on `gospa_questions` so only the question's `created_by` can rename or delete it (read/insert stay unchanged). Existing rows with NULL `created_by` will be editable by everyone (legacy fallback) — we'll backfill where possible.
+### 2. Read-only renderer: `src/components/gospa/RichTextView.tsx`
+- Renders saved HTML safely using `DOMPurify` (already common dep — add `isomorphic-dompurify` if not present) inside a `<div className="prose prose-sm max-w-none">`.
+- Used in `EntrySection` list items in place of the current `<div className="whitespace-pre-wrap">`.
 
-### Code changes
+### 3. `src/pages/app/gospa/ObjectiveWorkspace.tsx` — `EntrySection` updates
+- For `type === "summary"` only:
+  - Replace the `<Input>` add field with `<RichTextEditor>` + an "Add" button.
+  - Replace the inline edit `<Textarea>` with `<RichTextEditor>`.
+  - Replace the display `<div className="whitespace-pre-wrap">` with `<RichTextView html={e.content} />`.
+- `risk` / `opportunity` / `link` paths are already removed / remain plain — no change.
+- Keep existing save/edit/delete logic; just pass HTML strings through `gospa.createQuestionEntry` / `updateQuestionEntry`.
 
-- **`src/lib/gospaService.ts`** — add `listQuestionEntries(questionId)`, `createQuestionEntry({question_id, entry_type, content})`, `updateQuestionEntry(id, content)`, `deleteQuestionEntry(id)`.
-- **`src/pages/app/gospa/ObjectiveWorkspace.tsx`** — replace the four single-field textareas in each question card with four `EntrySection` blocks (Summary / Risks / Opportunities / Links). Each block:
-  - Lists entries from `gospa_question_entries` for that question + `entry_type`.
-  - Shows author name (resolved via a small profile lookup query keyed by `created_by`).
-  - Renders edit/delete controls only when `entry.created_by === currentUser.id`.
-  - For `entry_type='link'`, renders content as a clickable badge with `ExternalLink` icon (reusing existing normalisation).
-- A small helper hook `useGospaUserNames(userIds)` batches profile fetches via the existing secure profile path (`get_safe_profile_info` or a single `profiles` select restricted to the 5 allow-list users).
-- The existing `answer_text` / `evidence` / `risks` / `opportunities` columns on `gospa_questions` stay in place (legacy data preserved, but UI no longer reads/writes them).
+### 4. Backwards compatibility
+- Existing entries are plain text. `RichTextView` renders plain strings unchanged (DOMPurify passes through escaped text). When a user edits a legacy entry, TipTap loads it as a single paragraph automatically.
 
-### Out of scope
+### 5. Styling
+- Add `@tailwindcss/typography` plugin to `tailwind.config.ts` if missing, scoped to `prose` only.
+- Toolbar uses existing shadcn `Button` (ghost, size icon) and `Select` for font size — matches surrounding UI.
 
-- No changes to Strategies, Plans, Actions, Metrics, Decisions, Blockers — those keep current behaviour.
-- No data migration of existing single-field text into per-entry rows (existing values become invisible in the new UI; if needed we can add a one-off backfill in a follow-up).
-- The 5-user GOSPA allow-list itself is unchanged.
+## Out of scope
+- No DB migration (HTML stored in existing `content text` column).
+- No changes to risks/opportunities/links rendering.
+- No image paste support (Word/PowerPoint images come as `<img>` referencing local clipboard URIs that don't survive — we'll strip them and show a small toast hint if detected).
+
+## QA checklist (post-implementation)
+1. Type plain text → bold/underline/list → save → reload → formatting persists.
+2. Copy a formatted paragraph + bulleted list from Word → paste → formatting preserved.
+3. Copy a table from Word/PowerPoint → paste → table renders with borders.
+4. Edit a legacy plain-text entry → still loads correctly.
+5. Only the entry's owner sees Edit/Delete buttons (existing behaviour intact).

@@ -81,8 +81,9 @@ export default function ObjectiveWorkspace() {
               <Card key={q.id}>
                 <CardHeader className="pb-2 flex flex-row items-start gap-2 space-y-0">
                   <span className="text-sm font-semibold mt-2">Q{q.order_index}.</span>
-                  <Input
-                    className="flex-1 font-medium border-0 px-0 h-auto bg-transparent focus-visible:ring-0"
+                  <Textarea
+                    className="flex-1 font-medium border-0 px-0 py-1 min-h-0 bg-transparent focus-visible:ring-0 resize-none whitespace-pre-wrap break-words leading-snug"
+                    rows={2}
                     defaultValue={q.question_text}
                     placeholder="Question"
                     onBlur={e => e.target.value !== q.question_text && gospa.updateQuestion(q.id, { question_text: e.target.value }).then(() => qc.invalidateQueries({ queryKey: ["gospa-q", id] }))}

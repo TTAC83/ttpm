@@ -1,4 +1,4 @@
-import { Temporal } from "temporal-polyfill";
+import "temporal-polyfill/global";
 import type { CalendarEvent, EventScope } from "./calendarEventsService";
 
 // Schedule-X v4 requires Temporal.PlainDate (all-day) or Temporal.ZonedDateTime (timed) for start/end.
@@ -25,7 +25,7 @@ export const scopeToCalendarId = (
 const toPlainDate = (iso: string): Temporal.PlainDate => {
   // Take YYYY-MM-DD portion (date-only convention used in this project)
   const dateOnly = iso.slice(0, 10);
-  return Temporal.PlainDate.from(dateOnly);
+  return globalThis.Temporal.PlainDate.from(dateOnly);
 };
 
 export const toScheduleXEvent = (ev: CalendarEvent): SXEvent => ({

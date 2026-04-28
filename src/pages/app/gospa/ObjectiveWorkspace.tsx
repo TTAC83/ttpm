@@ -42,8 +42,14 @@ function useUserNames(userIds: string[]) {
 export default function ObjectiveWorkspace() {
   const { id = "" } = useParams();
   const qc = useQueryClient();
+  const { user } = useAuth();
+  const currentUserId = user?.id ?? "";
   const objQ = useQuery({ queryKey: ["gospa-obj", id], queryFn: async () => (await gospa.getObjective(id)).data });
   const questionsQ = useQuery({ queryKey: ["gospa-q", id], queryFn: async () => (await gospa.listQuestions(id)).data ?? [] });
+  const entriesQ = useQuery({
+    queryKey: ["gospa-q-entries", id],
+    queryFn: async () => (await gospa.listQuestionEntriesForObjective(id)).data ?? [],
+  });
   const stratsQ = useQuery({ queryKey: ["gospa-strat", id], queryFn: async () => (await gospa.listStrategies(id)).data ?? [] });
   const plansQ = useQuery({ queryKey: ["gospa-plans-by-obj", id], queryFn: async () => (await gospa.listPlans()).data ?? [] });
   const actionsQ = useQuery({ queryKey: ["gospa-actions-obj", id], queryFn: async () => (await gospa.listActions({ objectiveId: id })).data ?? [] });
@@ -53,6 +59,18 @@ export default function ObjectiveWorkspace() {
 
   const obj = objQ.data;
   const planByStrategy = (sid: string) => (plansQ.data ?? []).filter(p => p.strategy_id === sid);
+
+  // Collect every user_id that owns a question or an entry, so we can resolve names in one go.
+  const allOwnerIds = useMemo(() => {
+    const ids: string[] = [];
+    (questionsQ.data ?? []).forEach((q: any) => { if (q.created_by) ids.push(q.created_by); });
+    (entriesQ.data ?? []).forEach((e: any) => { if (e.created_by) ids.push(e.created_by); });
+    return ids;
+  }, [questionsQ.data, entriesQ.data]);
+  const namesQ = useUserNames(allOwnerIds);
+  const nameOf = (uid?: string | null) => (uid && namesQ.data?.[uid]) || (uid === currentUserId ? "You" : "—");
+
+  const invalidateEntries = () => qc.invalidateQueries({ queryKey: ["gospa-q-entries", id] });
 
   if (!obj) return <div className="p-6">Loading…</div>;
 

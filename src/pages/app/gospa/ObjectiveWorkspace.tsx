@@ -1,22 +1,43 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { gospa, gospaAI } from "@/lib/gospaService";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 import { RAGBadge } from "@/components/gospa/RAGBadge";
 import { StatusPill } from "@/components/gospa/StatusPill";
-import { Plus, Trash2, Sparkles, ArrowLeft, AlertTriangle, Link2, ExternalLink } from "lucide-react";
+import { Plus, Trash2, Sparkles, ArrowLeft, AlertTriangle, Link2, ExternalLink, Check, X, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import type { GospaRag, GospaStatus } from "@/lib/gospaService";
 
 const RAGS: GospaRag[] = ["green", "amber", "red"];
 const STATUSES: GospaStatus[] = ["not_started", "in_progress", "blocked", "done"];
+
+// Lookup hook: given a set of user_ids, return { [user_id]: displayName }
+function useUserNames(userIds: string[]) {
+  const ids = useMemo(() => Array.from(new Set(userIds.filter(Boolean))).sort(), [userIds]);
+  return useQuery({
+    queryKey: ["gospa-user-names", ids.join(",")],
+    enabled: ids.length > 0,
+    queryFn: async () => {
+      const map: Record<string, string> = {};
+      await Promise.all(ids.map(async (uid) => {
+        const { data } = await supabase.rpc("get_safe_profile_info", { target_user_id: uid });
+        if (data && data[0]) map[uid] = data[0].name || "Unknown";
+        else map[uid] = "Unknown";
+      }));
+      return map;
+    },
+  });
+}
 
 export default function ObjectiveWorkspace() {
   const { id = "" } = useParams();

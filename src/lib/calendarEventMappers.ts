@@ -1,4 +1,4 @@
-import { Temporal } from "@js-temporal/polyfill";
+import { Temporal } from "temporal-polyfill";
 import type { CalendarEvent, EventScope } from "./calendarEventsService";
 
 // Schedule-X v4 requires Temporal.PlainDate (all-day) or Temporal.ZonedDateTime (timed) for start/end.

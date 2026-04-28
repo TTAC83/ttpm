@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 import { RAGBadge } from "@/components/gospa/RAGBadge";
 import { StatusPill } from "@/components/gospa/StatusPill";
-import { Plus, Trash2, Sparkles, ArrowLeft, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Sparkles, ArrowLeft, AlertTriangle, Link2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import type { GospaRag, GospaStatus } from "@/lib/gospaService";
 

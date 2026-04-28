@@ -116,34 +116,55 @@ export default function ObjectiveWorkspace() {
             qc.invalidateQueries({ queryKey: ["gospa-q", id] });
           }}/>
           <div className="grid md:grid-cols-2 gap-3">
-            {(questionsQ.data ?? []).map(q => (
-              <Card key={q.id}>
-                <CardHeader className="pb-2 flex flex-row items-start gap-2 space-y-0">
-                  <span className="text-sm font-semibold mt-2">Q{q.order_index}.</span>
-                  <Textarea
-                    className="flex-1 font-medium border-0 px-0 py-1 min-h-0 bg-transparent focus-visible:ring-0 resize-none whitespace-pre-wrap break-words leading-snug"
-                    rows={2}
-                    defaultValue={q.question_text}
-                    placeholder="Question"
-                    onBlur={e => e.target.value !== q.question_text && gospa.updateQuestion(q.id, { question_text: e.target.value }).then(() => qc.invalidateQueries({ queryKey: ["gospa-q", id] }))}
-                  />
-                  <Button variant="ghost" size="icon" onClick={() => gospa.deleteQuestion(q.id).then(() => qc.invalidateQueries({ queryKey: ["gospa-q", id] }))}>
-                    <Trash2 className="h-4 w-4 text-destructive"/>
-                  </Button>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <EvidenceLinks
-                    value={q.answer_text ?? ""}
-                    onChange={(v) => gospa.updateQuestion(q.id, { answer_text: v }).then(() => qc.invalidateQueries({ queryKey: ["gospa-q", id] }))}
-                  />
-                  <Textarea defaultValue={q.evidence ?? ""} placeholder="Summary" rows={2} onBlur={e => gospa.updateQuestion(q.id, { evidence: e.target.value })}/>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Textarea defaultValue={q.risks ?? ""} placeholder="Risks" rows={2} onBlur={e => gospa.updateQuestion(q.id, { risks: e.target.value })}/>
-                    <Textarea defaultValue={q.opportunities ?? ""} placeholder="Opportunities" rows={2} onBlur={e => gospa.updateQuestion(q.id, { opportunities: e.target.value })}/>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {(questionsQ.data ?? []).map((q: any) => {
+              const ownsQuestion = !q.created_by || q.created_by === currentUserId;
+              const entriesFor = (type: "summary"|"risk"|"opportunity"|"link") =>
+                (entriesQ.data ?? []).filter((e: any) => e.question_id === q.id && e.entry_type === type);
+              return (
+                <Card key={q.id}>
+                  <CardHeader className="pb-2 flex flex-row items-start gap-2 space-y-0">
+                    <span className="text-sm font-semibold mt-2">Q{q.order_index}.</span>
+                    <div className="flex-1 space-y-1">
+                      <Textarea
+                        className="font-medium border-0 px-0 py-1 min-h-0 bg-transparent focus-visible:ring-0 resize-none whitespace-pre-wrap break-words leading-snug disabled:opacity-100 disabled:cursor-default"
+                        rows={2}
+                        defaultValue={q.question_text}
+                        placeholder="Question"
+                        disabled={!ownsQuestion}
+                        onBlur={e => ownsQuestion && e.target.value !== q.question_text && gospa.updateQuestion(q.id, { question_text: e.target.value }).then(() => qc.invalidateQueries({ queryKey: ["gospa-q", id] }))}
+                      />
+                      <Badge variant="secondary" className="text-[10px] font-normal">Added by {nameOf(q.created_by)}</Badge>
+                    </div>
+                    {ownsQuestion && (
+                      <Button variant="ghost" size="icon" onClick={() => gospa.deleteQuestion(q.id).then(() => qc.invalidateQueries({ queryKey: ["gospa-q", id] }))}>
+                        <Trash2 className="h-4 w-4 text-destructive"/>
+                      </Button>
+                    )}
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <EntrySection
+                      label="Supporting evidence links" icon={<Link2 className="h-3 w-3"/>}
+                      type="link" questionId={q.id} entries={entriesFor("link")}
+                      currentUserId={currentUserId} nameOf={nameOf} onChanged={invalidateEntries}
+                    />
+                    <EntrySection
+                      label="Summary" type="summary" questionId={q.id} entries={entriesFor("summary")}
+                      currentUserId={currentUserId} nameOf={nameOf} onChanged={invalidateEntries}
+                    />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <EntrySection
+                        label="Risks" type="risk" questionId={q.id} entries={entriesFor("risk")}
+                        currentUserId={currentUserId} nameOf={nameOf} onChanged={invalidateEntries}
+                      />
+                      <EntrySection
+                        label="Opportunities" type="opportunity" questionId={q.id} entries={entriesFor("opportunity")}
+                        currentUserId={currentUserId} nameOf={nameOf} onChanged={invalidateEntries}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
             {!questionsQ.data?.length && <div className="text-sm text-muted-foreground md:col-span-2">No questions yet. Add one above.</div>}
           </div>
         </TabsContent>

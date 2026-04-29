@@ -11,12 +11,22 @@ import { Button } from "@/components/ui/button";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Bold as BoldIcon, Italic as ItalicIcon, Underline as UnderlineIcon,
-  List, ListOrdered, RemoveFormatting,
+  List, ListOrdered, RemoveFormatting, Link2,
 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+
+const normalizeUrl = (url: string) => {
+  const trimmed = url.trim();
+  if (!trimmed) return "";
+  if (/^(https?:|mailto:|tel:)/i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+};
 
 interface Props {
   value: string;

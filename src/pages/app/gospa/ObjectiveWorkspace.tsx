@@ -589,6 +589,26 @@ function EntrySection({
             </Button>
           </div>
         </div>
+      ) : type === "link" ? (
+        <div className="space-y-2">
+          <Input
+            placeholder="Link name (optional)"
+            value={linkNameDraft}
+            onChange={e => setLinkNameDraft(e.target.value)}
+            className="h-9"
+          />
+          <div className="flex gap-2">
+            <Input
+              placeholder={PLACEHOLDERS[type]}
+              value={draft}
+              onChange={e => setDraft(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
+            />
+            <Button type="button" variant="outline" size="sm" onClick={add}>
+              <Plus className="h-4 w-4"/>
+            </Button>
+          </div>
+        </div>
       ) : (
         <div className="flex gap-2">
           <Input

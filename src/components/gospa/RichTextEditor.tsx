@@ -233,6 +233,52 @@ export function RichTextEditor({ value, onChange, placeholder, autoFocus, classN
 
         <div className="w-px h-5 bg-border mx-1" />
 
+        <Popover open={linkOpen} onOpenChange={(open) => { setLinkOpen(open); if (!open) { setLinkText(""); setLinkUrl(""); } }}>
+          <PopoverTrigger asChild>
+            <Button type="button" variant="ghost" size="icon" className="h-7 w-7"
+              onClick={openLinkPopover} aria-label="Insert link">
+              <Link2 className={cn("h-3.5 w-3.5", editor.isActive("link") && "text-primary")} />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-72 p-3" align="start">
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="rte-link-text" className="text-xs">Text to display</Label>
+                <Input
+                  id="rte-link-text"
+                  value={linkText}
+                  onChange={(e) => setLinkText(e.target.value)}
+                  placeholder="Link name"
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="rte-link-url" className="text-xs">URL</Label>
+                <Input
+                  id="rte-link-url"
+                  value={linkUrl}
+                  onChange={(e) => setLinkUrl(e.target.value)}
+                  placeholder="https://example.com"
+                  className="h-8 text-sm"
+                  type="url"
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyLink(); } }}
+                />
+              </div>
+              <div className="flex justify-between gap-2">
+                {editor.isActive("link") ? (
+                  <Button type="button" size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={removeLink}>
+                    Remove
+                  </Button>
+                ) : <span />}
+                <div className="flex gap-2 ml-auto">
+                  <Button type="button" size="sm" variant="outline" onClick={() => setLinkOpen(false)}>Cancel</Button>
+                  <Button type="button" size="sm" onClick={applyLink} disabled={!linkUrl.trim()}>Save</Button>
+                </div>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+
         <Button type="button" variant="ghost" size="icon" className="h-7 w-7"
           onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}
           aria-label="Clear formatting">

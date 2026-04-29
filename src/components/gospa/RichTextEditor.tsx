@@ -125,6 +125,10 @@ export function RichTextEditor({ value, onChange, placeholder, autoFocus, classN
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, editor]);
 
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkText, setLinkText] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
+
   if (!editor) return null;
 
   const currentSize =
@@ -136,6 +140,58 @@ export function RichTextEditor({ value, onChange, placeholder, autoFocus, classN
     } else {
       editor.chain().focus().setMark("textStyle", { fontSize: size }).run();
     }
+  };
+
+  const openLinkPopover = () => {
+    const { from, to, empty } = editor.state.selection;
+    const isLink = editor.isActive("link");
+    let existingHref = "";
+    let existingText = "";
+
+    if (isLink) {
+      const attrs = editor.getAttributes("link");
+      existingHref = (attrs?.href as string) ?? "";
+      editor.chain().focus().extendMarkRange("link").run();
+      const { from: lf, to: lt } = editor.state.selection;
+      existingText = editor.state.doc.textBetween(lf, lt, " ");
+    } else if (!empty) {
+      existingText = editor.state.doc.textBetween(from, to, " ");
+    }
+
+    setLinkText(existingText);
+    setLinkUrl(existingHref);
+    setLinkOpen(true);
+  };
+
+  const applyLink = () => {
+    const href = normalizeUrl(linkUrl);
+    if (!href) return;
+    const text = linkText.trim() || href;
+    const linkMark = { type: "link", attrs: { href, target: "_blank", rel: "noopener noreferrer" } };
+    const node = { type: "text", text, marks: [linkMark] };
+
+    const chain = editor.chain().focus();
+    const isLink = editor.isActive("link");
+    const { empty } = editor.state.selection;
+
+    if (isLink) {
+      chain.extendMarkRange("link").insertContent(node).run();
+    } else if (!empty) {
+      chain.deleteSelection().insertContent(node).run();
+    } else {
+      chain.insertContent(node).run();
+    }
+
+    setLinkOpen(false);
+    setLinkText("");
+    setLinkUrl("");
+  };
+
+  const removeLink = () => {
+    editor.chain().focus().extendMarkRange("link").unsetMark("link").run();
+    setLinkOpen(false);
+    setLinkText("");
+    setLinkUrl("");
   };
 
   return (

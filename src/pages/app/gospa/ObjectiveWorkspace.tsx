@@ -91,7 +91,16 @@ export default function ObjectiveWorkspace() {
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <Input className="text-2xl font-bold border-0 px-0 h-auto bg-transparent focus-visible:ring-0" defaultValue={obj.title} onBlur={e => e.target.value !== obj.title && updateObj({ title: e.target.value })}/>
-          <Textarea className="mt-1 border-0 px-0 bg-transparent focus-visible:ring-0 text-muted-foreground" defaultValue={obj.description ?? ""} placeholder="Description" onBlur={e => updateObj({ description: e.target.value })}/>
+          <div className="mt-1">
+            <RichTextEditor
+              value={obj.description ?? ""}
+              placeholder="Description"
+              onChange={(html) => {
+                if (html === (obj.description ?? "")) return;
+                updateObj({ description: html });
+              }}
+            />
+          </div>
         </div>
         <div className="flex flex-col gap-2 items-end">
           <Select value={obj.rag_status} onValueChange={v => updateObj({ rag_status: v })}>

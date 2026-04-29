@@ -229,19 +229,18 @@ export default function ObjectiveWorkspace() {
                       qc.invalidateQueries({ queryKey: ["gospa-strat", id] });
                     }}
                   />
-                  <Textarea
-                    rows={2}
-                    className="mt-1"
-                    defaultValue={s.description ?? ""}
-                    placeholder="Description"
-                    onBlur={async e => {
-                      if (e.target.value === (s.description ?? "")) return;
-                      const { error } = await gospa.updateStrategy(s.id, { description: e.target.value });
-                      if (error) return toast.error(error.message);
-                      toast.success("Description saved");
-                      qc.invalidateQueries({ queryKey: ["gospa-strat", id] });
-                    }}
-                  />
+                  <div className="mt-1">
+                    <RichTextEditor
+                      value={s.description ?? ""}
+                      placeholder="Description"
+                      onChange={async (html) => {
+                        if (html === (s.description ?? "")) return;
+                        const { error } = await gospa.updateStrategy(s.id, { description: html });
+                        if (error) return toast.error(error.message);
+                        qc.invalidateQueries({ queryKey: ["gospa-strat", id] });
+                      }}
+                    />
+                  </div>
                 </div>
                 <Select value={s.status} onValueChange={v => gospa.updateStrategy(s.id, { status: v as GospaStatus }).then(() => qc.invalidateQueries({ queryKey: ["gospa-strat", id] }))}>
                   <SelectTrigger className="w-32"><SelectValue/></SelectTrigger>

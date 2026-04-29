@@ -1,105 +1,61 @@
-## Goal
+## Problem
 
-Add a "Present" mode to the Objective Workspace (`/app/gospa/objectives/:id`) so a user can walk an audience through every question and the answers it has received. Output is fullscreen, Thingtrax-branded, and renders the existing rich-text answers (including clickable links) at presentation size.
+When a user copies text (e.g. from a PDF, Word, Google Docs, browser page) into the **Key insights** field of a GOSPA question, the resulting display shows words flowing onto separate lines with no spaces between them.
 
-## UX design
+Two root causes in `src/components/gospa/RichTextEditor.tsx` and `src/components/gospa/RichTextView.tsx`:
 
-**Trigger**
-- Add a `Present` button (Play icon) in the Objective header next to the RAG selector. Only visible when at least one question exists.
+1. **No paste sanitisation in the TipTap editor.** Pasted HTML from PDFs/Word frequently wraps every word or run in its own `<span>` / `<p>` / `<div>` with explicit `style` attributes (e.g. `display:block`, `white-space:nowrap`, absolute positioning, font sizes per span). Adjacent runs often have no whitespace text node between them, so when rendered they visually concatenate or break per word.
+2. **`RichTextView` allows the `style` attribute** through DOMPurify, so any leftover inline styles from paste (block display, fixed line-heights, transforms) are honoured at render time and break the flow.
 
-**Layout (per slide)**
-```
-┌──────────────────────────────────────────────────────────────┐
-│ [Thingtrax logo]            Objective title    1 / 14   [✕]  │
-│──────────────────────────────────────────────────────────────│
-│  Q3.  How do we reduce changeover time on Line 4?            │
-│                                                              │
-│  Answered by: Allan Carney                                   │
-│                                                              │
-│  ┌── Key insights ──────────────────────────────────────┐   │
-│  │  <RichTextView> rendered at presentation size         │   │
-│  │  • bullet                                             │   │
-│  │  • bullet with [hyperlink ↗]                          │   │
-│  └───────────────────────────────────────────────────────┘   │
-│                                                              │
-│  ┌── Supporting evidence ───────────────────────────────┐   │
-│  │  • https://… (opens new tab)                          │   │
-│  └───────────────────────────────────────────────────────┘   │
-│                                                              │
-│──────────────────────────────────────────────────────────────│
-│  ◀ Prev          • • • ● • • • • • • •          Next ▶       │
-└──────────────────────────────────────────────────────────────┘
-```
+## Fix
 
-- Black/white branded chrome using existing `--thingtrax-black` and `--thingtrax-green` tokens; logo is `@/assets/thingtrax-logo-full.png` top-left.
-- Body uses a centered max-width column (~1100px) with generous line-height. Base font 22–24px so text reads from a meeting room. Rich-text styles inherit through a scoped wrapper that bumps `prose` sizes (similar to the slides skill pattern).
-- Hyperlinks open in new tab — `RichTextView` already renders `<a>`; we'll wrap rendered content with a click handler that forces `target="_blank" rel="noopener"` on any anchor without one.
-- Long answers scroll inside the slide body (no clipping); slide chrome stays fixed.
+### 1. Add a paste transformer to `RichTextEditor`
 
-**Slide ordering**
+In the `useEditor` config, add `editorProps.transformPastedHTML` that:
 
-For each question (ordered by `order_index`), generate one slide per user who has contributed an answer entry of type `summary` or `link`.
-- Group entries by `created_by` within the question.
-- A user's slide shows ALL of their entries for that question (their `summary` insights + their `link` evidence stacked).
-- If a question has no answers, render a single "No answers yet" slide so audiences see the question was asked.
-- Title block on each slide always shows the question text + "Answered by {name}" (or "Awaiting answer").
+- Parses the pasted HTML in a detached `DOMParser`.
+- Strips all `style`, `class`, `id`, `width`, `height`, `align`, `face`, `color`, `bgcolor` attributes from every element (TipTap extensions will reapply only the formatting they support).
+- Unwraps presentational tags that often come from PDFs (`font`, `o:p`, `xml`, MS Office namespaced tags, empty `span`s).
+- For every element whose previous sibling is a non-whitespace text/element on the same logical line, ensures a space character is inserted before it if the original had visual whitespace (use `getComputedStyle`-free heuristic: if the element or its parent has `display:block` / is a `<p>`, `<div>`, `<br>`, leave the line break; otherwise insert ` ` text node between adjacent inline runs that have no whitespace between them).
+- Returns the cleaned HTML string.
 
-Slide order: `Q1/UserA → Q1/UserB → Q2/UserA → Q2/UserC → …`
+Also add `transformPastedText` to keep plain-text paste intact (TipTap default already does, but make it explicit so newlines become `<br>` and runs of spaces are preserved).
 
-**Navigation**
-- `→` / `Space` / `PageDown` / on-screen Next → next slide.
-- `←` / `PageUp` / on-screen Prev → previous slide.
-- `Home` / `End` jump to first / last.
-- `Esc` or the ✕ button exits present mode.
-- Bottom progress dots; current slide highlighted in Thingtrax green.
+### 2. Tighten `RichTextView` sanitisation
 
-**Fullscreen behaviour**
-- On Present: call `document.documentElement.requestFullscreen()` (best-effort, fall back to a fixed-position cover if the API rejects).
-- Listen to `fullscreenchange` and exit cleanly if the user presses browser ESC.
-- Hide cursor after 3s of inactivity inside the presenter.
+In `src/components/gospa/RichTextView.tsx`:
 
-## Technical implementation
+- Remove `"style"` from `ALLOWED_ATTR` so any rogue inline styles that slipped past the editor cannot affect rendering.
+- Keep `href`, `target`, `rel`, `colspan`, `rowspan`.
+- Add a hook (`DOMPurify.addHook('uponSanitizeAttribute', ...)`) scoped to this component, or a one-off sanitize call with `FORBID_ATTR: ['class','style']`, to guarantee no layout-affecting attributes survive.
 
-**New files**
-- `src/components/gospa/PresentObjectiveDialog.tsx`
-  - Props: `open`, `onOpenChange`, `objective`, `questions`, `entries`, `nameOf`.
-  - Builds the slide list (memoised) from `questions` + `entries`.
-  - Renders a fixed-position branded overlay (no shadcn Dialog — we want full control over fullscreen & keyboard).
-  - Handles fullscreen lifecycle, keyboard nav, cursor auto-hide.
-  - Uses `RichTextView` for answer content inside a `.gospa-present-content` scoped wrapper.
+### 3. Render-side safety net
 
-**Modifications**
-- `src/pages/app/gospa/ObjectiveWorkspace.tsx`
-  - Import `Play` icon and `PresentObjectiveDialog`.
-  - Add `presentOpen` state.
-  - Add `<Button variant="outline" onClick={() => setPresentOpen(true)}><Play/> Present</Button>` in the header (next to the RAG select). Disable if no questions.
-  - Render `<PresentObjectiveDialog ... />` at the bottom of the page, passing already-loaded `questionsQ.data`, `entriesQ.data`, `obj`, and `nameOf`.
+In the `RichTextView` wrapper `div` className, add Tailwind utilities so any residual block-level pasted nodes still flow naturally:
 
-- `src/index.css`
-  - Add a small scoped block to upscale `RichTextView` content inside the presenter:
-  ```css
-  .gospa-present-content { font-size: 22px; line-height: 1.6; }
-  .gospa-present-content h1 { font-size: 40px; }
-  .gospa-present-content h2 { font-size: 32px; }
-  .gospa-present-content h3 { font-size: 26px; }
-  .gospa-present-content a  { color: hsl(var(--thingtrax-green)); text-decoration: underline; }
-  .gospa-present-content ul, .gospa-present-content ol { padding-left: 1.5rem; }
-  .gospa-present-content li { margin: 0.4rem 0; }
-  ```
+- `[&_span]:!inline` — force spans inline.
+- `[&_*]:!whitespace-normal` — never honour `white-space: nowrap`.
+- Keep existing `break-words` so long URLs still wrap.
 
-**Link safety**
+### 4. Backfill existing data (optional, no-op if not needed)
 
-After `RichTextView` renders, run a small effect on the slide container that finds `a[href]` and sets `target="_blank"` and `rel="noopener noreferrer"` if missing. (Keeps the existing DOMPurify allow-list intact — no schema changes needed.)
+Existing `gospa_question_entries` rows of type `summary` saved before this fix may still contain dirty HTML. They will render correctly after change #2/#3 because the renderer strips/overrides the bad attributes — no migration required.
 
-**Data**
+## Files to change
 
-No DB or service changes. Uses existing:
-- `gospa.listQuestions(objectiveId)`
-- `gospa.listQuestionEntriesForObjective(objectiveId)` (already loaded by the page)
-- `useUserNames` for owner display names
+- `src/components/gospa/RichTextEditor.tsx` — add `transformPastedHTML` cleaner.
+- `src/components/gospa/RichTextView.tsx` — drop `style` from allowed attrs, add inline/whitespace overrides.
 
 ## Out of scope
 
-- Editing answers inside Present mode.
-- Exporting slides to PDF/PPTX.
-- Cross-objective presenting (single objective only for this iteration).
+- No DB migration.
+- No change to the Present mode dialog (it consumes `RichTextView`, so it inherits the fix automatically).
+- No change to other GOSPA entry types (risk/opportunity/link) — they use `Textarea` / plain rendering and aren't affected.
+
+## Verification
+
+After approval and implementation:
+1. Copy a paragraph from a PDF into Key insights → words display with normal spacing and natural wrapping.
+2. Copy from Google Docs / Word → bold/italic preserved, no broken layout.
+3. Open Present mode on the same objective → same clean rendering.
+4. Existing entries continue to render (and now look better if previously affected).

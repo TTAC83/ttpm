@@ -18,7 +18,8 @@ export function RichTextView({ html, className }: Props) {
           "table", "thead", "tbody", "tr", "th", "td",
           "a", "span", "blockquote", "h1", "h2", "h3", "h4",
         ],
-        ALLOWED_ATTR: ["href", "target", "rel", "style", "colspan", "rowspan"],
+        ALLOWED_ATTR: ["href", "target", "rel", "colspan", "rowspan"],
+        FORBID_ATTR: ["style", "class", "id", "width", "height", "align", "face", "color", "bgcolor"],
       })
     : null;
 
@@ -37,6 +38,7 @@ export function RichTextView({ html, className }: Props) {
         "[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5",
         "[&_a]:text-primary [&_a]:underline",
         "[&_p]:my-1",
+        "[&_span]:!inline [&_*]:!whitespace-normal",
         className,
       )}
       dangerouslySetInnerHTML={{ __html: safe }}

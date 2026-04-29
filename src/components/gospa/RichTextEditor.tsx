@@ -28,6 +28,49 @@ interface Props {
 
 const FONT_SIZES = ["12px", "14px", "16px", "18px", "20px", "24px"];
 
+const BLOCK_TAGS = new Set(["P", "DIV", "LI", "TR", "BLOCKQUOTE", "H1", "H2", "H3", "H4", "H5", "H6", "BR", "SECTION", "ARTICLE", "HEADER", "FOOTER"]);
+const STRIP_ATTRS = ["style", "class", "id", "width", "height", "align", "face", "color", "bgcolor", "lang", "dir"];
+
+function cleanPastedHtml(html: string): string {
+  if (typeof window === "undefined") return html;
+  const doc = new DOMParser().parseFromString(html, "text/html");
+
+  doc.querySelectorAll("style, script, meta, link, title").forEach(el => el.remove());
+
+  doc.querySelectorAll("*").forEach(el => {
+    STRIP_ATTRS.forEach(a => el.removeAttribute(a));
+    [...el.attributes].forEach(attr => {
+      if (/^(mso-|o:|w:|v:|x:|data-)/i.test(attr.name)) el.removeAttribute(attr.name);
+    });
+  });
+
+  // Insert a space between adjacent inline siblings that have no whitespace between them
+  // (PDFs often output <span>word1</span><span>word2</span> with no separator)
+  const walk = (node: Node) => {
+    const children = Array.from(node.childNodes);
+    for (let i = 1; i < children.length; i++) {
+      const prev = children[i - 1];
+      const curr = children[i];
+      const prevIsInlineEl = prev.nodeType === 1 && !BLOCK_TAGS.has((prev as Element).tagName);
+      const currIsInlineEl = curr.nodeType === 1 && !BLOCK_TAGS.has((curr as Element).tagName);
+      const prevText = prev.textContent ?? "";
+      const currText = curr.textContent ?? "";
+      if (
+        (prevIsInlineEl || prev.nodeType === 3) &&
+        (currIsInlineEl || curr.nodeType === 3) &&
+        prevText.length > 0 && currText.length > 0 &&
+        !/\s$/.test(prevText) && !/^\s/.test(currText)
+      ) {
+        node.insertBefore(doc.createTextNode(" "), curr);
+      }
+    }
+    children.forEach(walk);
+  };
+  walk(doc.body);
+
+  return doc.body.innerHTML;
+}
+
 export function RichTextEditor({ value, onChange, placeholder, autoFocus, className }: Props) {
   const editor = useEditor({
     extensions: [
@@ -53,6 +96,7 @@ export function RichTextEditor({ value, onChange, placeholder, autoFocus, classN
           "[&_p:empty]:before:content-['\\00a0']",
         ),
       },
+      transformPastedHTML: (html: string) => cleanPastedHtml(html),
     },
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();

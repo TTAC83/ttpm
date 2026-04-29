@@ -421,28 +421,43 @@ function EntrySection({
   onChanged: () => void;
 }) {
   const [draft, setDraft] = useState("");
+  const [linkNameDraft, setLinkNameDraft] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [editLinkName, setEditLinkName] = useState("");
 
   const isEmptyHtml = (s: string) => !s || s.replace(/<[^>]+>/g, "").trim() === "";
 
   const add = async () => {
     let v: string;
-    if (type === "link") v = normalizeUrl(draft);
-    else if (type === "summary") v = isEmptyHtml(draft) ? "" : draft;
-    else v = draft.trim();
+    if (type === "link") {
+      const url = normalizeLinkUrl(draft);
+      if (!url) return;
+      v = encodeLinkEntry(linkNameDraft, url);
+    } else if (type === "summary") {
+      v = isEmptyHtml(draft) ? "" : draft;
+    } else {
+      v = draft.trim();
+    }
     if (!v) return;
     const { error } = await gospa.createQuestionEntry({ question_id: questionId, entry_type: type, content: v });
     if (error) return toast.error(error.message);
     setDraft("");
+    setLinkNameDraft("");
     onChanged();
   };
 
   const save = async (id: string) => {
     let v: string;
-    if (type === "link") v = normalizeUrl(editValue);
-    else if (type === "summary") v = isEmptyHtml(editValue) ? "" : editValue;
-    else v = editValue.trim();
+    if (type === "link") {
+      const url = normalizeLinkUrl(editValue);
+      if (!url) return;
+      v = encodeLinkEntry(editLinkName, url);
+    } else if (type === "summary") {
+      v = isEmptyHtml(editValue) ? "" : editValue;
+    } else {
+      v = editValue.trim();
+    }
     if (!v) return;
     const { error } = await gospa.updateQuestionEntry(id, v);
     if (error) return toast.error(error.message);
@@ -454,6 +469,18 @@ function EntrySection({
     const { error } = await gospa.deleteQuestionEntry(id);
     if (error) return toast.error(error.message);
     onChanged();
+  };
+
+  const beginEdit = (e: any) => {
+    if (type === "link") {
+      const parsed = parseLinkEntry(e.content);
+      setEditingId(e.id);
+      setEditValue(parsed.url);
+      setEditLinkName(parsed.name);
+    } else {
+      setEditingId(e.id);
+      setEditValue(e.content);
+    }
   };
 
   return (

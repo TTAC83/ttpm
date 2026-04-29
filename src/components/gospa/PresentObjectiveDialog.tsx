@@ -217,18 +217,22 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
                   </div>
                   <ul className="space-y-2">
                     {slide.links.map((e) => {
-                      const url = e.content.trim();
-                      const isUrl = /^https?:\/\//i.test(url);
+                      const raw = (e.content ?? "").trim();
+                      const sep = raw.indexOf("|");
+                      const name = sep === -1 ? "" : raw.slice(0, sep).trim();
+                      const urlPart = sep === -1 ? raw : raw.slice(sep + 1).trim();
+                      const isUrl = /^(https?:|mailto:|tel:)/i.test(urlPart);
+                      const display = name || urlPart;
                       return (
                         <li key={e.id} className="rounded-lg bg-white/5 border border-white/10 px-5 py-3">
                           {isUrl ? (
                             <a
-                              href={url}
+                              href={urlPart}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-thingtrax-green underline break-all hover:opacity-80"
                             >
-                              {url}
+                              {display}
                             </a>
                           ) : (
                             <RichTextView html={e.content} className="text-white" />

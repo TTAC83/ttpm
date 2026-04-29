@@ -20,6 +20,7 @@ import { Plus, Trash2, Sparkles, ArrowLeft, AlertTriangle, Link2, ExternalLink, 
 import { toast } from "sonner";
 import type { GospaRag, GospaStatus } from "@/lib/gospaService";
 import { PresentObjectiveDialog } from "@/components/gospa/PresentObjectiveDialog";
+import { encodeLinkEntry, parseLinkEntry, normalizeLinkUrl } from "@/lib/gospaLinkEntry";
 
 const RAGS: GospaRag[] = ["green", "amber", "red"];
 const STATUSES: GospaStatus[] = ["not_started", "in_progress", "blocked", "done"];
@@ -420,28 +421,43 @@ function EntrySection({
   onChanged: () => void;
 }) {
   const [draft, setDraft] = useState("");
+  const [linkNameDraft, setLinkNameDraft] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [editLinkName, setEditLinkName] = useState("");
 
   const isEmptyHtml = (s: string) => !s || s.replace(/<[^>]+>/g, "").trim() === "";
 
   const add = async () => {
     let v: string;
-    if (type === "link") v = normalizeUrl(draft);
-    else if (type === "summary") v = isEmptyHtml(draft) ? "" : draft;
-    else v = draft.trim();
+    if (type === "link") {
+      const url = normalizeLinkUrl(draft);
+      if (!url) return;
+      v = encodeLinkEntry(linkNameDraft, url);
+    } else if (type === "summary") {
+      v = isEmptyHtml(draft) ? "" : draft;
+    } else {
+      v = draft.trim();
+    }
     if (!v) return;
     const { error } = await gospa.createQuestionEntry({ question_id: questionId, entry_type: type, content: v });
     if (error) return toast.error(error.message);
     setDraft("");
+    setLinkNameDraft("");
     onChanged();
   };
 
   const save = async (id: string) => {
     let v: string;
-    if (type === "link") v = normalizeUrl(editValue);
-    else if (type === "summary") v = isEmptyHtml(editValue) ? "" : editValue;
-    else v = editValue.trim();
+    if (type === "link") {
+      const url = normalizeLinkUrl(editValue);
+      if (!url) return;
+      v = encodeLinkEntry(editLinkName, url);
+    } else if (type === "summary") {
+      v = isEmptyHtml(editValue) ? "" : editValue;
+    } else {
+      v = editValue.trim();
+    }
     if (!v) return;
     const { error } = await gospa.updateQuestionEntry(id, v);
     if (error) return toast.error(error.message);
@@ -453,6 +469,18 @@ function EntrySection({
     const { error } = await gospa.deleteQuestionEntry(id);
     if (error) return toast.error(error.message);
     onChanged();
+  };
+
+  const beginEdit = (e: any) => {
+    if (type === "link") {
+      const parsed = parseLinkEntry(e.content);
+      setEditingId(e.id);
+      setEditValue(parsed.url);
+      setEditLinkName(parsed.name);
+    } else {
+      setEditingId(e.id);
+      setEditValue(e.content);
+    }
   };
 
   return (
@@ -476,6 +504,23 @@ function EntrySection({
                         placeholder="Edit key insight…"
                         autoFocus
                       />
+                    ) : type === "link" ? (
+                      <div className="space-y-2">
+                        <Input
+                          value={editLinkName}
+                          onChange={ev => setEditLinkName(ev.target.value)}
+                          placeholder="Link name (optional)"
+                          className="text-sm h-8"
+                          autoFocus
+                        />
+                        <Input
+                          value={editValue}
+                          onChange={ev => setEditValue(ev.target.value)}
+                          placeholder="https://example.com"
+                          className="text-sm h-8"
+                          type="url"
+                        />
+                      </div>
                     ) : (
                       <Textarea
                         value={editValue}
@@ -485,14 +530,18 @@ function EntrySection({
                         autoFocus
                       />
                     )
-                  ) : type === "link" ? (
-                    <a href={e.content} target="_blank" rel="noopener noreferrer"
-                       className="text-sm text-primary hover:underline inline-flex items-center gap-1 break-all"
-                       title={e.content}>
-                      <ExternalLink className="h-3 w-3 shrink-0" />
-                      <span className="break-all">{e.content}</span>
-                    </a>
-                  ) : type === "summary" ? (
+                  ) : type === "link" ? (() => {
+                    const parsed = parseLinkEntry(e.content);
+                    const display = parsed.name || parsed.url;
+                    return (
+                      <a href={parsed.url} target="_blank" rel="noopener noreferrer"
+                         className="text-sm text-primary hover:underline inline-flex items-center gap-1 break-all"
+                         title={parsed.url}>
+                        <ExternalLink className="h-3 w-3 shrink-0" />
+                        <span className="break-all">{display}</span>
+                      </a>
+                    );
+                  })() : type === "summary" ? (
                     <RichTextView html={e.content} className="text-sm" />
                   ) : (
                     <div className="text-sm whitespace-pre-wrap break-words">{e.content}</div>
@@ -504,7 +553,7 @@ function EntrySection({
                 {mine && !isEditing && (
                   <div className="flex gap-1 shrink-0">
                     <Button variant="ghost" size="icon" className="h-6 w-6"
-                      onClick={() => { setEditingId(e.id); setEditValue(e.content); }}>
+                      onClick={() => beginEdit(e)}>
                       <Pencil className="h-3 w-3"/>
                     </Button>
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => remove(e.id)}>
@@ -537,6 +586,26 @@ function EntrySection({
           <div className="flex justify-end">
             <Button type="button" variant="outline" size="sm" onClick={add}>
               <Plus className="h-4 w-4 mr-1"/> Add insight
+            </Button>
+          </div>
+        </div>
+      ) : type === "link" ? (
+        <div className="space-y-2">
+          <Input
+            placeholder="Link name (optional)"
+            value={linkNameDraft}
+            onChange={e => setLinkNameDraft(e.target.value)}
+            className="h-9"
+          />
+          <div className="flex gap-2">
+            <Input
+              placeholder={PLACEHOLDERS[type]}
+              value={draft}
+              onChange={e => setDraft(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
+            />
+            <Button type="button" variant="outline" size="sm" onClick={add}>
+              <Plus className="h-4 w-4"/>
             </Button>
           </div>
         </div>

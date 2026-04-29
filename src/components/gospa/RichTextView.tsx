@@ -38,6 +38,7 @@ export function RichTextView({ html, className }: Props) {
         "[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5",
         "[&_a]:text-primary [&_a]:underline",
         "[&_p]:my-1",
+        "[&_span]:!inline [&_*]:!whitespace-normal",
         className,
       )}
       dangerouslySetInnerHTML={{ __html: safe }}

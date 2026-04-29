@@ -20,6 +20,7 @@ import { Plus, Trash2, Sparkles, ArrowLeft, AlertTriangle, Link2, ExternalLink, 
 import { toast } from "sonner";
 import type { GospaRag, GospaStatus } from "@/lib/gospaService";
 import { PresentObjectiveDialog } from "@/components/gospa/PresentObjectiveDialog";
+import { encodeLinkEntry, parseLinkEntry, normalizeLinkUrl } from "@/lib/gospaLinkEntry";
 
 const RAGS: GospaRag[] = ["green", "amber", "red"];
 const STATUSES: GospaStatus[] = ["not_started", "in_progress", "blocked", "done"];

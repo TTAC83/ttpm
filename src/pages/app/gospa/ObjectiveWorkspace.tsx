@@ -262,8 +262,28 @@ export default function ObjectiveWorkspace() {
                 {planByStrategy(s.id).map(p => (
                   <div key={p.id} className="flex items-center gap-2 border rounded-md p-2">
                     <Input className="flex-1 border-0 bg-transparent" defaultValue={p.title} onBlur={e => gospa.updatePlan(p.id, { title: e.target.value })}/>
-                    <Input type="date" className="w-36" defaultValue={p.start_date ?? ""} onBlur={e => gospa.updatePlan(p.id, { start_date: e.target.value || null })}/>
-                    <Input type="date" className="w-36" defaultValue={p.end_date ?? ""} onBlur={e => gospa.updatePlan(p.id, { end_date: e.target.value || null })}/>
+                    <Input
+                      type="date"
+                      className="w-36"
+                      value={p.start_date ?? ""}
+                      onChange={async e => {
+                        const v = e.target.value || null;
+                        const { error } = await gospa.updatePlan(p.id, { start_date: v });
+                        if (error) toast.error("Failed to save start date");
+                        qc.invalidateQueries({ queryKey: ["gospa-plans-by-obj", id] });
+                      }}
+                    />
+                    <Input
+                      type="date"
+                      className="w-36"
+                      value={p.end_date ?? ""}
+                      onChange={async e => {
+                        const v = e.target.value || null;
+                        const { error } = await gospa.updatePlan(p.id, { end_date: v });
+                        if (error) toast.error("Failed to save end date");
+                        qc.invalidateQueries({ queryKey: ["gospa-plans-by-obj", id] });
+                      }}
+                    />
                     <Select value={p.status} onValueChange={v => gospa.updatePlan(p.id, { status: v as GospaStatus }).then(() => qc.invalidateQueries({ queryKey: ["gospa-plans-by-obj", id] }))}>
                       <SelectTrigger className="w-32"><SelectValue/></SelectTrigger>
                       <SelectContent>{STATUSES.map(st => <SelectItem key={st} value={st}><StatusPill value={st}/></SelectItem>)}</SelectContent>

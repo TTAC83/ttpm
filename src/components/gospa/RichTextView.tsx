@@ -8,10 +8,24 @@ interface Props {
 
 const looksLikeHtml = (s: string) => /<\/?[a-z][\s\S]*>/i.test(s);
 
+const preserveIntentionalSpaces = (html: string) => {
+  if (typeof window === "undefined") return html;
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+  const nodes: Text[] = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode as Text);
+
+  nodes.forEach((node) => {
+    node.nodeValue = node.nodeValue?.replace(/ {2,}/g, (spaces) => "\u00a0".repeat(spaces.length)) ?? "";
+  });
+
+  return doc.body.innerHTML;
+};
+
 export function RichTextView({ html, className }: Props) {
   const content = html ?? "";
   const safe = looksLikeHtml(content)
-    ? DOMPurify.sanitize(content, {
+    ? preserveIntentionalSpaces(DOMPurify.sanitize(content, {
         ALLOWED_TAGS: [
           "p", "br", "strong", "b", "em", "i", "u", "s", "code", "pre",
           "ul", "ol", "li",
@@ -20,7 +34,7 @@ export function RichTextView({ html, className }: Props) {
         ],
         ALLOWED_ATTR: ["href", "target", "rel", "colspan", "rowspan"],
         FORBID_ATTR: ["style", "class", "id", "width", "height", "align", "face", "color", "bgcolor"],
-      })
+      }))
     : null;
 
   if (safe === null) {

@@ -91,7 +91,16 @@ export default function ObjectiveWorkspace() {
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <Input className="text-2xl font-bold border-0 px-0 h-auto bg-transparent focus-visible:ring-0" defaultValue={obj.title} onBlur={e => e.target.value !== obj.title && updateObj({ title: e.target.value })}/>
-          <Textarea className="mt-1 border-0 px-0 bg-transparent focus-visible:ring-0 text-muted-foreground" defaultValue={obj.description ?? ""} placeholder="Description" onBlur={e => updateObj({ description: e.target.value })}/>
+          <div className="mt-1">
+            <RichTextEditor
+              value={obj.description ?? ""}
+              placeholder="Description"
+              onChange={(html) => {
+                if (html === (obj.description ?? "")) return;
+                updateObj({ description: html });
+              }}
+            />
+          </div>
         </div>
         <div className="flex flex-col gap-2 items-end">
           <Select value={obj.rag_status} onValueChange={v => updateObj({ rag_status: v })}>
@@ -220,19 +229,18 @@ export default function ObjectiveWorkspace() {
                       qc.invalidateQueries({ queryKey: ["gospa-strat", id] });
                     }}
                   />
-                  <Textarea
-                    rows={2}
-                    className="mt-1"
-                    defaultValue={s.description ?? ""}
-                    placeholder="Description"
-                    onBlur={async e => {
-                      if (e.target.value === (s.description ?? "")) return;
-                      const { error } = await gospa.updateStrategy(s.id, { description: e.target.value });
-                      if (error) return toast.error(error.message);
-                      toast.success("Description saved");
-                      qc.invalidateQueries({ queryKey: ["gospa-strat", id] });
-                    }}
-                  />
+                  <div className="mt-1">
+                    <RichTextEditor
+                      value={s.description ?? ""}
+                      placeholder="Description"
+                      onChange={async (html) => {
+                        if (html === (s.description ?? "")) return;
+                        const { error } = await gospa.updateStrategy(s.id, { description: html });
+                        if (error) return toast.error(error.message);
+                        qc.invalidateQueries({ queryKey: ["gospa-strat", id] });
+                      }}
+                    />
+                  </div>
                 </div>
                 <Select value={s.status} onValueChange={v => gospa.updateStrategy(s.id, { status: v as GospaStatus }).then(() => qc.invalidateQueries({ queryKey: ["gospa-strat", id] }))}>
                   <SelectTrigger className="w-32"><SelectValue/></SelectTrigger>

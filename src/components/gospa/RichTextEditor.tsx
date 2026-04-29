@@ -96,6 +96,7 @@ export function RichTextEditor({ value, onChange, placeholder, autoFocus, classN
           "[&_p:empty]:before:content-['\\00a0']",
         ),
       },
+      transformPastedHTML: (html: string) => cleanPastedHtml(html),
     },
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();

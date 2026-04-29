@@ -8,9 +8,26 @@ interface Props {
 
 const looksLikeHtml = (s: string) => /<\/?[a-z][\s\S]*>/i.test(s);
 
-const preserveIntentionalSpaces = (html: string) => {
+const preserveRichTextWhitespace = (html: string) => {
   if (typeof window === "undefined") return html;
   const doc = new DOMParser().parseFromString(html, "text/html");
+
+  doc.body.querySelectorAll("p").forEach((paragraph) => {
+    const isVisuallyBlank = Array.from(paragraph.childNodes).every((node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return (node.textContent ?? "").replace(/\u00a0/g, " ").trim() === "";
+      }
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        return (node as Element).tagName === "BR";
+      }
+      return false;
+    });
+
+    if (isVisuallyBlank) {
+      paragraph.textContent = "\u00a0";
+    }
+  });
+
   const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
   const nodes: Text[] = [];
   while (walker.nextNode()) nodes.push(walker.currentNode as Text);
@@ -25,7 +42,7 @@ const preserveIntentionalSpaces = (html: string) => {
 export function RichTextView({ html, className }: Props) {
   const content = html ?? "";
   const safe = looksLikeHtml(content)
-    ? preserveIntentionalSpaces(DOMPurify.sanitize(content, {
+    ? preserveRichTextWhitespace(DOMPurify.sanitize(content, {
         ALLOWED_TAGS: [
           "p", "br", "strong", "b", "em", "i", "u", "s", "code", "pre",
           "ul", "ol", "li",
@@ -51,8 +68,8 @@ export function RichTextView({ html, className }: Props) {
         "[&_td]:border [&_td]:border-border [&_td]:px-2 [&_td]:py-1",
         "[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5",
         "[&_a]:text-primary [&_a]:underline",
-        "[&_p]:my-1",
-        "[&_p:empty]:before:content-['\\00a0'] [&_p:empty]:before:inline-block",
+        "[&_p]:my-1 [&_p]:min-h-[1.35em] [&_p]:leading-normal",
+        "[&_p:empty]:before:content-['\\00a0'] [&_p:empty]:before:inline-block [&_p:empty]:before:min-h-[1.35em]",
         "[&_span]:!inline [&_*]:!whitespace-pre-wrap",
         className,
       )}

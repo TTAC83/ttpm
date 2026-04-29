@@ -504,6 +504,23 @@ function EntrySection({
                         placeholder="Edit key insight…"
                         autoFocus
                       />
+                    ) : type === "link" ? (
+                      <div className="space-y-2">
+                        <Input
+                          value={editLinkName}
+                          onChange={ev => setEditLinkName(ev.target.value)}
+                          placeholder="Link name (optional)"
+                          className="text-sm h-8"
+                          autoFocus
+                        />
+                        <Input
+                          value={editValue}
+                          onChange={ev => setEditValue(ev.target.value)}
+                          placeholder="https://example.com"
+                          className="text-sm h-8"
+                          type="url"
+                        />
+                      </div>
                     ) : (
                       <Textarea
                         value={editValue}
@@ -513,14 +530,18 @@ function EntrySection({
                         autoFocus
                       />
                     )
-                  ) : type === "link" ? (
-                    <a href={e.content} target="_blank" rel="noopener noreferrer"
-                       className="text-sm text-primary hover:underline inline-flex items-center gap-1 break-all"
-                       title={e.content}>
-                      <ExternalLink className="h-3 w-3 shrink-0" />
-                      <span className="break-all">{e.content}</span>
-                    </a>
-                  ) : type === "summary" ? (
+                  ) : type === "link" ? (() => {
+                    const parsed = parseLinkEntry(e.content);
+                    const display = parsed.name || parsed.url;
+                    return (
+                      <a href={parsed.url} target="_blank" rel="noopener noreferrer"
+                         className="text-sm text-primary hover:underline inline-flex items-center gap-1 break-all"
+                         title={parsed.url}>
+                        <ExternalLink className="h-3 w-3 shrink-0" />
+                        <span className="break-all">{display}</span>
+                      </a>
+                    );
+                  })() : type === "summary" ? (
                     <RichTextView html={e.content} className="text-sm" />
                   ) : (
                     <div className="text-sm whitespace-pre-wrap break-words">{e.content}</div>
@@ -532,7 +553,7 @@ function EntrySection({
                 {mine && !isEditing && (
                   <div className="flex gap-1 shrink-0">
                     <Button variant="ghost" size="icon" className="h-6 w-6"
-                      onClick={() => { setEditingId(e.id); setEditValue(e.content); }}>
+                      onClick={() => beginEdit(e)}>
                       <Pencil className="h-3 w-3"/>
                     </Button>
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => remove(e.id)}>

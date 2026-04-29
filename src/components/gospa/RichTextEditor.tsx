@@ -11,12 +11,22 @@ import { Button } from "@/components/ui/button";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Bold as BoldIcon, Italic as ItalicIcon, Underline as UnderlineIcon,
-  List, ListOrdered, RemoveFormatting,
+  List, ListOrdered, RemoveFormatting, Link2,
 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+
+const normalizeUrl = (url: string) => {
+  const trimmed = url.trim();
+  if (!trimmed) return "";
+  if (/^(https?:|mailto:|tel:)/i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+};
 
 interface Props {
   value: string;
@@ -115,6 +125,10 @@ export function RichTextEditor({ value, onChange, placeholder, autoFocus, classN
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, editor]);
 
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkText, setLinkText] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
+
   if (!editor) return null;
 
   const currentSize =
@@ -126,6 +140,58 @@ export function RichTextEditor({ value, onChange, placeholder, autoFocus, classN
     } else {
       editor.chain().focus().setMark("textStyle", { fontSize: size }).run();
     }
+  };
+
+  const openLinkPopover = () => {
+    const { from, to, empty } = editor.state.selection;
+    const isLink = editor.isActive("link");
+    let existingHref = "";
+    let existingText = "";
+
+    if (isLink) {
+      const attrs = editor.getAttributes("link");
+      existingHref = (attrs?.href as string) ?? "";
+      editor.chain().focus().extendMarkRange("link").run();
+      const { from: lf, to: lt } = editor.state.selection;
+      existingText = editor.state.doc.textBetween(lf, lt, " ");
+    } else if (!empty) {
+      existingText = editor.state.doc.textBetween(from, to, " ");
+    }
+
+    setLinkText(existingText);
+    setLinkUrl(existingHref);
+    setLinkOpen(true);
+  };
+
+  const applyLink = () => {
+    const href = normalizeUrl(linkUrl);
+    if (!href) return;
+    const text = linkText.trim() || href;
+    const linkMark = { type: "link", attrs: { href, target: "_blank", rel: "noopener noreferrer" } };
+    const node = { type: "text", text, marks: [linkMark] };
+
+    const chain = editor.chain().focus();
+    const isLink = editor.isActive("link");
+    const { empty } = editor.state.selection;
+
+    if (isLink) {
+      chain.extendMarkRange("link").insertContent(node).run();
+    } else if (!empty) {
+      chain.deleteSelection().insertContent(node).run();
+    } else {
+      chain.insertContent(node).run();
+    }
+
+    setLinkOpen(false);
+    setLinkText("");
+    setLinkUrl("");
+  };
+
+  const removeLink = () => {
+    editor.chain().focus().extendMarkRange("link").unsetMark("link").run();
+    setLinkOpen(false);
+    setLinkText("");
+    setLinkUrl("");
   };
 
   return (
@@ -166,6 +232,52 @@ export function RichTextEditor({ value, onChange, placeholder, autoFocus, classN
         </Button>
 
         <div className="w-px h-5 bg-border mx-1" />
+
+        <Popover open={linkOpen} onOpenChange={(open) => { setLinkOpen(open); if (!open) { setLinkText(""); setLinkUrl(""); } }}>
+          <PopoverTrigger asChild>
+            <Button type="button" variant="ghost" size="icon" className="h-7 w-7"
+              onClick={openLinkPopover} aria-label="Insert link">
+              <Link2 className={cn("h-3.5 w-3.5", editor.isActive("link") && "text-primary")} />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-72 p-3" align="start">
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="rte-link-text" className="text-xs">Text to display</Label>
+                <Input
+                  id="rte-link-text"
+                  value={linkText}
+                  onChange={(e) => setLinkText(e.target.value)}
+                  placeholder="Link name"
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="rte-link-url" className="text-xs">URL</Label>
+                <Input
+                  id="rte-link-url"
+                  value={linkUrl}
+                  onChange={(e) => setLinkUrl(e.target.value)}
+                  placeholder="https://example.com"
+                  className="h-8 text-sm"
+                  type="url"
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyLink(); } }}
+                />
+              </div>
+              <div className="flex justify-between gap-2">
+                {editor.isActive("link") ? (
+                  <Button type="button" size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={removeLink}>
+                    Remove
+                  </Button>
+                ) : <span />}
+                <div className="flex gap-2 ml-auto">
+                  <Button type="button" size="sm" variant="outline" onClick={() => setLinkOpen(false)}>Cancel</Button>
+                  <Button type="button" size="sm" onClick={applyLink} disabled={!linkUrl.trim()}>Save</Button>
+                </div>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
 
         <Button type="button" variant="ghost" size="icon" className="h-7 w-7"
           onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}

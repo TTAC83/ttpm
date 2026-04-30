@@ -179,7 +179,7 @@ export default function ObjectiveWorkspace() {
                       currentUserId={currentUserId} nameOf={nameOf} onChanged={invalidateEntries}
                     />
                     <EntrySection
-                      label="Key insights" type="summary" questionId={q.id} entries={entriesFor("summary")}
+                      label="Answer" type="summary" questionId={q.id} entries={entriesFor("summary")}
                       currentUserId={currentUserId} nameOf={nameOf} onChanged={invalidateEntries}
                     />
                   </CardContent>
@@ -424,7 +424,7 @@ function ActionCreator({ plans, onCreated }: { plans: any[]; onCreated: () => vo
 type EntryType = "summary" | "risk" | "opportunity" | "link";
 
 const PLACEHOLDERS: Record<EntryType, string> = {
-  summary: "Add a key insight",
+  summary: "Add an answer",
   risk: "Add a risk",
   opportunity: "Add an opportunity",
   link: "Paste a link (https://…)",
@@ -529,7 +529,7 @@ function EntrySection({
                       <RichTextEditor
                         value={editValue}
                         onChange={setEditValue}
-                        placeholder="Edit key insight…"
+                        placeholder="Edit answer…"
                         autoFocus
                       />
                     ) : type === "link" ? (

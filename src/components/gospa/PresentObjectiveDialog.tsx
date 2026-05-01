@@ -6,7 +6,7 @@ import thingtraxLogoFull from "@/assets/thingtrax-logo-full.png";
 interface Entry {
   id: string;
   question_id: string;
-  entry_type: "summary" | "risk" | "opportunity" | "link";
+  entry_type: "summary" | "risk" | "opportunity" | "link" | "key_insight";
   content: string;
   created_by?: string | null;
 }
@@ -25,6 +25,7 @@ interface Slide {
   ownerId: string | null;
   ownerName: string;
   summaries: Entry[];
+  insights: Entry[];
   links: Entry[];
   empty?: boolean;
 }
@@ -43,7 +44,7 @@ function buildSlides(questions: Question[], entries: Entry[], nameOf: (uid?: str
   const sorted = [...questions].sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
   for (const q of sorted) {
     const qEntries = entries.filter(
-      (e) => e.question_id === q.id && (e.entry_type === "summary" || e.entry_type === "link"),
+      (e) => e.question_id === q.id && (e.entry_type === "summary" || e.entry_type === "link" || e.entry_type === "key_insight"),
     );
     if (!qEntries.length) {
       slides.push({
@@ -53,6 +54,7 @@ function buildSlides(questions: Question[], entries: Entry[], nameOf: (uid?: str
         ownerId: null,
         ownerName: "",
         summaries: [],
+        insights: [],
         links: [],
         empty: true,
       });
@@ -73,6 +75,7 @@ function buildSlides(questions: Question[], entries: Entry[], nameOf: (uid?: str
         ownerId: uid === "__unknown__" ? null : uid,
         ownerName: nameOf(uid === "__unknown__" ? null : uid),
         summaries: list.filter((e) => e.entry_type === "summary"),
+        insights: list.filter((e) => e.entry_type === "key_insight"),
         links: list.filter((e) => e.entry_type === "link"),
       });
     }
@@ -198,10 +201,25 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
               {!slide.empty && slide.summaries.length > 0 && (
                 <section className="mb-8">
                   <div className="flex items-center gap-2 text-thingtrax-green text-sm uppercase tracking-wide mb-3">
-                    <Lightbulb className="h-4 w-4" /> Key insights
+                    <Lightbulb className="h-4 w-4" /> Answer
                   </div>
                   <div className="space-y-4">
                     {slide.summaries.map((e) => (
+                      <div key={e.id} className="rounded-lg bg-white/5 border border-white/10 p-6">
+                        <RichTextView html={e.content} className="text-white" />
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {!slide.empty && slide.insights.length > 0 && (
+                <section className="mb-8">
+                  <div className="flex items-center gap-2 text-thingtrax-green text-sm uppercase tracking-wide mb-3">
+                    <Lightbulb className="h-4 w-4" /> Key insight
+                  </div>
+                  <div className="space-y-4">
+                    {slide.insights.map((e) => (
                       <div key={e.id} className="rounded-lg bg-white/5 border border-white/10 p-6">
                         <RichTextView html={e.content} className="text-white" />
                       </div>

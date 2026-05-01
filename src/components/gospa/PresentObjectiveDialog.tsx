@@ -6,7 +6,7 @@ import thingtraxLogoFull from "@/assets/thingtrax-logo-full.png";
 interface Entry {
   id: string;
   question_id: string;
-  entry_type: "summary" | "risk" | "opportunity" | "link";
+  entry_type: "summary" | "risk" | "opportunity" | "link" | "key_insight";
   content: string;
   created_by?: string | null;
 }
@@ -25,6 +25,7 @@ interface Slide {
   ownerId: string | null;
   ownerName: string;
   summaries: Entry[];
+  insights: Entry[];
   links: Entry[];
   empty?: boolean;
 }
@@ -43,7 +44,7 @@ function buildSlides(questions: Question[], entries: Entry[], nameOf: (uid?: str
   const sorted = [...questions].sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
   for (const q of sorted) {
     const qEntries = entries.filter(
-      (e) => e.question_id === q.id && (e.entry_type === "summary" || e.entry_type === "link"),
+      (e) => e.question_id === q.id && (e.entry_type === "summary" || e.entry_type === "link" || e.entry_type === "key_insight"),
     );
     if (!qEntries.length) {
       slides.push({
@@ -53,6 +54,7 @@ function buildSlides(questions: Question[], entries: Entry[], nameOf: (uid?: str
         ownerId: null,
         ownerName: "",
         summaries: [],
+        insights: [],
         links: [],
         empty: true,
       });
@@ -73,6 +75,7 @@ function buildSlides(questions: Question[], entries: Entry[], nameOf: (uid?: str
         ownerId: uid === "__unknown__" ? null : uid,
         ownerName: nameOf(uid === "__unknown__" ? null : uid),
         summaries: list.filter((e) => e.entry_type === "summary"),
+        insights: list.filter((e) => e.entry_type === "key_insight"),
         links: list.filter((e) => e.entry_type === "link"),
       });
     }

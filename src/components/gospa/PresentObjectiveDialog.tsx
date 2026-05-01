@@ -201,10 +201,25 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
               {!slide.empty && slide.summaries.length > 0 && (
                 <section className="mb-8">
                   <div className="flex items-center gap-2 text-thingtrax-green text-sm uppercase tracking-wide mb-3">
-                    <Lightbulb className="h-4 w-4" /> Key insights
+                    <Lightbulb className="h-4 w-4" /> Answer
                   </div>
                   <div className="space-y-4">
                     {slide.summaries.map((e) => (
+                      <div key={e.id} className="rounded-lg bg-white/5 border border-white/10 p-6">
+                        <RichTextView html={e.content} className="text-white" />
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {!slide.empty && slide.insights.length > 0 && (
+                <section className="mb-8">
+                  <div className="flex items-center gap-2 text-thingtrax-green text-sm uppercase tracking-wide mb-3">
+                    <Lightbulb className="h-4 w-4" /> Key insight
+                  </div>
+                  <div className="space-y-4">
+                    {slide.insights.map((e) => (
                       <div key={e.id} className="rounded-lg bg-white/5 border border-white/10 p-6">
                         <RichTextView html={e.content} className="text-white" />
                       </div>

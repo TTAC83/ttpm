@@ -149,7 +149,7 @@ export default function ObjectiveWorkspace() {
           <div className="grid md:grid-cols-2 gap-3">
             {(questionsQ.data ?? []).map((q: any) => {
               const ownsQuestion = !q.created_by || q.created_by === currentUserId;
-              const entriesFor = (type: "summary"|"risk"|"opportunity"|"link") =>
+              const entriesFor = (type: "summary"|"risk"|"opportunity"|"link"|"key_insight") =>
                 (entriesQ.data ?? []).filter((e: any) => e.question_id === q.id && e.entry_type === type);
               return (
                 <Card key={q.id}>
@@ -180,6 +180,10 @@ export default function ObjectiveWorkspace() {
                     />
                     <EntrySection
                       label="Answer" type="summary" questionId={q.id} entries={entriesFor("summary")}
+                      currentUserId={currentUserId} nameOf={nameOf} onChanged={invalidateEntries}
+                    />
+                    <EntrySection
+                      label="Key insight" type="key_insight" questionId={q.id} entries={entriesFor("key_insight")}
                       currentUserId={currentUserId} nameOf={nameOf} onChanged={invalidateEntries}
                     />
                   </CardContent>
@@ -421,14 +425,17 @@ function ActionCreator({ plans, onCreated }: { plans: any[]; onCreated: () => vo
   );
 }
 
-type EntryType = "summary" | "risk" | "opportunity" | "link";
+type EntryType = "summary" | "risk" | "opportunity" | "link" | "key_insight";
 
 const PLACEHOLDERS: Record<EntryType, string> = {
   summary: "Add an answer",
+  key_insight: "Add a key insight",
   risk: "Add a risk",
   opportunity: "Add an opportunity",
   link: "Paste a link (https://…)",
 };
+
+const RICH_TEXT_TYPES: EntryType[] = ["summary", "key_insight"];
 
 const normalizeUrl = (raw: string) => {
   const t = raw.trim();

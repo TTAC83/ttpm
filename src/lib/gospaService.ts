@@ -59,7 +59,7 @@ export const gospa = {
     if (!ids.length) return { data: [] as any[], error: null } as any;
     return supabase.from("gospa_question_entries").select("*").in("question_id", ids).order("created_at");
   },
-  createQuestionEntry: (e: { question_id: string; entry_type: "summary"|"risk"|"opportunity"|"link"; content: string }) =>
+  createQuestionEntry: (e: { question_id: string; entry_type: "summary"|"risk"|"opportunity"|"link"|"key_insight"; content: string }) =>
     supabase.from("gospa_question_entries").insert(e).select().single(),
   updateQuestionEntry: (id: string, content: string) =>
     supabase.from("gospa_question_entries").update({ content }).eq("id", id).select().single(),

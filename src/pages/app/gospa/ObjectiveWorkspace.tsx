@@ -469,7 +469,7 @@ function EntrySection({
       const url = normalizeLinkUrl(draft);
       if (!url) return;
       v = encodeLinkEntry(linkNameDraft, url);
-    } else if (type === "summary") {
+    } else if (RICH_TEXT_TYPES.includes(type)) {
       v = isEmptyHtml(draft) ? "" : draft;
     } else {
       v = draft.trim();
@@ -488,7 +488,7 @@ function EntrySection({
       const url = normalizeLinkUrl(editValue);
       if (!url) return;
       v = encodeLinkEntry(editLinkName, url);
-    } else if (type === "summary") {
+    } else if (RICH_TEXT_TYPES.includes(type)) {
       v = isEmptyHtml(editValue) ? "" : editValue;
     } else {
       v = editValue.trim();
@@ -532,11 +532,11 @@ function EntrySection({
               <li key={e.id} className="flex items-start gap-2 border rounded-md px-2 py-1 bg-muted/30">
                 <div className="flex-1 min-w-0">
                   {isEditing ? (
-                    type === "summary" ? (
+                    RICH_TEXT_TYPES.includes(type) ? (
                       <RichTextEditor
                         value={editValue}
                         onChange={setEditValue}
-                        placeholder="Edit answer…"
+                        placeholder={type === "key_insight" ? "Edit key insight…" : "Edit answer…"}
                         autoFocus
                       />
                     ) : type === "link" ? (
@@ -576,7 +576,7 @@ function EntrySection({
                         <span className="break-all">{display}</span>
                       </a>
                     );
-                  })() : type === "summary" ? (
+                  })() : RICH_TEXT_TYPES.includes(type) ? (
                     <RichTextView html={e.content} className="text-sm" />
                   ) : (
                     <div className="text-sm whitespace-pre-wrap break-words">{e.content}</div>
@@ -611,7 +611,7 @@ function EntrySection({
           })}
         </ul>
       )}
-      {type === "summary" ? (
+      {RICH_TEXT_TYPES.includes(type) ? (
         <div className="space-y-2">
           <RichTextEditor
             value={draft}
@@ -620,7 +620,7 @@ function EntrySection({
           />
           <div className="flex justify-end">
             <Button type="button" variant="outline" size="sm" onClick={add}>
-              <Plus className="h-4 w-4 mr-1"/> Add insight
+              <Plus className="h-4 w-4 mr-1"/> {type === "key_insight" ? "Add key insight" : "Add answer"}
             </Button>
           </div>
         </div>

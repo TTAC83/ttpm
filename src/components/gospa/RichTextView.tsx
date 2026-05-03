@@ -62,15 +62,17 @@ export function RichTextView({ html, className }: Props) {
   return (
     <div
       className={cn(
-        "prose prose-sm max-w-none break-words",
+        "prose prose-sm max-w-none break-words prose-inherit",
         "[&_table]:border-collapse [&_table]:w-full [&_table]:my-2",
-        "[&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-2 [&_th]:py-1 [&_th]:text-left",
-        "[&_td]:border [&_td]:border-border [&_td]:px-2 [&_td]:py-1",
+        "[&_th]:border [&_th]:border-current/20 [&_th]:bg-current/5 [&_th]:px-2 [&_th]:py-1 [&_th]:text-left",
+        "[&_td]:border [&_td]:border-current/20 [&_td]:px-2 [&_td]:py-1",
+        "[&_table]:text-inherit [&_th]:text-inherit [&_td]:text-inherit",
         "[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5",
         "[&_a]:text-primary [&_a]:underline",
-        "[&_p]:my-1 [&_p]:min-h-[1.35em] [&_p]:leading-normal",
+        "[&_p]:my-1 [&_p]:min-h-[1.35em] [&_p]:leading-normal [&_p]:text-inherit",
         "[&_p:empty]:before:content-['\\00a0'] [&_p:empty]:before:inline-block [&_p:empty]:before:min-h-[1.35em]",
         "[&_span]:!inline [&_*]:!whitespace-pre-wrap",
+        "[&_strong]:text-inherit [&_em]:text-inherit [&_li]:text-inherit",
         className,
       )}
       dangerouslySetInnerHTML={{ __html: safe }}

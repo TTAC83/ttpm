@@ -236,7 +236,7 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
                   <div className="space-y-4">
                     {slide.insights.map((e) => (
                       <div key={e.id} className={`rounded-lg bg-white/5 border border-white/10 ${isExpanded ? "p-8" : "p-6"}`}>
-                        <RichTextView html={e.content} className={`text-white ${isExpanded ? "!prose-lg !text-lg [&_p]:!text-lg [&_li]:!text-lg [&_td]:!text-lg [&_th]:!text-lg [&_span]:!text-lg [&_img]:w-full" : ""}`} />
+                        <RichTextView html={e.content} className="text-white" />
                       </div>
                     ))}
                   </div>

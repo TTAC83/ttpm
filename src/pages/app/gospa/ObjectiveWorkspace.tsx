@@ -118,6 +118,22 @@ export default function ObjectiveWorkspace() {
           >
             <Play className="h-4 w-4 mr-2"/> Present
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!questionsQ.data?.length}
+            onClick={() => {
+              exportObjectiveToWord(
+                obj.title,
+                (questionsQ.data ?? []) as any,
+                (entriesQ.data ?? []) as any,
+                nameOf,
+              );
+              toast.success("Word document exported");
+            }}
+          >
+            <FileDown className="h-4 w-4 mr-2"/> Export Word
+          </Button>
         </div>
       </div>
 

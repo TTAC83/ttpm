@@ -421,8 +421,71 @@ const normalizeUrl = (raw: string) => {
   return /^https?:\/\//i.test(t) ? t : `https://${t}`;
 };
 
+function QuestionCard({
+  question: q, ownsQuestion, entriesFor, currentUserId, nameOf, invalidateEntries, onDelete, onUpdate, onPresent,
+}: {
+  question: any;
+  ownsQuestion: boolean;
+  entriesFor: (type: "summary"|"risk"|"opportunity"|"link"|"key_insight") => any[];
+  currentUserId: string;
+  nameOf: (uid?: string | null) => string;
+  invalidateEntries: () => void;
+  onDelete: () => void;
+  onUpdate: (text: string) => void;
+  onPresent: () => void;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+
+  return (
+    <Card className={cn("flex flex-col transition-all", isEditing ? "h-auto" : "h-[420px]")}>
+      <CardHeader className="pb-2 flex flex-row items-start gap-2 space-y-0 shrink-0">
+        <span className="text-sm font-semibold mt-2">Q{q.order_index}.</span>
+        <div className="flex-1 space-y-1 min-w-0">
+          <Textarea
+            className="font-medium border-0 px-0 py-1 min-h-0 bg-transparent focus-visible:ring-0 resize-none whitespace-pre-wrap break-words leading-snug disabled:opacity-100 disabled:cursor-default"
+            rows={2}
+            defaultValue={q.question_text}
+            placeholder="Question"
+            disabled={!ownsQuestion}
+            onBlur={e => ownsQuestion && e.target.value !== q.question_text && onUpdate(e.target.value)}
+          />
+          <Badge variant="secondary" className="text-[10px] font-normal">Added by {nameOf(q.created_by)}</Badge>
+        </div>
+        <div className="flex gap-1 shrink-0">
+          <Button variant="ghost" size="icon" onClick={onPresent} title="Open in presentation view">
+            <Eye className="h-4 w-4" />
+          </Button>
+          {ownsQuestion && (
+            <Button variant="ghost" size="icon" onClick={onDelete}>
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className={cn("space-y-3 min-h-0", isEditing ? "" : "overflow-y-auto flex-1")}>
+        <EntrySection
+          label="Supporting evidence links" icon={<Link2 className="h-3 w-3"/>}
+          type="link" questionId={q.id} entries={entriesFor("link")}
+          currentUserId={currentUserId} nameOf={nameOf} onChanged={invalidateEntries}
+          onEditingChange={setIsEditing}
+        />
+        <EntrySection
+          label="Answer" type="summary" questionId={q.id} entries={entriesFor("summary")}
+          currentUserId={currentUserId} nameOf={nameOf} onChanged={invalidateEntries}
+          onEditingChange={setIsEditing}
+        />
+        <EntrySection
+          label="Key insight" type="key_insight" questionId={q.id} entries={entriesFor("key_insight")}
+          currentUserId={currentUserId} nameOf={nameOf} onChanged={invalidateEntries}
+          onEditingChange={setIsEditing}
+        />
+      </CardContent>
+    </Card>
+  );
+}
+
 function EntrySection({
-  label, icon, type, questionId, entries, currentUserId, nameOf, onChanged,
+  label, icon, type, questionId, entries, currentUserId, nameOf, onChanged, onEditingChange,
 }: {
   label: string;
   icon?: React.ReactNode;
@@ -432,6 +495,7 @@ function EntrySection({
   currentUserId: string;
   nameOf: (uid?: string | null) => string;
   onChanged: () => void;
+  onEditingChange?: (editing: boolean) => void;
 }) {
   const [draft, setDraft] = useState("");
   const [linkNameDraft, setLinkNameDraft] = useState("");

@@ -64,6 +64,7 @@ export default function ObjectiveWorkspace() {
   const obj = objQ.data;
   const planByStrategy = (sid: string) => (plansQ.data ?? []).filter(p => p.strategy_id === sid);
   const [presentOpen, setPresentOpen] = useState(false);
+  const [presentQuestionId, setPresentQuestionId] = useState<string | null>(null);
 
   // Collect every user_id that owns a question or an entry, so we can resolve names in one go.
   const allOwnerIds = useMemo(() => {

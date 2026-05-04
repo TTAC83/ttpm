@@ -34,6 +34,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   objectiveTitle: string;
+  initialQuestionId?: string | null;
   questions: Question[];
   entries: Entry[];
   nameOf: (uid?: string | null) => string;
@@ -83,7 +84,7 @@ function buildSlides(questions: Question[], entries: Entry[], nameOf: (uid?: str
   return slides;
 }
 
-export function PresentObjectiveDialog({ open, onClose, objectiveTitle, questions, entries, nameOf }: Props) {
+export function PresentObjectiveDialog({ open, onClose, objectiveTitle, questions, entries, nameOf, initialQuestionId }: Props) {
   const slides = useMemo(() => buildSlides(questions, entries, nameOf), [questions, entries, nameOf]);
   const [index, setIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -97,7 +98,12 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
   // Open / close lifecycle
   useEffect(() => {
     if (!open) return;
-    setIndex(0);
+    if (initialQuestionId) {
+      const slideIdx = slides.findIndex(s => s.questionId === initialQuestionId);
+      setIndex(slideIdx >= 0 ? slideIdx : 0);
+    } else {
+      setIndex(0);
+    }
     const el = containerRef.current;
     if (el && el.requestFullscreen) {
       el.requestFullscreen().catch(() => {});

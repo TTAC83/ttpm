@@ -565,6 +565,7 @@ function EntrySection({
       setEditingId(e.id);
       setEditValue(e.content);
     }
+    notifyEditing(true);
   };
 
   return (

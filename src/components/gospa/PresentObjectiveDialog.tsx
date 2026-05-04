@@ -235,11 +235,8 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
                   </div>
                   <div className="space-y-4">
                     {slide.insights.map((e) => (
-                      <div key={e.id} className="group relative rounded-lg bg-white/5 border border-white/10 p-6 cursor-pointer hover:border-white/20 transition-colors" onClick={() => setZoomedHtml(e.content)}>
+                      <div key={e.id} className="rounded-lg bg-white/5 border border-white/10 p-6">
                         <RichTextView html={e.content} className="text-white" />
-                        <button className="absolute top-2 right-2 p-1.5 rounded-md bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Zoom in">
-                          <ZoomIn className="h-4 w-4 text-white/70" />
-                        </button>
                       </div>
                     ))}
                   </div>

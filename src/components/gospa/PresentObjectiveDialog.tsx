@@ -90,6 +90,7 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [cursorHidden, setCursorHidden] = useState(false);
+  const [zoomedHtml, setZoomedHtml] = useState<string | null>(null);
   const cursorTimer = useRef<number | null>(null);
 
   const next = useCallback(() => setIndex((i) => Math.min(i + 1, Math.max(0, slides.length - 1))), [slides.length]);

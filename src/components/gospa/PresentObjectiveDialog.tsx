@@ -34,6 +34,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   objectiveTitle: string;
+  initialQuestionId?: string | null;
   questions: Question[];
   entries: Entry[];
   nameOf: (uid?: string | null) => string;

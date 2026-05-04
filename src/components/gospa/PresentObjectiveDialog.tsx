@@ -198,7 +198,7 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
 
       {/* Body */}
       <main className="flex-1 overflow-auto">
-        <div ref={contentRef} className={`mx-auto py-12 gospa-present-content transition-all ${isExpanded ? "max-w-none px-12 text-lg [&_img]:w-full [&_img]:max-w-none [&_table]:text-base" : "max-w-[1100px] px-10"}`}>
+        <div ref={contentRef} className={`mx-auto py-12 gospa-present-content transition-all ${isExpanded ? "gospa-present-expanded max-w-none px-12" : "max-w-[1100px] px-10"}`}>
           {!slide ? (
             <div className="text-center text-white/60 mt-24 text-2xl">No questions to present yet.</div>
           ) : (
@@ -221,7 +221,7 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
                   <div className="space-y-4">
                     {slide.summaries.map((e) => (
                       <div key={e.id} className={`rounded-lg bg-white/5 border border-white/10 ${isExpanded ? "p-8" : "p-6"}`}>
-                        <RichTextView html={e.content} className={`text-white ${isExpanded ? "!prose-lg !text-lg [&_p]:!text-lg [&_li]:!text-lg [&_td]:!text-lg [&_th]:!text-lg [&_span]:!text-lg [&_img]:w-full" : ""}`} />
+                        <RichTextView html={e.content} className="text-white" />
                       </div>
                     ))}
                   </div>
@@ -236,7 +236,7 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
                   <div className="space-y-4">
                     {slide.insights.map((e) => (
                       <div key={e.id} className={`rounded-lg bg-white/5 border border-white/10 ${isExpanded ? "p-8" : "p-6"}`}>
-                        <RichTextView html={e.content} className={`text-white ${isExpanded ? "!prose-lg !text-lg [&_p]:!text-lg [&_li]:!text-lg [&_td]:!text-lg [&_th]:!text-lg [&_span]:!text-lg [&_img]:w-full" : ""}`} />
+                        <RichTextView html={e.content} className="text-white" />
                       </div>
                     ))}
                   </div>
@@ -263,12 +263,12 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
                               href={urlPart}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className={`text-thingtrax-green underline break-all hover:opacity-80 ${isExpanded ? "text-lg" : ""}`}
+                              className="text-thingtrax-green underline break-all hover:opacity-80"
                             >
                               {display}
                             </a>
                           ) : (
-                            <RichTextView html={e.content} className={`text-white ${isExpanded ? "!prose-lg !text-lg [&_p]:!text-lg [&_li]:!text-lg [&_span]:!text-lg" : ""}`} />
+                            <RichTextView html={e.content} className="text-white" />
                           )}
                         </li>
                       );

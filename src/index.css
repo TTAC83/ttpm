@@ -396,3 +396,14 @@ All colors MUST be HSL.
 .gospa-present-content table { font-size: 20px; }
 .gospa-present-content th, .gospa-present-content td { padding: 0.5rem 0.75rem; border-color: rgba(255,255,255,0.2); }
 .gospa-present-content strong { color: #fff; }
+
+/* Expanded mode – larger text for full-width presentation */
+.gospa-present-expanded { font-size: 28px; line-height: 1.7; }
+.gospa-present-expanded h1 { font-size: 52px; }
+.gospa-present-expanded h2 { font-size: 40px; }
+.gospa-present-expanded h3 { font-size: 32px; }
+.gospa-present-expanded p { font-size: 28px; }
+.gospa-present-expanded li { font-size: 28px; }
+.gospa-present-expanded table { font-size: 26px; }
+.gospa-present-expanded th, .gospa-present-expanded td { padding: 0.6rem 1rem; }
+.gospa-present-expanded img { width: 100%; max-width: none; }

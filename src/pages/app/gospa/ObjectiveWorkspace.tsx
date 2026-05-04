@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link } from "react-router-dom";
 import { useState, useMemo } from "react";
+import { cn } from "@/lib/utils";
 import { gospa, gospaAI } from "@/lib/gospaService";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";

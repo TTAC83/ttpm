@@ -651,7 +651,7 @@ function EntrySection({
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => save(e.id)}>
                       <Check className="h-3 w-3"/>
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingId(null)}>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingId(null); notifyEditing(false); }}>
                       <X className="h-3 w-3"/>
                     </Button>
                   </div>

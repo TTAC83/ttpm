@@ -1,36 +1,46 @@
-## Goal
 
-When inserting a hyperlink in a GOSPA question (and any insight that uses the rich text editor), let the user enter a **display name** alongside the URL. The displayed text in the question / read-only view / presentation mode should show that name, not the raw URL.
+# Uniform Question Cards with Presentation Preview & Expandable Editors
 
-## Current behaviour
+## What changes
 
-`src/components/gospa/RichTextEditor.tsx` includes the TipTap `Link` extension with `autolink: true`, but there is no toolbar control to insert a link. Users typing or pasting a URL get an auto-link whose visible text is the URL itself, with no way to give it a friendly name.
+### 1. Fixed-height question cards with scrollable content
+All 6 question cards will have a consistent fixed height (approximately 400px). The answer and key insight sections inside each card will be placed in a scrollable container, so cards align neatly in the 2-column grid regardless of content length.
 
-## Changes
+### 2. "Open" button on each question card
+Each card header will get an "Open" button (eye/expand icon). Clicking it opens the `PresentObjectiveDialog` but pre-navigated to that question's slide, so the user sees the presentation view for that specific question immediately.
 
-### 1. `src/components/gospa/RichTextEditor.tsx` — add an "Insert link" toolbar button
+### 3. Expandable editors when editing
+When a user clicks to add or edit an answer/insight, the editor area will expand (removing the fixed height constraint temporarily) so they have room to work with tables and rich content. Once done, it returns to the fixed-height scrollable view.
 
-- Add a `Link2` (lucide) icon button to the toolbar, placed next to the formatting controls.
-- Clicking it opens a small popover (using existing `Popover` from `@/components/ui/popover`) with two inputs:
-  - **Text to display** (defaults to the currently selected text, if any)
-  - **URL** (defaults to the existing link's `href` if the cursor is inside a link)
-- Two actions: **Save** and (when editing an existing link) **Remove link**.
-- On Save:
-  - Normalize the URL (prepend `https://` if no protocol, same rule used in `LinkManager`).
-  - If text differs from the current selection / link text, replace the selection with the new text and apply the link mark to it. If no selection and no existing link, insert the text as new content with the link mark.
-  - Use TipTap commands: `editor.chain().focus().extendMarkRange('link').insertContent(...).setLink({ href, target: '_blank', rel: 'noopener noreferrer' }).run()` (or `unsetLink` for remove).
-- Highlight the button when the cursor is inside an existing link (`editor.isActive('link')`).
-- Keep `autolink: true` so plain URLs still become links automatically; this only adds the explicit "named link" path.
+## Technical details
 
-### 2. `src/components/gospa/RichTextView.tsx` — no logic change needed
+### File: `src/pages/app/gospa/ObjectiveWorkspace.tsx`
 
-`a` and `href`/`target`/`rel` are already in the DOMPurify allow-lists, so a named anchor (`<a href="…">My label</a>`) will render with the label as visible text. Confirm `rel` stays in `ALLOWED_ATTR` (it already is).
+**Card layout** (lines 149-192):
+- Add a fixed height class to each `<Card>` (e.g. `h-[420px] flex flex-col`)
+- Wrap `<CardContent>` inner content in a scrollable div (`overflow-y-auto flex-1 min-h-0`)
+- Add an "Open" button in the card header next to the delete button
+- Track which question is being "presented" via new state: `presentQuestionId`
+- Pass `initialSlideQuestionId` prop to `PresentObjectiveDialog`
 
-## Out of scope
+**PresentObjectiveDialog** (lines 121-128):
+- Accept new `initialQuestionId?: string` prop
+- On open, find the slide index matching that question and set `index` accordingly
 
-- No data migration. Existing auto-linked URLs stay as-is; users can click them, open the new dialog, and rename them if they want.
-- No changes to `LinkManager` (separate "Links" feature, already supports names).
+**EntrySection** (lines 446-662):
+- Add local state `isAdding` / `isEditing` to track when editor is active
+- When editor is active, the parent card removes its fixed height constraint (communicated via a callback prop `onEditingChange`)
+- The card toggles between `h-[420px]` (browsing) and `h-auto` (editing) based on whether any EntrySection is in edit mode
 
-## Files touched
+### File: `src/components/gospa/PresentObjectiveDialog.tsx`
+- Add `initialQuestionId` prop
+- In the `useEffect` for open lifecycle, look up the slide index for the matching `questionId` and call `setIndex()`
 
-- `src/components/gospa/RichTextEditor.tsx` (toolbar button + popover + insert/edit link logic)
+### File: `src/components/gospa/RichTextEditor.tsx`
+- No changes needed; it already grows with content naturally
+
+## UX rationale
+- **Uniform cards**: The 2-column grid looks tidy with equal-height cards; users scan questions without layout jitter
+- **Scrollable content**: Long answers with tables don't blow out the card height; users scroll within the card
+- **Open button**: Quick access to the polished presentation view per question, without cycling through all slides
+- **Expandable editor**: When composing, users need space -- especially for pasted Excel tables. The card temporarily grows to accommodate, then snaps back when done

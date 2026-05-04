@@ -17,11 +17,12 @@ import { RAGBadge } from "@/components/gospa/RAGBadge";
 import { StatusPill } from "@/components/gospa/StatusPill";
 import { RichTextEditor } from "@/components/gospa/RichTextEditor";
 import { RichTextView } from "@/components/gospa/RichTextView";
-import { Plus, Trash2, Sparkles, ArrowLeft, AlertTriangle, Link2, ExternalLink, Check, X, Pencil, Play, Eye } from "lucide-react";
+import { Plus, Trash2, Sparkles, ArrowLeft, AlertTriangle, Link2, ExternalLink, Check, X, Pencil, Play, Eye, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import type { GospaRag, GospaStatus } from "@/lib/gospaService";
 import { PresentObjectiveDialog } from "@/components/gospa/PresentObjectiveDialog";
 import { encodeLinkEntry, parseLinkEntry, normalizeLinkUrl } from "@/lib/gospaLinkEntry";
+import { exportObjectiveToWord } from "@/lib/gospaWordExport";
 
 const RAGS: GospaRag[] = ["green", "amber", "red"];
 const STATUSES: GospaStatus[] = ["not_started", "in_progress", "blocked", "done"];

@@ -3,6 +3,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Link from "@tiptap/extension-link";
+import Image from "@tiptap/extension-image";
 import { Table } from "@tiptap/extension-table";
 import { TableRow } from "@tiptap/extension-table-row";
 import { TableCell } from "@tiptap/extension-table-cell";
@@ -16,10 +17,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Bold as BoldIcon, Italic as ItalicIcon, Underline as UnderlineIcon,
-  List, ListOrdered, RemoveFormatting, Link2,
+  List, ListOrdered, RemoveFormatting, Link2, ImagePlus,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Plugin, PluginKey } from "@tiptap/pm/state";
 
 const normalizeUrl = (url: string) => {
   const trimmed = url.trim();
@@ -48,14 +52,13 @@ function cleanPastedHtml(html: string): string {
   doc.querySelectorAll("style, script, meta, link, title").forEach(el => el.remove());
 
   doc.querySelectorAll("*").forEach(el => {
+    if ((el as Element).tagName === "IMG") return; // preserve images
     STRIP_ATTRS.forEach(a => el.removeAttribute(a));
     [...el.attributes].forEach(attr => {
       if (/^(mso-|o:|w:|v:|x:|data-)/i.test(attr.name)) el.removeAttribute(attr.name);
     });
   });
 
-  // Insert a space between adjacent inline siblings that have no whitespace between them
-  // (PDFs often output <span>word1</span><span>word2</span> with no separator)
   const walk = (node: Node) => {
     const children = Array.from(node.childNodes);
     for (let i = 1; i < children.length; i++) {
@@ -81,13 +84,89 @@ function cleanPastedHtml(html: string): string {
   return doc.body.innerHTML;
 }
 
+async function uploadImageToSupabase(file: File): Promise<string | null> {
+  const ext = file.name.split(".").pop() ?? "png";
+  const path = `${crypto.randomUUID()}.${ext}`;
+
+  const { error } = await supabase.storage
+    .from("gospa-images")
+    .upload(path, file, { contentType: file.type, upsert: false });
+
+  if (error) {
+    console.error("Image upload failed:", error);
+    toast.error("Failed to upload image");
+    return null;
+  }
+
+  const { data: urlData } = supabase.storage
+    .from("gospa-images")
+    .getPublicUrl(path);
+
+  return urlData.publicUrl;
+}
+
+function createImagePastePlugin(uploadAndInsert: (files: File[]) => void) {
+  return new Plugin({
+    key: new PluginKey("imagePaste"),
+    props: {
+      handlePaste(_view, event) {
+        const items = event.clipboardData?.items;
+        if (!items) return false;
+        const imageFiles: File[] = [];
+        for (const item of items) {
+          if (item.type.startsWith("image/")) {
+            const file = item.getAsFile();
+            if (file) imageFiles.push(file);
+          }
+        }
+        if (imageFiles.length === 0) return false;
+        event.preventDefault();
+        uploadAndInsert(imageFiles);
+        return true;
+      },
+      handleDrop(_view, event) {
+        const files = event.dataTransfer?.files;
+        if (!files?.length) return false;
+        const imageFiles = Array.from(files).filter(f => f.type.startsWith("image/"));
+        if (imageFiles.length === 0) return false;
+        event.preventDefault();
+        uploadAndInsert(imageFiles);
+        return true;
+      },
+    },
+  });
+}
+
 export function RichTextEditor({ value, onChange, placeholder, autoFocus, className }: Props) {
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = useCallback(async (files: File[], editorInstance: any) => {
+    if (!editorInstance) return;
+    setUploading(true);
+    try {
+      for (const file of files) {
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error("Image must be under 5MB");
+          continue;
+        }
+        const url = await uploadImageToSupabase(file);
+        if (url) {
+          editorInstance.chain().focus().setImage({ src: url, alt: file.name }).run();
+        }
+      }
+    } finally {
+      setUploading(false);
+    }
+  }, []);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: false }),
       Underline,
       TextStyle.configure({ mergeNestedSpanStyles: true }),
       Link.configure({ openOnClick: false, autolink: true }),
+      Image.configure({ inline: false, allowBase64: false }),
       Table.configure({ resizable: true }),
       TableRow,
       TableHeader,
@@ -104,6 +183,7 @@ export function RichTextEditor({ value, onChange, placeholder, autoFocus, classN
           "[&_td]:border [&_td]:border-border [&_td]:px-2 [&_td]:py-1",
           "[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5",
           "[&_p:empty]:before:content-['\\00a0']",
+          "[&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md [&_img]:my-2",
         ),
       },
       transformPastedHTML: (html: string) => cleanPastedHtml(html),
@@ -113,6 +193,16 @@ export function RichTextEditor({ value, onChange, placeholder, autoFocus, classN
       onChange(html === "<p></p>" ? "" : html);
     },
   });
+
+  // Register paste/drop plugin once editor is ready
+  useEffect(() => {
+    if (!editor) return;
+    const plugin = createImagePastePlugin((files) => handleImageUpload(files, editor));
+    editor.registerPlugin(plugin);
+    return () => {
+      editor.unregisterPlugin(new PluginKey("imagePaste"));
+    };
+  }, [editor, handleImageUpload]);
 
   useEffect(() => {
     if (!editor) return;
@@ -192,6 +282,14 @@ export function RichTextEditor({ value, onChange, placeholder, autoFocus, classN
     setLinkOpen(false);
     setLinkText("");
     setLinkUrl("");
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files?.length) {
+      handleImageUpload(Array.from(files), editor);
+    }
+    e.target.value = "";
   };
 
   return (
@@ -280,6 +378,13 @@ export function RichTextEditor({ value, onChange, placeholder, autoFocus, classN
         </Popover>
 
         <Button type="button" variant="ghost" size="icon" className="h-7 w-7"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          aria-label="Insert image">
+          <ImagePlus className={cn("h-3.5 w-3.5", uploading && "animate-pulse")} />
+        </Button>
+
+        <Button type="button" variant="ghost" size="icon" className="h-7 w-7"
           onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}
           aria-label="Clear formatting">
           <RemoveFormatting className="h-3.5 w-3.5" />
@@ -292,7 +397,19 @@ export function RichTextEditor({ value, onChange, placeholder, autoFocus, classN
             {placeholder}
           </div>
         )}
+        {uploading && (
+          <div className="absolute inset-0 bg-background/50 flex items-center justify-center rounded-b-md">
+            <span className="text-sm text-muted-foreground animate-pulse">Uploading image…</span>
+          </div>
+        )}
       </div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileInputChange}
+      />
     </div>
   );
 }

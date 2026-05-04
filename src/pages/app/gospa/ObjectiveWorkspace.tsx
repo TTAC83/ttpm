@@ -503,6 +503,9 @@ function EntrySection({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [editLinkName, setEditLinkName] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
+
+  const notifyEditing = (active: boolean) => onEditingChange?.(active);
 
   const isEmptyHtml = (s: string) => !s || s.replace(/<[^>]+>/g, "").trim() === "";
 

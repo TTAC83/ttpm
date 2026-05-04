@@ -48,8 +48,9 @@ export function RichTextView({ html, className }: Props) {
           "ul", "ol", "li",
           "table", "thead", "tbody", "tr", "th", "td",
           "a", "span", "blockquote", "h1", "h2", "h3", "h4",
+          "img",
         ],
-        ALLOWED_ATTR: ["href", "target", "rel", "colspan", "rowspan"],
+        ALLOWED_ATTR: ["href", "target", "rel", "colspan", "rowspan", "src", "alt"],
         FORBID_ATTR: ["style", "class", "id", "width", "height", "align", "face", "color", "bgcolor"],
       }))
     : null;

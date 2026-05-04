@@ -51,9 +51,31 @@ function cleanPastedHtml(html: string): string {
 
   doc.querySelectorAll("style, script, meta, link, title").forEach(el => el.remove());
 
+  const TABLE_TAGS = new Set(["TABLE", "THEAD", "TBODY", "TR", "TH", "TD"]);
+  const KEEP_STYLE_PROPS = /^(background|background-color|color|border|border-top|border-right|border-bottom|border-left|font-weight|font-style|text-align|text-decoration|vertical-align|white-space|padding)/i;
+
   doc.querySelectorAll("*").forEach(el => {
-    if ((el as Element).tagName === "IMG") return; // preserve images
-    STRIP_ATTRS.forEach(a => el.removeAttribute(a));
+    const tag = (el as Element).tagName;
+    if (tag === "IMG") return;
+
+    if (TABLE_TAGS.has(tag)) {
+      const rawStyle = el.getAttribute("style") ?? "";
+      if (rawStyle) {
+        const kept = rawStyle.split(";").filter(s => {
+          const prop = s.split(":")[0]?.trim();
+          return prop && KEEP_STYLE_PROPS.test(prop) && !/mso-/i.test(prop);
+        }).join(";");
+        if (kept.trim()) {
+          el.setAttribute("style", kept);
+        } else {
+          el.removeAttribute("style");
+        }
+      }
+      STRIP_ATTRS.filter(a => a !== "style").forEach(a => el.removeAttribute(a));
+    } else {
+      STRIP_ATTRS.forEach(a => el.removeAttribute(a));
+    }
+
     [...el.attributes].forEach(attr => {
       if (/^(mso-|o:|w:|v:|x:|data-)/i.test(attr.name)) el.removeAttribute(attr.name);
     });
@@ -169,8 +191,22 @@ export function RichTextEditor({ value, onChange, placeholder, autoFocus, classN
       Image.configure({ inline: false, allowBase64: false }),
       Table.configure({ resizable: true }),
       TableRow,
-      TableHeader,
-      TableCell,
+      TableHeader.extend({
+        addAttributes() {
+          return {
+            ...this.parent?.(),
+            style: { default: null, parseHTML: el => el.getAttribute("style"), renderHTML: attrs => attrs.style ? { style: attrs.style } : {} },
+          };
+        },
+      }),
+      TableCell.extend({
+        addAttributes() {
+          return {
+            ...this.parent?.(),
+            style: { default: null, parseHTML: el => el.getAttribute("style"), renderHTML: attrs => attrs.style ? { style: attrs.style } : {} },
+          };
+        },
+      }),
     ],
     content: value || "",
     autofocus: autoFocus,

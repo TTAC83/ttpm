@@ -198,7 +198,7 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
 
       {/* Body */}
       <main className="flex-1 overflow-auto">
-        <div ref={contentRef} className={`mx-auto py-12 gospa-present-content transition-all ${isExpanded ? "max-w-none px-12" : "max-w-[1100px] px-10"}`}>
+        <div ref={contentRef} className={`mx-auto py-12 gospa-present-content transition-all ${isExpanded ? "max-w-none px-12 text-lg [&_img]:w-full [&_img]:max-w-none [&_table]:text-base" : "max-w-[1100px] px-10"}`}>
           {!slide ? (
             <div className="text-center text-white/60 mt-24 text-2xl">No questions to present yet.</div>
           ) : (

@@ -98,7 +98,12 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
   // Open / close lifecycle
   useEffect(() => {
     if (!open) return;
-    setIndex(0);
+    if (initialQuestionId) {
+      const slideIdx = slides.findIndex(s => s.questionId === initialQuestionId);
+      setIndex(slideIdx >= 0 ? slideIdx : 0);
+    } else {
+      setIndex(0);
+    }
     const el = containerRef.current;
     if (el && el.requestFullscreen) {
       el.requestFullscreen().catch(() => {});

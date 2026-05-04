@@ -48,8 +48,9 @@ export function RichTextView({ html, className }: Props) {
           "ul", "ol", "li",
           "table", "thead", "tbody", "tr", "th", "td",
           "a", "span", "blockquote", "h1", "h2", "h3", "h4",
+          "img",
         ],
-        ALLOWED_ATTR: ["href", "target", "rel", "colspan", "rowspan"],
+        ALLOWED_ATTR: ["href", "target", "rel", "colspan", "rowspan", "src", "alt"],
         FORBID_ATTR: ["style", "class", "id", "width", "height", "align", "face", "color", "bgcolor"],
       }))
     : null;
@@ -73,6 +74,7 @@ export function RichTextView({ html, className }: Props) {
         "[&_p:empty]:before:content-['\\00a0'] [&_p:empty]:before:inline-block [&_p:empty]:before:min-h-[1.35em]",
         "[&_span]:!inline [&_*]:!whitespace-pre-wrap",
         "[&_strong]:text-inherit [&_em]:text-inherit [&_li]:text-inherit",
+        "[&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md [&_img]:my-2",
         className,
       )}
       dangerouslySetInnerHTML={{ __html: safe }}

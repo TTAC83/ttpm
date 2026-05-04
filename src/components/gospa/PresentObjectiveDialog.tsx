@@ -124,15 +124,21 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        if (zoomedHtml) { setZoomedHtml(null); }
+        else { onClose(); }
+        return;
+      }
+      if (zoomedHtml) return; // block nav while zoomed
       if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") { e.preventDefault(); next(); }
       else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); prev(); }
       else if (e.key === "Home") { e.preventDefault(); setIndex(0); }
       else if (e.key === "End") { e.preventDefault(); setIndex(Math.max(0, slides.length - 1)); }
-      else if (e.key === "Escape") { onClose(); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, next, prev, slides.length, onClose]);
+  }, [open, next, prev, slides.length, onClose, zoomedHtml]);
 
   // Force external links to open in new tab
   useEffect(() => {

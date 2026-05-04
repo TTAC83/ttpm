@@ -662,18 +662,28 @@ function EntrySection({
         </ul>
       )}
       {RICH_TEXT_TYPES.includes(type) ? (
-        <div className="space-y-2">
-          <RichTextEditor
-            value={draft}
-            onChange={setDraft}
-            placeholder={PLACEHOLDERS[type]}
-          />
-          <div className="flex justify-end">
-            <Button type="button" variant="outline" size="sm" onClick={add}>
-              <Plus className="h-4 w-4 mr-1"/> {type === "key_insight" ? "Add key insight" : "Add answer"}
-            </Button>
+        isAdding ? (
+          <div className="space-y-2">
+            <RichTextEditor
+              value={draft}
+              onChange={setDraft}
+              placeholder={PLACEHOLDERS[type]}
+              autoFocus
+            />
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="ghost" size="sm" onClick={() => { setIsAdding(false); setDraft(""); notifyEditing(false); }}>
+                Cancel
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={add}>
+                <Plus className="h-4 w-4 mr-1"/> {type === "key_insight" ? "Add key insight" : "Add answer"}
+              </Button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => { setIsAdding(true); notifyEditing(true); }}>
+            <Plus className="h-4 w-4 mr-1"/> {type === "key_insight" ? "Add key insight" : "Add answer"}
+          </Button>
+        )
       ) : type === "link" ? (
         <div className="space-y-2">
           <Input

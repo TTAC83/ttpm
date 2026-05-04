@@ -121,11 +121,12 @@ export default function ObjectiveWorkspace() {
 
       <PresentObjectiveDialog
         open={presentOpen}
-        onClose={() => setPresentOpen(false)}
+        onClose={() => { setPresentOpen(false); setPresentQuestionId(null); }}
         objectiveTitle={obj.title}
         questions={(questionsQ.data ?? []) as any}
         entries={(entriesQ.data ?? []) as any}
         nameOf={nameOf}
+        initialQuestionId={presentQuestionId}
       />
 
       <Tabs defaultValue="questions">

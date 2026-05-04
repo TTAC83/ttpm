@@ -263,12 +263,12 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
                               href={urlPart}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className={`text-thingtrax-green underline break-all hover:opacity-80 ${isExpanded ? "text-lg" : ""}`}
+                              className="text-thingtrax-green underline break-all hover:opacity-80"
                             >
                               {display}
                             </a>
                           ) : (
-                            <RichTextView html={e.content} className={`text-white ${isExpanded ? "!prose-lg !text-lg [&_p]:!text-lg [&_li]:!text-lg [&_span]:!text-lg" : ""}`} />
+                            <RichTextView html={e.content} className="text-white" />
                           )}
                         </li>
                       );

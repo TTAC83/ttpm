@@ -198,30 +198,30 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
 
       {/* Body */}
       <main className="flex-1 overflow-auto">
-        <div ref={contentRef} className={`mx-auto py-12 gospa-present-content transition-all ${isExpanded ? "max-w-none px-12" : "max-w-[1100px] px-10"}`}>
+        <div ref={contentRef} className={`mx-auto py-12 gospa-present-content transition-all ${isExpanded ? "max-w-none px-12 text-lg [&_img]:w-full [&_img]:max-w-none [&_table]:text-base" : "max-w-[1100px] px-10"}`}>
           {!slide ? (
             <div className="text-center text-white/60 mt-24 text-2xl">No questions to present yet.</div>
           ) : (
             <>
               <div className="mb-8">
-                <div className="text-thingtrax-green text-base font-semibold tracking-wide uppercase mb-2">
+                <div className={`text-thingtrax-green font-semibold tracking-wide uppercase mb-2 ${isExpanded ? "text-lg" : "text-base"}`}>
                   Question {slide.questionNumber}
                 </div>
-                <h1 className="text-4xl font-bold leading-tight text-white">{slide.questionText}</h1>
-                <div className="mt-4 text-white/60 text-lg">
+                <h1 className={`font-bold leading-tight text-white ${isExpanded ? "text-5xl" : "text-4xl"}`}>{slide.questionText}</h1>
+                <div className={`mt-4 text-white/60 ${isExpanded ? "text-xl" : "text-lg"}`}>
                   {slide.empty ? "Awaiting an answer" : <>Answered by <span className="text-white">{slide.ownerName || "—"}</span></>}
                 </div>
               </div>
 
               {!slide.empty && slide.summaries.length > 0 && (
                 <section className="mb-8">
-                  <div className="flex items-center gap-2 text-thingtrax-green text-sm uppercase tracking-wide mb-3">
-                    <Lightbulb className="h-4 w-4" /> Answer
+                  <div className={`flex items-center gap-2 text-thingtrax-green uppercase tracking-wide mb-3 ${isExpanded ? "text-base" : "text-sm"}`}>
+                    <Lightbulb className={isExpanded ? "h-5 w-5" : "h-4 w-4"} /> Answer
                   </div>
                   <div className="space-y-4">
                     {slide.summaries.map((e) => (
-                      <div key={e.id} className="rounded-lg bg-white/5 border border-white/10 p-6">
-                        <RichTextView html={e.content} className="text-white" />
+                      <div key={e.id} className={`rounded-lg bg-white/5 border border-white/10 ${isExpanded ? "p-8" : "p-6"}`}>
+                        <RichTextView html={e.content} className={`text-white ${isExpanded ? "text-lg [&_img]:w-full" : ""}`} />
                       </div>
                     ))}
                   </div>
@@ -230,13 +230,13 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
 
               {!slide.empty && slide.insights.length > 0 && (
                 <section className="mb-8">
-                  <div className="flex items-center gap-2 text-thingtrax-green text-sm uppercase tracking-wide mb-3">
-                    <Lightbulb className="h-4 w-4" /> Key insight
+                  <div className={`flex items-center gap-2 text-thingtrax-green uppercase tracking-wide mb-3 ${isExpanded ? "text-base" : "text-sm"}`}>
+                    <Lightbulb className={isExpanded ? "h-5 w-5" : "h-4 w-4"} /> Key insight
                   </div>
                   <div className="space-y-4">
                     {slide.insights.map((e) => (
-                      <div key={e.id} className="rounded-lg bg-white/5 border border-white/10 p-6">
-                        <RichTextView html={e.content} className="text-white" />
+                      <div key={e.id} className={`rounded-lg bg-white/5 border border-white/10 ${isExpanded ? "p-8" : "p-6"}`}>
+                        <RichTextView html={e.content} className={`text-white ${isExpanded ? "text-lg [&_img]:w-full" : ""}`} />
                       </div>
                     ))}
                   </div>
@@ -245,8 +245,8 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
 
               {!slide.empty && slide.links.length > 0 && (
                 <section className="mb-8">
-                  <div className="flex items-center gap-2 text-thingtrax-green text-sm uppercase tracking-wide mb-3">
-                    <Link2 className="h-4 w-4" /> Supporting evidence
+                  <div className={`flex items-center gap-2 text-thingtrax-green uppercase tracking-wide mb-3 ${isExpanded ? "text-base" : "text-sm"}`}>
+                    <Link2 className={isExpanded ? "h-5 w-5" : "h-4 w-4"} /> Supporting evidence
                   </div>
                   <ul className="space-y-2">
                     {slide.links.map((e) => {

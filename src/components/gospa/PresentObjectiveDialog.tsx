@@ -174,10 +174,18 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
       <header className="flex items-center justify-between px-8 py-4 border-b border-white/10 shrink-0">
         <img src={thingtraxLogoFull} alt="Thingtrax" className="h-8" />
         <div className="text-sm text-white/70 truncate px-4 max-w-[50%] text-center">{objectiveTitle}</div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <span className="text-sm tabular-nums text-white/70">
             {slides.length ? index + 1 : 0} / {slides.length}
           </span>
+          <button
+            onClick={() => setIsExpanded(e => !e)}
+            className="rounded-md p-2 hover:bg-white/10 transition-colors"
+            aria-label={isExpanded ? "Collapse content" : "Expand content to full width"}
+            title={isExpanded ? "Collapse" : "Expand to full width"}
+          >
+            {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </button>
           <button
             onClick={onClose}
             className="rounded-md p-2 hover:bg-white/10 transition-colors"

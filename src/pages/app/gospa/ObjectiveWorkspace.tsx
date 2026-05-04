@@ -545,6 +545,7 @@ function EntrySection({
     const { error } = await gospa.updateQuestionEntry(id, v);
     if (error) return toast.error(error.message);
     setEditingId(null);
+    notifyEditing(false);
     onChanged();
   };
 

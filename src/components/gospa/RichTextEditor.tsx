@@ -191,8 +191,22 @@ export function RichTextEditor({ value, onChange, placeholder, autoFocus, classN
       Image.configure({ inline: false, allowBase64: false }),
       Table.configure({ resizable: true }),
       TableRow,
-      TableHeader,
-      TableCell,
+      TableHeader.extend({
+        addAttributes() {
+          return {
+            ...this.parent?.(),
+            style: { default: null, parseHTML: el => el.getAttribute("style"), renderHTML: attrs => attrs.style ? { style: attrs.style } : {} },
+          };
+        },
+      }),
+      TableCell.extend({
+        addAttributes() {
+          return {
+            ...this.parent?.(),
+            style: { default: null, parseHTML: el => el.getAttribute("style"), renderHTML: attrs => attrs.style ? { style: attrs.style } : {} },
+          };
+        },
+      }),
     ],
     content: value || "",
     autofocus: autoFocus,

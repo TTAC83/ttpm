@@ -525,6 +525,8 @@ function EntrySection({
     if (error) return toast.error(error.message);
     setDraft("");
     setLinkNameDraft("");
+    setIsAdding(false);
+    notifyEditing(false);
     onChanged();
   };
 

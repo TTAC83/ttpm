@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { ChevronLeft, ChevronRight, X, Link2, Lightbulb } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Link2, Lightbulb, ZoomIn } from "lucide-react";
 import { RichTextView } from "./RichTextView";
 import thingtraxLogoFull from "@/assets/thingtrax-logo-full.png";
 
@@ -90,6 +90,7 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [cursorHidden, setCursorHidden] = useState(false);
+  const [zoomedHtml, setZoomedHtml] = useState<string | null>(null);
   const cursorTimer = useRef<number | null>(null);
 
   const next = useCallback(() => setIndex((i) => Math.min(i + 1, Math.max(0, slides.length - 1))), [slides.length]);
@@ -123,15 +124,21 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        if (zoomedHtml) { setZoomedHtml(null); }
+        else { onClose(); }
+        return;
+      }
+      if (zoomedHtml) return; // block nav while zoomed
       if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") { e.preventDefault(); next(); }
       else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); prev(); }
       else if (e.key === "Home") { e.preventDefault(); setIndex(0); }
       else if (e.key === "End") { e.preventDefault(); setIndex(Math.max(0, slides.length - 1)); }
-      else if (e.key === "Escape") { onClose(); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, next, prev, slides.length, onClose]);
+  }, [open, next, prev, slides.length, onClose, zoomedHtml]);
 
   // Force external links to open in new tab
   useEffect(() => {
@@ -211,8 +218,11 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
                   </div>
                   <div className="space-y-4">
                     {slide.summaries.map((e) => (
-                      <div key={e.id} className="rounded-lg bg-white/5 border border-white/10 p-6">
+                      <div key={e.id} className="group relative rounded-lg bg-white/5 border border-white/10 p-6 cursor-pointer hover:border-white/20 transition-colors" onClick={() => setZoomedHtml(e.content)}>
                         <RichTextView html={e.content} className="text-white" />
+                        <button className="absolute top-2 right-2 p-1.5 rounded-md bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Zoom in">
+                          <ZoomIn className="h-4 w-4 text-white/70" />
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -226,8 +236,11 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
                   </div>
                   <div className="space-y-4">
                     {slide.insights.map((e) => (
-                      <div key={e.id} className="rounded-lg bg-white/5 border border-white/10 p-6">
+                      <div key={e.id} className="group relative rounded-lg bg-white/5 border border-white/10 p-6 cursor-pointer hover:border-white/20 transition-colors" onClick={() => setZoomedHtml(e.content)}>
                         <RichTextView html={e.content} className="text-white" />
+                        <button className="absolute top-2 right-2 p-1.5 rounded-md bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Zoom in">
+                          <ZoomIn className="h-4 w-4 text-white/70" />
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -309,6 +322,33 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
           Next <ChevronRight className="h-4 w-4" />
         </button>
       </footer>
+
+      {/* Zoom overlay */}
+      {zoomedHtml && (
+        <div
+          className="fixed inset-0 z-[110] bg-black/90 backdrop-blur-sm flex flex-col cursor-pointer"
+          onClick={() => setZoomedHtml(null)}
+        >
+          <div className="flex items-center justify-between px-8 py-4 shrink-0">
+            <span className="text-white/60 text-sm">Click anywhere or press Esc to close</span>
+            <button
+              onClick={() => setZoomedHtml(null)}
+              className="rounded-md p-2 hover:bg-white/10 transition-colors"
+              aria-label="Close zoom"
+            >
+              <X className="h-5 w-5 text-white" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-auto px-8 pb-8" onClick={(e) => e.stopPropagation()}>
+            <div className="w-full gospa-present-content">
+              <div className="rounded-lg bg-white/5 border border-white/10 p-8">
+                <RichTextView html={zoomedHtml} className="text-white text-lg [&_table]:text-base [&_img]:max-w-full [&_img]:w-full" />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

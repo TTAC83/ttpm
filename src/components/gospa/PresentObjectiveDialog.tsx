@@ -322,6 +322,33 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
           Next <ChevronRight className="h-4 w-4" />
         </button>
       </footer>
+
+      {/* Zoom overlay */}
+      {zoomedHtml && (
+        <div
+          className="fixed inset-0 z-[110] bg-black/90 backdrop-blur-sm flex flex-col cursor-pointer"
+          onClick={() => setZoomedHtml(null)}
+        >
+          <div className="flex items-center justify-between px-8 py-4 shrink-0">
+            <span className="text-white/60 text-sm">Click anywhere or press Esc to close</span>
+            <button
+              onClick={() => setZoomedHtml(null)}
+              className="rounded-md p-2 hover:bg-white/10 transition-colors"
+              aria-label="Close zoom"
+            >
+              <X className="h-5 w-5 text-white" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-auto px-8 pb-8" onClick={(e) => e.stopPropagation()}>
+            <div className="w-full gospa-present-content">
+              <div className="rounded-lg bg-white/5 border border-white/10 p-8">
+                <RichTextView html={zoomedHtml} className="text-white text-lg [&_table]:text-base [&_img]:max-w-full [&_img]:w-full" />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

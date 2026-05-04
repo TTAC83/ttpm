@@ -204,11 +204,11 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
           ) : (
             <>
               <div className="mb-8">
-                <div className="text-thingtrax-green text-base font-semibold tracking-wide uppercase mb-2">
+                <div className={`text-thingtrax-green font-semibold tracking-wide uppercase mb-2 ${isExpanded ? "text-lg" : "text-base"}`}>
                   Question {slide.questionNumber}
                 </div>
-                <h1 className="text-4xl font-bold leading-tight text-white">{slide.questionText}</h1>
-                <div className="mt-4 text-white/60 text-lg">
+                <h1 className={`font-bold leading-tight text-white ${isExpanded ? "text-5xl" : "text-4xl"}`}>{slide.questionText}</h1>
+                <div className={`mt-4 text-white/60 ${isExpanded ? "text-xl" : "text-lg"}`}>
                   {slide.empty ? "Awaiting an answer" : <>Answered by <span className="text-white">{slide.ownerName || "—"}</span></>}
                 </div>
               </div>

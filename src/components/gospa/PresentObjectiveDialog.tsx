@@ -84,7 +84,7 @@ function buildSlides(questions: Question[], entries: Entry[], nameOf: (uid?: str
   return slides;
 }
 
-export function PresentObjectiveDialog({ open, onClose, objectiveTitle, questions, entries, nameOf }: Props) {
+export function PresentObjectiveDialog({ open, onClose, objectiveTitle, questions, entries, nameOf, initialQuestionId }: Props) {
   const slides = useMemo(() => buildSlides(questions, entries, nameOf), [questions, entries, nameOf]);
   const [index, setIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);

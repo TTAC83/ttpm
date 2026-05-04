@@ -16,7 +16,7 @@ import { RAGBadge } from "@/components/gospa/RAGBadge";
 import { StatusPill } from "@/components/gospa/StatusPill";
 import { RichTextEditor } from "@/components/gospa/RichTextEditor";
 import { RichTextView } from "@/components/gospa/RichTextView";
-import { Plus, Trash2, Sparkles, ArrowLeft, AlertTriangle, Link2, ExternalLink, Check, X, Pencil, Play } from "lucide-react";
+import { Plus, Trash2, Sparkles, ArrowLeft, AlertTriangle, Link2, ExternalLink, Check, X, Pencil, Play, Eye } from "lucide-react";
 import { toast } from "sonner";
 import type { GospaRag, GospaStatus } from "@/lib/gospaService";
 import { PresentObjectiveDialog } from "@/components/gospa/PresentObjectiveDialog";

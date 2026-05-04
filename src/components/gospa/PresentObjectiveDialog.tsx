@@ -245,8 +245,8 @@ export function PresentObjectiveDialog({ open, onClose, objectiveTitle, question
 
               {!slide.empty && slide.links.length > 0 && (
                 <section className="mb-8">
-                  <div className="flex items-center gap-2 text-thingtrax-green text-sm uppercase tracking-wide mb-3">
-                    <Link2 className="h-4 w-4" /> Supporting evidence
+                  <div className={`flex items-center gap-2 text-thingtrax-green uppercase tracking-wide mb-3 ${isExpanded ? "text-base" : "text-sm"}`}>
+                    <Link2 className={isExpanded ? "h-5 w-5" : "h-4 w-4"} /> Supporting evidence
                   </div>
                   <ul className="space-y-2">
                     {slide.links.map((e) => {

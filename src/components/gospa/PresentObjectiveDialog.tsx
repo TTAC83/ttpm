@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { ChevronLeft, ChevronRight, X, Link2, Lightbulb, ZoomIn } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Link2, Lightbulb, Maximize2, Minimize2 } from "lucide-react";
 import { RichTextView } from "./RichTextView";
 import thingtraxLogoFull from "@/assets/thingtrax-logo-full.png";
 

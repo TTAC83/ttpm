@@ -727,11 +727,11 @@ function QuestionSlideContent({ slide, isExpanded }: { slide: QuestionSlide; isE
       )}
 
       {!slide.empty && slide.links.length > 0 && (
-        <section className="mb-8">
-          <div className={`flex items-center gap-2 text-thingtrax-green uppercase tracking-wide mb-3 ${isExpanded ? "text-base" : "text-sm"}`}>
-            <Link2 className={isExpanded ? "h-5 w-5" : "h-4 w-4"} /> Supporting evidence
+        <section className="mb-10">
+          <div className={`flex items-center gap-2 text-thingtrax-green uppercase tracking-wide mb-4 ${isExpanded ? "text-lg" : "text-base"}`}>
+            <Link2 className={isExpanded ? "h-6 w-6" : "h-5 w-5"} /> Supporting evidence
           </div>
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {slide.links.map((e) => {
               const raw = (e.content ?? "").trim();
               const sep = raw.indexOf("|");
@@ -740,13 +740,13 @@ function QuestionSlideContent({ slide, isExpanded }: { slide: QuestionSlide; isE
               const isUrl = /^(https?:|mailto:|tel:)/i.test(urlPart);
               const display = name || urlPart;
               return (
-                <li key={e.id} className="rounded-lg bg-white/5 border border-white/10 px-5 py-3">
+                <li key={e.id} className="rounded-lg bg-white/5 border border-white/10 px-6 py-4">
                   {isUrl ? (
-                    <a href={urlPart} target="_blank" rel="noopener noreferrer" className="text-thingtrax-green underline break-all hover:opacity-80">
+                    <a href={urlPart} target="_blank" rel="noopener noreferrer" className="text-thingtrax-green underline break-all hover:opacity-80 text-xl">
                       {display}
                     </a>
                   ) : (
-                    <RichTextView html={e.content} className="text-white" />
+                    <RichTextView html={e.content} className="text-white text-xl" />
                   )}
                 </li>
               );

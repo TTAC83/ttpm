@@ -195,14 +195,18 @@ export default function ObjectiveWorkspace() {
           <Card>
             <CardHeader><CardTitle className="text-base">Strategic Direction</CardTitle></CardHeader>
             <CardContent className="space-y-3">
-              <Textarea rows={6} defaultValue={obj.strategic_direction ?? ""} placeholder="What's the strategic direction this objective is taking?" onBlur={e => updateObj({ strategic_direction: e.target.value })}/>
+              <RichTextEditor
+                value={obj.strategic_direction ?? ""}
+                placeholder="What's the strategic direction this objective is taking?"
+                onChange={val => updateObj({ strategic_direction: val })}
+              />
               <Button variant="outline" size="sm" onClick={async () => {
                 toast.info("Generating AI summary…");
                 const { data, error } = await gospaAI.summariseQuestions(id);
                 if (error) return toast.error(error.message);
                 toast.success("Summary generated"); qc.invalidateQueries({ queryKey: ["gospa-obj", id] });
               }}><Sparkles className="h-4 w-4 mr-2"/>Generate AI summary from answers</Button>
-              {obj.ai_summary && <Card className="bg-muted/40"><CardContent className="pt-4 text-sm whitespace-pre-wrap">{obj.ai_summary}</CardContent></Card>}
+              {obj.ai_summary && <Card className="bg-muted/40"><CardContent className="pt-4"><RichTextView html={obj.ai_summary} /></CardContent></Card>}
             </CardContent>
           </Card>
         </TabsContent>

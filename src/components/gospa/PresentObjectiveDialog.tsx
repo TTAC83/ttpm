@@ -712,14 +712,14 @@ function QuestionSlideContent({ slide, isExpanded }: { slide: QuestionSlide; isE
       )}
 
       {!slide.empty && slide.insights.length > 0 && (
-        <section className="mb-8">
-          <div className={`flex items-center gap-2 text-thingtrax-green uppercase tracking-wide mb-3 ${isExpanded ? "text-base" : "text-sm"}`}>
-            <Lightbulb className={isExpanded ? "h-5 w-5" : "h-4 w-4"} /> Key insight
+        <section className="mb-10">
+          <div className={`flex items-center gap-2 text-thingtrax-green uppercase tracking-wide mb-4 ${isExpanded ? "text-lg" : "text-base"}`}>
+            <Lightbulb className={isExpanded ? "h-6 w-6" : "h-5 w-5"} /> Key insight
           </div>
-          <div className="space-y-4">
+          <div className="space-y-5">
             {slide.insights.map((e) => (
-              <div key={e.id} className={`rounded-lg bg-white/5 border border-white/10 ${isExpanded ? "p-8" : "p-6"}`}>
-                <RichTextView html={e.content} className="text-white" />
+              <div key={e.id} className={`rounded-lg bg-white/5 border border-white/10 ${isExpanded ? "p-10" : "p-8"}`}>
+                <RichTextView html={e.content} className="text-white text-2xl [&_p]:text-2xl [&_li]:text-2xl" />
               </div>
             ))}
           </div>

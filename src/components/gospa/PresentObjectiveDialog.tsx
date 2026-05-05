@@ -686,12 +686,12 @@ function SectionHeader({ icon, title, subtitle, isExpanded }: { icon: React.Reac
 function QuestionSlideContent({ slide, isExpanded }: { slide: QuestionSlide; isExpanded: boolean }) {
   return (
     <>
-      <div className="mb-8">
-        <div className={`text-thingtrax-green font-semibold tracking-wide uppercase mb-2 ${isExpanded ? "text-lg" : "text-base"}`}>
+      <div className="mb-10">
+        <div className={`text-thingtrax-green font-semibold tracking-wide uppercase mb-3 ${isExpanded ? "text-xl" : "text-lg"}`}>
           Question {slide.questionNumber}
         </div>
-        <h1 className={`font-bold leading-tight text-white ${isExpanded ? "text-5xl" : "text-4xl"}`}>{slide.questionText}</h1>
-        <div className={`mt-4 text-white/60 ${isExpanded ? "text-xl" : "text-lg"}`}>
+        <h1 className={`font-bold leading-tight text-white ${isExpanded ? "text-6xl" : "text-5xl"}`}>{slide.questionText}</h1>
+        <div className={`mt-5 text-white/60 ${isExpanded ? "text-2xl" : "text-xl"}`}>
           {slide.empty ? "Awaiting an answer" : <>Answered by <span className="text-white">{slide.ownerName || "—"}</span></>}
         </div>
       </div>

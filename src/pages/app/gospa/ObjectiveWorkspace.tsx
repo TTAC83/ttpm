@@ -140,9 +140,15 @@ export default function ObjectiveWorkspace() {
       <PresentObjectiveDialog
         open={presentOpen}
         onClose={() => { setPresentOpen(false); setPresentQuestionId(null); }}
-        objectiveTitle={obj.title}
+        objective={{ title: obj.title, description: obj.description, rag_status: obj.rag_status, strategic_direction: obj.strategic_direction }}
         questions={(questionsQ.data ?? []) as any}
         entries={(entriesQ.data ?? []) as any}
+        strategies={(stratsQ.data ?? []) as any}
+        plans={(plansQ.data ?? []).filter((p: any) => stratsQ.data?.some((s: any) => s.id === p.strategy_id)) as any}
+        actions={(actionsQ.data ?? []) as any}
+        metrics={(metricsQ.data ?? []) as any}
+        blockers={(blockersQ.data ?? []) as any}
+        decisions={(decisionsQ.data ?? []) as any}
         nameOf={nameOf}
         initialQuestionId={presentQuestionId}
       />

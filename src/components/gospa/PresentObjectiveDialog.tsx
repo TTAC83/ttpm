@@ -686,25 +686,25 @@ function SectionHeader({ icon, title, subtitle, isExpanded }: { icon: React.Reac
 function QuestionSlideContent({ slide, isExpanded }: { slide: QuestionSlide; isExpanded: boolean }) {
   return (
     <>
-      <div className="mb-8">
-        <div className={`text-thingtrax-green font-semibold tracking-wide uppercase mb-2 ${isExpanded ? "text-lg" : "text-base"}`}>
+      <div className="mb-10">
+        <div className={`text-thingtrax-green font-semibold tracking-wide uppercase mb-3 ${isExpanded ? "text-xl" : "text-lg"}`}>
           Question {slide.questionNumber}
         </div>
-        <h1 className={`font-bold leading-tight text-white ${isExpanded ? "text-5xl" : "text-4xl"}`}>{slide.questionText}</h1>
-        <div className={`mt-4 text-white/60 ${isExpanded ? "text-xl" : "text-lg"}`}>
+        <h1 className={`font-bold leading-tight text-white ${isExpanded ? "text-6xl" : "text-5xl"}`}>{slide.questionText}</h1>
+        <div className={`mt-5 text-white/60 ${isExpanded ? "text-2xl" : "text-xl"}`}>
           {slide.empty ? "Awaiting an answer" : <>Answered by <span className="text-white">{slide.ownerName || "—"}</span></>}
         </div>
       </div>
 
       {!slide.empty && slide.summaries.length > 0 && (
-        <section className="mb-8">
-          <div className={`flex items-center gap-2 text-thingtrax-green uppercase tracking-wide mb-3 ${isExpanded ? "text-base" : "text-sm"}`}>
-            <Lightbulb className={isExpanded ? "h-5 w-5" : "h-4 w-4"} /> Answer
+        <section className="mb-10">
+          <div className={`flex items-center gap-2 text-thingtrax-green uppercase tracking-wide mb-4 ${isExpanded ? "text-lg" : "text-base"}`}>
+            <Lightbulb className={isExpanded ? "h-6 w-6" : "h-5 w-5"} /> Answer
           </div>
-          <div className="space-y-4">
+          <div className="space-y-5">
             {slide.summaries.map((e) => (
-              <div key={e.id} className={`rounded-lg bg-white/5 border border-white/10 ${isExpanded ? "p-8" : "p-6"}`}>
-                <RichTextView html={e.content} className="text-white" />
+              <div key={e.id} className={`rounded-lg bg-white/5 border border-white/10 ${isExpanded ? "p-10" : "p-8"}`}>
+                <RichTextView html={e.content} className="text-white text-2xl [&_p]:text-2xl [&_li]:text-2xl" />
               </div>
             ))}
           </div>
@@ -712,14 +712,14 @@ function QuestionSlideContent({ slide, isExpanded }: { slide: QuestionSlide; isE
       )}
 
       {!slide.empty && slide.insights.length > 0 && (
-        <section className="mb-8">
-          <div className={`flex items-center gap-2 text-thingtrax-green uppercase tracking-wide mb-3 ${isExpanded ? "text-base" : "text-sm"}`}>
-            <Lightbulb className={isExpanded ? "h-5 w-5" : "h-4 w-4"} /> Key insight
+        <section className="mb-10">
+          <div className={`flex items-center gap-2 text-thingtrax-green uppercase tracking-wide mb-4 ${isExpanded ? "text-lg" : "text-base"}`}>
+            <Lightbulb className={isExpanded ? "h-6 w-6" : "h-5 w-5"} /> Key insight
           </div>
-          <div className="space-y-4">
+          <div className="space-y-5">
             {slide.insights.map((e) => (
-              <div key={e.id} className={`rounded-lg bg-white/5 border border-white/10 ${isExpanded ? "p-8" : "p-6"}`}>
-                <RichTextView html={e.content} className="text-white" />
+              <div key={e.id} className={`rounded-lg bg-white/5 border border-white/10 ${isExpanded ? "p-10" : "p-8"}`}>
+                <RichTextView html={e.content} className="text-white text-2xl [&_p]:text-2xl [&_li]:text-2xl" />
               </div>
             ))}
           </div>
@@ -727,11 +727,11 @@ function QuestionSlideContent({ slide, isExpanded }: { slide: QuestionSlide; isE
       )}
 
       {!slide.empty && slide.links.length > 0 && (
-        <section className="mb-8">
-          <div className={`flex items-center gap-2 text-thingtrax-green uppercase tracking-wide mb-3 ${isExpanded ? "text-base" : "text-sm"}`}>
-            <Link2 className={isExpanded ? "h-5 w-5" : "h-4 w-4"} /> Supporting evidence
+        <section className="mb-10">
+          <div className={`flex items-center gap-2 text-thingtrax-green uppercase tracking-wide mb-4 ${isExpanded ? "text-lg" : "text-base"}`}>
+            <Link2 className={isExpanded ? "h-6 w-6" : "h-5 w-5"} /> Supporting evidence
           </div>
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {slide.links.map((e) => {
               const raw = (e.content ?? "").trim();
               const sep = raw.indexOf("|");
@@ -740,13 +740,13 @@ function QuestionSlideContent({ slide, isExpanded }: { slide: QuestionSlide; isE
               const isUrl = /^(https?:|mailto:|tel:)/i.test(urlPart);
               const display = name || urlPart;
               return (
-                <li key={e.id} className="rounded-lg bg-white/5 border border-white/10 px-5 py-3">
+                <li key={e.id} className="rounded-lg bg-white/5 border border-white/10 px-6 py-4">
                   {isUrl ? (
-                    <a href={urlPart} target="_blank" rel="noopener noreferrer" className="text-thingtrax-green underline break-all hover:opacity-80">
+                    <a href={urlPart} target="_blank" rel="noopener noreferrer" className="text-thingtrax-green underline break-all hover:opacity-80 text-xl">
                       {display}
                     </a>
                   ) : (
-                    <RichTextView html={e.content} className="text-white" />
+                    <RichTextView html={e.content} className="text-white text-xl" />
                   )}
                 </li>
               );

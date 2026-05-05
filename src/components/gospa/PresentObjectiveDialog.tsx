@@ -112,7 +112,7 @@ function buildQuestionSlides(questions: Question[], entries: Entry[], nameOf: (u
       slides.push({ questionId: q.id, questionNumber: q.order_index, questionText: q.question_text, ownerId: null, ownerName: "", summaries: [], insights: [], links: [], empty: true });
       continue;
     }
-    const byUser = new Map<string, Entry[]>();
+    const byUser: Record<string, Entry[]> = {};
     for (const e of qEntries) {
       const key = e.created_by ?? "__unknown__";
       if (!byUser.has(key)) byUser.set(key, []);

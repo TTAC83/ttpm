@@ -115,10 +115,11 @@ function buildQuestionSlides(questions: Question[], entries: Entry[], nameOf: (u
     const byUser: Record<string, Entry[]> = {};
     for (const e of qEntries) {
       const key = e.created_by ?? "__unknown__";
-      if (!byUser.has(key)) byUser.set(key, []);
-      byUser.get(key)!.push(e);
+      if (!byUser[key]) byUser[key] = [];
+      byUser[key].push(e);
     }
-    for (const [uid, list] of byUser) {
+    for (const uid of Object.keys(byUser)) {
+      const list = byUser[uid];
       slides.push({
         questionId: q.id, questionNumber: q.order_index, questionText: q.question_text,
         ownerId: uid === "__unknown__" ? null : uid,

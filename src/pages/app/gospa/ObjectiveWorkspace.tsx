@@ -113,7 +113,7 @@ export default function ObjectiveWorkspace() {
           <Button
             variant="outline"
             size="sm"
-            disabled={!questionsQ.data?.length}
+            
             onClick={() => setPresentOpen(true)}
           >
             <Play className="h-4 w-4 mr-2"/> Present

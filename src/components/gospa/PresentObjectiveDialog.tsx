@@ -496,18 +496,19 @@ export function PresentObjectiveDialog({
     if (!open) return;
     if (initialQuestionId) {
       const slideIdx = slides.findIndex(s => s.section === "questions");
-      // find the specific question slide
       const qIdx = slides.findIndex(s => s.section === "questions" && s.render.toString().includes(initialQuestionId));
       setIndex(qIdx >= 0 ? qIdx : (slideIdx >= 0 ? slideIdx : 0));
     } else {
       setIndex(0);
     }
+    // Try fullscreen but don't depend on it
     const el = containerRef.current;
+    let enteredFullscreen = false;
     if (el && el.requestFullscreen) {
-      el.requestFullscreen().catch(() => {});
+      el.requestFullscreen().then(() => { enteredFullscreen = true; }).catch(() => {});
     }
     const onFsChange = () => {
-      if (!document.fullscreenElement) onClose();
+      if (enteredFullscreen && !document.fullscreenElement) onClose();
     };
     document.addEventListener("fullscreenchange", onFsChange);
     return () => {

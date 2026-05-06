@@ -1,15 +1,18 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { gospa } from "@/lib/gospaService";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RAGBadge } from "@/components/gospa/RAGBadge";
-import { Target, AlertTriangle, CheckCircle2, TrendingUp, Calendar, ChevronRight, ListTree } from "lucide-react";
+import { Target, AlertTriangle, CheckCircle2, TrendingUp, Calendar, ChevronRight, ListTree, Play } from "lucide-react";
 import { StatusPill } from "@/components/gospa/StatusPill";
+import { PresentGospaDialog } from "@/components/gospa/PresentGospaDialog";
 
 const isDoneAction = (status: string | null) => status === "Done" || status === "done";
 
 export default function GospaDashboard() {
+  const [presentOpen, setPresentOpen] = useState(false);
   const goalsQ = useQuery({ queryKey: ["gospa-goals"], queryFn: async () => (await gospa.listGoals()).data ?? [] });
   const objectivesQ = useQuery({ queryKey: ["gospa-objectives"], queryFn: async () => (await gospa.listObjectives()).data ?? [] });
   const blockersQ = useQuery({ queryKey: ["gospa-blockers"], queryFn: async () => (await gospa.listBlockers()).data ?? [] });

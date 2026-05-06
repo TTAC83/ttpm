@@ -591,7 +591,7 @@ function GospaTreeView({ goal, objectives, strategies, plans, actions, onNavigat
                                 className="w-full group rounded-lg bg-white/[0.04] border border-white/10 p-3 text-left hover:bg-white/8 hover:border-thingtrax-cyan/30 transition-all"
                               >
                                 <div className="flex items-center gap-2 mb-1.5">
-                                  <Map className="h-3.5 w-3.5 text-thingtrax-cyan/70" />
+                                  <MapIcon className="h-3.5 w-3.5 text-thingtrax-cyan/70" />
                                   <span className="text-[10px] text-white/30 uppercase tracking-widest">Strategy</span>
                                   {ragDot(strat.rag_status)}
                                 </div>
@@ -693,7 +693,7 @@ function GospaTreeView({ goal, objectives, strategies, plans, actions, onNavigat
           <div className="flex items-center justify-center gap-8 mt-8 text-[11px] text-white/30">
             <div className="flex items-center gap-2"><Target className="h-3.5 w-3.5 text-thingtrax-green" /> Goal</div>
             <div className="flex items-center gap-2"><span className="w-3 h-3 rounded border-l-2 border-l-green-400 bg-white/5" /> Objective</div>
-            <div className="flex items-center gap-2"><Map className="h-3.5 w-3.5 text-thingtrax-cyan/60" /> Strategy</div>
+            <div className="flex items-center gap-2"><MapIcon className="h-3.5 w-3.5 text-thingtrax-cyan/60" /> Strategy</div>
             <div className="flex items-center gap-2"><ListChecks className="h-3.5 w-3.5 text-thingtrax-yellow/60" /> Plan</div>
             <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-white/30" /> Action</div>
           </div>

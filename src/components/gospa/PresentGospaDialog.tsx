@@ -431,14 +431,36 @@ function GospaTreeView({ goal, objectives, strategies, plans, actions, onNavigat
   actions: ActionData[];
   onNavigate: (v: ViewState) => void;
 }) {
+  const [expandedObjectives, setExpandedObjectives] = useState<Set<string>>(new Set());
+
+  const toggleObjective = (id: string) => {
+    setExpandedObjectives(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const expandAll = () => setExpandedObjectives(new Set(objectives.map(o => o.id)));
+  const collapseAll = () => setExpandedObjectives(new Set());
+  const allExpanded = objectives.length > 0 && expandedObjectives.size === objectives.length;
+
+  // Find the deepest level present for any expanded objective to know which columns to show
+  const hasAnyExpanded = expandedObjectives.size > 0;
+
+  // Column headers
+  const columns = hasAnyExpanded
+    ? ["Goal", "Objectives", "Strategies", "Plans", "Actions"]
+    : ["Goal", "Objectives"];
+
   return (
     <div>
       {/* Hero header */}
-      <div className="text-center mb-12">
-        <div className="inline-block mb-4">
+      <div className="text-center mb-8">
+        <div className="inline-block mb-3">
           <img src={thingtraxLogoFull} alt="Thingtrax" className="h-10 opacity-70" />
         </div>
-        <div className="rounded-full px-5 py-1.5 mb-5 border border-thingtrax-green/30 text-thingtrax-green uppercase tracking-[0.2em] text-sm font-medium inline-block">
+        <div className="rounded-full px-5 py-1.5 mb-4 border border-thingtrax-green/30 text-thingtrax-green uppercase tracking-[0.2em] text-sm font-medium inline-block">
           GOSPA Strategic Plan
         </div>
         {(goal.timeframe_start || goal.timeframe_end) && (
@@ -450,165 +472,193 @@ function GospaTreeView({ goal, objectives, strategies, plans, actions, onNavigat
         )}
       </div>
 
-      {/* Tree */}
-      <div className="overflow-x-auto pb-8">
-        <div className="min-w-[900px]">
-          {/* Goal node as the root */}
-          <div className="flex items-start gap-0">
-            {/* Goal card */}
-            <div className="shrink-0 w-64">
-              <div className="rounded-2xl bg-gradient-to-br from-thingtrax-green/20 to-thingtrax-green/5 border-2 border-thingtrax-green/40 p-6 backdrop-blur-sm">
-                <div className="flex items-center gap-2 mb-3">
-                  <Target className="h-5 w-5 text-thingtrax-green" />
-                  <span className="text-xs text-thingtrax-green uppercase tracking-widest font-semibold">Goal</span>
-                </div>
-                <h2 className="text-xl font-bold text-white leading-tight mb-2">{goal.title}</h2>
-                {goal.description && (
-                  <p className="text-sm text-white/50 line-clamp-3">{goal.description}</p>
-                )}
-              </div>
-            </div>
+      {/* Expand/Collapse all */}
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={allExpanded ? collapseAll : expandAll}
+          className="flex items-center gap-2 text-xs text-white/40 hover:text-white/70 transition-colors px-3 py-1.5 rounded-md border border-white/10 hover:border-white/20"
+        >
+          {allExpanded ? <Shrink className="h-3.5 w-3.5" /> : <Expand className="h-3.5 w-3.5" />}
+          {allExpanded ? "Collapse All" : "Expand All"}
+        </button>
+      </div>
 
-            {/* Connector from goal to objectives */}
-            <div className="flex flex-col items-center justify-center w-10 shrink-0 self-stretch">
-              <div className="w-full h-px bg-thingtrax-green/30" />
-            </div>
+      {/* Column headers */}
+      <div className={`grid gap-px mb-3 ${hasAnyExpanded ? "grid-cols-5" : "grid-cols-2"}`}>
+        {columns.map(col => (
+          <div key={col} className="text-center text-[10px] text-white/30 uppercase tracking-[0.15em] font-semibold py-2">
+            {col}
+          </div>
+        ))}
+      </div>
 
-            {/* Objectives column */}
-            <div className="flex-1 space-y-4">
-              {objectives.map((obj, oi) => {
-                const objStrats = strategies.filter(s => s.objective_id === obj.id);
-                return (
-                  <div key={obj.id} className="flex items-start gap-0">
-                    {/* Objective card */}
-                    <button
-                      onClick={() => onNavigate({ type: "objective", objectiveId: obj.id })}
-                      className={`shrink-0 w-56 group rounded-xl bg-white/5 border border-white/10 border-l-4 ${ragBorderColor(obj.rag_status)} p-4 text-left hover:bg-white/8 hover:border-white/20 transition-all backdrop-blur-sm`}
-                    >
+      {/* Tree rows — one row per objective */}
+      <div className="space-y-3">
+        {objectives.map((obj, oi) => {
+          const isExpObjExpanded = expandedObjectives.has(obj.id);
+          const objStrats = strategies.filter(s => s.objective_id === obj.id);
+
+          return (
+            <div key={obj.id}>
+              <div className={`grid gap-0 ${hasAnyExpanded ? "grid-cols-5" : "grid-cols-2"}`}>
+                {/* Goal column — only show in first row */}
+                <div className="flex items-start justify-center px-2">
+                  {oi === 0 && (
+                    <div className="rounded-2xl bg-gradient-to-br from-thingtrax-green/20 to-thingtrax-green/5 border-2 border-thingtrax-green/40 p-5 backdrop-blur-sm w-full">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="flex items-center justify-center rounded-md w-6 h-6 text-xs font-bold bg-white/10 text-white/60">
-                          {oi + 1}
-                        </span>
-                        <span className="text-[10px] text-white/40 uppercase tracking-widest">Objective</span>
+                        <Target className="h-5 w-5 text-thingtrax-green" />
+                        <span className="text-xs text-thingtrax-green uppercase tracking-widest font-semibold">Goal</span>
                       </div>
-                      <div className="text-sm font-semibold text-white group-hover:text-thingtrax-green transition-colors line-clamp-2 leading-snug">
+                      <h2 className="text-lg font-bold text-white leading-tight mb-1">{goal.title}</h2>
+                      {goal.description && (
+                        <p className="text-xs text-white/50 line-clamp-3">{goal.description}</p>
+                      )}
+                    </div>
+                  )}
+                  {oi !== 0 && (
+                    <div className="w-px h-full bg-thingtrax-green/15 mx-auto" />
+                  )}
+                </div>
+
+                {/* Objective column */}
+                <div className="flex items-start px-2">
+                  <div className="w-full">
+                    <button
+                      onClick={() => toggleObjective(obj.id)}
+                      className={`w-full group rounded-xl bg-white/5 border border-white/10 border-l-4 ${ragBorderColor(obj.rag_status)} p-4 text-left hover:bg-white/8 hover:border-white/20 transition-all`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="flex items-center justify-center rounded-md w-6 h-6 text-xs font-bold bg-white/10 text-white/60">
+                            {oi + 1}
+                          </span>
+                          <span className="text-[10px] text-white/40 uppercase tracking-widest">Objective</span>
+                          {ragDot(obj.rag_status)}
+                        </div>
+                        <ChevronDown className={`h-4 w-4 text-white/30 transition-transform ${isExpObjExpanded ? "rotate-180" : ""}`} />
+                      </div>
+                      <div className="text-sm font-semibold text-white group-hover:text-thingtrax-green transition-colors leading-snug">
                         {obj.title}
                       </div>
                     </button>
+                    {/* Click to navigate to detail */}
+                    <button
+                      onClick={() => onNavigate({ type: "objective", objectiveId: obj.id })}
+                      className="mt-1 text-[10px] text-white/30 hover:text-thingtrax-green transition-colors pl-2"
+                    >
+                      View detail →
+                    </button>
+                  </div>
+                </div>
 
-                    {objStrats.length > 0 && (
-                      <>
-                        {/* Connector */}
-                        <div className="flex flex-col items-center justify-center w-8 shrink-0 self-stretch">
-                          <div className="w-full h-px bg-white/10" />
-                        </div>
+                {/* Strategies column */}
+                {hasAnyExpanded && (
+                  <div className="flex items-start px-2">
+                    {isExpObjExpanded && objStrats.length > 0 ? (
+                      <div className="space-y-2 w-full">
+                        {objStrats.map(strat => (
+                          <button
+                            key={strat.id}
+                            onClick={() => onNavigate({ type: "strategy", strategyId: strat.id, objectiveId: obj.id })}
+                            className="w-full group rounded-lg bg-white/[0.04] border border-white/10 p-3 text-left hover:bg-white/8 hover:border-thingtrax-cyan/30 transition-all"
+                          >
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <Map className="h-3.5 w-3.5 text-thingtrax-cyan/70" />
+                              <span className="text-[10px] text-white/30 uppercase tracking-widest">Strategy</span>
+                              {ragDot(strat.rag_status)}
+                            </div>
+                            <div className="text-xs font-medium text-white/80 group-hover:text-thingtrax-cyan transition-colors line-clamp-2 leading-snug">
+                              {strat.title}
+                            </div>
+                            <span className={`mt-1.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${statusDot(strat.status) === "bg-green-400" ? "bg-green-500/20 text-green-400" : "bg-white/10 text-white/50"}`}>
+                              {statusLabel(strat.status)}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : isExpObjExpanded ? (
+                      <div className="text-xs text-white/20 italic px-2 pt-4">No strategies</div>
+                    ) : null}
+                  </div>
+                )}
 
-                        {/* Strategies column */}
-                        <div className="space-y-2 flex-1">
-                          {objStrats.map(strat => {
-                            const stratPlans = plans.filter(p => p.strategy_id === strat.id);
+                {/* Plans column */}
+                {hasAnyExpanded && (
+                  <div className="flex items-start px-2">
+                    {isExpObjExpanded && (() => {
+                      const objPlans = objStrats.flatMap(s => plans.filter(p => p.strategy_id === s.id));
+                      if (objPlans.length === 0) return <div className="text-xs text-white/20 italic px-2 pt-4">No plans</div>;
+                      return (
+                        <div className="space-y-2 w-full">
+                          {objPlans.map(plan => {
+                            const planActions = actions.filter(a => a.gospa_plan_id === plan.id);
+                            const doneCount = planActions.filter(a => a.status === "Done" || a.status === "done").length;
                             return (
-                              <div key={strat.id} className="flex items-start gap-0">
-                                <button
-                                  onClick={() => onNavigate({ type: "strategy", strategyId: strat.id, objectiveId: obj.id })}
-                                  className="shrink-0 w-48 group rounded-lg bg-white/[0.04] border border-white/10 p-3 text-left hover:bg-white/8 hover:border-thingtrax-cyan/30 transition-all"
-                                >
-                                  <div className="flex items-center gap-2 mb-1.5">
-                                    <Map className="h-3.5 w-3.5 text-thingtrax-cyan/70" />
-                                    <span className="text-[10px] text-white/30 uppercase tracking-widest">Strategy</span>
-                                    {ragDot(strat.rag_status)}
-                                  </div>
-                                  <div className="text-xs font-medium text-white/80 group-hover:text-thingtrax-cyan transition-colors line-clamp-2 leading-snug">
-                                    {strat.title}
-                                  </div>
-                                  <div className="mt-1.5">
-                                    <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${statusDot(strat.status) === "bg-green-400" ? "bg-green-500/20 text-green-400" : "bg-white/10 text-white/50"}`}>
-                                      {statusLabel(strat.status)}
-                                    </span>
-                                  </div>
-                                </button>
-
-                                {stratPlans.length > 0 && (
-                                  <>
-                                    <div className="flex flex-col items-center justify-center w-6 shrink-0 self-stretch">
-                                      <div className="w-full h-px bg-white/8" />
+                              <button
+                                key={plan.id}
+                                onClick={() => onNavigate({ type: "plan", planId: plan.id, objectiveId: obj.id })}
+                                className="w-full group rounded-md bg-white/[0.03] border border-white/8 p-2.5 text-left hover:bg-white/6 hover:border-thingtrax-yellow/30 transition-all"
+                              >
+                                <div className="flex items-center gap-1.5 mb-1">
+                                  <ListChecks className="h-3 w-3 text-thingtrax-yellow/60" />
+                                  <span className="text-[9px] text-white/25 uppercase tracking-widest">Plan</span>
+                                </div>
+                                <div className="text-[11px] font-medium text-white/70 group-hover:text-thingtrax-yellow transition-colors line-clamp-2 leading-snug">
+                                  {plan.title}
+                                </div>
+                                {planActions.length > 0 && (
+                                  <div className="mt-1.5 flex items-center gap-1.5">
+                                    <div className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden">
+                                      <div className="h-full rounded-full bg-thingtrax-green/60" style={{ width: `${(doneCount / planActions.length) * 100}%` }} />
                                     </div>
-
-                                    <div className="space-y-1.5 flex-1">
-                                      {stratPlans.map(plan => {
-                                        const planActions = actions.filter(a => a.gospa_plan_id === plan.id);
-                                        const doneCount = planActions.filter(a => a.status === "Done" || a.status === "done").length;
-                                        return (
-                                          <div key={plan.id} className="flex items-start gap-0">
-                                            <button
-                                              onClick={() => onNavigate({ type: "plan", planId: plan.id, objectiveId: obj.id })}
-                                              className="shrink-0 w-44 group rounded-md bg-white/[0.03] border border-white/8 p-2.5 text-left hover:bg-white/6 hover:border-thingtrax-yellow/30 transition-all"
-                                            >
-                                              <div className="flex items-center gap-1.5 mb-1">
-                                                <ListChecks className="h-3 w-3 text-thingtrax-yellow/60" />
-                                                <span className="text-[9px] text-white/25 uppercase tracking-widest">Plan</span>
-                                              </div>
-                                              <div className="text-[11px] font-medium text-white/70 group-hover:text-thingtrax-yellow transition-colors line-clamp-2 leading-snug">
-                                                {plan.title}
-                                              </div>
-                                              {planActions.length > 0 && (
-                                                <div className="mt-1.5 flex items-center gap-1.5">
-                                                  <div className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden">
-                                                    <div
-                                                      className="h-full rounded-full bg-thingtrax-green/60"
-                                                      style={{ width: `${planActions.length ? (doneCount / planActions.length) * 100 : 0}%` }}
-                                                    />
-                                                  </div>
-                                                  <span className="text-[9px] text-white/30">{doneCount}/{planActions.length}</span>
-                                                </div>
-                                              )}
-                                            </button>
-
-                                            {planActions.length > 0 && (
-                                              <>
-                                                <div className="flex flex-col items-center justify-center w-5 shrink-0 self-stretch">
-                                                  <div className="w-full h-px bg-white/6" />
-                                                </div>
-
-                                                <div className="space-y-1 flex-1">
-                                                  {planActions.slice(0, 4).map(action => (
-                                                    <button
-                                                      key={action.id}
-                                                      onClick={() => onNavigate({ type: "action", actionId: action.id, objectiveId: obj.id })}
-                                                      className="w-full group flex items-center gap-2 rounded bg-white/[0.02] border border-white/5 px-2.5 py-1.5 text-left hover:bg-white/5 hover:border-white/15 transition-all"
-                                                    >
-                                                      <span className={`w-2 h-2 rounded-full shrink-0 ${statusDot(action.status)}`} />
-                                                      <span className="text-[10px] text-white/50 group-hover:text-white/80 transition-colors truncate">
-                                                        {action.task_title}
-                                                      </span>
-                                                    </button>
-                                                  ))}
-                                                  {planActions.length > 4 && (
-                                                    <div className="text-[9px] text-white/25 pl-5">
-                                                      +{planActions.length - 4} more
-                                                    </div>
-                                                  )}
-                                                </div>
-                                              </>
-                                            )}
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  </>
+                                    <span className="text-[9px] text-white/30">{doneCount}/{planActions.length}</span>
+                                  </div>
                                 )}
-                              </div>
+                              </button>
                             );
                           })}
                         </div>
-                      </>
-                    )}
+                      );
+                    })()}
                   </div>
-                );
-              })}
+                )}
+
+                {/* Actions column */}
+                {hasAnyExpanded && (
+                  <div className="flex items-start px-2">
+                    {isExpObjExpanded && (() => {
+                      const objActions = objStrats.flatMap(s =>
+                        plans.filter(p => p.strategy_id === s.id).flatMap(p =>
+                          actions.filter(a => a.gospa_plan_id === p.id)
+                        )
+                      );
+                      if (objActions.length === 0) return <div className="text-xs text-white/20 italic px-2 pt-4">No actions</div>;
+                      return (
+                        <div className="space-y-1 w-full">
+                          {objActions.slice(0, 8).map(action => (
+                            <button
+                              key={action.id}
+                              onClick={() => onNavigate({ type: "action", actionId: action.id, objectiveId: obj.id })}
+                              className="w-full group flex items-center gap-2 rounded bg-white/[0.02] border border-white/5 px-2.5 py-1.5 text-left hover:bg-white/5 hover:border-white/15 transition-all"
+                            >
+                              <span className={`w-2 h-2 rounded-full shrink-0 ${statusDot(action.status)}`} />
+                              <span className="text-[10px] text-white/50 group-hover:text-white/80 transition-colors truncate">
+                                {action.task_title}
+                              </span>
+                            </button>
+                          ))}
+                          {objActions.length > 8 && (
+                            <div className="text-[9px] text-white/25 pl-5">+{objActions.length - 8} more</div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
+          );
+        })}
       </div>
 
       {/* Legend */}

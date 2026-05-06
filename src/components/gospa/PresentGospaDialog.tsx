@@ -304,39 +304,109 @@ export function PresentGospaDialog({ open, onClose, goal, objectives, strategies
           )}
         </div>
 
-        <div className="px-4 pt-2 pb-1">
-          <div className="text-xs text-white/40 uppercase tracking-widest font-semibold px-4 mb-2">
-            Objectives
-          </div>
-        </div>
-        <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-1">
-          {objectives.map((obj, i) => {
-            const isActive = view.type !== "home" && (view as any).objectiveId === obj.id;
-            return (
-              <button
-                key={obj.id}
-                onClick={() => navigate({ type: "objective", objectiveId: obj.id })}
-                className={`w-full flex items-start gap-3 rounded-lg px-4 py-3 text-left transition-all ${
-                  isActive
-                    ? "bg-thingtrax-green/15 text-thingtrax-green border border-thingtrax-green/20"
-                    : "text-white/70 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                <span className={`flex items-center justify-center rounded-md w-7 h-7 text-xs font-bold shrink-0 mt-0.5 ${
-                  isActive ? "bg-thingtrax-green/30 text-thingtrax-green" : "bg-white/10 text-white/50"
-                }`}>
-                  {i + 1}
-                </span>
-                <div className="min-w-0">
-                  <div className="text-sm font-medium leading-tight line-clamp-2">{obj.title}</div>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    {ragDot(obj.rag_status)}
-                    <span className="text-xs text-white/40 capitalize">{obj.rag_status || "—"}</span>
+        <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-0.5">
+          {/* Objectives */}
+          <NavSection
+            label="Objectives"
+            count={objectives.length}
+            defaultOpen={true}
+          >
+            {objectives.map((obj, i) => {
+              const isActive = view.type !== "home" && (view as any).objectiveId === obj.id;
+              return (
+                <button
+                  key={obj.id}
+                  onClick={() => navigate({ type: "objective", objectiveId: obj.id })}
+                  className={`w-full flex items-start gap-3 rounded-lg px-4 py-2.5 text-left transition-all ${
+                    isActive
+                      ? "bg-thingtrax-green/15 text-thingtrax-green border border-thingtrax-green/20"
+                      : "text-white/70 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  <span className={`flex items-center justify-center rounded-md w-6 h-6 text-xs font-bold shrink-0 mt-0.5 ${
+                    isActive ? "bg-thingtrax-green/30 text-thingtrax-green" : "bg-white/10 text-white/50"
+                  }`}>
+                    {i + 1}
+                  </span>
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium leading-tight line-clamp-2">{obj.title}</div>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      {ragDot(obj.rag_status)}
+                      <span className="text-xs text-white/40 capitalize">{obj.rag_status || "—"}</span>
+                    </div>
                   </div>
-                </div>
-              </button>
-            );
-          })}
+                </button>
+              );
+            })}
+          </NavSection>
+
+          {/* Strategies */}
+          <NavSection label="Strategies" count={strategies.length}>
+            {strategies.map((strat) => {
+              const obj = objectives.find(o => o.id === strat.objective_id);
+              const isActive = view.type === "strategy" && (view as any).strategyId === strat.id;
+              return (
+                <button
+                  key={strat.id}
+                  onClick={() => navigate({ type: "strategy", strategyId: strat.id, objectiveId: strat.objective_id })}
+                  className={`w-full flex flex-col gap-0.5 rounded-lg px-4 py-2 text-left transition-all ${
+                    isActive
+                      ? "bg-thingtrax-green/15 text-thingtrax-green border border-thingtrax-green/20"
+                      : "text-white/70 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  <span className="text-sm font-medium leading-tight line-clamp-1">{strat.title}</span>
+                  {obj && <span className="text-xs text-white/30 line-clamp-1">{obj.title}</span>}
+                </button>
+              );
+            })}
+          </NavSection>
+
+          {/* Plans */}
+          <NavSection label="Plans" count={plans.length}>
+            {plans.map((plan) => {
+              const isActive = view.type === "plan" && (view as any).planId === plan.id;
+              return (
+                <button
+                  key={plan.id}
+                  onClick={() => navigate({ type: "plan", planId: plan.id, objectiveId: "" })}
+                  className={`w-full flex flex-col gap-0.5 rounded-lg px-4 py-2 text-left transition-all ${
+                    isActive
+                      ? "bg-thingtrax-green/15 text-thingtrax-green border border-thingtrax-green/20"
+                      : "text-white/70 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  <span className="text-sm font-medium leading-tight line-clamp-1">{plan.title}</span>
+                  {plan.start_date && (
+                    <span className="text-xs text-white/30">{plan.start_date} → {plan.end_date || "—"}</span>
+                  )}
+                </button>
+              );
+            })}
+          </NavSection>
+
+          {/* Actions */}
+          <NavSection label="Actions" count={actions.length}>
+            {actions.map((action) => {
+              const isActive = view.type === "action" && (view as any).actionId === action.id;
+              return (
+                <button
+                  key={action.id}
+                  onClick={() => navigate({ type: "action", actionId: action.id, objectiveId: action.gospa_objective_id || "" })}
+                  className={`w-full flex flex-col gap-0.5 rounded-lg px-4 py-2 text-left transition-all ${
+                    isActive
+                      ? "bg-thingtrax-green/15 text-thingtrax-green border border-thingtrax-green/20"
+                      : "text-white/70 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  <span className="text-sm font-medium leading-tight line-clamp-1">{action.task_title}</span>
+                  <span className={`text-xs ${action.status === "Done" ? "text-green-400/60" : action.status === "Blocked" ? "text-red-400/60" : "text-white/30"}`}>
+                    {action.status || "Planned"}
+                  </span>
+                </button>
+              );
+            })}
+          </NavSection>
         </div>
       </nav>
 

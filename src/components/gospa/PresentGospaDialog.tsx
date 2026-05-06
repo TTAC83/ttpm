@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { X, Home, ChevronLeft, ChevronRight, ChevronDown, Target, Lightbulb, Link2, Maximize2, Minimize2, Map, ListChecks, CheckCircle2, Clock, AlertTriangle, Expand, Shrink, BarChart3, ZoomIn, ZoomOut, Calendar } from "lucide-react";
+import { X, Home, ChevronLeft, ChevronRight, ChevronDown, Target, Lightbulb, Link2, Maximize2, Minimize2, Map as MapIcon, ListChecks, CheckCircle2, Clock, AlertTriangle, Expand, Shrink, BarChart3, ZoomIn, ZoomOut, Calendar } from "lucide-react";
 import { computeBounds, generateDateMarkers, generateMonthBands, dateToX } from "@/features/gospa-gantt/buildTimeline";
 import { gospa } from "@/lib/gospaService";
 import { supabase } from "@/integrations/supabase/client";

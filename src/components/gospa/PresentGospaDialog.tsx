@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { X, Home, ChevronLeft, ChevronRight, Target, Lightbulb, Link2, Maximize2, Minimize2, Map, ListChecks, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
+import { X, Home, ChevronLeft, ChevronRight, ChevronDown, Target, Lightbulb, Link2, Maximize2, Minimize2, Map, ListChecks, CheckCircle2, Clock, AlertTriangle, Expand, Shrink } from "lucide-react";
 import { gospa } from "@/lib/gospaService";
 import { supabase } from "@/integrations/supabase/client";
 import { RichTextView } from "./RichTextView";

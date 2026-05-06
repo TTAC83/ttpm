@@ -432,6 +432,7 @@ function GospaTreeView({ goal, objectives, strategies, plans, actions, onNavigat
   actions: ActionData[];
   onNavigate: (v: ViewState) => void;
 }) {
+  const [homeTab, setHomeTab] = useState<"tree" | "gantt">("tree");
   const [expandedObjectives, setExpandedObjectives] = useState<Set<string>>(new Set());
 
   const toggleObjective = (id: string) => {
@@ -446,10 +447,8 @@ function GospaTreeView({ goal, objectives, strategies, plans, actions, onNavigat
   const collapseAll = () => setExpandedObjectives(new Set());
   const allExpanded = objectives.length > 0 && expandedObjectives.size === objectives.length;
 
-  // Find the deepest level present for any expanded objective to know which columns to show
   const hasAnyExpanded = expandedObjectives.size > 0;
 
-  // Column headers
   const columns = hasAnyExpanded
     ? ["Goal", "Objectives", "Strategies", "Plans", "Actions"]
     : ["Goal", "Objectives"];
@@ -473,202 +472,579 @@ function GospaTreeView({ goal, objectives, strategies, plans, actions, onNavigat
         )}
       </div>
 
-      {/* Expand/Collapse all */}
-      <div className="flex justify-end mb-4">
-        <button
-          onClick={allExpanded ? collapseAll : expandAll}
-          className="flex items-center gap-2 text-xs text-white/40 hover:text-white/70 transition-colors px-3 py-1.5 rounded-md border border-white/10 hover:border-white/20"
-        >
-          {allExpanded ? <Shrink className="h-3.5 w-3.5" /> : <Expand className="h-3.5 w-3.5" />}
-          {allExpanded ? "Collapse All" : "Expand All"}
-        </button>
+      {/* View toggle + controls */}
+      <div className="flex items-center justify-between mb-4">
+        {/* Tree / Gantt toggle */}
+        <div className="flex items-center rounded-lg border border-white/10 overflow-hidden">
+          <button
+            onClick={() => setHomeTab("tree")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-all ${homeTab === "tree" ? "bg-thingtrax-green/20 text-thingtrax-green" : "text-white/40 hover:text-white/60"}`}
+          >
+            <Target className="h-3.5 w-3.5" /> Tree View
+          </button>
+          <button
+            onClick={() => setHomeTab("gantt")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-all ${homeTab === "gantt" ? "bg-thingtrax-green/20 text-thingtrax-green" : "text-white/40 hover:text-white/60"}`}
+          >
+            <BarChart3 className="h-3.5 w-3.5" /> Gantt View
+          </button>
+        </div>
+
+        {/* Expand/collapse for tree view */}
+        {homeTab === "tree" && (
+          <button
+            onClick={allExpanded ? collapseAll : expandAll}
+            className="flex items-center gap-2 text-xs text-white/40 hover:text-white/70 transition-colors px-3 py-1.5 rounded-md border border-white/10 hover:border-white/20"
+          >
+            {allExpanded ? <Shrink className="h-3.5 w-3.5" /> : <Expand className="h-3.5 w-3.5" />}
+            {allExpanded ? "Collapse All" : "Expand All"}
+          </button>
+        )}
       </div>
 
-      {/* Column headers */}
-      <div className={`grid gap-px mb-3 ${hasAnyExpanded ? "grid-cols-5" : "grid-cols-2"}`}>
-        {columns.map(col => (
-          <div key={col} className="text-center text-[10px] text-white/30 uppercase tracking-[0.15em] font-semibold py-2">
-            {col}
+      {homeTab === "gantt" ? (
+        <PresentationGanttView
+          plans={plans}
+          actions={actions}
+          strategies={strategies}
+          objectives={objectives}
+          onNavigate={onNavigate}
+        />
+      ) : (
+        <>
+          {/* Column headers */}
+          <div className={`grid gap-px mb-3 ${hasAnyExpanded ? "grid-cols-5" : "grid-cols-2"}`}>
+            {columns.map(col => (
+              <div key={col} className="text-center text-[10px] text-white/30 uppercase tracking-[0.15em] font-semibold py-2">
+                {col}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      {/* Tree rows — one row per objective */}
-      <div className="space-y-3">
-        {objectives.map((obj, oi) => {
-          const isExpObjExpanded = expandedObjectives.has(obj.id);
-          const objStrats = strategies.filter(s => s.objective_id === obj.id);
+          {/* Tree rows — one row per objective */}
+          <div className="space-y-3">
+            {objectives.map((obj, oi) => {
+              const isExpObjExpanded = expandedObjectives.has(obj.id);
+              const objStrats = strategies.filter(s => s.objective_id === obj.id);
 
-          return (
-            <div key={obj.id}>
-              <div className={`grid gap-0 ${hasAnyExpanded ? "grid-cols-5" : "grid-cols-2"}`}>
-                {/* Goal column — only show in first row */}
-                <div className="flex items-start justify-center px-2">
-                  {oi === 0 && (
-                    <div className="rounded-2xl bg-gradient-to-br from-thingtrax-green/20 to-thingtrax-green/5 border-2 border-thingtrax-green/40 p-5 backdrop-blur-sm w-full">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Target className="h-5 w-5 text-thingtrax-green" />
-                        <span className="text-xs text-thingtrax-green uppercase tracking-widest font-semibold">Goal</span>
-                      </div>
-                      <h2 className="text-lg font-bold text-white leading-tight mb-1">{goal.title}</h2>
-                      {goal.description && (
-                        <p className="text-xs text-white/50 line-clamp-3">{goal.description}</p>
-                      )}
-                    </div>
-                  )}
-                  {oi !== 0 && (
-                    <div className="w-px h-full bg-thingtrax-green/15 mx-auto" />
-                  )}
-                </div>
-
-                {/* Objective column */}
-                <div className="flex items-start px-2">
-                  <div className="w-full">
-                    <button
-                      onClick={() => toggleObjective(obj.id)}
-                      className={`w-full group rounded-xl bg-white/5 border border-white/10 border-l-4 ${ragBorderColor(obj.rag_status)} p-4 text-left hover:bg-white/8 hover:border-white/20 transition-all`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="flex items-center justify-center rounded-md w-6 h-6 text-xs font-bold bg-white/10 text-white/60">
-                            {oi + 1}
-                          </span>
-                          <span className="text-[10px] text-white/40 uppercase tracking-widest">Objective</span>
-                          {ragDot(obj.rag_status)}
-                        </div>
-                        <ChevronDown className={`h-4 w-4 text-white/30 transition-transform ${isExpObjExpanded ? "rotate-180" : ""}`} />
-                      </div>
-                      <div className="text-sm font-semibold text-white group-hover:text-thingtrax-green transition-colors leading-snug">
-                        {obj.title}
-                      </div>
-                    </button>
-                    {/* Click to navigate to detail */}
-                    <button
-                      onClick={() => onNavigate({ type: "objective", objectiveId: obj.id })}
-                      className="mt-1 text-[10px] text-white/30 hover:text-thingtrax-green transition-colors pl-2"
-                    >
-                      View detail →
-                    </button>
-                  </div>
-                </div>
-
-                {/* Strategies column */}
-                {hasAnyExpanded && (
-                  <div className="flex items-start px-2">
-                    {isExpObjExpanded && objStrats.length > 0 ? (
-                      <div className="space-y-2 w-full">
-                        {objStrats.map(strat => (
-                          <button
-                            key={strat.id}
-                            onClick={() => onNavigate({ type: "strategy", strategyId: strat.id, objectiveId: obj.id })}
-                            className="w-full group rounded-lg bg-white/[0.04] border border-white/10 p-3 text-left hover:bg-white/8 hover:border-thingtrax-cyan/30 transition-all"
-                          >
-                            <div className="flex items-center gap-2 mb-1.5">
-                              <Map className="h-3.5 w-3.5 text-thingtrax-cyan/70" />
-                              <span className="text-[10px] text-white/30 uppercase tracking-widest">Strategy</span>
-                              {ragDot(strat.rag_status)}
-                            </div>
-                            <div className="text-xs font-medium text-white/80 group-hover:text-thingtrax-cyan transition-colors line-clamp-2 leading-snug">
-                              {strat.title}
-                            </div>
-                            <span className={`mt-1.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${statusDot(strat.status) === "bg-green-400" ? "bg-green-500/20 text-green-400" : "bg-white/10 text-white/50"}`}>
-                              {statusLabel(strat.status)}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    ) : isExpObjExpanded ? (
-                      <div className="text-xs text-white/20 italic px-2 pt-4">No strategies</div>
-                    ) : null}
-                  </div>
-                )}
-
-                {/* Plans column */}
-                {hasAnyExpanded && (
-                  <div className="flex items-start px-2">
-                    {isExpObjExpanded && (() => {
-                      const objPlans = objStrats.flatMap(s => plans.filter(p => p.strategy_id === s.id));
-                      if (objPlans.length === 0) return <div className="text-xs text-white/20 italic px-2 pt-4">No plans</div>;
-                      return (
-                        <div className="space-y-2 w-full">
-                          {objPlans.map(plan => {
-                            const planActions = actions.filter(a => a.gospa_plan_id === plan.id);
-                            const doneCount = planActions.filter(a => a.status === "Done" || a.status === "done").length;
-                            return (
-                              <button
-                                key={plan.id}
-                                onClick={() => onNavigate({ type: "plan", planId: plan.id, objectiveId: obj.id })}
-                                className="w-full group rounded-md bg-white/[0.03] border border-white/8 p-2.5 text-left hover:bg-white/6 hover:border-thingtrax-yellow/30 transition-all"
-                              >
-                                <div className="flex items-center gap-1.5 mb-1">
-                                  <ListChecks className="h-3 w-3 text-thingtrax-yellow/60" />
-                                  <span className="text-[9px] text-white/25 uppercase tracking-widest">Plan</span>
-                                </div>
-                                <div className="text-[11px] font-medium text-white/70 group-hover:text-thingtrax-yellow transition-colors line-clamp-2 leading-snug">
-                                  {plan.title}
-                                </div>
-                                {planActions.length > 0 && (
-                                  <div className="mt-1.5 flex items-center gap-1.5">
-                                    <div className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden">
-                                      <div className="h-full rounded-full bg-thingtrax-green/60" style={{ width: `${(doneCount / planActions.length) * 100}%` }} />
-                                    </div>
-                                    <span className="text-[9px] text-white/30">{doneCount}/{planActions.length}</span>
-                                  </div>
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      );
-                    })()}
-                  </div>
-                )}
-
-                {/* Actions column */}
-                {hasAnyExpanded && (
-                  <div className="flex items-start px-2">
-                    {isExpObjExpanded && (() => {
-                      const objActions = objStrats.flatMap(s =>
-                        plans.filter(p => p.strategy_id === s.id).flatMap(p =>
-                          actions.filter(a => a.gospa_plan_id === p.id)
-                        )
-                      );
-                      if (objActions.length === 0) return <div className="text-xs text-white/20 italic px-2 pt-4">No actions</div>;
-                      return (
-                        <div className="space-y-1 w-full">
-                          {objActions.slice(0, 8).map(action => (
-                            <button
-                              key={action.id}
-                              onClick={() => onNavigate({ type: "action", actionId: action.id, objectiveId: obj.id })}
-                              className="w-full group flex items-center gap-2 rounded bg-white/[0.02] border border-white/5 px-2.5 py-1.5 text-left hover:bg-white/5 hover:border-white/15 transition-all"
-                            >
-                              <span className={`w-2 h-2 rounded-full shrink-0 ${statusDot(action.status)}`} />
-                              <span className="text-[10px] text-white/50 group-hover:text-white/80 transition-colors truncate">
-                                {action.task_title}
-                              </span>
-                            </button>
-                          ))}
-                          {objActions.length > 8 && (
-                            <div className="text-[9px] text-white/25 pl-5">+{objActions.length - 8} more</div>
+              return (
+                <div key={obj.id}>
+                  <div className={`grid gap-0 ${hasAnyExpanded ? "grid-cols-5" : "grid-cols-2"}`}>
+                    {/* Goal column — only show in first row */}
+                    <div className="flex items-start justify-center px-2">
+                      {oi === 0 && (
+                        <div className="rounded-2xl bg-gradient-to-br from-thingtrax-green/20 to-thingtrax-green/5 border-2 border-thingtrax-green/40 p-5 backdrop-blur-sm w-full">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Target className="h-5 w-5 text-thingtrax-green" />
+                            <span className="text-xs text-thingtrax-green uppercase tracking-widest font-semibold">Goal</span>
+                          </div>
+                          <h2 className="text-lg font-bold text-white leading-tight mb-1">{goal.title}</h2>
+                          {goal.description && (
+                            <p className="text-xs text-white/50 line-clamp-3">{goal.description}</p>
                           )}
                         </div>
-                      );
-                    })()}
+                      )}
+                      {oi !== 0 && (
+                        <div className="w-px h-full bg-thingtrax-green/15 mx-auto" />
+                      )}
+                    </div>
+
+                    {/* Objective column */}
+                    <div className="flex items-start px-2">
+                      <div className="w-full">
+                        <button
+                          onClick={() => toggleObjective(obj.id)}
+                          className={`w-full group rounded-xl bg-white/5 border border-white/10 border-l-4 ${ragBorderColor(obj.rag_status)} p-4 text-left hover:bg-white/8 hover:border-white/20 transition-all`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="flex items-center justify-center rounded-md w-6 h-6 text-xs font-bold bg-white/10 text-white/60">
+                                {oi + 1}
+                              </span>
+                              <span className="text-[10px] text-white/40 uppercase tracking-widest">Objective</span>
+                              {ragDot(obj.rag_status)}
+                            </div>
+                            <ChevronDown className={`h-4 w-4 text-white/30 transition-transform ${isExpObjExpanded ? "rotate-180" : ""}`} />
+                          </div>
+                          <div className="text-sm font-semibold text-white group-hover:text-thingtrax-green transition-colors leading-snug">
+                            {obj.title}
+                          </div>
+                        </button>
+                        <button
+                          onClick={() => onNavigate({ type: "objective", objectiveId: obj.id })}
+                          className="mt-1 text-[10px] text-white/30 hover:text-thingtrax-green transition-colors pl-2"
+                        >
+                          View detail →
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Strategies column */}
+                    {hasAnyExpanded && (
+                      <div className="flex items-start px-2">
+                        {isExpObjExpanded && objStrats.length > 0 ? (
+                          <div className="space-y-2 w-full">
+                            {objStrats.map(strat => (
+                              <button
+                                key={strat.id}
+                                onClick={() => onNavigate({ type: "strategy", strategyId: strat.id, objectiveId: obj.id })}
+                                className="w-full group rounded-lg bg-white/[0.04] border border-white/10 p-3 text-left hover:bg-white/8 hover:border-thingtrax-cyan/30 transition-all"
+                              >
+                                <div className="flex items-center gap-2 mb-1.5">
+                                  <Map className="h-3.5 w-3.5 text-thingtrax-cyan/70" />
+                                  <span className="text-[10px] text-white/30 uppercase tracking-widest">Strategy</span>
+                                  {ragDot(strat.rag_status)}
+                                </div>
+                                <div className="text-xs font-medium text-white/80 group-hover:text-thingtrax-cyan transition-colors line-clamp-2 leading-snug">
+                                  {strat.title}
+                                </div>
+                                <span className={`mt-1.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${statusDot(strat.status) === "bg-green-400" ? "bg-green-500/20 text-green-400" : "bg-white/10 text-white/50"}`}>
+                                  {statusLabel(strat.status)}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        ) : isExpObjExpanded ? (
+                          <div className="text-xs text-white/20 italic px-2 pt-4">No strategies</div>
+                        ) : null}
+                      </div>
+                    )}
+
+                    {/* Plans column */}
+                    {hasAnyExpanded && (
+                      <div className="flex items-start px-2">
+                        {isExpObjExpanded && (() => {
+                          const objPlans = objStrats.flatMap(s => plans.filter(p => p.strategy_id === s.id));
+                          if (objPlans.length === 0) return <div className="text-xs text-white/20 italic px-2 pt-4">No plans</div>;
+                          return (
+                            <div className="space-y-2 w-full">
+                              {objPlans.map(plan => {
+                                const planActions = actions.filter(a => a.gospa_plan_id === plan.id);
+                                const doneCount = planActions.filter(a => a.status === "Done" || a.status === "done").length;
+                                return (
+                                  <button
+                                    key={plan.id}
+                                    onClick={() => onNavigate({ type: "plan", planId: plan.id, objectiveId: obj.id })}
+                                    className="w-full group rounded-md bg-white/[0.03] border border-white/8 p-2.5 text-left hover:bg-white/6 hover:border-thingtrax-yellow/30 transition-all"
+                                  >
+                                    <div className="flex items-center gap-1.5 mb-1">
+                                      <ListChecks className="h-3 w-3 text-thingtrax-yellow/60" />
+                                      <span className="text-[9px] text-white/25 uppercase tracking-widest">Plan</span>
+                                    </div>
+                                    <div className="text-[11px] font-medium text-white/70 group-hover:text-thingtrax-yellow transition-colors line-clamp-2 leading-snug">
+                                      {plan.title}
+                                    </div>
+                                    {planActions.length > 0 && (
+                                      <div className="mt-1.5 flex items-center gap-1.5">
+                                        <div className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden">
+                                          <div className="h-full rounded-full bg-thingtrax-green/60" style={{ width: `${(doneCount / planActions.length) * 100}%` }} />
+                                        </div>
+                                        <span className="text-[9px] text-white/30">{doneCount}/{planActions.length}</span>
+                                      </div>
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+
+                    {/* Actions column */}
+                    {hasAnyExpanded && (
+                      <div className="flex items-start px-2">
+                        {isExpObjExpanded && (() => {
+                          const objActions = objStrats.flatMap(s =>
+                            plans.filter(p => p.strategy_id === s.id).flatMap(p =>
+                              actions.filter(a => a.gospa_plan_id === p.id)
+                            )
+                          );
+                          if (objActions.length === 0) return <div className="text-xs text-white/20 italic px-2 pt-4">No actions</div>;
+                          return (
+                            <div className="space-y-1 w-full">
+                              {objActions.slice(0, 8).map(action => (
+                                <button
+                                  key={action.id}
+                                  onClick={() => onNavigate({ type: "action", actionId: action.id, objectiveId: obj.id })}
+                                  className="w-full group flex items-center gap-2 rounded bg-white/[0.02] border border-white/5 px-2.5 py-1.5 text-left hover:bg-white/5 hover:border-white/15 transition-all"
+                                >
+                                  <span className={`w-2 h-2 rounded-full shrink-0 ${statusDot(action.status)}`} />
+                                  <span className="text-[10px] text-white/50 group-hover:text-white/80 transition-colors truncate">
+                                    {action.task_title}
+                                  </span>
+                                </button>
+                              ))}
+                              {objActions.length > 8 && (
+                                <div className="text-[9px] text-white/25 pl-5">+{objActions.length - 8} more</div>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Legend */}
+          <div className="flex items-center justify-center gap-8 mt-8 text-[11px] text-white/30">
+            <div className="flex items-center gap-2"><Target className="h-3.5 w-3.5 text-thingtrax-green" /> Goal</div>
+            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded border-l-2 border-l-green-400 bg-white/5" /> Objective</div>
+            <div className="flex items-center gap-2"><Map className="h-3.5 w-3.5 text-thingtrax-cyan/60" /> Strategy</div>
+            <div className="flex items-center gap-2"><ListChecks className="h-3.5 w-3.5 text-thingtrax-yellow/60" /> Plan</div>
+            <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-white/30" /> Action</div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PRESENTATION GANTT VIEW — Plans & Actions Timeline
+   ═══════════════════════════════════════════════════════════════════ */
+
+interface GanttRow {
+  id: string;
+  kind: "plan" | "action";
+  title: string;
+  start: Date | null;
+  end: Date | null;
+  status: string;
+  parentPlanId?: string;
+  objectiveId: string;
+  depth: number;
+  childIds: string[];
+}
+
+const GANTT_ROW_HEIGHT = 34;
+const GANTT_HEADER_HEIGHT = 52;
+const GANTT_SIDEBAR_WIDTH = 280;
+const GANTT_ZOOMS = [0.5, 0.75, 1, 1.5, 2];
+const GANTT_BASE_DAY_WIDTH = 18;
+
+const ganttStatusColor = (s: string) => {
+  if (s === "Done" || s === "done" || s === "completed") return { fill: "hsl(142 71% 38%)", text: "#fff" };
+  if (s === "In Progress" || s === "in_progress") return { fill: "hsl(217 91% 60%)", text: "#fff" };
+  if (s === "Blocked" || s === "blocked") return { fill: "hsl(0 84% 55%)", text: "#fff" };
+  if (s === "not_started" || s === "Not Started") return { fill: "hsl(220 9% 55%)", text: "#fff" };
+  return { fill: "hsl(220 9% 55%)", text: "#fff" };
+};
+
+function PresentationGanttView({ plans, actions, strategies, objectives, onNavigate }: {
+  plans: PlanData[];
+  actions: ActionData[];
+  strategies: StrategyData[];
+  objectives: ObjectiveData[];
+  onNavigate: (v: ViewState) => void;
+}) {
+  const [zoom, setZoom] = useState(1);
+  const [expandedPlans, setExpandedPlans] = useState<Set<string>>(() => new Set(plans.map(p => p.id)));
+  const headerScrollRef = useRef<HTMLDivElement>(null);
+  const timelineScrollRef = useRef<HTMLDivElement>(null);
+  const sidebarScrollRef = useRef<HTMLDivElement>(null);
+  const isSyncing = useRef(false);
+
+  // Build rows: plan rows with nested action rows
+  const allRows = useMemo((): GanttRow[] => {
+    const rows: GanttRow[] = [];
+    // Group plans by objective (via strategy)
+    const stratToObj = new Map<string, string>();
+    strategies.forEach(s => stratToObj.set(s.id, s.objective_id));
+
+    plans.forEach(plan => {
+      const objId = stratToObj.get(plan.strategy_id) ?? "";
+      const planActions = actions.filter(a => a.gospa_plan_id === plan.id);
+      rows.push({
+        id: plan.id,
+        kind: "plan",
+        title: plan.title,
+        start: plan.start_date ? new Date(plan.start_date) : null,
+        end: plan.end_date ? new Date(plan.end_date) : null,
+        status: plan.status,
+        objectiveId: objId,
+        depth: 0,
+        childIds: planActions.map(a => a.id),
+      });
+    });
+
+    return rows;
+  }, [plans, actions, strategies]);
+
+  const visibleRows = useMemo((): GanttRow[] => {
+    const out: GanttRow[] = [];
+    allRows.forEach(row => {
+      out.push(row);
+      if (row.kind === "plan" && expandedPlans.has(row.id)) {
+        const planActions = actions.filter(a => a.gospa_plan_id === row.id);
+        planActions.forEach(a => {
+          out.push({
+            id: a.id,
+            kind: "action",
+            title: a.task_title,
+            start: a.planned_start ? new Date(a.planned_start) : null,
+            end: a.planned_end ? new Date(a.planned_end) : null,
+            status: a.status,
+            parentPlanId: row.id,
+            objectiveId: row.objectiveId,
+            depth: 1,
+            childIds: [],
+          });
+        });
+      }
+    });
+    return out;
+  }, [allRows, expandedPlans, actions]);
+
+  // Bounds
+  const allDates: Date[] = [];
+  visibleRows.forEach(r => { if (r.start) allDates.push(r.start); if (r.end) allDates.push(r.end); });
+  const bounds = useMemo(() => {
+    const items = visibleRows.map(r => ({ start: r.start, end: r.end }));
+    const now = new Date(); now.setHours(0, 0, 0, 0);
+    const all: Date[] = [];
+    items.forEach(i => { if (i.start) all.push(i.start); if (i.end) all.push(i.end); });
+    if (!all.length) {
+      const s = new Date(now); s.setDate(s.getDate() - 14);
+      const e = new Date(now); e.setDate(e.getDate() + 60);
+      return { start: s, end: e };
+    }
+    const min = new Date(Math.min(...all.map(d => d.getTime())));
+    const max = new Date(Math.max(...all.map(d => d.getTime())));
+    const s = new Date(min); s.setDate(s.getDate() - 7);
+    const e = new Date(max); e.setDate(e.getDate() + 14);
+    if (now < s) s.setTime(now.getTime() - 7 * 86400000);
+    if (now > e) e.setTime(now.getTime() + 14 * 86400000);
+    return { start: s, end: e };
+  }, [visibleRows]);
+
+  const dayWidth = GANTT_BASE_DAY_WIDTH * zoom;
+  const dateMarkers = useMemo(() => generateDateMarkers(bounds.start, bounds.end, dayWidth, zoom), [bounds, dayWidth, zoom]);
+  const monthBands = useMemo(() => generateMonthBands(bounds.start, bounds.end, dayWidth), [bounds, dayWidth]);
+  const totalWidth = monthBands.length ? monthBands[monthBands.length - 1].position + monthBands[monthBands.length - 1].width : 1000;
+  const totalHeight = visibleRows.length * GANTT_ROW_HEIGHT;
+
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const todayX = dateToX(today, bounds.start, dayWidth);
+
+  // Scroll sync
+  useEffect(() => {
+    const h = headerScrollRef.current, t = timelineScrollRef.current;
+    if (!h || !t) return;
+    const sync = (from: HTMLDivElement, to: HTMLDivElement) => () => {
+      if (isSyncing.current) return;
+      isSyncing.current = true;
+      to.scrollLeft = from.scrollLeft;
+      requestAnimationFrame(() => { isSyncing.current = false; });
+    };
+    const a = sync(t, h), b = sync(h, t);
+    t.addEventListener("scroll", a); h.addEventListener("scroll", b);
+    return () => { t.removeEventListener("scroll", a); h.removeEventListener("scroll", b); };
+  }, []);
+
+  useEffect(() => {
+    const s = sidebarScrollRef.current, t = timelineScrollRef.current;
+    if (!s || !t) return;
+    const sync = (from: HTMLDivElement, to: HTMLDivElement) => () => {
+      if (isSyncing.current) return;
+      isSyncing.current = true;
+      to.scrollTop = from.scrollTop;
+      requestAnimationFrame(() => { isSyncing.current = false; });
+    };
+    const a = sync(t, s), b = sync(s, t);
+    t.addEventListener("scroll", a); s.addEventListener("scroll", b);
+    return () => { t.removeEventListener("scroll", a); s.removeEventListener("scroll", b); };
+  }, []);
+
+  const togglePlan = (id: string) => {
+    setExpandedPlans(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const zoomIdx = GANTT_ZOOMS.indexOf(zoom);
+  const zoomIn = () => { if (zoomIdx < GANTT_ZOOMS.length - 1) setZoom(GANTT_ZOOMS[zoomIdx + 1]); };
+  const zoomOut = () => { if (zoomIdx > 0) setZoom(GANTT_ZOOMS[zoomIdx - 1]); };
+
+  const scrollToToday = () => {
+    if (!timelineScrollRef.current) return;
+    const x = todayX - timelineScrollRef.current.clientWidth / 2;
+    timelineScrollRef.current.scrollTo({ left: Math.max(0, x), behavior: "smooth" });
+  };
+
+  const noData = plans.length === 0;
+  if (noData) {
+    return (
+      <div className="text-center py-16 text-white/30 text-sm">
+        No plans or actions with dates to display. Add dates to your plans and actions to see them on the Gantt chart.
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* Toolbar */}
+      <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+        <div className="flex items-center gap-1">
+          <button onClick={() => setExpandedPlans(new Set(plans.map(p => p.id)))}
+            className="flex items-center gap-1 text-xs text-white/40 hover:text-white/70 px-2 py-1 rounded border border-white/10 hover:border-white/20 transition-colors">
+            Expand all
+          </button>
+          <button onClick={() => setExpandedPlans(new Set())}
+            className="flex items-center gap-1 text-xs text-white/40 hover:text-white/70 px-2 py-1 rounded border border-white/10 hover:border-white/20 transition-colors">
+            Collapse all
+          </button>
+        </div>
+        <div className="flex items-center gap-1">
+          <button onClick={zoomOut} className="p-1.5 rounded border border-white/10 text-white/40 hover:text-white/70 hover:border-white/20 transition-colors" aria-label="Zoom out">
+            <ZoomOut className="h-3.5 w-3.5" />
+          </button>
+          <span className="text-[10px] text-white/30 w-10 text-center">{Math.round(zoom * 100)}%</span>
+          <button onClick={zoomIn} className="p-1.5 rounded border border-white/10 text-white/40 hover:text-white/70 hover:border-white/20 transition-colors" aria-label="Zoom in">
+            <ZoomIn className="h-3.5 w-3.5" />
+          </button>
+          <button onClick={scrollToToday} className="flex items-center gap-1 text-xs text-white/40 hover:text-white/70 px-2 py-1 rounded border border-white/10 hover:border-white/20 transition-colors">
+            <Calendar className="h-3.5 w-3.5" /> Today
+          </button>
+        </div>
       </div>
 
-      {/* Legend */}
-      <div className="flex items-center justify-center gap-8 mt-8 text-[11px] text-white/30">
-        <div className="flex items-center gap-2"><Target className="h-3.5 w-3.5 text-thingtrax-green" /> Goal</div>
-        <div className="flex items-center gap-2"><span className="w-3 h-3 rounded border-l-2 border-l-green-400 bg-white/5" /> Objective</div>
-        <div className="flex items-center gap-2"><Map className="h-3.5 w-3.5 text-thingtrax-cyan/60" /> Strategy</div>
-        <div className="flex items-center gap-2"><ListChecks className="h-3.5 w-3.5 text-thingtrax-yellow/60" /> Plan</div>
-        <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-white/30" /> Action</div>
+      {/* Gantt chart */}
+      <div className="rounded-xl border border-white/10 overflow-hidden bg-white/[0.02]">
+        {/* Header row */}
+        <div className="flex border-b border-white/10" style={{ height: GANTT_HEADER_HEIGHT }}>
+          <div className="flex-shrink-0 flex items-center px-3 border-r border-white/10 text-xs font-semibold text-white/50 uppercase tracking-widest" style={{ width: GANTT_SIDEBAR_WIDTH }}>
+            Plans & Actions
+          </div>
+          <div ref={headerScrollRef} className="flex-1 overflow-x-auto overflow-y-hidden">
+            <svg width={totalWidth} height={GANTT_HEADER_HEIGHT}>
+              {monthBands.map((m, i) => (
+                <g key={`m-${i}`}>
+                  <rect x={m.position} y={0} width={m.width} height={GANTT_HEADER_HEIGHT / 2} fill="rgba(255,255,255,0.03)" />
+                  <line x1={m.position} y1={0} x2={m.position} y2={GANTT_HEADER_HEIGHT} stroke="rgba(255,255,255,0.08)" />
+                  <text x={m.position + 6} y={GANTT_HEADER_HEIGHT / 2 - 8} fontSize={11} fontWeight={600} fill="rgba(255,255,255,0.5)">{m.label}</text>
+                </g>
+              ))}
+              {dateMarkers.map((d, i) => (
+                <g key={`d-${i}`}>
+                  {d.isWeekend && (
+                    <rect x={d.position} y={GANTT_HEADER_HEIGHT / 2} width={dayWidth} height={GANTT_HEADER_HEIGHT / 2} fill="rgba(255,255,255,0.02)" />
+                  )}
+                  <text x={d.position + dayWidth / 2} y={GANTT_HEADER_HEIGHT - 8} textAnchor="middle" fontSize={10}
+                    fill={d.isToday ? "#ef4444" : "rgba(255,255,255,0.3)"}
+                    fontWeight={d.isToday ? 700 : 400}>
+                    {d.label}
+                  </text>
+                </g>
+              ))}
+            </svg>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="flex" style={{ height: `min(60vh, ${Math.max(200, totalHeight + 20)}px)` }}>
+          {/* Sidebar */}
+          <div ref={sidebarScrollRef} className="flex-shrink-0 overflow-y-auto overflow-x-hidden border-r border-white/10" style={{ width: GANTT_SIDEBAR_WIDTH }}>
+            {visibleRows.map(row => (
+              <div
+                key={row.id}
+                className="flex items-center gap-1.5 border-b border-white/5 text-xs hover:bg-white/[0.04] cursor-pointer transition-colors"
+                style={{ height: GANTT_ROW_HEIGHT, paddingLeft: 8 + row.depth * 18 }}
+                onClick={() => {
+                  if (row.kind === "plan") {
+                    const objId = row.objectiveId;
+                    onNavigate({ type: "plan", planId: row.id, objectiveId: objId });
+                  } else {
+                    onNavigate({ type: "action", actionId: row.id, objectiveId: row.objectiveId });
+                  }
+                }}
+              >
+                {row.kind === "plan" && row.childIds.length > 0 ? (
+                  <button onClick={(e) => { e.stopPropagation(); togglePlan(row.id); }} className="p-0.5 hover:bg-white/10 rounded">
+                    {expandedPlans.has(row.id) ? <ChevronDown className="h-3 w-3 text-white/30" /> : <ChevronRight className="h-3 w-3 text-white/30" />}
+                  </button>
+                ) : <span className="w-4" />}
+                <span className={`text-[9px] uppercase font-semibold rounded px-1 py-0.5 shrink-0 ${row.kind === "plan" ? "bg-amber-500/20 text-amber-300" : "bg-white/10 text-white/40"}`}>
+                  {row.kind === "plan" ? "PLN" : "ACT"}
+                </span>
+                <span className={`truncate flex-1 ${row.kind === "plan" ? "font-medium text-white/80" : "text-white/50"}`} title={row.title}>
+                  {row.title}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Timeline */}
+          <div ref={timelineScrollRef} className="flex-1 overflow-auto relative">
+            <svg width={totalWidth} height={Math.max(totalHeight, 1)} className="block">
+              {/* Row backgrounds + grid */}
+              {visibleRows.map((_, i) => (
+                <rect key={`bg-${i}`} x={0} y={i * GANTT_ROW_HEIGHT} width={totalWidth} height={GANTT_ROW_HEIGHT}
+                  fill={i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.015)"} />
+              ))}
+              {dateMarkers.map((d, i) => (
+                <g key={`g-${i}`}>
+                  {d.isWeekend && (
+                    <rect x={d.position} y={0} width={dayWidth} height={totalHeight} fill="rgba(255,255,255,0.02)" />
+                  )}
+                  <line x1={d.position} y1={0} x2={d.position} y2={totalHeight} stroke="rgba(255,255,255,0.05)" />
+                </g>
+              ))}
+              {/* Today line */}
+              {todayX >= 0 && todayX <= totalWidth && (
+                <line x1={todayX} y1={0} x2={todayX} y2={totalHeight} stroke="#ef4444" strokeWidth={2} strokeDasharray="4 4" />
+              )}
+              {/* Bars */}
+              {visibleRows.map((row, i) => {
+                if (!row.start || !row.end) return null;
+                const x = dateToX(row.start, bounds.start, dayWidth);
+                const width = Math.max(dayWidth * 0.5, dateToX(row.end, bounds.start, dayWidth) - x + dayWidth);
+                const y = i * GANTT_ROW_HEIGHT + 7;
+                const h = GANTT_ROW_HEIGHT - 14;
+                const colour = ganttStatusColor(row.status);
+                const isPlan = row.kind === "plan";
+                return (
+                  <g key={row.id} style={{ cursor: "pointer" }} onClick={() => {
+                    if (row.kind === "plan") onNavigate({ type: "plan", planId: row.id, objectiveId: row.objectiveId });
+                    else onNavigate({ type: "action", actionId: row.id, objectiveId: row.objectiveId });
+                  }}>
+                    <rect x={x} y={y} width={width} height={h} rx={4}
+                      fill={colour.fill} opacity={isPlan ? 0.7 : 0.9}
+                      stroke={isPlan ? colour.fill : "none"} strokeWidth={isPlan ? 1.5 : 0}
+                    />
+                    {width > 50 && (
+                      <text x={x + 6} y={y + h / 2 + 3.5} fontSize={10} fill={colour.text} style={{ pointerEvents: "none" }}>
+                        {row.title.length > Math.floor(width / 7) ? row.title.slice(0, Math.floor(width / 7) - 1) + "…" : row.title}
+                      </text>
+                    )}
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
+        </div>
+
+        {/* Legend */}
+        <div className="flex flex-wrap gap-4 px-3 py-2 border-t border-white/10 text-[10px] text-white/30 items-center">
+          <span className="font-medium">Status:</span>
+          {[
+            { label: "Done", fill: "hsl(142 71% 38%)" },
+            { label: "In Progress", fill: "hsl(217 91% 60%)" },
+            { label: "Not Started", fill: "hsl(220 9% 55%)" },
+            { label: "Blocked", fill: "hsl(0 84% 55%)" },
+          ].map(s => (
+            <span key={s.label} className="inline-flex items-center gap-1.5">
+              <span className="inline-block h-3 w-4 rounded" style={{ background: s.fill }} />
+              {s.label}
+            </span>
+          ))}
+          <span className="ml-auto">{visibleRows.length} rows</span>
+        </div>
       </div>
     </div>
   );

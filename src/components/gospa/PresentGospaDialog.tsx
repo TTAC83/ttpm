@@ -136,6 +136,29 @@ const statusDot = (s: string) => {
 
 const statusLabel = (s: string) => s.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 
+/* ── Nav Section (collapsible sidebar group) ──────────────────── */
+
+function NavSection({ label, count, defaultOpen = false, children }: {
+  label: string;
+  count: number;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="mb-1">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-4 py-2 text-xs text-white/40 uppercase tracking-widest font-semibold hover:text-white/60 transition-colors"
+      >
+        <span>{label} ({count})</span>
+        <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? "" : "-rotate-90"}`} />
+      </button>
+      {open && <div className="space-y-0.5">{children}</div>}
+    </div>
+  );
+}
+
 /* ── Component ─────────────────────────────────────────────────── */
 
 export function PresentGospaDialog({ open, onClose, goal, objectives, strategies, plans, actions }: Props) {

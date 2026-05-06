@@ -34,6 +34,11 @@ export default function GospaDashboard() {
           <p className="text-muted-foreground text-sm mt-1">Goal → Objectives → Strategies → Plans → Actions → Metrics</p>
         </div>
         <div className="flex gap-2">
+          {activeGoal && (
+            <Button variant="outline" onClick={() => setPresentOpen(true)}>
+              <Play className="h-4 w-4 mr-2" />Present GOSPA
+            </Button>
+          )}
           <Link to="/app/gospa/weekly-review"><Button variant="outline"><Calendar className="h-4 w-4 mr-2" />Weekly Review</Button></Link>
           <Link to="/app/gospa/goals"><Button>Manage Goals</Button></Link>
         </div>

@@ -175,6 +175,15 @@ export default function GospaDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {activeGoal && (
+        <PresentGospaDialog
+          open={presentOpen}
+          onClose={() => setPresentOpen(false)}
+          goal={activeGoal}
+          objectives={objectivesQ.data ?? []}
+        />
+      )}
     </div>
   );
 }

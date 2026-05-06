@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { X, Home, ChevronLeft, Target, Lightbulb, Link2, Maximize2, Minimize2 } from "lucide-react";
+import { X, Home, ChevronLeft, ChevronRight, Target, Lightbulb, Link2, Maximize2, Minimize2, Map, ListChecks, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
 import { gospa } from "@/lib/gospaService";
 import { supabase } from "@/integrations/supabase/client";
 import { RichTextView } from "./RichTextView";
@@ -26,6 +26,37 @@ interface ObjectiveData {
   order_index?: number | null;
 }
 
+interface StrategyData {
+  id: string;
+  title: string;
+  description?: string | null;
+  status: string;
+  rag_status: string;
+  objective_id: string;
+}
+
+interface PlanData {
+  id: string;
+  title: string;
+  strategy_id: string;
+  start_date?: string | null;
+  end_date?: string | null;
+  status: string;
+  description?: string | null;
+}
+
+interface ActionData {
+  id: string;
+  task_title: string;
+  status: string;
+  planned_start?: string | null;
+  planned_end?: string | null;
+  assignee?: string | null;
+  gospa_plan_id?: string | null;
+  gospa_objective_id?: string | null;
+  gospa_strategy_id?: string | null;
+}
+
 interface QuestionData {
   id: string;
   question_text: string;
@@ -47,7 +78,10 @@ interface EntryData {
 type ViewState =
   | { type: "home" }
   | { type: "objective"; objectiveId: string }
-  | { type: "question"; objectiveId: string; questionId: string };
+  | { type: "question"; objectiveId: string; questionId: string }
+  | { type: "strategy"; strategyId: string; objectiveId: string }
+  | { type: "plan"; planId: string; objectiveId: string }
+  | { type: "action"; actionId: string; objectiveId: string };
 
 /* ── Props ─────────────────────────────────────────────────────── */
 
@@ -56,6 +90,9 @@ interface Props {
   onClose: () => void;
   goal: GoalData;
   objectives: ObjectiveData[];
+  strategies: StrategyData[];
+  plans: PlanData[];
+  actions: ActionData[];
 }
 
 /* ── Helpers ───────────────────────────────────────────────────── */
@@ -82,9 +119,25 @@ const ragDot = (rag?: string | null) => {
   return <span className={`inline-block w-3 h-3 rounded-full ${color}`} />;
 };
 
+const ragBorderColor = (rag?: string | null) => {
+  if (rag === "green") return "border-l-green-400";
+  if (rag === "amber") return "border-l-amber-400";
+  if (rag === "red") return "border-l-red-400";
+  return "border-l-white/20";
+};
+
+const statusDot = (s: string) => {
+  if (s === "Done" || s === "done") return "bg-green-400";
+  if (s === "In Progress" || s === "in_progress") return "bg-blue-400";
+  if (s === "Blocked" || s === "blocked") return "bg-red-400";
+  return "bg-white/30";
+};
+
+const statusLabel = (s: string) => s.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
 /* ── Component ─────────────────────────────────────────────────── */
 
-export function PresentGospaDialog({ open, onClose, goal, objectives }: Props) {
+export function PresentGospaDialog({ open, onClose, goal, objectives, strategies, plans, actions }: Props) {
   const [view, setView] = useState<ViewState>({ type: "home" });
   const [history, setHistory] = useState<ViewState[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -188,9 +241,32 @@ export function PresentGospaDialog({ open, onClose, goal, objectives }: Props) {
 
   if (!open) return null;
 
-  const currentObjective = view.type !== "home" 
-    ? objectives.find(o => o.id === view.objectiveId) 
+  const currentObjective = (view.type !== "home")
+    ? objectives.find(o => o.id === (view as any).objectiveId)
     : null;
+
+  // Breadcrumb text
+  const breadcrumb = (() => {
+    if (view.type === "home") return "GOSPA Overview";
+    if (view.type === "objective") return currentObjective?.title ?? "";
+    if (view.type === "question") {
+      const q = questions.find(q => q.id === view.questionId);
+      return q ? `Q${q.order_index}: ${q.question_text.slice(0, 50)}...` : "Question";
+    }
+    if (view.type === "strategy") {
+      const s = strategies.find(s => s.id === view.strategyId);
+      return s ? `Strategy: ${s.title}` : "Strategy";
+    }
+    if (view.type === "plan") {
+      const p = plans.find(p => p.id === view.planId);
+      return p ? `Plan: ${p.title}` : "Plan";
+    }
+    if (view.type === "action") {
+      const a = actions.find(a => a.id === view.actionId);
+      return a ? `Action: ${a.task_title}` : "Action";
+    }
+    return "";
+  })();
 
   return (
     <div
@@ -199,12 +275,10 @@ export function PresentGospaDialog({ open, onClose, goal, objectives }: Props) {
     >
       {/* ── Left Navigation Panel ─────────────────────────────── */}
       <nav className="w-72 shrink-0 flex flex-col border-r border-white/10 bg-black/40 backdrop-blur-sm">
-        {/* Logo */}
         <div className="px-6 py-5 border-b border-white/10">
           <img src={thingtraxLogoFull} alt="Thingtrax" className="h-8" />
         </div>
 
-        {/* Nav buttons */}
         <div className="px-4 py-3 space-y-1">
           <button
             onClick={goHome}
@@ -229,7 +303,6 @@ export function PresentGospaDialog({ open, onClose, goal, objectives }: Props) {
           )}
         </div>
 
-        {/* Objectives list */}
         <div className="px-4 pt-2 pb-1">
           <div className="text-xs text-white/40 uppercase tracking-widest font-semibold px-4 mb-2">
             Objectives
@@ -237,7 +310,7 @@ export function PresentGospaDialog({ open, onClose, goal, objectives }: Props) {
         </div>
         <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-1">
           {objectives.map((obj, i) => {
-            const isActive = view.type !== "home" && view.objectiveId === obj.id;
+            const isActive = view.type !== "home" && (view as any).objectiveId === obj.id;
             return (
               <button
                 key={obj.id}
@@ -268,16 +341,8 @@ export function PresentGospaDialog({ open, onClose, goal, objectives }: Props) {
 
       {/* ── Main Content ──────────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top bar */}
         <header className="flex items-center justify-between px-6 py-3 border-b border-white/10 shrink-0">
-          <div className="text-sm text-white/50">
-            {view.type === "home" && "GOSPA Overview"}
-            {view.type === "objective" && currentObjective?.title}
-            {view.type === "question" && (() => {
-              const q = questions.find(q => q.id === view.questionId);
-              return q ? `Q${q.order_index}: ${q.question_text.slice(0, 60)}...` : "Question";
-            })()}
-          </div>
+          <div className="text-sm text-white/50 truncate max-w-[60%]">{breadcrumb}</div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsExpanded(e => !e)}
@@ -291,11 +356,17 @@ export function PresentGospaDialog({ open, onClose, goal, objectives }: Props) {
           </div>
         </header>
 
-        {/* Content */}
         <main className="flex-1 overflow-auto">
-          <div className={`mx-auto py-10 transition-all ${isExpanded ? "max-w-none px-12" : "max-w-[1100px] px-10"}`}>
+          <div className={`mx-auto py-10 transition-all ${isExpanded ? "max-w-none px-12" : "max-w-[1400px] px-10"}`}>
             {view.type === "home" && (
-              <HomeView goal={goal} objectives={objectives} onSelectObjective={(id) => navigate({ type: "objective", objectiveId: id })} />
+              <GospaTreeView
+                goal={goal}
+                objectives={objectives}
+                strategies={strategies}
+                plans={plans}
+                actions={actions}
+                onNavigate={navigate}
+              />
             )}
             {view.type === "objective" && currentObjective && (
               <ObjectiveView
@@ -315,6 +386,32 @@ export function PresentGospaDialog({ open, onClose, goal, objectives }: Props) {
                 isExpanded={isExpanded}
               />
             )}
+            {view.type === "strategy" && (
+              <StrategyDetailView
+                strategy={strategies.find(s => s.id === view.strategyId)!}
+                plans={plans.filter(p => p.strategy_id === view.strategyId)}
+                actions={actions}
+                onNavigate={navigate}
+                objectiveId={view.objectiveId}
+                isExpanded={isExpanded}
+              />
+            )}
+            {view.type === "plan" && (
+              <PlanDetailView
+                plan={plans.find(p => p.id === view.planId)!}
+                actions={actions.filter(a => a.gospa_plan_id === view.planId)}
+                onNavigate={navigate}
+                objectiveId={view.objectiveId}
+                isExpanded={isExpanded}
+              />
+            )}
+            {view.type === "action" && (
+              <ActionDetailView
+                action={actions.find(a => a.id === view.actionId)!}
+                nameOf={nameOf}
+                isExpanded={isExpanded}
+              />
+            )}
           </div>
         </main>
       </div>
@@ -322,79 +419,435 @@ export function PresentGospaDialog({ open, onClose, goal, objectives }: Props) {
   );
 }
 
-/* ── Home View ─────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════
+   GOSPA TREE VIEW — Visual Hierarchy Home Page
+   ═══════════════════════════════════════════════════════════════════ */
 
-function HomeView({ goal, objectives, onSelectObjective }: {
+function GospaTreeView({ goal, objectives, strategies, plans, actions, onNavigate }: {
   goal: GoalData;
   objectives: ObjectiveData[];
-  onSelectObjective: (id: string) => void;
+  strategies: StrategyData[];
+  plans: PlanData[];
+  actions: ActionData[];
+  onNavigate: (v: ViewState) => void;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[70vh] text-center">
-      {/* Logo accent */}
-      <div className="mb-8">
-        <img src={thingtraxLogoFull} alt="Thingtrax" className="h-12 opacity-80" />
+    <div>
+      {/* Hero header */}
+      <div className="text-center mb-12">
+        <div className="inline-block mb-4">
+          <img src={thingtraxLogoFull} alt="Thingtrax" className="h-10 opacity-70" />
+        </div>
+        <div className="rounded-full px-5 py-1.5 mb-5 border border-thingtrax-green/30 text-thingtrax-green uppercase tracking-[0.2em] text-sm font-medium inline-block">
+          GOSPA Strategic Plan
+        </div>
+        {(goal.timeframe_start || goal.timeframe_end) && (
+          <div className="flex items-center justify-center gap-3 text-white/40 text-sm mb-2">
+            <span>{goal.timeframe_start ?? "—"}</span>
+            <span className="text-thingtrax-green">→</span>
+            <span>{goal.timeframe_end ?? "—"}</span>
+          </div>
+        )}
       </div>
 
-      {/* GOSPA label */}
-      <div className="rounded-full px-5 py-1.5 mb-6 border border-thingtrax-green/30 text-thingtrax-green uppercase tracking-[0.2em] text-sm font-medium">
-        GOSPA Strategic Plan
+      {/* Tree */}
+      <div className="overflow-x-auto pb-8">
+        <div className="min-w-[900px]">
+          {/* Goal node as the root */}
+          <div className="flex items-start gap-0">
+            {/* Goal card */}
+            <div className="shrink-0 w-64">
+              <div className="rounded-2xl bg-gradient-to-br from-thingtrax-green/20 to-thingtrax-green/5 border-2 border-thingtrax-green/40 p-6 backdrop-blur-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <Target className="h-5 w-5 text-thingtrax-green" />
+                  <span className="text-xs text-thingtrax-green uppercase tracking-widest font-semibold">Goal</span>
+                </div>
+                <h2 className="text-xl font-bold text-white leading-tight mb-2">{goal.title}</h2>
+                {goal.description && (
+                  <p className="text-sm text-white/50 line-clamp-3">{goal.description}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Connector from goal to objectives */}
+            <div className="flex flex-col items-center justify-center w-10 shrink-0 self-stretch">
+              <div className="w-full h-px bg-thingtrax-green/30" />
+            </div>
+
+            {/* Objectives column */}
+            <div className="flex-1 space-y-4">
+              {objectives.map((obj, oi) => {
+                const objStrats = strategies.filter(s => s.objective_id === obj.id);
+                return (
+                  <div key={obj.id} className="flex items-start gap-0">
+                    {/* Objective card */}
+                    <button
+                      onClick={() => onNavigate({ type: "objective", objectiveId: obj.id })}
+                      className={`shrink-0 w-56 group rounded-xl bg-white/5 border border-white/10 border-l-4 ${ragBorderColor(obj.rag_status)} p-4 text-left hover:bg-white/8 hover:border-white/20 transition-all backdrop-blur-sm`}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="flex items-center justify-center rounded-md w-6 h-6 text-xs font-bold bg-white/10 text-white/60">
+                          {oi + 1}
+                        </span>
+                        <span className="text-[10px] text-white/40 uppercase tracking-widest">Objective</span>
+                      </div>
+                      <div className="text-sm font-semibold text-white group-hover:text-thingtrax-green transition-colors line-clamp-2 leading-snug">
+                        {obj.title}
+                      </div>
+                    </button>
+
+                    {objStrats.length > 0 && (
+                      <>
+                        {/* Connector */}
+                        <div className="flex flex-col items-center justify-center w-8 shrink-0 self-stretch">
+                          <div className="w-full h-px bg-white/10" />
+                        </div>
+
+                        {/* Strategies column */}
+                        <div className="space-y-2 flex-1">
+                          {objStrats.map(strat => {
+                            const stratPlans = plans.filter(p => p.strategy_id === strat.id);
+                            return (
+                              <div key={strat.id} className="flex items-start gap-0">
+                                <button
+                                  onClick={() => onNavigate({ type: "strategy", strategyId: strat.id, objectiveId: obj.id })}
+                                  className="shrink-0 w-48 group rounded-lg bg-white/[0.04] border border-white/10 p-3 text-left hover:bg-white/8 hover:border-thingtrax-cyan/30 transition-all"
+                                >
+                                  <div className="flex items-center gap-2 mb-1.5">
+                                    <Map className="h-3.5 w-3.5 text-thingtrax-cyan/70" />
+                                    <span className="text-[10px] text-white/30 uppercase tracking-widest">Strategy</span>
+                                    {ragDot(strat.rag_status)}
+                                  </div>
+                                  <div className="text-xs font-medium text-white/80 group-hover:text-thingtrax-cyan transition-colors line-clamp-2 leading-snug">
+                                    {strat.title}
+                                  </div>
+                                  <div className="mt-1.5">
+                                    <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${statusDot(strat.status) === "bg-green-400" ? "bg-green-500/20 text-green-400" : "bg-white/10 text-white/50"}`}>
+                                      {statusLabel(strat.status)}
+                                    </span>
+                                  </div>
+                                </button>
+
+                                {stratPlans.length > 0 && (
+                                  <>
+                                    <div className="flex flex-col items-center justify-center w-6 shrink-0 self-stretch">
+                                      <div className="w-full h-px bg-white/8" />
+                                    </div>
+
+                                    <div className="space-y-1.5 flex-1">
+                                      {stratPlans.map(plan => {
+                                        const planActions = actions.filter(a => a.gospa_plan_id === plan.id);
+                                        const doneCount = planActions.filter(a => a.status === "Done" || a.status === "done").length;
+                                        return (
+                                          <div key={plan.id} className="flex items-start gap-0">
+                                            <button
+                                              onClick={() => onNavigate({ type: "plan", planId: plan.id, objectiveId: obj.id })}
+                                              className="shrink-0 w-44 group rounded-md bg-white/[0.03] border border-white/8 p-2.5 text-left hover:bg-white/6 hover:border-thingtrax-yellow/30 transition-all"
+                                            >
+                                              <div className="flex items-center gap-1.5 mb-1">
+                                                <ListChecks className="h-3 w-3 text-thingtrax-yellow/60" />
+                                                <span className="text-[9px] text-white/25 uppercase tracking-widest">Plan</span>
+                                              </div>
+                                              <div className="text-[11px] font-medium text-white/70 group-hover:text-thingtrax-yellow transition-colors line-clamp-2 leading-snug">
+                                                {plan.title}
+                                              </div>
+                                              {planActions.length > 0 && (
+                                                <div className="mt-1.5 flex items-center gap-1.5">
+                                                  <div className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden">
+                                                    <div
+                                                      className="h-full rounded-full bg-thingtrax-green/60"
+                                                      style={{ width: `${planActions.length ? (doneCount / planActions.length) * 100 : 0}%` }}
+                                                    />
+                                                  </div>
+                                                  <span className="text-[9px] text-white/30">{doneCount}/{planActions.length}</span>
+                                                </div>
+                                              )}
+                                            </button>
+
+                                            {planActions.length > 0 && (
+                                              <>
+                                                <div className="flex flex-col items-center justify-center w-5 shrink-0 self-stretch">
+                                                  <div className="w-full h-px bg-white/6" />
+                                                </div>
+
+                                                <div className="space-y-1 flex-1">
+                                                  {planActions.slice(0, 4).map(action => (
+                                                    <button
+                                                      key={action.id}
+                                                      onClick={() => onNavigate({ type: "action", actionId: action.id, objectiveId: obj.id })}
+                                                      className="w-full group flex items-center gap-2 rounded bg-white/[0.02] border border-white/5 px-2.5 py-1.5 text-left hover:bg-white/5 hover:border-white/15 transition-all"
+                                                    >
+                                                      <span className={`w-2 h-2 rounded-full shrink-0 ${statusDot(action.status)}`} />
+                                                      <span className="text-[10px] text-white/50 group-hover:text-white/80 transition-colors truncate">
+                                                        {action.task_title}
+                                                      </span>
+                                                    </button>
+                                                  ))}
+                                                  {planActions.length > 4 && (
+                                                    <div className="text-[9px] text-white/25 pl-5">
+                                                      +{planActions.length - 4} more
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </>
+                                            )}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Goal title */}
-      <h1 className="text-5xl md:text-6xl font-bold leading-tight text-white mb-6 max-w-4xl">
-        {goal.title}
-      </h1>
-
-      {/* Description */}
-      {goal.description && (
-        <p className="text-xl text-white/60 max-w-3xl mb-8 leading-relaxed">
-          {goal.description}
-        </p>
-      )}
-
-      {/* Dates */}
-      {(goal.timeframe_start || goal.timeframe_end) && (
-        <div className="flex items-center gap-3 text-white/40 text-lg mb-12">
-          <span>{goal.timeframe_start ?? "—"}</span>
-          <span className="text-thingtrax-green">→</span>
-          <span>{goal.timeframe_end ?? "—"}</span>
-        </div>
-      )}
-
-      {/* Objectives grid */}
-      <div className="w-full max-w-4xl mt-4">
-        <div className="text-xs text-white/40 uppercase tracking-widest mb-4">
-          {objectives.length} Objective{objectives.length !== 1 ? "s" : ""}
-        </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {objectives.map((obj, i) => (
-            <button
-              key={obj.id}
-              onClick={() => onSelectObjective(obj.id)}
-              className="group rounded-xl bg-white/5 border border-white/10 p-6 text-left hover:border-thingtrax-green/40 hover:bg-thingtrax-green/5 transition-all"
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <span className="flex items-center justify-center rounded-lg bg-thingtrax-green/20 text-thingtrax-green font-bold w-9 h-9 text-sm">
-                  {i + 1}
-                </span>
-                {ragDot(obj.rag_status)}
-              </div>
-              <div className="font-semibold text-white group-hover:text-thingtrax-green transition-colors line-clamp-2 text-lg">
-                {obj.title}
-              </div>
-              {obj.target_outcome && (
-                <div className="text-sm text-white/40 mt-2 line-clamp-2">{obj.target_outcome}</div>
-              )}
-            </button>
-          ))}
-        </div>
+      {/* Legend */}
+      <div className="flex items-center justify-center gap-8 mt-8 text-[11px] text-white/30">
+        <div className="flex items-center gap-2"><Target className="h-3.5 w-3.5 text-thingtrax-green" /> Goal</div>
+        <div className="flex items-center gap-2"><span className="w-3 h-3 rounded border-l-2 border-l-green-400 bg-white/5" /> Objective</div>
+        <div className="flex items-center gap-2"><Map className="h-3.5 w-3.5 text-thingtrax-cyan/60" /> Strategy</div>
+        <div className="flex items-center gap-2"><ListChecks className="h-3.5 w-3.5 text-thingtrax-yellow/60" /> Plan</div>
+        <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-white/30" /> Action</div>
       </div>
     </div>
   );
 }
 
-/* ── Objective View ────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════
+   STRATEGY DETAIL VIEW
+   ═══════════════════════════════════════════════════════════════════ */
+
+function StrategyDetailView({ strategy, plans: stratPlans, actions, onNavigate, objectiveId, isExpanded }: {
+  strategy: StrategyData;
+  plans: PlanData[];
+  actions: ActionData[];
+  onNavigate: (v: ViewState) => void;
+  objectiveId: string;
+  isExpanded: boolean;
+}) {
+  if (!strategy) return null;
+  return (
+    <div>
+      <div className="mb-10">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="rounded-full px-4 py-1 border border-thingtrax-cyan/30 text-thingtrax-cyan uppercase tracking-widest text-xs">
+            Strategy
+          </div>
+          <RAGBadge value={strategy.rag_status as any} />
+          <span className={`rounded-full px-3 py-1 text-xs font-medium bg-white/10 text-white/60`}>{statusLabel(strategy.status)}</span>
+        </div>
+        <h1 className={`font-bold leading-tight text-white mb-4 ${isExpanded ? "text-5xl" : "text-4xl"}`}>
+          {strategy.title}
+        </h1>
+        {strategy.description && (
+          <div className="text-white/60 text-lg max-w-3xl">
+            <RichTextView html={strategy.description} className="text-white/60" />
+          </div>
+        )}
+      </div>
+
+      {stratPlans.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 text-thingtrax-yellow uppercase tracking-widest text-sm font-semibold mb-6">
+            <ListChecks className="h-5 w-5" />
+            Plans ({stratPlans.length})
+          </div>
+          <div className="space-y-3">
+            {stratPlans.map(p => {
+              const planActions = actions.filter(a => a.gospa_plan_id === p.id);
+              const doneCount = planActions.filter(a => a.status === "Done" || a.status === "done").length;
+              const pct = planActions.length ? Math.round((doneCount / planActions.length) * 100) : 0;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => onNavigate({ type: "plan", planId: p.id, objectiveId })}
+                  className="w-full group rounded-xl bg-white/5 border border-white/10 px-6 py-5 text-left hover:border-thingtrax-yellow/40 hover:bg-thingtrax-yellow/5 transition-all flex items-center gap-4"
+                >
+                  <ListChecks className="h-5 w-5 text-thingtrax-yellow/60 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className={`font-medium text-white group-hover:text-thingtrax-yellow transition-colors ${isExpanded ? "text-xl" : "text-lg"}`}>
+                      {p.title}
+                    </div>
+                    <div className="flex items-center gap-4 mt-2 text-sm text-white/40">
+                      {(p.start_date || p.end_date) && (
+                        <span>{p.start_date ?? "?"} → {p.end_date ?? "?"}</span>
+                      )}
+                      <span>{statusLabel(p.status)}</span>
+                      {planActions.length > 0 && <span>{doneCount}/{planActions.length} actions ({pct}%)</span>}
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-white/20 group-hover:text-thingtrax-yellow shrink-0" />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PLAN DETAIL VIEW
+   ═══════════════════════════════════════════════════════════════════ */
+
+function PlanDetailView({ plan, actions: planActions, onNavigate, objectiveId, isExpanded }: {
+  plan: PlanData;
+  actions: ActionData[];
+  onNavigate: (v: ViewState) => void;
+  objectiveId: string;
+  isExpanded: boolean;
+}) {
+  if (!plan) return null;
+  const doneCount = planActions.filter(a => a.status === "Done" || a.status === "done").length;
+  const pct = planActions.length ? Math.round((doneCount / planActions.length) * 100) : 0;
+
+  return (
+    <div>
+      <div className="mb-10">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="rounded-full px-4 py-1 border border-thingtrax-yellow/30 text-thingtrax-yellow uppercase tracking-widest text-xs">
+            Plan
+          </div>
+          <span className="rounded-full px-3 py-1 text-xs font-medium bg-white/10 text-white/60">{statusLabel(plan.status)}</span>
+        </div>
+        <h1 className={`font-bold leading-tight text-white mb-4 ${isExpanded ? "text-5xl" : "text-4xl"}`}>
+          {plan.title}
+        </h1>
+        {(plan.start_date || plan.end_date) && (
+          <div className="flex items-center gap-3 text-white/40 text-lg mb-4">
+            <Clock className="h-5 w-5" />
+            <span>{plan.start_date ?? "?"} → {plan.end_date ?? "?"}</span>
+          </div>
+        )}
+        {plan.description && (
+          <div className="text-white/60 text-lg max-w-3xl">
+            <RichTextView html={plan.description} className="text-white/60" />
+          </div>
+        )}
+      </div>
+
+      {/* Progress bar */}
+      {planActions.length > 0 && (
+        <div className="mb-8 rounded-xl bg-white/5 border border-white/10 p-6">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm text-white/50">Progress</span>
+            <span className="text-lg font-bold text-thingtrax-green">{pct}%</span>
+          </div>
+          <div className="w-full h-3 rounded-full bg-white/10 overflow-hidden">
+            <div className="h-full rounded-full bg-thingtrax-green transition-all" style={{ width: `${pct}%` }} />
+          </div>
+          <div className="mt-2 text-sm text-white/40">{doneCount} of {planActions.length} actions complete</div>
+        </div>
+      )}
+
+      {/* Actions list */}
+      {planActions.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 text-thingtrax-green uppercase tracking-widest text-sm font-semibold mb-6">
+            <CheckCircle2 className="h-5 w-5" />
+            Actions ({planActions.length})
+          </div>
+          <div className="space-y-2">
+            {planActions.map(a => (
+              <button
+                key={a.id}
+                onClick={() => onNavigate({ type: "action", actionId: a.id, objectiveId })}
+                className="w-full group flex items-center gap-4 rounded-lg bg-white/5 border border-white/10 px-5 py-4 text-left hover:bg-white/8 hover:border-white/20 transition-all"
+              >
+                <span className={`w-3 h-3 rounded-full shrink-0 ${statusDot(a.status)}`} />
+                <div className="flex-1 min-w-0">
+                  <div className={`font-medium text-white group-hover:text-thingtrax-green transition-colors ${isExpanded ? "text-lg" : "text-base"}`}>
+                    {a.task_title}
+                  </div>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-white/40">
+                    <span>{statusLabel(a.status)}</span>
+                    {a.planned_end && <span>Due: {a.planned_end}</span>}
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-white/20 group-hover:text-thingtrax-green shrink-0" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ACTION DETAIL VIEW
+   ═══════════════════════════════════════════════════════════════════ */
+
+function ActionDetailView({ action, nameOf, isExpanded }: {
+  action: ActionData;
+  nameOf: (uid?: string | null) => string;
+  isExpanded: boolean;
+}) {
+  if (!action) return null;
+  const isOverdue = action.planned_end && action.planned_end < new Date().toISOString().slice(0, 10) && action.status !== "Done";
+
+  return (
+    <div>
+      <div className="mb-10">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="rounded-full px-4 py-1 border border-white/20 text-white/50 uppercase tracking-widest text-xs">
+            Action
+          </div>
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${
+            action.status === "Done" || action.status === "done" ? "bg-green-500/20 text-green-400" :
+            action.status === "In Progress" ? "bg-blue-500/20 text-blue-400" :
+            action.status === "Blocked" ? "bg-red-500/20 text-red-400" :
+            "bg-white/10 text-white/60"
+          }`}>
+            <span className={`w-2 h-2 rounded-full ${statusDot(action.status)}`} />
+            {statusLabel(action.status)}
+          </span>
+          {isOverdue && (
+            <span className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium bg-red-500/20 text-red-400">
+              <AlertTriangle className="h-3 w-3" /> Overdue
+            </span>
+          )}
+        </div>
+        <h1 className={`font-bold leading-tight text-white mb-6 ${isExpanded ? "text-5xl" : "text-4xl"}`}>
+          {action.task_title}
+        </h1>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        {action.assignee && (
+          <div className="rounded-xl bg-white/5 border border-white/10 p-6">
+            <div className="text-xs text-white/40 uppercase tracking-widest mb-2">Assignee</div>
+            <div className="text-lg text-white">{nameOf(action.assignee)}</div>
+          </div>
+        )}
+        {(action.planned_start || action.planned_end) && (
+          <div className="rounded-xl bg-white/5 border border-white/10 p-6">
+            <div className="text-xs text-white/40 uppercase tracking-widest mb-2">Timeline</div>
+            <div className="text-lg text-white flex items-center gap-2">
+              <Clock className="h-5 w-5 text-white/40" />
+              {action.planned_start ?? "?"} → {action.planned_end ?? "?"}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   OBJECTIVE VIEW
+   ═══════════════════════════════════════════════════════════════════ */
 
 function ObjectiveView({ objective, questions, entries, nameOf, onSelectQuestion, isExpanded }: {
   objective: ObjectiveData;
@@ -408,7 +861,6 @@ function ObjectiveView({ objective, questions, entries, nameOf, onSelectQuestion
 
   return (
     <div>
-      {/* Objective header */}
       <div className="mb-12">
         <div className="flex items-center gap-3 mb-4">
           <div className="rounded-full px-4 py-1 border border-white/20 text-white/50 uppercase tracking-widest text-xs">
@@ -432,7 +884,6 @@ function ObjectiveView({ objective, questions, entries, nameOf, onSelectQuestion
         )}
       </div>
 
-      {/* Questions */}
       <div>
         <div className="flex items-center gap-2 text-thingtrax-green uppercase tracking-widest text-sm font-semibold mb-6">
           <Lightbulb className="h-5 w-5" />
@@ -465,18 +916,16 @@ function ObjectiveView({ objective, questions, entries, nameOf, onSelectQuestion
                     </div>
                     <div className="flex items-center gap-3 mt-2 text-sm text-white/40">
                       {hasAnswers ? (
-                        <>
-                          <span className="inline-flex items-center gap-1 text-thingtrax-green">
-                            <span className="w-2 h-2 rounded-full bg-thingtrax-green" />
-                            {answerCount} answer{answerCount !== 1 ? "s" : ""}
-                          </span>
-                        </>
+                        <span className="inline-flex items-center gap-1 text-thingtrax-green">
+                          <span className="w-2 h-2 rounded-full bg-thingtrax-green" />
+                          {answerCount} answer{answerCount !== 1 ? "s" : ""}
+                        </span>
                       ) : (
                         <span className="text-white/30">Awaiting answer</span>
                       )}
                     </div>
                   </div>
-                  <ChevronLeft className="h-5 w-5 text-white/20 group-hover:text-thingtrax-green rotate-180 transition-colors shrink-0 mt-2" />
+                  <ChevronRight className="h-5 w-5 text-white/20 group-hover:text-thingtrax-green transition-colors shrink-0 mt-2" />
                 </button>
               );
             })}
@@ -487,7 +936,9 @@ function ObjectiveView({ objective, questions, entries, nameOf, onSelectQuestion
   );
 }
 
-/* ── Question Detail View (answers, insights, links) ──────────── */
+/* ═══════════════════════════════════════════════════════════════════
+   QUESTION DETAIL VIEW
+   ═══════════════════════════════════════════════════════════════════ */
 
 function QuestionDetailView({ question, entries, nameOf, isExpanded }: {
   question: QuestionData;
@@ -497,7 +948,6 @@ function QuestionDetailView({ question, entries, nameOf, isExpanded }: {
 }) {
   if (!question) return null;
 
-  // Group by user
   const byUser: Record<string, EntryData[]> = {};
   for (const e of entries) {
     const key = e.created_by ?? "__unknown__";
@@ -510,7 +960,6 @@ function QuestionDetailView({ question, entries, nameOf, isExpanded }: {
 
   return (
     <div>
-      {/* Question header */}
       <div className="mb-10">
         <div className={`text-thingtrax-green font-semibold tracking-wide uppercase mb-3 ${isExpanded ? "text-xl" : "text-lg"}`}>
           Question {question.order_index}

@@ -182,6 +182,9 @@ export default function GospaDashboard() {
           onClose={() => setPresentOpen(false)}
           goal={activeGoal}
           objectives={objectivesQ.data ?? []}
+          strategies={stratsQ.data ?? []}
+          plans={plansQ.data ?? []}
+          actions={actionsQ.data ?? []}
         />
       )}
     </div>

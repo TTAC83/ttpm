@@ -69,7 +69,7 @@ export const NAV: NavItem[] = [
   {
     label: "GOSPA",
     iconName: "BarChart3",
-    roles: ["internal_admin", "internal_user"],
+    roles: ["internal_admin", "internal_user", "external_admin", "external_user"],
     children: [
       { label: "Dashboard", to: "/app/gospa", matchPaths: ["/app/gospa"] },
       { label: "Goals & Objectives", to: "/app/gospa/goals", matchPaths: ["/app/gospa/goals"] },

@@ -4148,6 +4148,7 @@ export type Database = {
           expense_approver_user_id: string | null
           is_internal: boolean
           job_title: string | null
+          last_active_at: string | null
           name: string | null
           phone: string | null
           role: string | null
@@ -4160,6 +4161,7 @@ export type Database = {
           expense_approver_user_id?: string | null
           is_internal?: boolean
           job_title?: string | null
+          last_active_at?: string | null
           name?: string | null
           phone?: string | null
           role?: string | null
@@ -4172,6 +4174,7 @@ export type Database = {
           expense_approver_user_id?: string | null
           is_internal?: boolean
           job_title?: string | null
+          last_active_at?: string | null
           name?: string | null
           phone?: string | null
           role?: string | null
@@ -7309,6 +7312,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      touch_last_active: { Args: never; Returns: undefined }
       upsert_bau_alias: {
         Args: { p_alias: string; p_bau_customer_id: string }
         Returns: undefined

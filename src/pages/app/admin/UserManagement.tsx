@@ -464,6 +464,12 @@ export const UserManagement = () => {
                     <TableCell className="text-sm text-muted-foreground">
                       {formatDate(user.last_sign_in_at)}
                     </TableCell>
+                    <TableCell
+                      className="text-sm text-muted-foreground"
+                      title={user.last_active_at ? formatDate(user.last_active_at) : undefined}
+                    >
+                      {formatRelativeDate(user.last_active_at)}
+                    </TableCell>
                     <TableCell>
                       <Button
                         variant="ghost"

@@ -18,6 +18,7 @@ interface UserData {
   email: string;
   created_at: string;
   last_sign_in_at: string | null;
+  last_active_at: string | null;
   profile: {
     name: string | null;
     job_title: string | null;
@@ -87,12 +88,21 @@ export const UserManagement = () => {
         return;
       }
 
+      // Fetch last_active_at separately (not in the RPC)
+      const { data: lastActiveData } = await supabase
+        .from('profiles')
+        .select('user_id, last_active_at');
+      const lastActiveMap = new Map(
+        (lastActiveData || []).map((p: any) => [p.user_id, p.last_active_at])
+      );
+
       // Transform the data to match our interface, handling missing fields gracefully
       const transformedUsers: UserData[] = usersData?.map(user => ({
         id: user.user_id,
         email: user.email || '',
         created_at: user.created_at || new Date().toISOString(),
         last_sign_in_at: user.last_sign_in_at || null,
+        last_active_at: (lastActiveMap.get(user.user_id) as string | null) || null,
         profile: {
           user_id: user.user_id,
           company_id: user.company_id || null,
@@ -311,6 +321,17 @@ export const UserManagement = () => {
     });
   };
 
+  const formatRelativeDate = (date: string | null) => {
+    if (!date) return 'Never';
+    const todayUk = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+    const dUk = new Date(date).toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+    if (dUk === todayUk) return 'Today';
+    const diffDays = Math.floor((new Date(todayUk).getTime() - new Date(dUk).getTime()) / 86400000);
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays > 1 && diffDays < 30) return `${diffDays} days ago`;
+    return formatDate(date);
+  };
+
   const getInitials = (name: string | null) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
@@ -398,6 +419,7 @@ export const UserManagement = () => {
                   <TableHead>Role</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Last Sign In</TableHead>
+                  <TableHead>Last Active</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -441,6 +463,12 @@ export const UserManagement = () => {
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {formatDate(user.last_sign_in_at)}
+                    </TableCell>
+                    <TableCell
+                      className="text-sm text-muted-foreground"
+                      title={user.last_active_at ? formatDate(user.last_active_at) : undefined}
+                    >
+                      {formatRelativeDate(user.last_active_at)}
                     </TableCell>
                     <TableCell>
                       <Button

@@ -127,6 +127,19 @@ export const Profile = () => {
     });
   };
 
+  const formatRelativeDate = (date: string | null | undefined) => {
+    if (!date) return 'Never';
+    const today = new Date();
+    const d = new Date(date);
+    const todayUk = today.toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+    const dUk = d.toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+    if (dUk === todayUk) return 'Active today';
+    const diffDays = Math.floor((new Date(todayUk).getTime() - new Date(dUk).getTime()) / 86400000);
+    if (diffDays === 1) return 'Active yesterday';
+    if (diffDays > 1 && diffDays < 30) return `Active ${diffDays} days ago`;
+    return `Active ${formatDate(date)}`;
+  };
+
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -348,12 +361,17 @@ export const Profile = () => {
                 {user?.created_at ? formatDate(user.created_at) : 'Unknown'}
               </p>
             </div>
-            <div>
-              <p className="text-sm font-medium">Last Sign In</p>
-              <p className="text-sm text-muted-foreground">
-                {user?.last_sign_in_at ? formatDate(user.last_sign_in_at) : 'Unknown'}
-              </p>
-            </div>
+            {profile?.is_internal && (
+              <div>
+                <p className="text-sm font-medium">Last Active</p>
+                <p
+                  className="text-sm text-muted-foreground"
+                  title={profile?.last_active_at ? formatDate(profile.last_active_at) : undefined}
+                >
+                  {formatRelativeDate(profile?.last_active_at)}
+                </p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

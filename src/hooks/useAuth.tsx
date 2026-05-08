@@ -11,6 +11,7 @@ interface Profile {
   job_title: string | null;
   phone: string | null;
   avatar_url: string | null;
+  last_active_at: string | null;
 }
 
 interface AuthContextType {
@@ -51,7 +52,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('user_id, company_id, role, is_internal, name, job_title, phone, avatar_url')
+        .select('user_id, company_id, role, is_internal, name, job_title, phone, avatar_url, last_active_at')
         .eq('user_id', userId)
         .single();
       
@@ -67,6 +68,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  // Fire-and-forget: bump last_active_at (throttled server-side to once per day)
+  const touchLastActive = () => {
+    supabase.rpc('touch_last_active').then(() => {}, () => {});
+  };
+
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -80,6 +86,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             const profileData = await fetchProfile(session.user.id);
             setProfile(profileData);
             setLoading(false);
+            touchLastActive();
           }, 0);
         } else {
           setProfile(null);
@@ -97,6 +104,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         fetchProfile(session.user.id).then(profileData => {
           setProfile(profileData);
           setLoading(false);
+          touchLastActive();
         });
       } else {
         setLoading(false);

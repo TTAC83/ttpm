@@ -86,6 +86,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             const profileData = await fetchProfile(session.user.id);
             setProfile(profileData);
             setLoading(false);
+            touchLastActive();
           }, 0);
         } else {
           setProfile(null);

@@ -38,7 +38,11 @@ interface Company {
   is_internal: boolean;
 }
 
+const LAST_ACTIVE_VIEWERS = ['will@thingtrax.com', 'allan@thingtrax.com'];
+
 export const UserManagement = () => {
+  const { user: currentUser } = useAuth();
+  const canViewLastActive = LAST_ACTIVE_VIEWERS.includes((currentUser?.email || '').toLowerCase());
   const [users, setUsers] = useState<UserData[]>([]);
   
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -419,7 +423,7 @@ export const UserManagement = () => {
                   <TableHead>Role</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Last Sign In</TableHead>
-                  <TableHead>Last Active</TableHead>
+                  {canViewLastActive && <TableHead>Last Active</TableHead>}
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -464,12 +468,14 @@ export const UserManagement = () => {
                     <TableCell className="text-sm text-muted-foreground">
                       {formatDate(user.last_sign_in_at)}
                     </TableCell>
-                    <TableCell
-                      className="text-sm text-muted-foreground"
-                      title={user.last_active_at ? formatDate(user.last_active_at) : undefined}
-                    >
-                      {formatRelativeDate(user.last_active_at)}
-                    </TableCell>
+                    {canViewLastActive && (
+                      <TableCell
+                        className="text-sm text-muted-foreground"
+                        title={user.last_active_at ? formatDate(user.last_active_at) : undefined}
+                      >
+                        {formatRelativeDate(user.last_active_at)}
+                      </TableCell>
+                    )}
                     <TableCell>
                       <Button
                         variant="ghost"

@@ -88,12 +88,21 @@ export const UserManagement = () => {
         return;
       }
 
+      // Fetch last_active_at separately (not in the RPC)
+      const { data: lastActiveData } = await supabase
+        .from('profiles')
+        .select('user_id, last_active_at');
+      const lastActiveMap = new Map(
+        (lastActiveData || []).map((p: any) => [p.user_id, p.last_active_at])
+      );
+
       // Transform the data to match our interface, handling missing fields gracefully
       const transformedUsers: UserData[] = usersData?.map(user => ({
         id: user.user_id,
         email: user.email || '',
         created_at: user.created_at || new Date().toISOString(),
         last_sign_in_at: user.last_sign_in_at || null,
+        last_active_at: (lastActiveMap.get(user.user_id) as string | null) || null,
         profile: {
           user_id: user.user_id,
           company_id: user.company_id || null,

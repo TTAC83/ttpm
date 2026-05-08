@@ -68,6 +68,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  // Fire-and-forget: bump last_active_at (throttled server-side to once per day)
+  const touchLastActive = () => {
+    supabase.rpc('touch_last_active').then(() => {}, () => {});
+  };
+
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(

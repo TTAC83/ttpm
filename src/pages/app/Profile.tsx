@@ -348,12 +348,17 @@ export const Profile = () => {
                 {user?.created_at ? formatDate(user.created_at) : 'Unknown'}
               </p>
             </div>
-            <div>
-              <p className="text-sm font-medium">Last Sign In</p>
-              <p className="text-sm text-muted-foreground">
-                {user?.last_sign_in_at ? formatDate(user.last_sign_in_at) : 'Unknown'}
-              </p>
-            </div>
+            {profile?.is_internal && (
+              <div>
+                <p className="text-sm font-medium">Last Active</p>
+                <p
+                  className="text-sm text-muted-foreground"
+                  title={profile?.last_active_at ? formatDate(profile.last_active_at) : undefined}
+                >
+                  {formatRelativeDate(profile?.last_active_at)}
+                </p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

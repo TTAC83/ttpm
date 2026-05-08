@@ -127,6 +127,19 @@ export const Profile = () => {
     });
   };
 
+  const formatRelativeDate = (date: string | null | undefined) => {
+    if (!date) return 'Never';
+    const today = new Date();
+    const d = new Date(date);
+    const todayUk = today.toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+    const dUk = d.toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+    if (dUk === todayUk) return 'Active today';
+    const diffDays = Math.floor((new Date(todayUk).getTime() - new Date(dUk).getTime()) / 86400000);
+    if (diffDays === 1) return 'Active yesterday';
+    if (diffDays > 1 && diffDays < 30) return `Active ${diffDays} days ago`;
+    return `Active ${formatDate(date)}`;
+  };
+
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     

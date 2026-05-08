@@ -11,6 +11,7 @@ interface Profile {
   job_title: string | null;
   phone: string | null;
   avatar_url: string | null;
+  last_active_at: string | null;
 }
 
 interface AuthContextType {

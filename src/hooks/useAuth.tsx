@@ -104,6 +104,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         fetchProfile(session.user.id).then(profileData => {
           setProfile(profileData);
           setLoading(false);
+          touchLastActive();
         });
       } else {
         setLoading(false);

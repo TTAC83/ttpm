@@ -321,6 +321,17 @@ export const UserManagement = () => {
     });
   };
 
+  const formatRelativeDate = (date: string | null) => {
+    if (!date) return 'Never';
+    const todayUk = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+    const dUk = new Date(date).toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+    if (dUk === todayUk) return 'Today';
+    const diffDays = Math.floor((new Date(todayUk).getTime() - new Date(dUk).getTime()) / 86400000);
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays > 1 && diffDays < 30) return `${diffDays} days ago`;
+    return formatDate(date);
+  };
+
   const getInitials = (name: string | null) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase();

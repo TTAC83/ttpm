@@ -361,7 +361,7 @@ export const Profile = () => {
                 {user?.created_at ? formatDate(user.created_at) : 'Unknown'}
               </p>
             </div>
-            {profile?.is_internal && (
+            {['will@thingtrax.com', 'allan@thingtrax.com'].includes((user?.email || '').toLowerCase()) && (
               <div>
                 <p className="text-sm font-medium">Last Active</p>
                 <p

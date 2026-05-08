@@ -212,7 +212,12 @@ export const AppLayout = () => {
           
           <SidebarFooter className="border-t border-sidebar-border p-4">
             <div className="space-y-3">
-              <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => handleNavigation('/app/profile')}
+                className="flex items-center gap-3 w-full text-left rounded-md p-1 -m-1 hover:bg-sidebar-accent transition-colors"
+                aria-label="Open profile"
+              >
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={profile?.avatar_url || ''} />
                   <AvatarFallback className="text-xs">
@@ -227,7 +232,7 @@ export const AppLayout = () => {
                      {user?.email}
                    </p>
                  </div>
-               </div>
+               </button>
                
                {profile?.role && (
                  <Badge 

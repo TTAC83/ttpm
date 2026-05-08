@@ -18,6 +18,7 @@ interface UserData {
   email: string;
   created_at: string;
   last_sign_in_at: string | null;
+  last_active_at: string | null;
   profile: {
     name: string | null;
     job_title: string | null;

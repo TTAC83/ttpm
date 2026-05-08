@@ -419,6 +419,7 @@ export const UserManagement = () => {
                   <TableHead>Role</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Last Sign In</TableHead>
+                  <TableHead>Last Active</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>

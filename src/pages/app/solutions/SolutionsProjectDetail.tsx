@@ -33,11 +33,35 @@ import { SolutionsInfrastructure } from './tabs/SolutionsInfrastructure';
 import { SolutionsPortalConfig } from './tabs/SolutionsPortalConfig';
 import { ProjectHardwareStatus } from '../projects/tabs/ProjectHardwareStatus';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useTabCompleteness } from './hooks/useTabCompleteness';
+import { useTabCompleteness, MissingItem } from './hooks/useTabCompleteness';
 import { FeasibilityGateDialog } from '@/components/FeasibilityGateDialog';
 import { ProjectAttributesTab } from '@/components/attributes/ProjectAttributesTab';
 import { SolutionsVisionProjects } from './tabs/SolutionsVisionProjects';
 import { SolutionsProducts } from './tabs/SolutionsProducts';
+import { MissingInfoBanner } from '@/components/shared/MissingInfoBanner';
+
+const StatusDot = ({ complete, missing }: { complete: boolean; missing?: MissingItem[] }) => {
+  const dot = (
+    <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${complete ? 'bg-green-500' : 'bg-red-500'}`} />
+  );
+  if (complete || !missing || missing.length === 0) return dot;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="inline-flex items-center">{dot}</span>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" className="max-w-xs">
+        <p className="font-semibold text-xs mb-1">{missing.length} missing:</p>
+        <ul className="text-xs space-y-0.5">
+          {missing.slice(0, 8).map(m => (
+            <li key={m.key}>• {m.label}{typeof m.count === 'number' ? ` (${m.count})` : ''}</li>
+          ))}
+          {missing.length > 8 && <li className="text-muted-foreground">+ {missing.length - 8} more…</li>}
+        </ul>
+      </TooltipContent>
+    </Tooltip>
+  );
+};
 
 interface SolutionsProject {
   id: string;
@@ -317,27 +341,33 @@ export const SolutionsProjectDetail = () => {
             </button>
             <TabsTrigger value="overview">
               Customer Overview
-              <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.overview ? 'bg-green-500' : 'bg-red-500'}`} />
+              <StatusDot complete={completeness.overview} missing={completeness.missing.overview} />
             </TabsTrigger>
             <TabsTrigger value="contacts">
               Contacts
-              <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.contacts ? 'bg-green-500' : 'bg-red-500'}`} />
+              <StatusDot complete={completeness.contacts} missing={completeness.missing.contacts} />
             </TabsTrigger>
             <TabsTrigger value="factory">
               Factory
-              <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${(completeness.factory && completeness.factoryConfig) ? 'bg-green-500' : 'bg-red-500'}`} />
+              <StatusDot
+                complete={completeness.factory && completeness.factoryConfig}
+                missing={[...completeness.missing.factory, ...completeness.missing.factoryConfig]}
+              />
             </TabsTrigger>
             <TabsTrigger value="lines">
               Lines
-              <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.lines ? 'bg-green-500' : 'bg-red-500'}`} />
+              <StatusDot complete={completeness.lines} missing={completeness.missing.lines} />
             </TabsTrigger>
             <TabsTrigger value="infrastructure">
               Infrastructure
-              <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.infrastructure ? 'bg-green-500' : 'bg-red-500'}`} />
+              <StatusDot complete={completeness.infrastructure} missing={completeness.missing.infrastructure} />
             </TabsTrigger>
             <TabsTrigger value="hardware">
               Factory Hardware
-              <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${(hwCompleteness ? (hwCompleteness.iot && hwCompleteness.vision) : completeness.factoryHardware) ? 'bg-green-500' : 'bg-red-500'}`} />
+              <StatusDot
+                complete={hwCompleteness ? (hwCompleteness.iot && hwCompleteness.vision) : completeness.factoryHardware}
+                missing={completeness.missing.factoryHardware}
+              />
             </TabsTrigger>
             <TabsTrigger value="product-gaps">
               Feature Requirements
@@ -350,7 +380,7 @@ export const SolutionsProjectDetail = () => {
             {isVisionOrHybrid && (
               <TabsTrigger value="attributes">
                 Attributes
-                <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.attributes ? 'bg-green-500' : 'bg-red-500'}`} />
+                <StatusDot complete={completeness.attributes} missing={completeness.missing.attributes} />
               </TabsTrigger>
             )}
           </TabsList>
@@ -360,10 +390,10 @@ export const SolutionsProjectDetail = () => {
             <span className="inline-flex items-center px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted-foreground/10 select-none">
               Sale &amp; Launch Gate
             </span>
-            <TabsTrigger value="hardware-summary">Hardware Summary <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.hardwareSummary ? 'bg-green-500' : 'bg-red-500'}`} /></TabsTrigger>
-            <TabsTrigger value="contract">Contract Info <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.contract ? 'bg-green-500' : 'bg-red-500'}`} /></TabsTrigger>
+            <TabsTrigger value="hardware-summary">Hardware Summary <StatusDot complete={completeness.hardwareSummary} missing={completeness.missing.hardwareSummary} /></TabsTrigger>
+            <TabsTrigger value="contract">Contract Info <StatusDot complete={completeness.contract} missing={completeness.missing.contract} /></TabsTrigger>
             <TabsTrigger value="account">Account Info</TabsTrigger>
-            <TabsTrigger value="team">Team <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.team ? 'bg-green-500' : 'bg-red-500'}`} /></TabsTrigger>
+            <TabsTrigger value="team">Team <StatusDot complete={completeness.team} missing={completeness.missing.team} /></TabsTrigger>
             <TabsTrigger value="sow">Generate SOW</TabsTrigger>
             <TabsTrigger value="launch">Launch</TabsTrigger>
           </TabsList>
@@ -374,7 +404,7 @@ export const SolutionsProjectDetail = () => {
               Readiness Gate
             </span>
             <TabsTrigger value="project-setup">Project Set-up</TabsTrigger>
-            <TabsTrigger value="portal-config">Portal Config <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${completeness.portalConfig ? 'bg-green-500' : 'bg-red-500'}`} /></TabsTrigger>
+            <TabsTrigger value="portal-config">Portal Config <StatusDot complete={completeness.portalConfig} missing={completeness.missing.portalConfig} /></TabsTrigger>
             <TabsTrigger value="hardware-status">Hardware Config</TabsTrigger>
             <TabsTrigger value="network-config">Network Config</TabsTrigger>
             <TabsTrigger value="camera-validation">Camera Validation</TabsTrigger>
@@ -410,14 +440,17 @@ export const SolutionsProjectDetail = () => {
         </div>
 
         <TabsContent value="overview" className="space-y-4">
+          <MissingInfoBanner items={completeness.missing.overview} />
           <OverviewTab data={project} onUpdate={fetchProject} type="solutions" />
         </TabsContent>
 
         <TabsContent value="contract" className="space-y-4">
+          <MissingInfoBanner items={completeness.missing.contract} />
           <ContractInformationTab data={project} onUpdate={fetchProject} type="solutions" />
         </TabsContent>
 
         <TabsContent value="team" className="space-y-4">
+          <MissingInfoBanner items={completeness.missing.team} title={`Missing team roles — ${completeness.missing.team.length} of 12 not assigned`} />
           <TeamTab data={project} onUpdate={fetchProject} type="solutions" />
         </TabsContent>
 
@@ -426,6 +459,7 @@ export const SolutionsProjectDetail = () => {
         </TabsContent>
 
         <TabsContent value="contacts" className="space-y-4">
+          <MissingInfoBanner items={completeness.missing.contacts} />
           <ProjectContacts 
             projectId={project.id} 
             projectType="solutions"
@@ -435,19 +469,23 @@ export const SolutionsProjectDetail = () => {
         </TabsContent>
 
         <TabsContent value="infrastructure" className="space-y-4">
+          <MissingInfoBanner items={completeness.missing.infrastructure} />
           <SolutionsInfrastructure projectId={project.id} projectData={project} onUpdate={fetchProject} />
         </TabsContent>
 
         <TabsContent value="hardware" className="space-y-4">
+          <MissingInfoBanner items={completeness.missing.factoryHardware} />
           <ProjectHardware projectId={project.id} type="solutions" onCompletenessChange={setHwCompleteness} />
         </TabsContent>
 
         <TabsContent value="factory" className="space-y-4">
+          <MissingInfoBanner items={[...completeness.missing.factory, ...completeness.missing.factoryConfig]} />
           <SolutionsFactoryConfig projectId={project.id} />
           <SkuCountCard projectId={project.id} initialValue={(project as any).sow_sku_count} onUpdate={() => { fetchProject(); setCompletenessRefreshKey(k => k + 1); }} />
         </TabsContent>
 
         <TabsContent value="lines" className="space-y-4">
+          <MissingInfoBanner items={completeness.missing.lines} />
           <SolutionsLines solutionsProjectId={project.id} />
         </TabsContent>
 
@@ -460,6 +498,7 @@ export const SolutionsProjectDetail = () => {
         </TabsContent>
 
         <TabsContent value="hardware-summary" className="space-y-4">
+          <MissingInfoBanner items={completeness.missing.hardwareSummary} />
           <SolutionsHardwareSummary solutionsProjectId={project.id} salespersonId={project.salesperson ?? null} />
         </TabsContent>
 
@@ -485,6 +524,7 @@ export const SolutionsProjectDetail = () => {
 
         {isVisionOrHybrid && (
           <TabsContent value="attributes" className="space-y-4">
+            <MissingInfoBanner items={completeness.missing.attributes} />
             <ProjectAttributesTab projectId={project.id} onCompletenessChange={() => setCompletenessRefreshKey(k => k + 1)} />
           </TabsContent>
         )}
@@ -514,6 +554,7 @@ export const SolutionsProjectDetail = () => {
         </TabsContent>
 
         <TabsContent value="portal-config" className="space-y-4">
+          <MissingInfoBanner items={completeness.missing.portalConfig} title={`Missing portal config tasks — ${completeness.missing.portalConfig.length} incomplete`} />
           <SolutionsPortalConfig
             projectId={project.id}
             implementationLeadId={(project as any).implementation_lead || null}

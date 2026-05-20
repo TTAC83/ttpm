@@ -81,6 +81,18 @@ export const NAV: NavItem[] = [
     ]
   },
 
+  // Metrics tracking (separate top-level item below GOSPA)
+  {
+    label: "Metrics",
+    iconName: "LineChart",
+    roles: ["internal_admin", "internal_user"],
+    children: [
+      { label: "Dashboard", to: "/app/metrics", matchPaths: ["/app/metrics"] },
+      { label: "Meetings", to: "/app/metrics/meetings", matchPaths: ["/app/metrics/meetings"] },
+    ]
+  },
+
+
   // 3) BAU
   {
     label: "BAU",

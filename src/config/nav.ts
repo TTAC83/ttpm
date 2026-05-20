@@ -369,7 +369,8 @@ export const ICON_MAP = {
   User,
   PieChart,
   Camera,
-  Users
+  Users,
+  LineChart
 } as const;
 
 export function visibleItemsForRole(role: Role | null | undefined): NavItem[] {

@@ -524,6 +524,7 @@ export const SolutionsProjectDetail = () => {
 
         {isVisionOrHybrid && (
           <TabsContent value="attributes" className="space-y-4">
+            <MissingInfoBanner items={completeness.missing.attributes} />
             <ProjectAttributesTab projectId={project.id} onCompletenessChange={() => setCompletenessRefreshKey(k => k + 1)} />
           </TabsContent>
         )}
@@ -553,6 +554,7 @@ export const SolutionsProjectDetail = () => {
         </TabsContent>
 
         <TabsContent value="portal-config" className="space-y-4">
+          <MissingInfoBanner items={completeness.missing.portalConfig} title={`Missing portal config tasks — ${completeness.missing.portalConfig.length} incomplete`} />
           <SolutionsPortalConfig
             projectId={project.id}
             implementationLeadId={(project as any).implementation_lead || null}

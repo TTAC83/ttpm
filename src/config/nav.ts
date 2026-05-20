@@ -18,7 +18,8 @@ import {
   User,
   PieChart,
   Camera,
-  Users
+  Users,
+  LineChart
 } from "lucide-react";
 
 export type Role = "internal_admin" | "internal_user" | "external_admin" | "external_user";

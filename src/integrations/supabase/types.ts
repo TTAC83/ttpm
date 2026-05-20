@@ -21,6 +21,8 @@ export type Database = {
           details: string | null
           id: string
           is_critical: boolean
+          metric_id: string | null
+          metric_meeting_id: string | null
           notes: string | null
           planned_date: string | null
           project_id: string | null
@@ -36,6 +38,8 @@ export type Database = {
           details?: string | null
           id?: string
           is_critical?: boolean
+          metric_id?: string | null
+          metric_meeting_id?: string | null
           notes?: string | null
           planned_date?: string | null
           project_id?: string | null
@@ -51,6 +55,8 @@ export type Database = {
           details?: string | null
           id?: string
           is_critical?: boolean
+          metric_id?: string | null
+          metric_meeting_id?: string | null
           notes?: string | null
           planned_date?: string | null
           project_id?: string | null
@@ -67,6 +73,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "actions_metric_id_fkey"
+            columns: ["metric_id"]
+            isOneToOne: false
+            referencedRelation: "metrics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "actions_metric_meeting_id_fkey"
+            columns: ["metric_meeting_id"]
+            isOneToOne: false
+            referencedRelation: "metric_meetings"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "actions_project_id_fkey"
@@ -3529,6 +3549,168 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      metric_meeting_items: {
+        Row: {
+          meeting_id: string
+          metric_id: string
+        }
+        Insert: {
+          meeting_id: string
+          metric_id: string
+        }
+        Update: {
+          meeting_id?: string
+          metric_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metric_meeting_items_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "metric_meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "metric_meeting_items_metric_id_fkey"
+            columns: ["metric_id"]
+            isOneToOne: false
+            referencedRelation: "metrics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      metric_meetings: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          scheduled_at: string
+          status: Database["public"]["Enums"]["metric_meeting_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          scheduled_at: string
+          status?: Database["public"]["Enums"]["metric_meeting_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          scheduled_at?: string
+          status?: Database["public"]["Enums"]["metric_meeting_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      metric_readings: {
+        Row: {
+          actual_value: number
+          commentary: string | null
+          created_at: string
+          entered_by: string | null
+          id: string
+          meeting_id: string | null
+          metric_id: string
+          on_target: boolean
+          period_date: string
+        }
+        Insert: {
+          actual_value: number
+          commentary?: string | null
+          created_at?: string
+          entered_by?: string | null
+          id?: string
+          meeting_id?: string | null
+          metric_id: string
+          on_target: boolean
+          period_date: string
+        }
+        Update: {
+          actual_value?: number
+          commentary?: string | null
+          created_at?: string
+          entered_by?: string | null
+          id?: string
+          meeting_id?: string | null
+          metric_id?: string
+          on_target?: boolean
+          period_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metric_readings_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "metric_meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "metric_readings_metric_id_fkey"
+            columns: ["metric_id"]
+            isOneToOne: false
+            referencedRelation: "metrics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      metrics: {
+        Row: {
+          category: Database["public"]["Enums"]["metric_category"]
+          created_at: string
+          created_by: string | null
+          description: string | null
+          direction: Database["public"]["Enums"]["metric_direction"]
+          id: string
+          is_archived: boolean
+          owner: string | null
+          target_value: number | null
+          title: string
+          tolerance: number | null
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["metric_category"]
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          direction?: Database["public"]["Enums"]["metric_direction"]
+          id?: string
+          is_archived?: boolean
+          owner?: string | null
+          target_value?: number | null
+          title: string
+          tolerance?: number | null
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["metric_category"]
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          direction?: Database["public"]["Enums"]["metric_direction"]
+          id?: string
+          is_archived?: boolean
+          owner?: string | null
+          target_value?: number | null
+          title?: string
+          tolerance?: number | null
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       plc_master: {
         Row: {
@@ -7035,6 +7217,7 @@ export type Database = {
         Args: { p_is_solutions?: boolean; p_project_id: string }
         Returns: undefined
       }
+      current_user_is_internal: { Args: never; Returns: boolean }
       expense_admin_signoff: {
         Args: { p_approved: boolean; p_assignment_id: string }
         Returns: undefined
@@ -7396,6 +7579,19 @@ export type Database = {
       impl_week_status: "on_track" | "off_track"
       implementation_blocker_status_enum: "Live" | "Closed"
       invoice_status_enum: "not_raised" | "raised" | "received"
+      metric_category:
+        | "financial"
+        | "operational"
+        | "customer"
+        | "people"
+        | "quality"
+        | "other"
+      metric_direction: "higher_is_better" | "lower_is_better" | "on_target"
+      metric_meeting_status:
+        | "scheduled"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
       project_type: "implementation" | "solutions"
       reference_status_enum: "Active" | "Promised" | "Priority" | "N/A"
       task_status: "Planned" | "In Progress" | "Blocked" | "Done"
@@ -7600,6 +7796,21 @@ export const Constants = {
       impl_week_status: ["on_track", "off_track"],
       implementation_blocker_status_enum: ["Live", "Closed"],
       invoice_status_enum: ["not_raised", "raised", "received"],
+      metric_category: [
+        "financial",
+        "operational",
+        "customer",
+        "people",
+        "quality",
+        "other",
+      ],
+      metric_direction: ["higher_is_better", "lower_is_better", "on_target"],
+      metric_meeting_status: [
+        "scheduled",
+        "in_progress",
+        "completed",
+        "cancelled",
+      ],
       project_type: ["implementation", "solutions"],
       reference_status_enum: ["Active", "Promised", "Priority", "N/A"],
       task_status: ["Planned", "In Progress", "Blocked", "Done"],

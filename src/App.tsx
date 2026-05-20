@@ -75,6 +75,10 @@ import GospaStrategyTree from "./pages/app/gospa/StrategyTree";
 import GospaTimeline from "./pages/app/gospa/Timeline";
 import GospaWeeklyReview from "./pages/app/gospa/WeeklyReview";
 import GospaMetrics from "./pages/app/gospa/Metrics";
+import MetricsDashboard from "./pages/app/metrics/MetricsDashboard";
+import MetricDetail from "./pages/app/metrics/MetricDetail";
+import MetricsMeetings from "./pages/app/metrics/MetricsMeetings";
+import MeetingDetail from "./pages/app/metrics/MeetingDetail";
 
 const queryClient = new QueryClient();
 
@@ -282,6 +286,10 @@ const App = () => (
               <Route path="gospa/timeline" element={<GospaRoute><GospaTimeline /></GospaRoute>} />
               <Route path="gospa/weekly-review" element={<GospaRoute><GospaWeeklyReview /></GospaRoute>} />
               <Route path="gospa/metrics" element={<GospaRoute><GospaMetrics /></GospaRoute>} />
+              <Route path="metrics" element={<InternalRoute><MetricsDashboard /></InternalRoute>} />
+              <Route path="metrics/meetings" element={<InternalRoute><MetricsMeetings /></InternalRoute>} />
+              <Route path="metrics/meetings/:id" element={<InternalRoute><MeetingDetail /></InternalRoute>} />
+              <Route path="metrics/:id" element={<InternalRoute><MetricDetail /></InternalRoute>} />
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

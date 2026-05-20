@@ -18,7 +18,8 @@ import {
   User,
   PieChart,
   Camera,
-  Users
+  Users,
+  LineChart
 } from "lucide-react";
 
 export type Role = "internal_admin" | "internal_user" | "external_admin" | "external_user";
@@ -79,6 +80,18 @@ export const NAV: NavItem[] = [
       { label: "Weekly Review", to: "/app/gospa/weekly-review", matchPaths: ["/app/gospa/weekly-review"] },
     ]
   },
+
+  // Metrics tracking (separate top-level item below GOSPA)
+  {
+    label: "Metrics",
+    iconName: "LineChart",
+    roles: ["internal_admin", "internal_user"],
+    children: [
+      { label: "Dashboard", to: "/app/metrics", matchPaths: ["/app/metrics"] },
+      { label: "Meetings", to: "/app/metrics/meetings", matchPaths: ["/app/metrics/meetings"] },
+    ]
+  },
+
 
   // 3) BAU
   {
@@ -356,7 +369,8 @@ export const ICON_MAP = {
   User,
   PieChart,
   Camera,
-  Users
+  Users,
+  LineChart
 } as const;
 
 export function visibleItemsForRole(role: Role | null | undefined): NavItem[] {

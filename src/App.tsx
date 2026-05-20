@@ -286,6 +286,10 @@ const App = () => (
               <Route path="gospa/timeline" element={<GospaRoute><GospaTimeline /></GospaRoute>} />
               <Route path="gospa/weekly-review" element={<GospaRoute><GospaWeeklyReview /></GospaRoute>} />
               <Route path="gospa/metrics" element={<GospaRoute><GospaMetrics /></GospaRoute>} />
+              <Route path="metrics" element={<InternalRoute><MetricsDashboard /></InternalRoute>} />
+              <Route path="metrics/meetings" element={<InternalRoute><MetricsMeetings /></InternalRoute>} />
+              <Route path="metrics/meetings/:id" element={<InternalRoute><MeetingDetail /></InternalRoute>} />
+              <Route path="metrics/:id" element={<InternalRoute><MetricDetail /></InternalRoute>} />
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

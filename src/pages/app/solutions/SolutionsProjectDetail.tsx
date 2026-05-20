@@ -440,14 +440,17 @@ export const SolutionsProjectDetail = () => {
         </div>
 
         <TabsContent value="overview" className="space-y-4">
+          <MissingInfoBanner items={completeness.missing.overview} />
           <OverviewTab data={project} onUpdate={fetchProject} type="solutions" />
         </TabsContent>
 
         <TabsContent value="contract" className="space-y-4">
+          <MissingInfoBanner items={completeness.missing.contract} />
           <ContractInformationTab data={project} onUpdate={fetchProject} type="solutions" />
         </TabsContent>
 
         <TabsContent value="team" className="space-y-4">
+          <MissingInfoBanner items={completeness.missing.team} title={`Missing team roles — ${completeness.missing.team.length} of 12 not assigned`} />
           <TeamTab data={project} onUpdate={fetchProject} type="solutions" />
         </TabsContent>
 
@@ -456,6 +459,7 @@ export const SolutionsProjectDetail = () => {
         </TabsContent>
 
         <TabsContent value="contacts" className="space-y-4">
+          <MissingInfoBanner items={completeness.missing.contacts} />
           <ProjectContacts 
             projectId={project.id} 
             projectType="solutions"
@@ -465,19 +469,23 @@ export const SolutionsProjectDetail = () => {
         </TabsContent>
 
         <TabsContent value="infrastructure" className="space-y-4">
+          <MissingInfoBanner items={completeness.missing.infrastructure} />
           <SolutionsInfrastructure projectId={project.id} projectData={project} onUpdate={fetchProject} />
         </TabsContent>
 
         <TabsContent value="hardware" className="space-y-4">
+          <MissingInfoBanner items={completeness.missing.factoryHardware} />
           <ProjectHardware projectId={project.id} type="solutions" onCompletenessChange={setHwCompleteness} />
         </TabsContent>
 
         <TabsContent value="factory" className="space-y-4">
+          <MissingInfoBanner items={[...completeness.missing.factory, ...completeness.missing.factoryConfig]} />
           <SolutionsFactoryConfig projectId={project.id} />
           <SkuCountCard projectId={project.id} initialValue={(project as any).sow_sku_count} onUpdate={() => { fetchProject(); setCompletenessRefreshKey(k => k + 1); }} />
         </TabsContent>
 
         <TabsContent value="lines" className="space-y-4">
+          <MissingInfoBanner items={completeness.missing.lines} />
           <SolutionsLines solutionsProjectId={project.id} />
         </TabsContent>
 
@@ -490,6 +498,7 @@ export const SolutionsProjectDetail = () => {
         </TabsContent>
 
         <TabsContent value="hardware-summary" className="space-y-4">
+          <MissingInfoBanner items={completeness.missing.hardwareSummary} />
           <SolutionsHardwareSummary solutionsProjectId={project.id} salespersonId={project.salesperson ?? null} />
         </TabsContent>
 

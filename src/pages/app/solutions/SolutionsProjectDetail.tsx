@@ -33,11 +33,35 @@ import { SolutionsInfrastructure } from './tabs/SolutionsInfrastructure';
 import { SolutionsPortalConfig } from './tabs/SolutionsPortalConfig';
 import { ProjectHardwareStatus } from '../projects/tabs/ProjectHardwareStatus';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useTabCompleteness } from './hooks/useTabCompleteness';
+import { useTabCompleteness, MissingItem } from './hooks/useTabCompleteness';
 import { FeasibilityGateDialog } from '@/components/FeasibilityGateDialog';
 import { ProjectAttributesTab } from '@/components/attributes/ProjectAttributesTab';
 import { SolutionsVisionProjects } from './tabs/SolutionsVisionProjects';
 import { SolutionsProducts } from './tabs/SolutionsProducts';
+import { MissingInfoBanner } from '@/components/shared/MissingInfoBanner';
+
+const StatusDot = ({ complete, missing }: { complete: boolean; missing?: MissingItem[] }) => {
+  const dot = (
+    <span className={`h-2 w-2 rounded-full inline-block ml-1.5 ${complete ? 'bg-green-500' : 'bg-red-500'}`} />
+  );
+  if (complete || !missing || missing.length === 0) return dot;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="inline-flex items-center">{dot}</span>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" className="max-w-xs">
+        <p className="font-semibold text-xs mb-1">{missing.length} missing:</p>
+        <ul className="text-xs space-y-0.5">
+          {missing.slice(0, 8).map(m => (
+            <li key={m.key}>• {m.label}{typeof m.count === 'number' ? ` (${m.count})` : ''}</li>
+          ))}
+          {missing.length > 8 && <li className="text-muted-foreground">+ {missing.length - 8} more…</li>}
+        </ul>
+      </TooltipContent>
+    </Tooltip>
+  );
+};
 
 interface SolutionsProject {
   id: string;

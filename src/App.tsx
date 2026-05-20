@@ -75,6 +75,10 @@ import GospaStrategyTree from "./pages/app/gospa/StrategyTree";
 import GospaTimeline from "./pages/app/gospa/Timeline";
 import GospaWeeklyReview from "./pages/app/gospa/WeeklyReview";
 import GospaMetrics from "./pages/app/gospa/Metrics";
+import MetricsDashboard from "./pages/app/metrics/MetricsDashboard";
+import MetricDetail from "./pages/app/metrics/MetricDetail";
+import MetricsMeetings from "./pages/app/metrics/MetricsMeetings";
+import MeetingDetail from "./pages/app/metrics/MeetingDetail";
 
 const queryClient = new QueryClient();
 
